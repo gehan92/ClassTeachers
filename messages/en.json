@@ -1,0 +1,1154 @@
+{
+  "meta": {
+    "homeTitle": "ClassPortals — Find teachers, classes & campus lecturers, Grade 1 to University",
+    "homeDescription": "Search verified teachers, tuition classes and campus lecturers across Sri Lanka. Compare qualifications, rates and reviews before you ever pick up the phone."
+  },
+  "nav": {
+    "findTeachers": "Find teachers",
+    "findClasses": "Find classes",
+    "roles": "Roles",
+    "advertise": "Advertise",
+    "pricing": "Pricing",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "help": "Help",
+    "login": "Log in",
+    "joinFree": "Join free",
+    "menu": "Menu"
+  },
+  "language": {
+    "label": "Language"
+  },
+  "hero": {
+    "eyebrow": "Grade 1 — Grade 13 — Campus",
+    "titlePrefix": "Find the right teacher,",
+    "titleEmphasis": "not just any teacher.",
+    "subtitle": "Search verified teachers, tuition classes and campus lecturers across Sri Lanka. Compare qualifications, rates and reviews before you ever pick up the phone.",
+    "browseTeachers": "Browse teachers",
+    "iWantToTeach": "I want to teach"
+  },
+  "search": {
+    "whatLearning": "What are you learning?",
+    "subjectPlaceholder": "Subject — e.g. Combined Maths, Organic Chemistry",
+    "locationPlaceholder": "Location — e.g. Matara, or 'Online'",
+    "onlineOnly": "Online classes only",
+    "level": "Level",
+    "searchButton": "Search",
+    "grades": {
+      "1-5": "1–5",
+      "6-9": "6–9",
+      "10-11": "10–11 O/L",
+      "12-13": "12–13 A/L",
+      "campus": "Campus & Professional"
+    }
+  },
+  "roles": {
+    "eyebrow": "Who's on ClassPortals",
+    "title": "One platform, every level of teaching",
+    "seeHow": "See how each role works →",
+    "teacher": {
+      "tag": "Individual",
+      "title": "Teacher",
+      "description": "School teachers and private tutors, Grade 1–13.",
+      "points": ["Own profile & pricing", "Notes, question bank, exams", "Online or in-person classes"]
+    },
+    "class": {
+      "tag": "Institute",
+      "title": "Class / Institute",
+      "description": "Tuition institutes with one or more teachers.",
+      "points": ["Multi-teacher profile", "Institute-wide advertisement", "Class-level pricing"]
+    },
+    "campus": {
+      "tag": "Higher education",
+      "title": "Campus Lecturer / Professor",
+      "description": "University lecturers offering courses or guest sessions.",
+      "points": ["Degree & research credentials", "Course-style question banks", "Same tools, campus level"]
+    },
+    "student": {
+      "tag": "Learner",
+      "title": "Student",
+      "description": "From Grade 1 pupils' parents to university students.",
+      "points": ["Search & compare freely", "Join classes, sit exams", "Full access after enrolling"]
+    }
+  },
+  "featured": {
+    "eyebrow": "Featured this week",
+    "title": "Teachers & classes near you",
+    "viewAll": "View all →"
+  },
+  "listing": {
+    "signInForContact": "Sign in for contact",
+    "viewClass": "View class",
+    "reviewsCount": "{count} reviews"
+  },
+  "reviews": {
+    "replyPrefix": "Replied:"
+  },
+  "gateNote": {
+    "text": "The full name and phone number unlock once you've joined this teacher or class.",
+    "signIn": "Sign in"
+  },
+  "priceBox": {
+    "hourly": "Hourly",
+    "monthly": "Monthly",
+    "join": "Join",
+    "message": "Message"
+  },
+  "comingSoon": {
+    "badge": "Coming soon",
+    "backHome": "Back to home"
+  },
+  "classBatch": {
+    "started": "Started",
+    "upcoming": "Not started yet",
+    "viewTeacher": "View teacher profile"
+  },
+  "adSlot": {
+    "eyebrow": "Site-wide advertisement",
+    "text": "This slot is sold to sponsors — institutes, publishers, or stationery brands.",
+    "cta": "Advertise here"
+  },
+  "teachCta": {
+    "eyebrow": "Teach on ClassPortals",
+    "title": "List your class, reach students across the island",
+    "subtitle": "Start on the free plan — upgrade any time you want featured placement.",
+    "cta": "Get started"
+  },
+  "rolesPage": {
+    "eyebrow": "How ClassPortals works",
+    "title": "Four roles, one platform",
+    "subtitle": "Whether you teach one student or run an institute, ClassPortals gives every role the same tools to be found, compared and contacted.",
+    "ctaTitle": "Ready to get started?",
+    "ctaSubtitle": "Setting up a profile takes a few minutes — you can start on the free plan.",
+    "ctaTeacher": "Register as a teacher",
+    "ctaClass": "Register a class"
+  },
+  "advertise": {
+    "hero": {
+      "eyebrow": "Advertise on ClassPortals",
+      "title": "Put your class or ad in front of active parents and students",
+      "subtitle": "Reach families who are already searching by subject, grade and location — no cold calls, no flyers.",
+      "cta": "Post an ad"
+    },
+    "compare": {
+      "eyebrow": "Two ways to be seen",
+      "title": "Ad-only or a full profile — pick what fits",
+      "standalone": {
+        "tag": "Ad-only",
+        "title": "Standalone ad",
+        "description": "A single paid listing for one class, vacancy or announcement — no ongoing profile attached.",
+        "points": [
+          "Pay once for the slot you book",
+          "Shown in the ads list and relevant search pages",
+          "No student reviews or profile page attached"
+        ]
+      },
+      "fullProfile": {
+        "tag": "Full profile",
+        "title": "Teacher / class profile",
+        "description": "A permanent listing with reviews, subjects and pricing that grows over time.",
+        "points": [
+          "Appears in search and subject pages year-round",
+          "Collects ratings and reviews from students",
+          "Free to list — upgrade any time for extra visibility"
+        ]
+      }
+    },
+    "plans": {
+      "eyebrow": "Ad plans",
+      "title": "Simple, one-time pricing",
+      "basic": {
+        "days": "7 days",
+        "title": "Basic",
+        "price": "Rs. 500",
+        "priceSuffix": "/ 7 days",
+        "features": [
+          "Listed on the standalone ads page",
+          "Subject and location tags",
+          "Contact requests via sign-in"
+        ],
+        "cta": "Choose Basic"
+      },
+      "featured": {
+        "badge": "Most booked",
+        "days": "14 days",
+        "title": "Featured",
+        "price": "Rs. 1,200",
+        "priceSuffix": "/ 14 days",
+        "features": [
+          "Everything in Basic",
+          "Higher placement in ad listings",
+          "Featured tag on your ad card"
+        ],
+        "cta": "Choose Featured"
+      },
+      "spotlight": {
+        "days": "30 days",
+        "title": "Homepage Spotlight",
+        "price": "Rs. 2,800",
+        "priceSuffix": "/ 30 days",
+        "features": [
+          "Everything in Featured",
+          "Rotates in the homepage ad slot",
+          "Priority support for your listing"
+        ],
+        "cta": "Choose Spotlight"
+      }
+    },
+    "currentAds": {
+      "eyebrow": "Live now",
+      "title": "Current standalone ads",
+      "signInToContact": "Sign in to contact"
+    },
+    "form": {
+      "eyebrow": "Post an ad",
+      "title": "Tell us about your class or vacancy",
+      "subtitle": "We'll review your ad and publish it within one business day.",
+      "adTitleLabel": "Ad title",
+      "adTitlePlaceholder": "e.g. A/L Combined Maths classes starting in Matara",
+      "subjectLabel": "Subject",
+      "subjectPlaceholder": "e.g. Combined Maths",
+      "locationLabel": "Location",
+      "locationPlaceholder": "e.g. Matara, or 'Online'",
+      "detailsLabel": "Details",
+      "detailsPlaceholder": "Share schedule, fees, and anything else parents should know.",
+      "phoneLabel": "Contact phone",
+      "phonePlaceholder": "07X XXX XXXX",
+      "submit": "Submit ad for review",
+      "posted": "Posted — your ad is now listed above.",
+      "newAdPosterType": "You",
+      "newAdLocationFallback": "Location not specified",
+      "newAdExpiresLabel": "Expires in 7 days"
+    }
+  },
+  "termsPage": {
+    "title": "Terms of service",
+    "body": "We're finalising the terms that govern how teachers, classes and students use ClassPortals. Check back soon for the full policy."
+  },
+  "privacyPage": {
+    "title": "Privacy policy",
+    "body": "This page will explain how we store your data, and the contact-gating rules that keep teacher and class names masked and phone numbers locked until a student enrolls. We're finalising the full policy — check back soon."
+  },
+  "pricingPage": {
+    "title": "Pricing",
+    "body": "Looking for tutoring rates? Those are already shown on each teacher and class profile — this page isn't for that. This page will cover ClassPortals' own Free, Standard and Premium subscription plans for teachers and classes once finalised."
+  },
+  "authErrors": {
+    "emailTaken": "An account with this email already exists. Try logging in instead.",
+    "invalidCredentials": "Incorrect email or password.",
+    "agreeRequired": "You must agree to the Terms and Privacy Policy to continue.",
+    "generic": "Something went wrong. Please try again."
+  },
+  "login": {
+    "eyebrow": "Account access",
+    "title": "Welcome back",
+    "subtitle": "Log in to message teachers, join classes, and take exams.",
+    "emailLabel": "Email or phone number",
+    "emailPlaceholder": "you@example.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "••••••••",
+    "rememberMe": "Keep me signed in",
+    "forgotPassword": "Forgot password?",
+    "submit": "Log in",
+    "submitting": "Logging in…",
+    "divider": "or continue with",
+    "google": "Continue with Google",
+    "footerPrompt": "Don't have an account?",
+    "footerLink": "Sign up free",
+    "sideQuote": "\"Notes, exams, and my classes — all in one login. I don't juggle four different apps anymore.\"",
+    "stats": [
+      { "value": "2,400+", "label": "Teachers & classes" },
+      { "value": "Grade 1–13", "label": "Plus campus" },
+      { "value": "18 districts", "label": "Across Sri Lanka" }
+    ]
+  },
+  "signup": {
+    "eyebrow": "Create account",
+    "title": "Create your account",
+    "subtitle": "Tell us what you're here to do — this decides which tools you'll see.",
+    "nameLabel": "Full name",
+    "namePlaceholder": "As it will appear once students join you",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "phoneLabel": "Phone number",
+    "phonePlaceholder": "07X XXX XXXX",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "At least 8 characters",
+    "passwordHelper": "At least 8 characters",
+    "agreeText": "I agree to the",
+    "agreeAnd": "and",
+    "termsLink": "Terms",
+    "privacyLink": "Privacy Policy",
+    "submit": "Create account",
+    "submitting": "Creating account…",
+    "footerPrompt": "Already have an account?",
+    "footerLink": "Log in",
+    "sideQuote": "\"Registered as an institute in an afternoon — all six of our teachers were listed by evening.\"",
+    "stats": [
+      { "value": "Free", "label": "To get started" },
+      { "value": "4 roles", "label": "One account system" },
+      { "value": "5 min", "label": "To set up a profile" }
+    ],
+    "roleSelect": {
+      "label": "Choose your role",
+      "student": { "tag": "Learner", "label": "Student / Parent" },
+      "teacher": { "tag": "Individual", "label": "Teacher" },
+      "class": { "tag": "Institute", "label": "Class / Institute" },
+      "lecturer": { "tag": "Higher ed", "label": "Campus Lecturer" }
+    },
+    "pendingConfirmation": {
+      "eyebrow": "Check your inbox",
+      "title": "Confirm your email",
+      "body": "We've sent a confirmation link to {email}. Click it to activate your account, then come back and log in.",
+      "backToLogin": "Back to log in"
+    }
+  },
+  "forgotPassword": {
+    "sideQuote": "\"Locked out before an exam once — reset link landed in under a minute.\"",
+    "stats": [
+      { "value": "~2 min", "label": "Typical reset time" },
+      { "value": "Secure", "label": "Link expires in 30 min" }
+    ],
+    "request": {
+      "eyebrow": "Password reset",
+      "title": "Reset your password",
+      "subtitle": "Enter the email on your account — we'll send a link to reset it.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send reset link",
+      "footerPrompt": "Remembered it?",
+      "footerLink": "Log in"
+    },
+    "sent": {
+      "eyebrow": "Check your inbox",
+      "title": "Link sent",
+      "body": "If an account matches that email, a reset link is on its way. It expires in 30 minutes.",
+      "resend": "Resend link",
+      "resendSent": "Sent again ✓",
+      "footerPrompt": "Didn't get it?",
+      "preview": "I clicked the link (preview)"
+    }
+  },
+  "resetPassword": {
+    "sideQuote": "\"One more step and you're straight back into your dashboard.\"",
+    "form": {
+      "eyebrow": "Account security",
+      "title": "Set a new password",
+      "subtitle": "Choose something you haven't used on ClassPortals before.",
+      "newPasswordLabel": "New password",
+      "newPasswordPlaceholder": "At least 8 characters",
+      "confirmPasswordLabel": "Confirm new password",
+      "confirmPasswordPlaceholder": "Re-enter password",
+      "mismatchError": "Passwords don't match",
+      "submit": "Update password"
+    },
+    "done": {
+      "eyebrow": "Password updated",
+      "title": "You're all set",
+      "body": "Your password has been changed. Log in with your new password.",
+      "cta": "Go to log in"
+    }
+  },
+  "profilePage": {
+    "save": "Save",
+    "joinTeacher": "Join teacher",
+    "joinInstitute": "Join institute",
+    "yearsExperience": "{years} years experience",
+    "teachersCount": "{count} teachers",
+    "about": "About",
+    "reviewsHeading": "{count} reviews · {rating} average",
+    "phoneLocked": "Sign in and join to view",
+    "qualifications": "Qualifications & experience",
+    "degreeLabel": "Degree",
+    "experienceLabel": "Experience",
+    "subjectsLabel": "Subjects",
+    "gradeLevelsLabel": "Grade levels",
+    "classTypeLabel": "Class type",
+    "phoneLabel": "Phone",
+    "locationLabel": "Location",
+    "establishedLabel": "Established",
+    "classTypePhysical": "Physical",
+    "classTypeOnline": "Online",
+    "classTypeBoth": "Physical & Online",
+    "notesTitle": "Notes & tutorials",
+    "notesSubtitle": "{pages} pages · watermarked, view-only",
+    "notesLocked": "Sign in and join",
+    "scheduleTitle": "Live class schedule",
+    "questionBankTitle": "Question bank & exams",
+    "questionBankLocked": "Members only",
+    "questionBankText": "Practice exams and the full question bank unlock once you join this teacher.",
+    "verificationTitle": "Verification",
+    "verificationDegree": "Degree certificate verified",
+    "verificationNic": "NIC verified",
+    "classesWithinInstitute": "Classes within this institute",
+    "instituteReviewsTitle": "{count} institute reviews · {rating} average",
+    "instituteDetailsTitle": "Institute details",
+    "generalRateHelper": "Applies when a student joins the institute generally, rather than a specific teacher."
+  },
+  "adminDashboard": {
+    "logout": "Log out",
+    "saved": "Saved",
+    "groupPlatform": "Platform",
+    "groupMonetization": "Monetization",
+    "groupTrust": "Trust & Safety",
+    "tabs": {
+      "overview": "Overview",
+      "approvals": "Approvals",
+      "users": "Users",
+      "subscriptions": "Subscriptions",
+      "siteAds": "Site-wide Ads",
+      "flagged": "Flagged Reviews"
+    },
+    "overview": {
+      "title": "Platform Overview",
+      "subtitle": "Snapshot across all teachers, classes, and students.",
+      "stats": {
+        "teachers": "Total teachers",
+        "institutes": "Total institutes",
+        "students": "Total students",
+        "revenue": "Platform revenue MTD"
+      },
+      "attentionHeading": "Needs your attention",
+      "attention": {
+        "approvals": {
+          "title": "5 pending approvals",
+          "body": "New teacher, institute, and campus lecturer signups are waiting for document review.",
+          "cta": "Review approvals"
+        },
+        "flagged": {
+          "title": "2 flagged reviews",
+          "body": "Reviews reported as abusive, fake, or off-topic need a moderation decision.",
+          "cta": "Review flags"
+        },
+        "ads": {
+          "title": "1 site ad expiring",
+          "body": "Nimal's Bookshop, ends in 2 days.",
+          "cta": "Manage ads"
+        }
+      }
+    },
+    "approvals": {
+      "title": "Pending Approvals",
+      "subtitle": "New teacher, institute, and campus lecturer accounts awaiting verification.",
+      "entityTypes": {
+        "teacher": "Teacher",
+        "institute": "Institute",
+        "campusLecturer": "Campus Lecturer"
+      },
+      "columns": {
+        "name": "Name",
+        "type": "Type",
+        "submitted": "Submitted",
+        "documents": "Documents",
+        "actions": "Actions"
+      },
+      "actions": {
+        "approve": "Approve",
+        "reject": "Reject"
+      },
+      "noApprovalsPending": "All caught up — no pending approvals."
+    },
+    "users": {
+      "title": "Users",
+      "subtitle": "Search and manage every account on the platform.",
+      "searchPlaceholder": "Search by name, email, or phone...",
+      "roleFilter": {
+        "all": "All roles",
+        "teacher": "Teacher",
+        "institute": "Class",
+        "student": "Student",
+        "campusLecturer": "Campus Lecturer"
+      },
+      "roles": {
+        "teacher": "Teacher",
+        "institute": "Class",
+        "student": "Student",
+        "campusLecturer": "Campus Lecturer"
+      },
+      "plans": {
+        "free": "Free",
+        "standard": "Standard",
+        "premium": "Premium"
+      },
+      "columns": {
+        "user": "User",
+        "role": "Role",
+        "joined": "Joined",
+        "plan": "Plan",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "suspended": "Suspended"
+      },
+      "actions": {
+        "manage": "Manage",
+        "reactivate": "Reactivate"
+      },
+      "empty": "No users match your search."
+    },
+    "subscriptions": {
+      "title": "Platform Subscriptions",
+      "stats": {
+        "free": "Free",
+        "standard": "Standard",
+        "premium": "Premium",
+        "churn": "Churn 30d"
+      },
+      "pricing": {
+        "heading": "Plan pricing",
+        "standardLabel": "Standard monthly (Rs.)",
+        "premiumLabel": "Premium monthly (Rs.)",
+        "save": "Save"
+      }
+    },
+    "siteAds": {
+      "title": "Site-wide Ads",
+      "subtitle": "Sponsor placements shown across the public site.",
+      "newAdSlot": "+ New ad slot",
+      "plans": {
+        "basic": "Basic",
+        "featured": "Featured",
+        "spotlight": "Homepage Spotlight"
+      },
+      "newAdForm": {
+        "sponsorLabel": "Sponsor name",
+        "sponsorPlaceholder": "e.g. Lanka Stationers",
+        "planLabel": "Plan",
+        "placementLabel": "Placement",
+        "placementPlaceholder": "e.g. Homepage banner",
+        "expiresLabel": "Expires",
+        "expiresPlaceholder": "e.g. Ends 30 Sep 2026",
+        "add": "Add",
+        "cancel": "Cancel"
+      },
+      "columns": {
+        "sponsor": "Sponsor",
+        "plan": "Plan",
+        "placement": "Placement",
+        "expires": "Expires",
+        "status": "Status"
+      },
+      "status": {
+        "expiring": "Expiring soon",
+        "live": "Live"
+      }
+    },
+    "flagged": {
+      "title": "Flagged Reviews",
+      "subtitle": "Reported by teachers/institutes as abusive, fake, or off-topic.",
+      "actions": {
+        "keep": "Keep",
+        "remove": "Remove"
+      },
+      "noFlaggedReviews": "No flagged reviews — the queue is clear."
+    }
+  },
+  "instituteDashboard": {
+    "publicProfile": "View public profile",
+    "logout": "Log out",
+    "groupInstitute": "Institute",
+    "groupManage": "Manage",
+    "tabs": {
+      "overview": "Overview",
+      "teachers": "Teachers",
+      "batches": "Classes & Batches",
+      "ads": "Advertisement",
+      "reviews": "Reviews",
+      "settings": "Settings"
+    },
+    "overview": {
+      "subtitle": "Overview across all 6 teachers and 9 running batches.",
+      "inviteTeacher": "+ Invite a teacher",
+      "stats": {
+        "teachers": "Teachers",
+        "teachersDelta": "1 pending invite",
+        "students": "Total students",
+        "studentsDelta": "+24 this month",
+        "rating": "Institute rating",
+        "ratingDelta": "211 reviews",
+        "batches": "Active batches",
+        "batchesDelta": "2 starting soon"
+      },
+      "glanceTitle": "Teachers at a glance",
+      "table": {
+        "teacher": "Teacher",
+        "subject": "Subject",
+        "students": "Students",
+        "rating": "Rating",
+        "status": "Status",
+        "active": "Active"
+      }
+    },
+    "teachers": {
+      "title": "Teachers",
+      "subtitle": "Manage the teachers linked to your institute.",
+      "inviteTeacher": "+ Invite a teacher",
+      "invited": "Invited",
+      "confirmRemove": "Remove {name} from your institute?",
+      "inviteForm": {
+        "title": "Invite a teacher",
+        "emailOrPhoneLabel": "Teacher's email or phone",
+        "emailOrPhonePlaceholder": "e.g. teacher@email.com or 077 123 4567",
+        "subjectLabel": "Subject they'll teach",
+        "subjectPlaceholder": "e.g. Combined Maths",
+        "helper": "We'll send them an invite to join Horizon Learning Institute on ClassPortals. They can accept it from their email or phone.",
+        "submit": "Send invite",
+        "cancel": "Cancel"
+      },
+      "table": {
+        "teacher": "Teacher",
+        "subject": "Subject",
+        "rate": "Rate",
+        "students": "Students",
+        "visible": "Visible on institute page",
+        "actions": "Actions",
+        "view": "View",
+        "remove": "Remove",
+        "inviteSent": "Invite sent",
+        "resend": "Resend",
+        "resentConfirm": "Invite resent"
+      }
+    },
+    "batches": {
+      "title": "Classes & Batches",
+      "subtitle": "All batches running under your institute.",
+      "addBatch": "+ Add batch",
+      "added": "Added",
+      "cancel": "Cancel",
+      "form": {
+        "title": "Add a batch",
+        "titleLabel": "Batch title",
+        "titlePlaceholder": "e.g. A/L Chemistry — Batch C",
+        "teacherLabel": "Teacher name",
+        "teacherPlaceholder": "e.g. Kasun Perera",
+        "scheduleLabel": "Schedule",
+        "schedulePlaceholder": "e.g. Mon, Wed, 5:00 PM",
+        "priceLabel": "Price (Rs.)",
+        "intervalLabel": "Billing interval",
+        "intervalHour": "Per hour",
+        "intervalMonth": "Per month",
+        "submit": "Add batch"
+      }
+    },
+    "ads": {
+      "title": "Advertisement",
+      "subtitle": "Promote your institute and manage your ad copy.",
+      "panelTitle": "Your promotion",
+      "promotionLabel": "Promotion text",
+      "save": "Save",
+      "saved": "Saved",
+      "spotlight": {
+        "eyebrow": "Get more visibility",
+        "cta": "See ad plans"
+      }
+    },
+    "reviews": {
+      "title": "Institute Reviews",
+      "summary": "{count} reviews · ★★★★★ {rating} average"
+    },
+    "settings": {
+      "title": "Institute Settings",
+      "subtitle": "Manage your institute's profile and default rates.",
+      "save": "Save",
+      "saved": "Saved",
+      "logo": {
+        "title": "Institute logo",
+        "upload": "Upload new logo"
+      },
+      "details": {
+        "title": "Institute details",
+        "nameLabel": "Institute name",
+        "establishedLabel": "Established",
+        "locationLabel": "Location",
+        "phoneLabel": "Phone"
+      },
+      "rate": {
+        "title": "Institute-wide rate",
+        "hourlyLabel": "Hourly (Rs.)",
+        "monthlyLabel": "Monthly (Rs.)",
+        "helper": "Applies when a student joins the institute generally, rather than a specific teacher."
+      }
+    }
+  },
+  "studentDashboard": {
+    "logout": "Log out",
+    "groupLearn": "Learn",
+    "groupAccount": "Account",
+    "tabs": {
+      "overview": "Overview",
+      "classes": "My Classes",
+      "live": "Live Classes",
+      "notes": "Tutes & Notes",
+      "exams": "Exams",
+      "reviews": "My Reviews",
+      "profile": "Profile & Account"
+    },
+    "overview": {
+      "greeting": "Good evening, {name}",
+      "subtitle": "Here's what's happening across your classes today.",
+      "statClasses": "Classes joined",
+      "statNextLive": "Next live class",
+      "statNextLiveValue": "Today · 6:00 PM",
+      "statExamsDue": "Exams due",
+      "statNotes": "Notes available",
+      "actionLiveTitle": "Combined Maths — live in 20 min",
+      "actionLiveBody": "Mr. Priyantha Kumara's Mechanics Revision class starts soon.",
+      "actionLiveCta": "Go to Live Classes",
+      "actionExamsTitle": "2 exams due this week",
+      "actionExamsBody": "Mechanics Unit Test and Periodic Table Quiz are still open.",
+      "actionExamsCta": "Go to Exams",
+      "actionNotesTitle": "8 notes available",
+      "actionNotesBody": "New Vectors & Statics notes were just added.",
+      "actionNotesCta": "Go to Notes"
+    },
+    "classes": {
+      "title": "My Classes",
+      "subtitle": "Teachers and classes you've joined.",
+      "typeTeacher": "Teacher",
+      "typeClass": "Class",
+      "viewProfile": "View profile"
+    },
+    "live": {
+      "title": "Live Classes",
+      "subtitle": "Scheduled online and physical classes from your teachers.",
+      "colTitle": "Title",
+      "colTeacher": "Teacher",
+      "colSchedule": "Schedule",
+      "colMode": "Mode",
+      "colAction": "Action",
+      "modeOnline": "Online",
+      "modePhysical": "Physical",
+      "stateNotOpen": "Not open yet",
+      "stateStartingSoon": "Live in 20 min",
+      "joinButton": "Join Live Class",
+      "markedPresent": "You're marked present"
+    },
+    "notes": {
+      "title": "Tutes & Notes",
+      "subtitle": "View-only notes from the teachers and classes you've joined.",
+      "pagesLabel": "{pages} pages",
+      "openViewer": "Open viewer",
+      "closeViewer": "Close viewer",
+      "viewerDisabledNote": "Download and print are disabled for this document.",
+      "viewerPageContent": "This is a placeholder page of the view-only document. Content renders here exactly as uploaded by your teacher."
+    },
+    "exams": {
+      "title": "Exams",
+      "subtitle": "Sit MCQ tests, upload essay answers, and track your results.",
+      "dueTitle": "Due now",
+      "dueSubtitle": "Exams you still need to submit.",
+      "dueEmpty": "No exams due right now.",
+      "pastTitle": "Past results",
+      "pastEmpty": "No graded results yet.",
+      "tableExam": "Exam",
+      "tableTeacher": "Teacher",
+      "tableGrade": "Grade",
+      "tableFeedback": "Feedback",
+      "tableDate": "Date graded",
+      "durationLabel": "{minutes} min",
+      "scheduledLabel": "Scheduled for {date}",
+      "notOpenYet": "Not open yet",
+      "startExam": "Start exam",
+      "continueExam": "Continue exam",
+      "backToExams": "Back to exams",
+      "mcqSectionTitle": "Multiple choice questions",
+      "essaySectionTitle": "Written answers",
+      "essayInstructions": "Upload clear photos of your written answer sheets.",
+      "addPhotos": "Add photos",
+      "submitExam": "Submit exam",
+      "pendingGrading": "Pending grading",
+      "resubmit": "Resubmit",
+      "resubmitPanelTitle": "Replace your answer photos",
+      "resubmitSubmit": "Resubmit",
+      "resubmitSuccess": "Resubmitted — waiting for your teacher to grade it",
+      "cancel": "Cancel",
+      "submittedTitle": "Submitted — your teacher will grade this soon",
+      "submittedBody": "We've received your answer photos. You'll see your grade and feedback here once it's ready.",
+      "gradedResultTitle": "Your result",
+      "gradedResultBody": "This exam was auto-graded — nice work!",
+      "scoreLabel": "{score} / {max}",
+      "essayPendingNote": "Your multiple-choice answers are auto-graded above. Your written answers are pending your teacher's review.",
+      "questionLabel": "Question {number}",
+      "examClosedNotAttempted": "This exam is closed and you did not attempt it."
+    },
+    "reviews": {
+      "pageTitle": "My Reviews",
+      "pageSubtitle": "Reviews you've left, and new ones you can leave for teachers or classes you've joined.",
+      "leftTitle": "Reviews you've left",
+      "composerTitle": "Leave a review",
+      "targetLabel": "Teacher or class",
+      "ratingLabel": "Your rating",
+      "commentLabel": "Comment",
+      "commentPlaceholder": "Share what you liked, or what could be better...",
+      "postButton": "Post review",
+      "posted": "Posted"
+    },
+    "profile": {
+      "profileTitle": "Profile",
+      "nameLabel": "Name",
+      "gradeLabel": "Grade / level",
+      "emailLabel": "Email",
+      "phoneLabel": "Phone",
+      "saveChanges": "Save changes",
+      "saved": "Saved",
+      "changePassword": "Change password",
+      "notificationsTitle": "Notifications",
+      "notifNewNotes": "New notes",
+      "notifLiveReminders": "Live class reminders",
+      "notifExamGraded": "Exam graded"
+    }
+  },
+  "teacherDashboard": {
+    "publicProfile": "Public profile",
+    "logout": "Log out",
+    "groupTeach": "Teach",
+    "groupManage": "Manage",
+    "common": {
+      "save": "Save",
+      "saved": "Saved",
+      "add": "Add",
+      "added": "Added",
+      "cancel": "Cancel",
+      "postReply": "Post reply"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "profile": "Profile",
+      "notes": "Notes",
+      "classes": "Classes",
+      "questionBank": "Question bank",
+      "exams": "Exams",
+      "live": "Live classes",
+      "students": "Students",
+      "attendance": "Attendance",
+      "reviews": "Reviews",
+      "ads": "Advertisement",
+      "settings": "Settings"
+    },
+    "overview": {
+      "greeting": "Good evening, {name}",
+      "subtitle": "Here's what's happening with your classes today.",
+      "createExam": "+ Create exam",
+      "stats": {
+        "activeStudents": "Active students",
+        "activeStudentsDelta": "+6 this month",
+        "earnings": "This month's earnings",
+        "earningsDelta": "+12%",
+        "rating": "Average rating",
+        "ratingDelta": "128 reviews",
+        "submissions": "Submissions to grade",
+        "submissionsDelta": "Due in 2 days"
+      },
+      "quickActionsHeading": "Quick actions",
+      "actions": {
+        "classHeading": "Today's class — 6:00 PM",
+        "classBody": "Combined Maths — Mechanics starts soon. Make sure your join link is ready.",
+        "classAction": "Start class",
+        "classStarted": "Class started",
+        "gradingHeading": "7 ungraded submissions",
+        "gradingBody": "Mechanics Unit Test — Term 2 is waiting for grading.",
+        "gradingAction": "Grade now",
+        "reviewHeading": "New review",
+        "reviewBody": "Best Combined Maths classes I've attended. The past paper clinic made all the difference.",
+        "reviewAction": "Reply"
+      }
+    },
+    "profile": {
+      "heading": "Profile",
+      "photoHeading": "Profile photo",
+      "uploadPhoto": "Upload new photo",
+      "qualificationsHeading": "Qualifications",
+      "fields": {
+        "degree": "Degree",
+        "experience": "Experience",
+        "subjects": "Subjects",
+        "gradeLevels": "Grade levels",
+        "location": "Location",
+        "classType": "Class type",
+        "hourlyRate": "Hourly rate (Rs.)",
+        "monthlyRate": "Monthly rate (Rs.)",
+        "email": "Email",
+        "phone": "Phone"
+      },
+      "pricingHeading": "Pricing",
+      "saveChanges": "Save changes"
+    },
+    "notes": {
+      "heading": "Notes & tutorials",
+      "uploadNote": "+ Upload note",
+      "columns": {
+        "title": "Title",
+        "subject": "Subject",
+        "pages": "Pages",
+        "views": "Views",
+        "protection": "Protection",
+        "actions": "Actions"
+      },
+      "watermarked": "Watermarked",
+      "edit": "Edit",
+      "titlePlaceholder": "Note title",
+      "subjectPlaceholder": "Subject"
+    },
+    "classes": {
+      "heading": "Classes",
+      "subtitle": "Your own batches and who's registered in each.",
+      "studentCount": "{count} students",
+      "noStudents": "No students enrolled yet.",
+      "columns": {
+        "student": "Student",
+        "joined": "Joined",
+        "contact": "Contact"
+      }
+    },
+    "questionBank": {
+      "heading": "Question bank",
+      "subtitle": "Reusable questions you can pull into any exam.",
+      "addQuestion": "+ Add question",
+      "emptyState": "No questions match your filters.",
+      "batchAnyLabel": "All my classes",
+      "filters": {
+        "searchPlaceholder": "Search by topic or text...",
+        "allGrades": "All grades",
+        "allBatches": "All batches"
+      },
+      "columns": {
+        "question": "Question",
+        "topic": "Topic",
+        "grade": "Grade",
+        "batch": "Batch",
+        "type": "Type",
+        "difficulty": "Difficulty",
+        "marks": "Marks"
+      },
+      "typeLabel": {
+        "mcq": "MCQ",
+        "essay": "Essay"
+      },
+      "difficultyLabel": {
+        "easy": "Easy",
+        "medium": "Medium",
+        "hard": "Hard"
+      },
+      "form": {
+        "title": "New question",
+        "textLabel": "Question text",
+        "textPlaceholder": "Type the question...",
+        "topicLabel": "Topic",
+        "topicPlaceholder": "e.g. Mechanics — Kinematics",
+        "marksLabel": "Marks",
+        "gradeLabel": "Grade level",
+        "batchLabel": "Batch",
+        "batchAny": "Any batch (all my classes)",
+        "difficultyLabel": "Difficulty",
+        "typeLabel": "Question type",
+        "typeMcq": "MCQ",
+        "typeEssay": "Essay",
+        "optionsLabel": "Answer options",
+        "optionPlaceholder": "Option {number}",
+        "optionFallback": "Option {number}",
+        "correctHint": "Select the radio button next to the correct option."
+      }
+    },
+    "exams": {
+      "heading": "Exams",
+      "subtitle": "Build exams from your question bank and grade submissions.",
+      "createExam": "+ Create exam",
+      "examsHeading": "Your exams",
+      "grade": "Grade",
+      "minutes": "{count} min",
+      "columns": {
+        "exam": "Exam",
+        "batch": "Batch",
+        "grade": "Grade",
+        "duration": "Duration",
+        "date": "Date",
+        "questions": "Questions",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "upcoming": "Upcoming",
+        "open": "Open",
+        "closed": "Closed"
+      },
+      "form": {
+        "title": "New exam",
+        "titleLabel": "Exam title",
+        "titlePlaceholder": "e.g. Mechanics Unit Test — Term 3",
+        "batchLabel": "Batch",
+        "durationLabel": "Duration (minutes)",
+        "dateLabel": "Scheduled date",
+        "datePlaceholder": "e.g. 10 Aug 2026",
+        "questionsLabel": "Questions from the bank",
+        "noQuestionsForBatch": "No questions in the bank for this batch yet — add some in the Question bank tab.",
+        "questionMarks": "{marks} marks"
+      },
+      "grading": {
+        "heading": "Grading — {title}",
+        "close": "Close",
+        "noSubmissions": "No submissions yet.",
+        "notStarted": "Not started",
+        "graded": "Graded",
+        "awaitingGrading": "Awaiting grading",
+        "inProgress": "In progress",
+        "mcqHeading": "Multiple choice",
+        "autoScore": "Auto-graded: {score}/{max}",
+        "essayHeading": "Essay answers",
+        "viewFiles": "View uploaded files ({count})",
+        "hideFiles": "Hide files",
+        "noFiles": "No essay files uploaded.",
+        "filesHeading": "Uploaded sheets",
+        "previewNote": "Preview only — actual uploaded sheets aren't available in this demo.",
+        "scoreLabel": "Score",
+        "feedbackLabel": "Feedback",
+        "feedbackPlaceholder": "Write feedback for the student...",
+        "saveGrade": "Save grade",
+        "editGrade": "Edit grade",
+        "totalScore": "Total: {score}/{max}"
+      }
+    },
+    "live": {
+      "heading": "Live classes",
+      "subtitle": "Manage your scheduled classes and join links.",
+      "scheduleClass": "+ Schedule class",
+      "columns": {
+        "class": "Class",
+        "dayTime": "Day & time",
+        "mode": "Mode",
+        "joinLink": "Join link",
+        "status": "Status"
+      },
+      "online": "Online",
+      "physical": "Physical",
+      "physicalAt": "Physical — {location}",
+      "scheduled": "Scheduled",
+      "classTitlePlaceholder": "Class title",
+      "dayPlaceholder": "Day",
+      "timePlaceholder": "Time (e.g. 5:00 PM – 7:00 PM)"
+    },
+    "students": {
+      "heading": "Students",
+      "searchPlaceholder": "Search students...",
+      "columns": {
+        "student": "Student",
+        "batch": "Batch",
+        "joined": "Joined",
+        "contact": "Contact"
+      }
+    },
+    "attendance": {
+      "heading": "Attendance",
+      "subtitle": "Pick a class to view and adjust attendance for each session.",
+      "noRecords": "No attendance records for this class yet.",
+      "status": {
+        "present": "Present",
+        "absent": "Absent",
+        "late": "Late"
+      }
+    },
+    "reviews": {
+      "heading": "Reviews",
+      "summary": "{count} reviews · ★★★★★ {rating} average",
+      "reply": "Reply",
+      "replyPlaceholder": "Write your reply..."
+    },
+    "ads": {
+      "heading": "Advertisement",
+      "promotionHeading": "Promotion text",
+      "promotionLabel": "Promotion text",
+      "save": "Save",
+      "adSlot": {
+        "eyebrow": "Boost your visibility",
+        "text": "Want more reach?",
+        "ctaLabel": "See ad plans"
+      }
+    },
+    "settings": {
+      "heading": "Settings",
+      "accountHeading": "Account",
+      "changePassword": "Change password",
+      "notificationsHeading": "Notifications",
+      "notifications": {
+        "enrolments": "New enrolments",
+        "reviews": "New reviews",
+        "submissions": "Exam submissions"
+      }
+    }
+  },
+  "teachersPage": {
+    "eyebrow": "Search results",
+    "title": "Find your teacher or class",
+    "subtitle": "Filter by subject, location and grade to compare verified teachers and institutes.",
+    "resultsCount": "{count} results",
+    "noResults": "No teachers or classes match your filters yet. Try clearing a filter or searching a different subject.",
+    "clearFilters": "Clear filters",
+    "categories": {
+      "label": "Category",
+      "all": "All",
+      "teacher": "Teacher",
+      "class": "Class / Institute",
+      "campus": "Campus Lecturer"
+    }
+  },
+  "helpPage": {
+    "eyebrow": "Help centre",
+    "title": "Frequently asked questions",
+    "subtitle": "Common questions about joining, pricing, and how contact details unlock.",
+    "faq": [
+      {
+        "question": "Do I need an account to browse teachers and classes?",
+        "answer": "No — anyone can search and view profiles without signing in. You'll need a free account to join a teacher or class, view notes, or take exams."
+      },
+      {
+        "question": "Why is the teacher's name and phone number hidden?",
+        "answer": "Full names and phone numbers only unlock once you've actually joined that specific teacher or class. This protects teachers from spam and keeps contact requests genuine."
+      },
+      {
+        "question": "How does pricing work if a class has multiple teachers?",
+        "answer": "If you join a specific teacher inside a class, you pay that teacher's own rate. If you join the class generally, you pay the class's rate."
+      },
+      {
+        "question": "Is ClassPortals free to join?",
+        "answer": "Yes — the Free plan covers a basic listing for teachers and classes. Paid plans add featured placement and a larger ad slot."
+      },
+      {
+        "question": "Can I advertise without creating a full profile?",
+        "answer": "Yes — the Advertise page lets you post a standalone ad (Basic, Featured, or Homepage Spotlight) without setting up an ongoing teacher or class profile."
+      },
+      {
+        "question": "How do online classes work?",
+        "answer": "Teachers schedule a class and share their own Zoom or Google Meet link. The \"Join Live Class\" button activates once the class is about to start."
+      },
+      {
+        "question": "Can I download or print notes?",
+        "answer": "No — notes are view-only and watermarked with your name to protect the teacher's content. This applies to every note across the platform."
+      }
+    ]
+  },
+  "demoSwitcher": {
+    "viewingAs": "Viewing as",
+    "student": "Student / Parent",
+    "teacher": "Teacher",
+    "class": "Class / Institute",
+    "lecturer": "Campus Lecturer",
+    "admin": "Admin"
+  },
+  "footer": {
+    "tagline": "Find teachers, classes and campus lecturers from Grade 1 through university, across Sri Lanka.",
+    "discover": "Discover",
+    "platform": "Platform",
+    "legal": "Legal",
+    "findTeachers": "Find teachers",
+    "findClasses": "Find classes",
+    "howRolesWork": "How roles work",
+    "pricing": "Pricing",
+    "advertise": "Advertise",
+    "helpCentre": "Help centre",
+    "termsOfService": "Terms of service",
+    "privacyPolicy": "Privacy policy",
+    "copyright": "© {year} ClassPortals. All rights reserved.",
+    "location": "Koggala, Sri Lanka"
+  }
+}

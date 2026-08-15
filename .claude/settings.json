@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"C:\\\\Users\\\\gehan\\\\.claude\\\\projects\\\\c--Users-gehan-Desktop-javapos-system-classe-app-project-classportals\\\\memory\\\\\" 2>/dev/null)",
+      "Read(//c/Users/gehan/.claude/projects/c--Users-gehan-Desktop-javapos-system-classe-app-project-classportals/memory\" 2>/dev/**)",
+      "Read(//c/Users/gehan/.claude/projects/c--Users-gehan-Desktop-javapos-system-classe-app-project-classportals/memory/**)"
+    ]
+  }
+}

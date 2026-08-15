@@ -1,0 +1,199 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-display);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-lock: var(--lock);
+  --color-lock-foreground: var(--lock-foreground);
+  --color-paper: var(--paper);
+  --color-cta: var(--cta);
+  --color-cta-foreground: var(--cta-foreground);
+  --color-cta-hover: var(--cta-hover);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+  --color-accent-deep: var(--accent-deep);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* ClassPortals — "Academic Register" brand palette, ported from the
+     req/*.html prototype's :root design tokens. */
+  --background: #f1f5f2;
+  --foreground: #17241f;
+  --paper: #ffffff;
+  --card: #ffffff;
+  --card-foreground: #17241f;
+  --popover: #ffffff;
+  --popover-foreground: #17241f;
+  --primary: #0e4c45;
+  --primary-foreground: #ffffff;
+  --primary-light: #1b6b60;
+  --primary-dark: #0a332e;
+  --secondary: #fbe2d2;
+  --secondary-foreground: #b8511f;
+  --muted: #f1f5f2;
+  --muted-foreground: #69796f;
+  --accent: #fbe2d2;
+  --accent-foreground: #b8511f;
+  --destructive: #8a2e2e;
+  --border: #dce6e0;
+  --input: #b7c7be;
+  --ring: #e2703a;
+  --success: #2a6b4f;
+  --success-foreground: #e4f0ea;
+  --lock: #8a2e2e;
+  --lock-foreground: #f6e7e7;
+  --cta: #e2703a;
+  --cta-foreground: #26190a;
+  --cta-hover: #c79a34;
+  --accent-deep: #b8511f;
+  --chart-1: #0e4c45;
+  --chart-2: #e2703a;
+  --chart-3: #1b6b60;
+  --chart-4: #b8511f;
+  --chart-5: #69796f;
+  --radius: 0.5rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #17241f;
+  --sidebar-primary: #0e4c45;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #fbe2d2;
+  --sidebar-accent-foreground: #b8511f;
+  --sidebar-border: #dce6e0;
+  --sidebar-ring: #e2703a;
+
+  --font-display: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
+  --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+}
+
+/* Locale-specific script fallbacks: Fraunces/Inter/Plex Mono don't cover
+   Sinhala or Tamil glyphs, so each locale layers its own script font in
+   before the Latin display/body stack. */
+:root[data-locale="si"] {
+  --font-display: var(--font-noto-si), var(--font-fraunces), "Iowan Old Style", Georgia, serif;
+  --font-body: var(--font-noto-si), var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+:root[data-locale="ta"] {
+  --font-display: var(--font-noto-ta), var(--font-fraunces), "Iowan Old Style", Georgia, serif;
+  --font-body: var(--font-noto-ta), var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.dark {
+  --background: #0a332e;
+  --foreground: #eef1ee;
+  --paper: #0e3a34;
+  --card: #0e3a34;
+  --card-foreground: #eef1ee;
+  --popover: #0e3a34;
+  --popover-foreground: #eef1ee;
+  --primary: #e2703a;
+  --primary-foreground: #26190a;
+  --primary-light: #ee9764;
+  --primary-dark: #a85422;
+  --secondary: #164039;
+  --secondary-foreground: #fbe2d2;
+  --muted: #164039;
+  --muted-foreground: #9fb3ab;
+  --accent: #164039;
+  --accent-foreground: #fbe2d2;
+  --destructive: #e08a8a;
+  --border: color-mix(in oklab, white 12%, transparent);
+  --input: color-mix(in oklab, white 18%, transparent);
+  --ring: #e2703a;
+  --success: #6fcf9e;
+  --success-foreground: #0a332e;
+  --lock: #e08a8a;
+  --lock-foreground: #3a1414;
+  --cta: #e2703a;
+  --cta-foreground: #26190a;
+  --cta-hover: #eea23f;
+  --accent-deep: #fbe2d2;
+  --chart-1: #e2703a;
+  --chart-2: #6fcf9e;
+  --chart-3: #fbe2d2;
+  --chart-4: #9fb3ab;
+  --chart-5: #b7c7be;
+  --sidebar: #0a332e;
+  --sidebar-foreground: #eef1ee;
+  --sidebar-primary: #e2703a;
+  --sidebar-primary-foreground: #26190a;
+  --sidebar-accent: #164039;
+  --sidebar-accent-foreground: #fbe2d2;
+  --sidebar-border: color-mix(in oklab, white 12%, transparent);
+  --sidebar-ring: #e2703a;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans scroll-smooth;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display font-semibold text-primary tracking-tight;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

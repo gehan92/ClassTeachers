@@ -828,6 +828,7 @@
     "notes": {
       "title": "Tutes & Notes",
       "subtitle": "View-only notes from the teachers and classes you've joined.",
+      "emptyState": "No notes have been shared with you yet.",
       "pagesLabel": "{pages} pages",
       "openViewer": "Open viewer",
       "closeViewer": "Close viewer",

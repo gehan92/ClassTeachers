@@ -5,17 +5,31 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { StatusBadge } from "@/components/features/status-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { teachersAtGlance } from "@/lib/mock-data/dashboard-institute";
 import { avatarGradientClass } from "@/lib/avatar-color";
+import type { TeachersAtGlance } from "@/types/dashboard-institute";
 
-export function OverviewTab() {
+export function OverviewTab({
+  instituteName,
+  teachersCount,
+  studentsCount,
+  averageRating,
+  batchesCount,
+  teachersAtGlance,
+}: {
+  instituteName: string;
+  teachersCount: number;
+  studentsCount: number;
+  averageRating: string | null;
+  batchesCount: number;
+  teachersAtGlance: TeachersAtGlance[];
+}) {
   const t = useTranslations("instituteDashboard.overview");
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl text-primary">Horizon Learning Institute</h1>
+          <h1 className="font-display text-2xl text-primary">{instituteName}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
         <Link
@@ -27,14 +41,17 @@ export function OverviewTab() {
       </div>
 
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label={t("stats.teachers")} value={6} delta={t("stats.teachersDelta")} />
-        <StatCard label={t("stats.students")} value={412} delta={t("stats.studentsDelta")} />
-        <StatCard label={t("stats.rating")} value="4.7" delta={t("stats.ratingDelta")} />
-        <StatCard label={t("stats.batches")} value={9} delta={t("stats.batchesDelta")} />
+        <StatCard label={t("stats.teachers")} value={teachersCount} />
+        <StatCard label={t("stats.students")} value={studentsCount} />
+        <StatCard label={t("stats.rating")} value={averageRating ?? "—"} />
+        <StatCard label={t("stats.batches")} value={batchesCount} />
       </div>
 
       <div className="rounded-lg border border-border bg-white p-5">
         <h3 className="mb-4 text-lg">{t("glanceTitle")}</h3>
+        {teachersAtGlance.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("glanceEmpty")}</p>
+        ) : (
         <Table>
           <TableHeader>
             <TableRow>
@@ -77,6 +94,7 @@ export function OverviewTab() {
             ))}
           </TableBody>
         </Table>
+        )}
       </div>
     </div>
   );

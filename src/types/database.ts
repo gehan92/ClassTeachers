@@ -251,6 +251,7 @@ export type Database = {
           owner_type: OwnerType;
           owner_id: string;
           subject_id: string | null;
+          batch_id: string | null;
           title: string;
           translations: Json;
           file_path: string;
@@ -264,6 +265,7 @@ export type Database = {
           owner_type: OwnerType;
           owner_id: string;
           subject_id?: string | null;
+          batch_id?: string | null;
           title: string;
           translations?: Json;
           file_path: string;
@@ -277,11 +279,63 @@ export type Database = {
           owner_type?: OwnerType;
           owner_id?: string;
           subject_id?: string | null;
+          batch_id?: string | null;
           title?: string;
           translations?: Json;
           file_path?: string;
           page_count?: number | null;
           watermark_settings?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
+        // every table declares no relationships rather than a guessed one.
+        Relationships: [];
+      };
+
+      batches: {
+        Row: {
+          id: string;
+          owner_type: OwnerType;
+          owner_id: string;
+          subject_id: string | null;
+          title: string;
+          mode: "online" | "physical";
+          location: string | null;
+          schedule_note: string | null;
+          teacher_label: string | null;
+          grade_band: GradeBand | null;
+          status: "active" | "upcoming" | "closed";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_type: OwnerType;
+          owner_id: string;
+          subject_id?: string | null;
+          title: string;
+          mode: "online" | "physical";
+          location?: string | null;
+          schedule_note?: string | null;
+          teacher_label?: string | null;
+          grade_band?: GradeBand | null;
+          status?: "active" | "upcoming" | "closed";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_type?: OwnerType;
+          owner_id?: string;
+          subject_id?: string | null;
+          title?: string;
+          mode?: "online" | "physical";
+          location?: string | null;
+          schedule_note?: string | null;
+          teacher_label?: string | null;
+          grade_band?: GradeBand | null;
+          status?: "active" | "upcoming" | "closed";
           created_at?: string;
           updated_at?: string;
         };
@@ -485,6 +539,7 @@ export type Database = {
           student_id: string;
           owner_type: OwnerType;
           owner_id: string;
+          batch_id: string | null;
           joined_at: string;
         };
         Insert: {
@@ -492,6 +547,7 @@ export type Database = {
           student_id: string;
           owner_type: OwnerType;
           owner_id: string;
+          batch_id?: string | null;
           joined_at?: string;
         };
         Update: {
@@ -499,6 +555,7 @@ export type Database = {
           student_id?: string;
           owner_type?: OwnerType;
           owner_id?: string;
+          batch_id?: string | null;
           joined_at?: string;
         };
         // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —

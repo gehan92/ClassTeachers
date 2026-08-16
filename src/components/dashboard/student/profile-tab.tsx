@@ -7,30 +7,58 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { updateStudentProfile } from "@/lib/dashboard/actions";
 
-export function ProfileTab() {
+export function ProfileTab({
+  initialName,
+  initialPhone,
+  email,
+}: {
+  initialName: string;
+  initialPhone: string;
+  email: string;
+}) {
   return (
     <div className="flex flex-col gap-5">
-      <ProfilePanel />
+      <ProfilePanel initialName={initialName} initialPhone={initialPhone} email={email} />
       <NotificationsPanel />
     </div>
   );
 }
 
-function ProfilePanel() {
+function ProfilePanel({
+  initialName,
+  initialPhone,
+  email,
+}: {
+  initialName: string;
+  initialPhone: string;
+  email: string;
+}) {
   const t = useTranslations("studentDashboard.profile");
   const nameId = useId();
   const gradeId = useId();
   const emailId = useId();
   const phoneId = useId();
 
-  const [name, setName] = useState("Sithara Gunasekara");
-  const [grade, setGrade] = useState("Grade 12 · A/L");
-  const [email, setEmail] = useState("sithara.g@example.com");
-  const [phone, setPhone] = useState("+94 77 123 4567");
+  // "Grade" has no backing column in `profiles` yet — kept as local-only
+  // input until there's a schema decision for where it should live.
+  const [name, setName] = useState(initialName);
+  const [grade, setGrade] = useState("");
+  const [phone, setPhone] = useState(initialPhone);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  function handleSave() {
+  async function handleSave() {
+    setSaving(true);
+    setError(null);
+    const result = await updateStudentProfile({ fullName: name, phone });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
@@ -55,7 +83,7 @@ function ProfilePanel() {
           <Label htmlFor={emailId} className="mb-1.5">
             {t("emailLabel")}
           </Label>
-          <Input id={emailId} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input id={emailId} type="email" value={email} readOnly disabled />
         </div>
         <div>
           <Label htmlFor={phoneId} className="mb-1.5">
@@ -65,8 +93,11 @@ function ProfilePanel() {
         </div>
       </div>
       <div className="mt-5 flex flex-wrap items-center gap-4">
-        <Button onClick={handleSave}>{t("saveChanges")}</Button>
+        <Button onClick={handleSave} disabled={saving}>
+          {t("saveChanges")}
+        </Button>
         {saved && <span className="text-sm font-medium text-success">{t("saved")}</span>}
+        {error && <span className="text-sm font-medium text-destructive">{error}</span>}
         <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline">
           {t("changePassword")}
         </Link>

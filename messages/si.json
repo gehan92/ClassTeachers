@@ -14,6 +14,8 @@
     "help": "සහාය",
     "login": "පිවිසෙන්න",
     "joinFree": "නොමිලේ එකතු වන්න",
+    "dashboard": "උපකරණ පුවරුව",
+    "logout": "ඉවත් වන්න",
     "menu": "මෙනුව"
   },
   "language": {
@@ -559,7 +561,7 @@
       "settings": "සැකසුම්"
     },
     "overview": {
-      "subtitle": "ගුරුවරුන් 6 දෙනා සහ ක්‍රියාත්මක වන කණ්ඩායම් 9ක දළ විශ්ලේෂණය.",
+      "subtitle": "ඔබේ ආයතනය පිළිබඳ දළ විශ්ලේෂණය.",
       "inviteTeacher": "+ ගුරුවරයෙකු ආරාධනා කරන්න",
       "stats": {
         "teachers": "ගුරුවරුන්",
@@ -569,9 +571,11 @@
         "rating": "ආයතන ශ්‍රේණිගත කිරීම",
         "ratingDelta": "සමාලෝචන 211",
         "batches": "සක්‍රීය කණ්ඩායම්",
-        "batchesDelta": "2ක් ඉක්මනින් ආරම්භ වේ"
+        "batchesDelta": "2ක් ඉක්මනින් ආරම්භ වේ",
+        "batchesUnavailable": "ඉක්මනින්"
       },
       "glanceTitle": "ගුරුවරුන් එක් බැල්මකින්",
+      "glanceEmpty": "තවම ගුරුවරුන් සම්බන්ධ කර නැත.",
       "table": {
         "teacher": "ගුරුවරයා",
         "subject": "විෂය",
@@ -617,6 +621,8 @@
       "addBatch": "+ කණ්ඩායමක් එකතු කරන්න",
       "added": "එකතු කරන ලදී",
       "cancel": "අවලංගු කරන්න",
+      "emptyState": "ඔබ තවම කණ්ඩායමක් එකතු කර නැත.",
+      "studentCount": "සිසුන් {count}",
       "form": {
         "title": "කණ්ඩායමක් එකතු කරන්න",
         "titleLabel": "කණ්ඩායමේ මාතෘකාව",
@@ -625,6 +631,9 @@
         "teacherPlaceholder": "උදා: කසුන් පෙරේරා",
         "scheduleLabel": "කාල සටහන",
         "schedulePlaceholder": "උදා: සඳුදා, බදාදා, ප.ව. 5:00",
+        "modeLabel": "ආකාරය",
+        "modeOnline": "මාර්ගගත",
+        "modePhysical": "භෞතික",
         "priceLabel": "මිල (රු.)",
         "intervalLabel": "ගෙවීම් කාල පරතරය",
         "intervalHour": "පැයකට",
@@ -691,6 +700,7 @@
       "statClasses": "එකතු වූ පන්ති",
       "statNextLive": "ඊළඟ සජීවී පන්තිය",
       "statNextLiveValue": "අද · පස්වරු 6:00",
+      "statNextLiveEmpty": "කිසිවක් නියමිත නැත",
       "statExamsDue": "විභාග කිරීමට ඇති",
       "statNotes": "ලබා ගත හැකි සටහන්",
       "actionLiveTitle": "සංයුක්ත ගණිතය — විනාඩි 20කින් සජීවී",
@@ -708,7 +718,13 @@
       "subtitle": "ඔබ එකතු වූ ගුරුවරුන් සහ පන්ති.",
       "typeTeacher": "ගුරුවරයා",
       "typeClass": "පන්තිය",
-      "viewProfile": "පැතිකඩ බලන්න"
+      "viewProfile": "පැතිකඩ බලන්න",
+      "emptyState": "ඔබ තවම කිසිදු පන්තියකට එකතු වී නැත.",
+      "browseTitle": "එකතු වීමට පන්ති සොයන්න",
+      "browseEmpty": "දැනට එකතු විය හැකි පන්ති නොමැත.",
+      "modeOnline": "මාර්ගගත",
+      "modePhysical": "භෞතික",
+      "join": "එකතු වන්න"
     },
     "live": {
       "title": "සජීවී පන්ති",
@@ -836,8 +852,9 @@
         "activeStudentsDelta": "+6 මෙම මාසයේ",
         "earnings": "මෙම මාසයේ ආදායම",
         "earningsDelta": "+12%",
+        "earningsUnavailable": "ඉක්මනින්",
         "rating": "සාමාන්‍ය ශ්‍රේණිගත කිරීම",
-        "ratingDelta": "සමාලෝචන 128",
+        "ratingDelta": "සමාලෝචන {count}",
         "submissions": "ලකුණු කිරීමට ඉදිරිපත් කිරීම්",
         "submissionsDelta": "දින 2කින් නියමිතයි"
       },
@@ -872,15 +889,22 @@
         "email": "විද්‍යුත් තැපෑල",
         "phone": "දුරකථනය"
       },
+      "classTypeOptions": {
+        "physical": "භෞතික",
+        "online": "මාර්ගගත",
+        "both": "මාර්ගගත සහ භෞතික"
+      },
       "pricingHeading": "මිල ගණන්",
       "saveChanges": "වෙනස්කම් සුරකින්න"
     },
     "notes": {
       "heading": "සටහන් සහ නිබන්ධන",
       "uploadNote": "+ සටහනක් උඩුගත කරන්න",
+      "emptyState": "ඔබ තවම සටහන් උඩුගත කර නැත.",
       "columns": {
         "title": "මාතෘකාව",
         "subject": "විෂය",
+        "batch": "කණ්ඩායම",
         "pages": "පිටු",
         "views": "බැලීම්",
         "protection": "ආරක්ෂණය",
@@ -888,18 +912,42 @@
       },
       "watermarked": "Watermark සහිත",
       "edit": "සංස්කරණය කරන්න",
+      "delete": "මකන්න",
       "titlePlaceholder": "සටහන් මාතෘකාව",
-      "subjectPlaceholder": "විෂය"
+      "subjectPlaceholder": "විෂය",
+      "form": {
+        "titleLabel": "මාතෘකාව",
+        "batchLabel": "කණ්ඩායම",
+        "batchGeneral": "සාමාන්‍ය (සියලුම සිසුන්)",
+        "fileLabel": "PDF ගොනුව",
+        "missingFields": "කරුණාකර මාතෘකාවක් එක් කර PDF ගොනුවක් තෝරන්න."
+      }
     },
     "classes": {
       "heading": "පන්ති",
       "subtitle": "ඔබේම කණ්ඩායම් සහ එක් එක් කණ්ඩායමට ලියාපදිංචි වූවන්.",
+      "addBatch": "+ කණ්ඩායමක් එකතු කරන්න",
+      "emptyState": "ඔබ තවම කණ්ඩායමක් සාදා නැත.",
       "studentCount": "සිසුන් {count}",
       "noStudents": "තවම සිසුන් ලියාපදිංචි වී නැත.",
       "columns": {
         "student": "සිසුවා",
         "joined": "එකතු වූ දිනය",
         "contact": "සම්බන්ධතාවය"
+      },
+      "form": {
+        "title": "නව කණ්ඩායම",
+        "titleLabel": "කණ්ඩායමේ මාතෘකාව",
+        "titlePlaceholder": "උදා: A/L සංයුක්ත ගණිතය — සඳුදා/බදාදා",
+        "modeLabel": "ආකාරය",
+        "modeOnline": "මාර්ගගත",
+        "modePhysical": "භෞතික",
+        "gradeLabel": "ශ්‍රේණිය",
+        "locationLabel": "ස්ථානය",
+        "locationPlaceholder": "උදා: කොළඹ 05",
+        "scheduleLabel": "කාලසටහන",
+        "schedulePlaceholder": "උදා: සඳුදා, බදාදා · පස්වරු 5:00",
+        "submit": "කණ්ඩායම සාදන්න"
       }
     },
     "questionBank": {

@@ -9,7 +9,19 @@ const cardClass = "rounded-lg border border-border bg-white p-4.5";
 const linkButtonClass =
   "inline-flex w-fit items-center rounded-sm border border-input px-3.5 py-1.5 text-[13px] font-semibold text-primary hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60";
 
-export function OverviewTab() {
+export function OverviewTab({
+  teacherName,
+  activeStudentsCount,
+  averageRating,
+  reviewsCount,
+  pendingSubmissionsCount,
+}: {
+  teacherName: string;
+  activeStudentsCount: number;
+  averageRating: string | null;
+  reviewsCount: number;
+  pendingSubmissionsCount: number;
+}) {
   const t = useTranslations("teacherDashboard.overview");
   const [classStarted, setClassStarted] = useState(false);
 
@@ -17,7 +29,7 @@ export function OverviewTab() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl">{t("greeting", { name: "Piyal" })}</h1>
+          <h1 className="text-2xl">{t("greeting", { name: teacherName.split(" ")[0] })}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
         <Link href="/teacher?tab=exams" className="rounded-sm bg-cta px-4 py-2 text-sm font-semibold text-cta-foreground hover:opacity-90">
@@ -26,15 +38,15 @@ export function OverviewTab() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label={t("stats.activeStudents")} value={86} delta={t("stats.activeStudentsDelta")} />
-        <StatCard label={t("stats.earnings")} value="Rs. 94,200" delta={t("stats.earningsDelta")} />
-        <StatCard label={t("stats.rating")} value="4.9" delta={t("stats.ratingDelta")} />
+        <StatCard label={t("stats.activeStudents")} value={activeStudentsCount} />
+        {/* No payments/transactions table exists yet — earnings can't be computed from real data. */}
+        <StatCard label={t("stats.earnings")} value={t("stats.earningsUnavailable")} />
         <StatCard
-          label={t("stats.submissions")}
-          value={7}
-          delta={t("stats.submissionsDelta")}
-          deltaDown
+          label={t("stats.rating")}
+          value={averageRating ?? "—"}
+          delta={reviewsCount > 0 ? t("stats.ratingDelta", { count: reviewsCount }) : undefined}
         />
+        <StatCard label={t("stats.submissions")} value={pendingSubmissionsCount} />
       </div>
 
       <div>

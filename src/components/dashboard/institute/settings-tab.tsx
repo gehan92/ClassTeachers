@@ -6,27 +6,74 @@ import { School } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { updateInstituteProfile } from "@/lib/dashboard/actions";
 
-export function SettingsTab() {
+export function SettingsTab({
+  initialName,
+  initialLocation,
+  initialPhone,
+  initialHourlyRate,
+  initialMonthlyRate,
+}: {
+  initialName: string;
+  initialLocation: string;
+  initialPhone: string;
+  initialHourlyRate: string;
+  initialMonthlyRate: string;
+}) {
   const t = useTranslations("instituteDashboard.settings");
 
+  // "Established" year has no backing column on class_profiles — kept as
+  // local-only until there's a schema decision for where it should live.
   const [details, setDetails] = useState({
-    name: "Horizon Learning Institute",
-    established: "2014",
-    location: "Matara",
-    phone: "077 123 4567",
+    name: initialName,
+    established: "",
+    location: initialLocation,
+    phone: initialPhone,
   });
   const [detailsSaved, setDetailsSaved] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
+  const [savingDetails, setSavingDetails] = useState(false);
 
-  const [rate, setRate] = useState({ hourly: "1200", monthly: "4500" });
+  const [rate, setRate] = useState({ hourly: initialHourlyRate, monthly: initialMonthlyRate });
   const [rateSaved, setRateSaved] = useState(false);
+  const [rateError, setRateError] = useState<string | null>(null);
+  const [savingRate, setSavingRate] = useState(false);
 
-  function handleSaveDetails() {
+  async function handleSaveDetails() {
+    setSavingDetails(true);
+    setDetailsError(null);
+    const result = await updateInstituteProfile({
+      name: details.name,
+      location: details.location,
+      phone: details.phone,
+      hourlyRate: rate.hourly,
+      monthlyRate: rate.monthly,
+    });
+    setSavingDetails(false);
+    if (result.error) {
+      setDetailsError(result.error);
+      return;
+    }
     setDetailsSaved(true);
     setTimeout(() => setDetailsSaved(false), 2500);
   }
 
-  function handleSaveRate() {
+  async function handleSaveRate() {
+    setSavingRate(true);
+    setRateError(null);
+    const result = await updateInstituteProfile({
+      name: details.name,
+      location: details.location,
+      phone: details.phone,
+      hourlyRate: rate.hourly,
+      monthlyRate: rate.monthly,
+    });
+    setSavingRate(false);
+    if (result.error) {
+      setRateError(result.error);
+      return;
+    }
     setRateSaved(true);
     setTimeout(() => setRateSaved(false), 2500);
   }
@@ -86,8 +133,11 @@ export function SettingsTab() {
           </div>
         </div>
         <div className="mt-4 flex items-center gap-3">
-          <Button onClick={handleSaveDetails}>{t("save")}</Button>
+          <Button onClick={handleSaveDetails} disabled={savingDetails}>
+            {t("save")}
+          </Button>
           {detailsSaved && <span className="text-sm font-medium text-success">{t("saved")}</span>}
+          {detailsError && <span className="text-sm font-medium text-destructive">{detailsError}</span>}
         </div>
       </div>
 
@@ -98,6 +148,8 @@ export function SettingsTab() {
             <Label htmlFor="institute-rate-hourly">{t("rate.hourlyLabel")}</Label>
             <Input
               id="institute-rate-hourly"
+              type="number"
+              min={0}
               value={rate.hourly}
               onChange={(e) => setRate((prev) => ({ ...prev, hourly: e.target.value }))}
             />
@@ -106,6 +158,8 @@ export function SettingsTab() {
             <Label htmlFor="institute-rate-monthly">{t("rate.monthlyLabel")}</Label>
             <Input
               id="institute-rate-monthly"
+              type="number"
+              min={0}
               value={rate.monthly}
               onChange={(e) => setRate((prev) => ({ ...prev, monthly: e.target.value }))}
             />
@@ -113,8 +167,11 @@ export function SettingsTab() {
         </div>
         <p className="mt-3 text-sm text-muted-foreground">{t("rate.helper")}</p>
         <div className="mt-4 flex items-center gap-3">
-          <Button onClick={handleSaveRate}>{t("save")}</Button>
+          <Button onClick={handleSaveRate} disabled={savingRate}>
+            {t("save")}
+          </Button>
           {rateSaved && <span className="text-sm font-medium text-success">{t("saved")}</span>}
+          {rateError && <span className="text-sm font-medium text-destructive">{rateError}</span>}
         </div>
       </div>
     </div>

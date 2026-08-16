@@ -14,6 +14,8 @@
     "help": "உதவி",
     "login": "உள்நுழையவும்",
     "joinFree": "இலவசமாக இணையுங்கள்",
+    "dashboard": "டாஷ்போர்டு",
+    "logout": "வெளியேறு",
     "menu": "பட்டி"
   },
   "language": {
@@ -559,7 +561,7 @@
       "settings": "அமைப்புகள்"
     },
     "overview": {
-      "subtitle": "அனைத்து 6 ஆசிரியர்கள் மற்றும் 9 நடைபெறும் தொகுதிகள் தொடர்பான கண்ணோட்டம்.",
+      "subtitle": "உங்கள் நிறுவனத்தின் கண்ணோட்டம்.",
       "inviteTeacher": "+ ஒரு ஆசிரியரை அழையுங்கள்",
       "stats": {
         "teachers": "ஆசிரியர்கள்",
@@ -569,9 +571,11 @@
         "rating": "நிறுவன மதிப்பீடு",
         "ratingDelta": "211 மதிப்புரைகள்",
         "batches": "செயலிலுள்ள தொகுதிகள்",
-        "batchesDelta": "2 விரைவில் தொடங்கும்"
+        "batchesDelta": "2 விரைவில் தொடங்கும்",
+        "batchesUnavailable": "விரைவில்"
       },
       "glanceTitle": "ஒரு பார்வையில் ஆசிரியர்கள்",
+      "glanceEmpty": "இன்னும் ஆசிரியர்கள் இணைக்கப்படவில்லை.",
       "table": {
         "teacher": "ஆசிரியர்",
         "subject": "பாடம்",
@@ -617,6 +621,8 @@
       "addBatch": "+ தொகுதியைச் சேர்க்கவும்",
       "added": "சேர்க்கப்பட்டது",
       "cancel": "ரத்துசெய்",
+      "emptyState": "நீங்கள் இன்னும் தொகுதி ஒன்றைச் சேர்க்கவில்லை.",
+      "studentCount": "{count} மாணவர்கள்",
       "form": {
         "title": "தொகுதியைச் சேர்க்கவும்",
         "titleLabel": "தொகுதியின் தலைப்பு",
@@ -625,6 +631,9 @@
         "teacherPlaceholder": "எ.கா. கசுன் பெரேரா",
         "scheduleLabel": "அட்டவணை",
         "schedulePlaceholder": "எ.கா. திங்கள், புதன், மாலை 5:00",
+        "modeLabel": "முறை",
+        "modeOnline": "ஆன்லைன்",
+        "modePhysical": "நேரடி",
         "priceLabel": "விலை (Rs.)",
         "intervalLabel": "கட்டண இடைவெளி",
         "intervalHour": "மணிநேரம்",
@@ -691,6 +700,7 @@
       "statClasses": "இணைந்த வகுப்புகள்",
       "statNextLive": "அடுத்த நேரடி வகுப்பு",
       "statNextLiveValue": "இன்று · மாலை 6:00",
+      "statNextLiveEmpty": "திட்டமிடப்படவில்லை",
       "statExamsDue": "நிலுவையிலுள்ள தேர்வுகள்",
       "statNotes": "கிடைக்கும் குறிப்புகள்",
       "actionLiveTitle": "கூட்டு கணிதம் — 20 நிமிடங்களில் நேரடி ஒளிபரப்பு",
@@ -708,7 +718,13 @@
       "subtitle": "நீங்கள் இணைந்த ஆசிரியர்கள் மற்றும் வகுப்புகள்.",
       "typeTeacher": "ஆசிரியர்",
       "typeClass": "வகுப்பு",
-      "viewProfile": "சுயவிவரத்தைக் காண்க"
+      "viewProfile": "சுயவிவரத்தைக் காண்க",
+      "emptyState": "நீங்கள் இன்னும் எந்த வகுப்பிலும் இணையவில்லை.",
+      "browseTitle": "இணைய வகுப்புகளைத் தேடுங்கள்",
+      "browseEmpty": "தற்போது இணைய வகுப்புகள் எதுவும் இல்லை.",
+      "modeOnline": "ஆன்லைன்",
+      "modePhysical": "நேரடி",
+      "join": "இணை"
     },
     "live": {
       "title": "நேரடி வகுப்புகள்",
@@ -836,8 +852,9 @@
         "activeStudentsDelta": "+6 இந்த மாதம்",
         "earnings": "இந்த மாத வருமானம்",
         "earningsDelta": "+12%",
+        "earningsUnavailable": "விரைவில்",
         "rating": "சராசரி மதிப்பீடு",
-        "ratingDelta": "128 மதிப்புரைகள்",
+        "ratingDelta": "{count} மதிப்புரைகள்",
         "submissions": "மதிப்பிட வேண்டிய சமர்ப்பணங்கள்",
         "submissionsDelta": "2 நாட்களில் நிலுவை"
       },
@@ -872,15 +889,22 @@
         "email": "மின்னஞ்சல்",
         "phone": "தொலைபேசி"
       },
+      "classTypeOptions": {
+        "physical": "நேரடி",
+        "online": "ஆன்லைன்",
+        "both": "ஆன்லைன் & நேரடி"
+      },
       "pricingHeading": "கட்டணங்கள்",
       "saveChanges": "மாற்றங்களைச் சேமிக்கவும்"
     },
     "notes": {
       "heading": "குறிப்புகள் மற்றும் பயிற்சிகள்",
       "uploadNote": "+ குறிப்பைப் பதிவேற்றவும்",
+      "emptyState": "நீங்கள் இன்னும் குறிப்புகள் எதுவும் பதிவேற்றவில்லை.",
       "columns": {
         "title": "தலைப்பு",
         "subject": "பாடம்",
+        "batch": "தொகுதி",
         "pages": "பக்கங்கள்",
         "views": "பார்வைகள்",
         "protection": "பாதுகாப்பு",
@@ -888,18 +912,42 @@
       },
       "watermarked": "நீர்முத்திரையிடப்பட்டது",
       "edit": "திருத்து",
+      "delete": "நீக்கு",
       "titlePlaceholder": "குறிப்பு தலைப்பு",
-      "subjectPlaceholder": "பாடம்"
+      "subjectPlaceholder": "பாடம்",
+      "form": {
+        "titleLabel": "தலைப்பு",
+        "batchLabel": "தொகுதி",
+        "batchGeneral": "பொது (அனைத்து மாணவர்களும்)",
+        "fileLabel": "PDF கோப்பு",
+        "missingFields": "தலைப்பு ஒன்றைச் சேர்த்து PDF கோப்பைத் தேர்ந்தெடுக்கவும்."
+      }
     },
     "classes": {
       "heading": "வகுப்புகள்",
       "subtitle": "உங்கள் சொந்த தொகுதிகள் மற்றும் ஒவ்வொன்றிலும் பதிவு செய்யப்பட்டவர்கள்.",
+      "addBatch": "+ தொகுதி சேர்க்கவும்",
+      "emptyState": "நீங்கள் இன்னும் தொகுதி ஒன்றை உருவாக்கவில்லை.",
       "studentCount": "{count} மாணவர்கள்",
       "noStudents": "இன்னும் மாணவர்கள் பதிவு செய்யப்படவில்லை.",
       "columns": {
         "student": "மாணவர்",
         "joined": "இணைந்த தேதி",
         "contact": "தொடர்பு"
+      },
+      "form": {
+        "title": "புதிய தொகுதி",
+        "titleLabel": "தொகுதியின் தலைப்பு",
+        "titlePlaceholder": "எ.கா. A/L கூட்டு கணிதம் — திங்கள்/புதன்",
+        "modeLabel": "முறை",
+        "modeOnline": "ஆன்லைன்",
+        "modePhysical": "நேரடி",
+        "gradeLabel": "தரம்",
+        "locationLabel": "இடம்",
+        "locationPlaceholder": "எ.கா. கொழும்பு 05",
+        "scheduleLabel": "அட்டவணை",
+        "schedulePlaceholder": "எ.கா. திங்கள், புதன் · மாலை 5:00",
+        "submit": "தொகுதியை உருவாக்கு"
       }
     },
     "questionBank": {

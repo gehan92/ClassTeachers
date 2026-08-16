@@ -1,55 +1,81 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LockPill } from "@/components/features/lock-pill";
-import { teacherNotes } from "@/lib/mock-data";
-import type { TeacherNote } from "@/types/dashboard-teacher";
+import { uploadNote, deleteNote } from "@/lib/dashboard/notes-actions";
+import type { TeacherBatchRow } from "./classes-tab";
 
-export function NotesTab() {
+export type TeacherNoteRow = {
+  id: string;
+  title: string;
+  batchTitle: string | null;
+  pageCount: number | null;
+};
+
+const GENERAL_BATCH = "general";
+
+export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches: TeacherBatchRow[] }) {
   const t = useTranslations("teacherDashboard.notes");
   const tc = useTranslations("teacherDashboard.common");
+  const router = useRouter();
+  const fileInputId = useId();
 
-  const [notes, setNotes] = useState<TeacherNote[]>(teacherNotes);
   const [adding, setAdding] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newSubject, setNewSubject] = useState("");
+  const [title, setTitle] = useState("");
+  const [batchId, setBatchId] = useState<string>(GENERAL_BATCH);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [added, setAdded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editTitle, setEditTitle] = useState("");
+  function resetForm() {
+    setTitle("");
+    setBatchId(GENERAL_BATCH);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
-  function handleAdd() {
-    if (!newTitle.trim() || !newSubject.trim()) return;
-    setNotes((list) => [...list, { title: newTitle.trim(), subject: newSubject.trim(), pages: 4, views: 0 }]);
-    setNewTitle("");
-    setNewSubject("");
+  async function handleUpload() {
+    const file = fileInputRef.current?.files?.[0];
+    if (!title.trim() || !file) {
+      setError(t("form.missingFields"));
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    const formData = new FormData();
+    formData.set("ownerType", "teacher");
+    formData.set("title", title.trim());
+    if (batchId !== GENERAL_BATCH) formData.set("batchId", batchId);
+    formData.set("file", file);
+
+    const result = await uploadNote(formData);
+    setUploading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    resetForm();
     setAdding(false);
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
+    router.refresh();
   }
 
-  function handleCancelAdd() {
-    setNewTitle("");
-    setNewSubject("");
-    setAdding(false);
-  }
-
-  function startEdit(index: number) {
-    setEditingIndex(index);
-    setEditTitle(notes[index].title);
-  }
-
-  function saveEdit(index: number) {
-    setNotes((list) => list.map((note, i) => (i === index ? { ...note, title: editTitle.trim() || note.title } : note)));
-    setEditingIndex(null);
-  }
-
-  function cancelEdit() {
-    setEditingIndex(null);
+  async function handleDelete(noteId: string) {
+    setDeletingId(noteId);
+    const result = await deleteNote(noteId);
+    setDeletingId(null);
+    if (!result.error) {
+      router.refresh();
+    }
   }
 
   return (
@@ -67,76 +93,102 @@ export function NotesTab() {
       {adding && (
         <div className="rounded-lg border border-border bg-white p-5">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Input
-              placeholder={t("titlePlaceholder")}
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-            />
-            <Input
-              placeholder={t("subjectPlaceholder")}
-              value={newSubject}
-              onChange={(e) => setNewSubject(e.target.value)}
-            />
+            <div className="grid gap-1.5">
+              <Label htmlFor="note-title">{t("form.titleLabel")}</Label>
+              <Input
+                id="note-title"
+                placeholder={t("titlePlaceholder")}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="note-batch">{t("form.batchLabel")}</Label>
+              <Select value={batchId} onValueChange={(value) => setBatchId(value ?? GENERAL_BATCH)}>
+                <SelectTrigger id="note-batch" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={GENERAL_BATCH}>{t("form.batchGeneral")}</SelectItem>
+                  {batches.map((batch) => (
+                    <SelectItem key={batch.id} value={batch.id}>
+                      {batch.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5 sm:col-span-2">
+              <Label htmlFor={fileInputId}>{t("form.fileLabel")}</Label>
+              <input
+                id={fileInputId}
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf"
+                className="text-sm text-foreground file:mr-3 file:rounded-sm file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-secondary-foreground"
+              />
+            </div>
           </div>
-          <div className="mt-4 flex gap-2.5">
-            <Button type="button" onClick={handleAdd}>
+          <div className="mt-4 flex flex-wrap items-center gap-2.5">
+            <Button type="button" onClick={handleUpload} disabled={uploading}>
               {tc("add")}
             </Button>
-            <Button type="button" variant="outline" onClick={handleCancelAdd}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                resetForm();
+                setAdding(false);
+              }}
+            >
               {tc("cancel")}
             </Button>
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
           </div>
         </div>
       )}
 
       <div className="rounded-lg border border-border bg-white p-5">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("columns.title")}</TableHead>
-              <TableHead>{t("columns.subject")}</TableHead>
-              <TableHead>{t("columns.pages")}</TableHead>
-              <TableHead>{t("columns.views")}</TableHead>
-              <TableHead>{t("columns.protection")}</TableHead>
-              <TableHead>{t("columns.actions")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {notes.map((note, index) => (
-              <TableRow key={`${note.title}-${index}`}>
-                <TableCell className="max-w-72 whitespace-normal font-medium text-foreground">
-                  {editingIndex === index ? (
-                    <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
-                  ) : (
-                    note.title
-                  )}
-                </TableCell>
-                <TableCell className="text-muted-foreground">{note.subject}</TableCell>
-                <TableCell className="text-muted-foreground">{note.pages}</TableCell>
-                <TableCell className="text-muted-foreground">{note.views}</TableCell>
-                <TableCell>
-                  <LockPill>{t("watermarked")}</LockPill>
-                </TableCell>
-                <TableCell>
-                  {editingIndex === index ? (
-                    <div className="flex gap-1.5">
-                      <Button type="button" variant="ghost" size="sm" onClick={() => saveEdit(index)}>
-                        {tc("save")}
-                      </Button>
-                      <Button type="button" variant="ghost" size="sm" onClick={cancelEdit}>
-                        {tc("cancel")}
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button type="button" variant="ghost" size="sm" onClick={() => startEdit(index)}>
-                      {t("edit")}
-                    </Button>
-                  )}
-                </TableCell>
+        {notes.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">{t("emptyState")}</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("columns.title")}</TableHead>
+                <TableHead>{t("columns.batch")}</TableHead>
+                <TableHead>{t("columns.pages")}</TableHead>
+                <TableHead>{t("columns.protection")}</TableHead>
+                <TableHead>{t("columns.actions")}</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {notes.map((note) => (
+                <TableRow key={note.id}>
+                  <TableCell className="max-w-72 whitespace-normal font-medium text-foreground">
+                    {note.title}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{note.batchTitle ?? t("form.batchGeneral")}</TableCell>
+                  <TableCell className="text-muted-foreground">{note.pageCount ?? "—"}</TableCell>
+                  <TableCell>
+                    <LockPill>{t("watermarked")}</LockPill>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={deletingId === note.id}
+                      onClick={() => handleDelete(note.id)}
+                    >
+                      {t("delete")}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
     </div>
   );

@@ -1,19 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { studentNotes } from "@/lib/mock-data";
-import type { StudentNote } from "@/types/dashboard-student";
 
-const STUDENT_NAME = "Sithara Gunasekara";
-const TODAY_LABEL = "14 Aug 2026";
+export type StudentNoteRow = {
+  id: string;
+  title: string;
+  batchTitle: string | null;
+  ownerName: string;
+  pageCount: number | null;
+};
 
-export function NotesTab() {
+export function NotesTab({ notes, studentName }: { notes: StudentNoteRow[]; studentName: string }) {
   const t = useTranslations("studentDashboard.notes");
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
-  const openNote = studentNotes.find((note) => note.id === openNoteId) ?? null;
+  const openNote = notes.find((note) => note.id === openNoteId) ?? null;
 
   return (
     <div>
@@ -23,10 +26,14 @@ export function NotesTab() {
       </div>
 
       {openNote ? (
-        <NoteViewer note={openNote} onClose={() => setOpenNoteId(null)} />
+        <NoteViewer note={openNote} studentName={studentName} onClose={() => setOpenNoteId(null)} />
+      ) : notes.length === 0 ? (
+        <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
+          {t("emptyState")}
+        </div>
       ) : (
         <div className="rounded-lg border border-border bg-white">
-          {studentNotes.map((note) => (
+          {notes.map((note) => (
             <div
               key={note.id}
               className="flex items-center gap-3 border-b border-border p-4 last:border-b-0"
@@ -35,7 +42,9 @@ export function NotesTab() {
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium text-foreground">{note.title}</div>
                 <div className="text-xs text-muted-foreground">
-                  {note.subject} · {note.teacherName} · {t("pagesLabel", { pages: note.pages })}
+                  {note.ownerName}
+                  {note.batchTitle ? ` · ${note.batchTitle}` : ""}
+                  {note.pageCount ? ` · ${t("pagesLabel", { pages: note.pageCount })}` : ""}
                 </div>
               </div>
               <Button size="sm" variant="outline" onClick={() => setOpenNoteId(note.id)}>
@@ -49,8 +58,18 @@ export function NotesTab() {
   );
 }
 
-function NoteViewer({ note, onClose }: { note: StudentNote; onClose: () => void }) {
+function NoteViewer({
+  note,
+  studentName,
+  onClose,
+}: {
+  note: StudentNoteRow;
+  studentName: string;
+  onClose: () => void;
+}) {
   const t = useTranslations("studentDashboard.notes");
+  const locale = useLocale();
+  const todayLabel = new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date());
 
   return (
     <div>
@@ -58,7 +77,8 @@ function NoteViewer({ note, onClose }: { note: StudentNote; onClose: () => void 
         <div>
           <div className="text-sm font-semibold text-foreground">{note.title}</div>
           <div className="text-xs text-muted-foreground">
-            {note.subject} · {note.teacherName}
+            {note.ownerName}
+            {note.batchTitle ? ` · ${note.batchTitle}` : ""}
           </div>
         </div>
         <Button size="sm" variant="outline" onClick={onClose}>
@@ -66,20 +86,18 @@ function NoteViewer({ note, onClose }: { note: StudentNote; onClose: () => void 
         </Button>
       </div>
 
-      <div className="relative mx-auto max-w-160 overflow-hidden rounded-lg border border-border bg-white p-8 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+      <div className="relative mx-auto h-[70vh] max-w-160 overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+        <iframe
+          src={`/${locale}/student/notes/${note.id}/file`}
+          title={note.title}
+          className="size-full"
+        />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 flex select-none items-center justify-center rotate-[-25deg] text-4xl font-bold text-foreground opacity-10"
         >
-          {STUDENT_NAME} · {TODAY_LABEL}
+          {studentName} · {todayLabel}
         </div>
-        <div className="relative font-mono text-xs uppercase tracking-wide text-muted-foreground">
-          {note.subject} — {t("pagesLabel", { pages: note.pages })}
-        </div>
-        <h2 className="relative mt-1 mb-4 text-lg">{note.title}</h2>
-        <p className="relative text-sm text-foreground/80">{t("viewerPageContent")}</p>
-        <p className="relative mt-3 text-sm text-foreground/80">{t("viewerPageContent")}</p>
-        <p className="relative mt-3 text-sm text-foreground/80">{t("viewerPageContent")}</p>
       </div>
       <p className="mx-auto mt-3 max-w-160 text-center text-xs text-muted-foreground">
         {t("viewerDisabledNote")}

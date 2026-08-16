@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { updateTeacherAccount } from "@/lib/dashboard/actions";
 
 const panelClass = "rounded-lg border border-border bg-white p-5";
 
-export function SettingsTab() {
+export function SettingsTab({ initialPhone, email }: { initialPhone: string; email: string }) {
   const t = useTranslations("teacherDashboard.settings");
   const tc = useTranslations("teacherDashboard.common");
 
@@ -20,13 +21,20 @@ export function SettingsTab() {
     submissions: true,
   });
 
-  const [account, setAccount] = useState({
-    email: "piyal.kumara@example.com",
-    phone: "077 123 4567",
-  });
+  const [phone, setPhone] = useState(initialPhone);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  function handleSaveChanges() {
+  async function handleSaveChanges() {
+    setSaving(true);
+    setError(null);
+    const result = await updateTeacherAccount({ phone });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
@@ -40,31 +48,22 @@ export function SettingsTab() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="email">{t("fields.email")}</Label>
-            <Input
-              id="email"
-              type="email"
-              value={account.email}
-              onChange={(e) => setAccount((a) => ({ ...a, email: e.target.value }))}
-            />
+            <Input id="email" type="email" value={email} readOnly disabled />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="phone">{t("fields.phone")}</Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={account.phone}
-              onChange={(e) => setAccount((a) => ({ ...a, phone: e.target.value }))}
-            />
+            <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
         </div>
         <Link href="/forgot-password" className="mt-4 inline-block text-sm font-medium text-primary hover:underline">
           {t("changePassword")}
         </Link>
         <div className="mt-4 flex items-center gap-3">
-          <Button type="button" onClick={handleSaveChanges}>
+          <Button type="button" onClick={handleSaveChanges} disabled={saving}>
             {tc("save")}
           </Button>
           {saved && <span className="text-sm font-medium text-success">{tc("saved")}</span>}
+          {error && <span className="text-sm font-medium text-destructive">{error}</span>}
         </div>
       </div>
 

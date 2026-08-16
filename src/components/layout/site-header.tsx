@@ -1,11 +1,13 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Menu } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { LocaleSwitcher } from "./locale-switcher";
+import { logOutAction } from "@/lib/auth/actions";
+import { roleDashboardPath, type UserRole } from "@/lib/auth/routes";
 
 const navItems = [
   { href: { pathname: "/teachers", query: { category: "teacher" } }, key: "findTeachers" },
@@ -16,7 +18,7 @@ const navItems = [
   { href: "/help", key: "help" },
 ] as const;
 
-export function SiteHeader() {
+export function SiteHeader({ user }: { user: { name: string; role: UserRole } | null }) {
   const t = useTranslations("nav");
 
   return (
@@ -43,12 +45,31 @@ export function SiteHeader() {
 
         <div className="hidden items-center gap-2 md:flex">
           <LocaleSwitcher />
-          <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/login" />}>
-            {t("login")}
-          </Button>
-          <Button size="sm" nativeButton={false} render={<Link href="/signup" />}>
-            {t("joinFree")}
-          </Button>
+          {user ? (
+            <>
+              <Button size="sm" nativeButton={false} render={<Link href={roleDashboardPath[user.role]} />}>
+                {t("dashboard")}
+              </Button>
+              <form action={logOutAction}>
+                <button
+                  type="submit"
+                  className="flex items-center gap-1.5 px-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                >
+                  <LogOut className="size-4" />
+                  {t("logout")}
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/login" />}>
+                {t("login")}
+              </Button>
+              <Button size="sm" nativeButton={false} render={<Link href="/signup" />}>
+                {t("joinFree")}
+              </Button>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-1 md:hidden">
@@ -70,12 +91,31 @@ export function SiteHeader() {
                   </Link>
                 ))}
                 <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
-                  <Button variant="outline" nativeButton={false} render={<Link href="/login" />}>
-                    {t("login")}
-                  </Button>
-                  <Button nativeButton={false} render={<Link href="/signup" />}>
-                    {t("joinFree")}
-                  </Button>
+                  {user ? (
+                    <>
+                      <Button nativeButton={false} render={<Link href={roleDashboardPath[user.role]} />}>
+                        {t("dashboard")}
+                      </Button>
+                      <form action={logOutAction}>
+                        <button
+                          type="submit"
+                          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-input px-3.5 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+                        >
+                          <LogOut className="size-4" />
+                          {t("logout")}
+                        </button>
+                      </form>
+                    </>
+                  ) : (
+                    <>
+                      <Button variant="outline" nativeButton={false} render={<Link href="/login" />}>
+                        {t("login")}
+                      </Button>
+                      <Button nativeButton={false} render={<Link href="/signup" />}>
+                        {t("joinFree")}
+                      </Button>
+                    </>
+                  )}
                 </div>
               </nav>
             </SheetContent>

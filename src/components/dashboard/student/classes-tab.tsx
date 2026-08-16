@@ -1,9 +1,52 @@
-import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
-import { studentEnrollments } from "@/lib/mock-data";
+"use client";
 
-export function ClassesTab() {
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { joinBatch } from "@/lib/dashboard/batches-actions";
+
+export type MyClassRow = {
+  enrollmentId: string;
+  batchTitle: string | null;
+  ownerName: string;
+  ownerType: "teacher" | "class";
+  mode: "online" | "physical" | null;
+  scheduleNote: string | null;
+};
+
+export type AvailableBatchRow = {
+  id: string;
+  title: string;
+  ownerName: string;
+  mode: "online" | "physical";
+  location: string | null;
+  scheduleNote: string | null;
+};
+
+export function ClassesTab({
+  myClasses,
+  availableBatches,
+}: {
+  myClasses: MyClassRow[];
+  availableBatches: AvailableBatchRow[];
+}) {
   const t = useTranslations("studentDashboard.classes");
+  const router = useRouter();
+  const [joiningId, setJoiningId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleJoin(batchId: string) {
+    setJoiningId(batchId);
+    setError(null);
+    const result = await joinBatch(batchId);
+    setJoiningId(null);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    router.refresh();
+  }
 
   return (
     <div>
@@ -12,34 +55,66 @@ export function ClassesTab() {
         <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
 
-      <div className="flex flex-col gap-4">
-        {studentEnrollments.map((enrollment) => (
-          <div
-            key={enrollment.id}
-            className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4.5 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div className="min-w-0">
-              <div className="mb-1 flex flex-wrap items-center gap-2">
-                <span className="font-semibold text-foreground">{enrollment.targetName}</span>
-                <span className="rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-                  {enrollment.targetType === "teacher" ? t("typeTeacher") : t("typeClass")}
-                </span>
+      {myClasses.length === 0 ? (
+        <div className="mb-8 rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
+          {t("emptyState")}
+        </div>
+      ) : (
+        <div className="mb-8 flex flex-col gap-4">
+          {myClasses.map((item) => (
+            <div
+              key={item.enrollmentId}
+              className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4.5 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="min-w-0">
+                <div className="mb-1 flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-foreground">{item.ownerName}</span>
+                  <span className="rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {item.ownerType === "teacher" ? t("typeTeacher") : t("typeClass")}
+                  </span>
+                </div>
+                {item.batchTitle && <div className="text-sm text-muted-foreground">{item.batchTitle}</div>}
+                {item.scheduleNote && <div className="mt-1 text-xs text-muted-foreground">{item.scheduleNote}</div>}
               </div>
-              <div className="text-sm text-muted-foreground">{enrollment.subject}</div>
-              <div className="mt-1 text-xs text-muted-foreground">{enrollment.scheduleSummary}</div>
             </div>
-            <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-              <span className="font-display text-base text-primary">{enrollment.priceDisplay}</span>
-              <Link
-                href={enrollment.targetHref}
-                className="rounded-sm border border-input px-3.5 py-1.5 text-[13px] font-semibold text-primary hover:bg-secondary"
+          ))}
+        </div>
+      )}
+
+      <h2 className="mb-3 text-lg font-semibold text-foreground">{t("browseTitle")}</h2>
+      {error && <p className="mb-3 text-sm font-medium text-destructive">{error}</p>}
+      {availableBatches.length === 0 ? (
+        <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
+          {t("browseEmpty")}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {availableBatches.map((batch) => (
+            <div
+              key={batch.id}
+              className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4.5 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="min-w-0">
+                <div className="font-semibold text-foreground">{batch.title}</div>
+                <div className="text-sm text-muted-foreground">{batch.ownerName}</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {batch.mode === "online" ? t("modeOnline") : t("modePhysical")}
+                  {batch.location ? ` · ${batch.location}` : ""}
+                  {batch.scheduleNote ? ` · ${batch.scheduleNote}` : ""}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                disabled={joiningId === batch.id}
+                onClick={() => handleJoin(batch.id)}
+                className="shrink-0"
               >
-                {t("viewProfile")}
-              </Link>
+                {t("join")}
+              </Button>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

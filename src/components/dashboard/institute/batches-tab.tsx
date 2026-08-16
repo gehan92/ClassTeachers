@@ -1,57 +1,66 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClassBatchCard } from "@/components/features/class-batch-card";
-import { instituteBatches } from "@/lib/mock-data/dashboard-institute";
-import type { ClassBatch } from "@/types/class-batch";
+import { createBatch } from "@/lib/dashboard/batches-actions";
 
-export function BatchesTab() {
+export type InstituteBatchRow = {
+  id: string;
+  title: string;
+  mode: "online" | "physical";
+  location: string | null;
+  scheduleNote: string | null;
+  teacherLabel: string | null;
+  studentCount: number;
+};
+
+export function BatchesTab({ batches }: { batches: InstituteBatchRow[] }) {
   const t = useTranslations("instituteDashboard.batches");
-  const [batches, setBatches] = useState<ClassBatch[]>(instituteBatches);
+  const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [teacherName, setTeacherName] = useState("");
+  const [mode, setMode] = useState<"online" | "physical">("physical");
   const [schedule, setSchedule] = useState("");
-  const [priceAmount, setPriceAmount] = useState("");
-  const [priceInterval, setPriceInterval] = useState<"hr" | "mo">("hr");
   const [added, setAdded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   function resetForm() {
     setTitle("");
     setTeacherName("");
+    setMode("physical");
     setSchedule("");
-    setPriceAmount("");
-    setPriceInterval("hr");
   }
 
-  function handleAdd() {
-    if (!title.trim() || !teacherName.trim()) return;
-
-    const newBatch: ClassBatch = {
-      id: `b-${Date.now()}`,
-      title: title.trim(),
-      teacherName: teacherName.trim(),
-      teacherHref: "#",
-      status: "upcoming",
-      scheduleChips: schedule
-        .split(",")
-        .map((chip) => chip.trim())
-        .filter(Boolean),
-      priceAmount: Number(priceAmount) || 0,
-      priceInterval,
-      studentIds: [],
-    };
-
-    setBatches((prev) => [...prev, newBatch]);
+  async function handleAdd() {
+    if (!title.trim()) return;
+    setCreating(true);
+    setError(null);
+    const result = await createBatch({
+      ownerType: "class",
+      title,
+      mode,
+      location: "",
+      scheduleNote: schedule,
+      teacherLabel: teacherName,
+      gradeBand: "",
+    });
+    setCreating(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
     resetForm();
     setShowForm(false);
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
+    router.refresh();
   }
 
   return (
@@ -98,34 +107,23 @@ export function BatchesTab() {
                 onChange={(e) => setSchedule(e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-1.5">
-                <Label htmlFor="batch-price">{t("form.priceLabel")}</Label>
-                <Input
-                  id="batch-price"
-                  type="number"
-                  inputMode="numeric"
-                  placeholder="1500"
-                  value={priceAmount}
-                  onChange={(e) => setPriceAmount(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="batch-interval">{t("form.intervalLabel")}</Label>
-                <Select value={priceInterval} onValueChange={(value) => setPriceInterval(value as "hr" | "mo")}>
-                  <SelectTrigger id="batch-interval" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hr">{t("form.intervalHour")}</SelectItem>
-                    <SelectItem value="mo">{t("form.intervalMonth")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="batch-mode">{t("form.modeLabel")}</Label>
+              <Select value={mode} onValueChange={(value) => setMode(value as "online" | "physical")}>
+                <SelectTrigger id="batch-mode" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="physical">{t("form.modePhysical")}</SelectItem>
+                  <SelectItem value="online">{t("form.modeOnline")}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          <div className="mt-4 flex gap-3">
-            <Button onClick={handleAdd}>{t("form.submit")}</Button>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button onClick={handleAdd} disabled={creating}>
+              {t("form.submit")}
+            </Button>
             <Button
               variant="outline"
               onClick={() => {
@@ -135,15 +133,49 @@ export function BatchesTab() {
             >
               {t("cancel")}
             </Button>
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
           </div>
         </div>
       )}
 
-      <div className="flex flex-col gap-4">
-        {batches.map((batch) => (
-          <ClassBatchCard key={batch.id} batch={batch} />
-        ))}
-      </div>
+      {batches.length === 0 ? (
+        <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
+          {t("emptyState")}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {batches.map((batch) => (
+            <div key={batch.id} className="rounded-lg border border-border bg-white p-4.5">
+              <div className="mb-2.5 flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <div className="font-display text-base text-primary">{batch.title}</div>
+                  {batch.teacherLabel && (
+                    <div className="mt-0.5 text-[13px] text-muted-foreground">{batch.teacherLabel}</div>
+                  )}
+                </div>
+                <span className="rounded-full bg-background px-2.5 py-1 font-mono text-[11px] text-muted-foreground">
+                  {t("studentCount", { count: batch.studentCount })}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <span className="rounded-sm border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground/80">
+                  {batch.mode === "online" ? t("form.modeOnline") : t("form.modePhysical")}
+                </span>
+                {batch.location && (
+                  <span className="rounded-sm border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground/80">
+                    {batch.location}
+                  </span>
+                )}
+                {batch.scheduleNote && (
+                  <span className="rounded-sm border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground/80">
+                    {batch.scheduleNote}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

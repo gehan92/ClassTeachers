@@ -14,6 +14,8 @@
     "help": "Help",
     "login": "Log in",
     "joinFree": "Join free",
+    "dashboard": "Dashboard",
+    "logout": "Log out",
     "menu": "Menu"
   },
   "language": {
@@ -559,7 +561,7 @@
       "settings": "Settings"
     },
     "overview": {
-      "subtitle": "Overview across all 6 teachers and 9 running batches.",
+      "subtitle": "Overview across your institute.",
       "inviteTeacher": "+ Invite a teacher",
       "stats": {
         "teachers": "Teachers",
@@ -569,9 +571,11 @@
         "rating": "Institute rating",
         "ratingDelta": "211 reviews",
         "batches": "Active batches",
-        "batchesDelta": "2 starting soon"
+        "batchesDelta": "2 starting soon",
+        "batchesUnavailable": "Coming soon"
       },
       "glanceTitle": "Teachers at a glance",
+      "glanceEmpty": "No teachers linked yet.",
       "table": {
         "teacher": "Teacher",
         "subject": "Subject",
@@ -617,6 +621,8 @@
       "addBatch": "+ Add batch",
       "added": "Added",
       "cancel": "Cancel",
+      "emptyState": "You haven't added a batch yet.",
+      "studentCount": "{count} students",
       "form": {
         "title": "Add a batch",
         "titleLabel": "Batch title",
@@ -625,6 +631,9 @@
         "teacherPlaceholder": "e.g. Kasun Perera",
         "scheduleLabel": "Schedule",
         "schedulePlaceholder": "e.g. Mon, Wed, 5:00 PM",
+        "modeLabel": "Mode",
+        "modeOnline": "Online",
+        "modePhysical": "Physical",
         "priceLabel": "Price (Rs.)",
         "intervalLabel": "Billing interval",
         "intervalHour": "Per hour",
@@ -691,6 +700,7 @@
       "statClasses": "Classes joined",
       "statNextLive": "Next live class",
       "statNextLiveValue": "Today · 6:00 PM",
+      "statNextLiveEmpty": "None scheduled",
       "statExamsDue": "Exams due",
       "statNotes": "Notes available",
       "actionLiveTitle": "Combined Maths — live in 20 min",
@@ -708,7 +718,13 @@
       "subtitle": "Teachers and classes you've joined.",
       "typeTeacher": "Teacher",
       "typeClass": "Class",
-      "viewProfile": "View profile"
+      "viewProfile": "View profile",
+      "emptyState": "You haven't joined any classes yet.",
+      "browseTitle": "Browse classes to join",
+      "browseEmpty": "No classes are open to join right now.",
+      "modeOnline": "Online",
+      "modePhysical": "Physical",
+      "join": "Join"
     },
     "live": {
       "title": "Live Classes",
@@ -836,8 +852,9 @@
         "activeStudentsDelta": "+6 this month",
         "earnings": "This month's earnings",
         "earningsDelta": "+12%",
+        "earningsUnavailable": "Coming soon",
         "rating": "Average rating",
-        "ratingDelta": "128 reviews",
+        "ratingDelta": "{count} reviews",
         "submissions": "Submissions to grade",
         "submissionsDelta": "Due in 2 days"
       },
@@ -872,15 +889,22 @@
         "email": "Email",
         "phone": "Phone"
       },
+      "classTypeOptions": {
+        "physical": "Physical",
+        "online": "Online",
+        "both": "Online & physical"
+      },
       "pricingHeading": "Pricing",
       "saveChanges": "Save changes"
     },
     "notes": {
       "heading": "Notes & tutorials",
       "uploadNote": "+ Upload note",
+      "emptyState": "You haven't uploaded any notes yet.",
       "columns": {
         "title": "Title",
         "subject": "Subject",
+        "batch": "Batch",
         "pages": "Pages",
         "views": "Views",
         "protection": "Protection",
@@ -888,18 +912,42 @@
       },
       "watermarked": "Watermarked",
       "edit": "Edit",
+      "delete": "Delete",
       "titlePlaceholder": "Note title",
-      "subjectPlaceholder": "Subject"
+      "subjectPlaceholder": "Subject",
+      "form": {
+        "titleLabel": "Title",
+        "batchLabel": "Batch",
+        "batchGeneral": "General (all students)",
+        "fileLabel": "PDF file",
+        "missingFields": "Please add a title and choose a PDF file."
+      }
     },
     "classes": {
       "heading": "Classes",
       "subtitle": "Your own batches and who's registered in each.",
+      "addBatch": "+ Add batch",
+      "emptyState": "You haven't created a batch yet.",
       "studentCount": "{count} students",
       "noStudents": "No students enrolled yet.",
       "columns": {
         "student": "Student",
         "joined": "Joined",
         "contact": "Contact"
+      },
+      "form": {
+        "title": "New batch",
+        "titleLabel": "Batch title",
+        "titlePlaceholder": "e.g. A/L Combined Maths — Mon/Wed",
+        "modeLabel": "Mode",
+        "modeOnline": "Online",
+        "modePhysical": "Physical",
+        "gradeLabel": "Grade",
+        "locationLabel": "Location",
+        "locationPlaceholder": "e.g. Colombo 05",
+        "scheduleLabel": "Schedule",
+        "schedulePlaceholder": "e.g. Mon, Wed · 5:00 PM",
+        "submit": "Create batch"
       }
     },
     "questionBank": {

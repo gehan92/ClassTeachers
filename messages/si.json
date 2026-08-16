@@ -16,7 +16,13 @@
     "joinFree": "නොමිලේ එකතු වන්න",
     "dashboard": "උපකරණ පුවරුව",
     "logout": "ඉවත් වන්න",
-    "menu": "මෙනුව"
+    "menu": "මෙනුව",
+    "search": "සොයන්න",
+    "searchTeachers": "පෞද්ගලික උපදේශකවරු",
+    "searchInstitutes": "ආයතන / පන්ති",
+    "searchCampusLecturers": "කැම්පස් කථිකාචාර්යවරු",
+    "searchOnlineLessons": "මාර්ගගත පාඩම්",
+    "postYourAd": "ඔබේ දැන්වීම පළ කරන්න"
   },
   "language": {
     "label": "භාෂාව"
@@ -209,27 +215,40 @@
     "currentAds": {
       "eyebrow": "දැන් සජීවීව",
       "title": "වර්තමාන ස්වාධීන දැන්වීම්",
-      "signInToContact": "සම්බන්ධ වීමට පිවිසෙන්න"
+      "signInToContact": "සම්බන්ධ වීමට පිවිසෙන්න",
+      "filterAll": "සියල්ල",
+      "filterClassAds": "පන්ති දැන්වීම්",
+      "filterVacancies": "පුරප්පාඩු",
+      "empty": "මෙම පෙරහන සමඟ ගැළපෙන දැන්වීම් නැත."
     },
     "form": {
       "eyebrow": "දැන්වීමක් පළ කරන්න",
       "title": "ඔබේ පන්තිය හෝ පුරප්පාඩුව ගැන අපට කියන්න",
       "subtitle": "අපි ඔබේ දැන්වීම සමාලෝචනය කර එක් වැඩකරන දිනක් ඇතුළත එය පළ කරන්නෙමු.",
+      "typeLabel": "මම පළ කරන්නේ",
+      "typeClassAd": "පන්ති දැන්වීමක්",
+      "typeVacancy": "ගුරු පුරප්පාඩුවක්",
       "adTitleLabel": "දැන්වීමේ මාතෘකාව",
       "adTitlePlaceholder": "උදා: මාතරින් ආරම්භ වන A/L සංයුක්ත ගණිත පන්ති",
+      "vacancyTitleLabel": "පුරප්පාඩුවේ මාතෘකාව",
+      "vacancyTitlePlaceholder": "උදා: මාතරදී A/L රසායන විද්‍යා ගුරුවරයෙකු අවශ්‍යයි",
       "subjectLabel": "විෂය",
       "subjectPlaceholder": "උදා: සංයුක්ත ගණිතය",
+      "vacancySubjectPlaceholder": "උදා: සංයුක්ත ගණිතය",
       "locationLabel": "ස්ථානය",
       "locationPlaceholder": "උදා: මාතර, හෝ 'Online'",
       "detailsLabel": "විස්තර",
       "detailsPlaceholder": "කාලසටහන, ගාස්තු, සහ දෙමාපියන් දැනගත යුතු වෙනත් ඕනෑම දෙයක් සඳහන් කරන්න.",
+      "vacancyDetailsLabel": "පුරප්පාඩුවේ විස්තර",
+      "vacancyDetailsPlaceholder": "රාජකාරිය, කාලසටහන, වැටුප සහ සුදුසුකම් සඳහන් කරන්න.",
       "phoneLabel": "සම්බන්ධතා දුරකථනය",
       "phonePlaceholder": "07X XXX XXXX",
       "submit": "සමාලෝචනය සඳහා දැන්වීම ඉදිරිපත් කරන්න",
       "posted": "පළ කරන ලදී — ඔබේ දැන්වීම දැන් ඉහත ලැයිස්තුගත වී ඇත.",
       "newAdPosterType": "ඔබ",
       "newAdLocationFallback": "ස්ථානය සඳහන් කර නැත",
-      "newAdExpiresLabel": "දින 7කින් කල් ඉකුත් වේ"
+      "newAdExpiresLabel": "දින 7කින් කල් ඉකුත් වේ",
+      "vacancyBadge": "පුරප්පාඩුව"
     }
   },
   "termsPage": {

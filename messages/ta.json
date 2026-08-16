@@ -16,7 +16,13 @@
     "joinFree": "இலவசமாக இணையுங்கள்",
     "dashboard": "டாஷ்போர்டு",
     "logout": "வெளியேறு",
-    "menu": "பட்டி"
+    "menu": "பட்டி",
+    "search": "தேடு",
+    "searchTeachers": "தனியார் ஆசிரியர்கள்",
+    "searchInstitutes": "நிறுவனங்கள் / வகுப்புகள்",
+    "searchCampusLecturers": "வளாக விரிவுரையாளர்கள்",
+    "searchOnlineLessons": "ஆன்லைன் பாடங்கள்",
+    "postYourAd": "உங்கள் விளம்பரத்தை இடுங்கள்"
   },
   "language": {
     "label": "மொழி"
@@ -209,27 +215,40 @@
     "currentAds": {
       "eyebrow": "தற்போது நேரடியில்",
       "title": "தற்போதைய தனி விளம்பரங்கள்",
-      "signInToContact": "தொடர்பு கொள்ள உள்நுழையவும்"
+      "signInToContact": "தொடர்பு கொள்ள உள்நுழையவும்",
+      "filterAll": "அனைத்தும்",
+      "filterClassAds": "வகுப்பு விளம்பரங்கள்",
+      "filterVacancies": "காலியிடங்கள்",
+      "empty": "இந்த வடிகட்டலுக்குப் பொருந்தும் விளம்பரங்கள் இல்லை."
     },
     "form": {
       "eyebrow": "விளம்பரத்தை இடுங்கள்",
       "title": "உங்கள் வகுப்பு அல்லது காலியிடம் பற்றி எங்களிடம் கூறுங்கள்",
       "subtitle": "நாங்கள் உங்கள் விளம்பரத்தை ஆய்வு செய்து ஒரு வேலை நாளுக்குள் வெளியிடுவோம்.",
+      "typeLabel": "நான் இடுவது",
+      "typeClassAd": "வகுப்பு விளம்பரம்",
+      "typeVacancy": "கற்பித்தல் காலியிடம்",
       "adTitleLabel": "விளம்பரத் தலைப்பு",
       "adTitlePlaceholder": "எ.கா. மாத்தறையில் தொடங்கும் உயர்தர கூட்டு கணிதம் வகுப்புகள்",
+      "vacancyTitleLabel": "காலியிடத் தலைப்பு",
+      "vacancyTitlePlaceholder": "எ.கா. மாத்தறையில் உயர்தர வேதியியல் ஆசிரியர் தேவை",
       "subjectLabel": "பாடம்",
       "subjectPlaceholder": "எ.கா. கூட்டு கணிதம்",
+      "vacancySubjectPlaceholder": "எ.கா. கூட்டு கணிதம்",
       "locationLabel": "இடம்",
       "locationPlaceholder": "எ.கா. மாத்தறை, அல்லது 'Online'",
       "detailsLabel": "விவரங்கள்",
       "detailsPlaceholder": "அட்டவணை, கட்டணங்கள் மற்றும் பெற்றோர்கள் அறிந்திருக்க வேண்டிய பிற விவரங்களைப் பகிருங்கள்.",
+      "vacancyDetailsLabel": "காலியிட விவரங்கள்",
+      "vacancyDetailsPlaceholder": "பணி, அட்டவணை, ஊதியம் மற்றும் தகுதிகளைப் பகிருங்கள்.",
       "phoneLabel": "தொடர்பு தொலைபேசி",
       "phonePlaceholder": "07X XXX XXXX",
       "submit": "ஆய்வுக்காக விளம்பரத்தைச் சமர்ப்பிக்கவும்",
       "posted": "இடுகையிடப்பட்டது — உங்கள் விளம்பரம் இப்போது மேலே பட்டியலிடப்பட்டுள்ளது.",
       "newAdPosterType": "நீங்கள்",
       "newAdLocationFallback": "இடம் குறிப்பிடப்படவில்லை",
-      "newAdExpiresLabel": "7 நாட்களில் காலாவதியாகும்"
+      "newAdExpiresLabel": "7 நாட்களில் காலாவதியாகும்",
+      "vacancyBadge": "காலியிடம்"
     }
   },
   "termsPage": {

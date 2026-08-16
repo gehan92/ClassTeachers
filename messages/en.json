@@ -16,7 +16,13 @@
     "joinFree": "Join free",
     "dashboard": "Dashboard",
     "logout": "Log out",
-    "menu": "Menu"
+    "menu": "Menu",
+    "search": "Search",
+    "searchTeachers": "Private tutors",
+    "searchInstitutes": "Institutes / classes",
+    "searchCampusLecturers": "Campus lecturers",
+    "searchOnlineLessons": "Online lessons",
+    "postYourAd": "Post your ad"
   },
   "language": {
     "label": "Language"
@@ -209,27 +215,40 @@
     "currentAds": {
       "eyebrow": "Live now",
       "title": "Current standalone ads",
-      "signInToContact": "Sign in to contact"
+      "signInToContact": "Sign in to contact",
+      "filterAll": "All",
+      "filterClassAds": "Class ads",
+      "filterVacancies": "Vacancies",
+      "empty": "No ads match this filter yet."
     },
     "form": {
       "eyebrow": "Post an ad",
       "title": "Tell us about your class or vacancy",
       "subtitle": "We'll review your ad and publish it within one business day.",
+      "typeLabel": "I'm posting a",
+      "typeClassAd": "Class ad",
+      "typeVacancy": "Teaching vacancy",
       "adTitleLabel": "Ad title",
       "adTitlePlaceholder": "e.g. A/L Combined Maths classes starting in Matara",
+      "vacancyTitleLabel": "Vacancy title",
+      "vacancyTitlePlaceholder": "e.g. Hiring an A/L Chemistry teacher in Matara",
       "subjectLabel": "Subject",
       "subjectPlaceholder": "e.g. Combined Maths",
+      "vacancySubjectPlaceholder": "e.g. Combined Maths",
       "locationLabel": "Location",
       "locationPlaceholder": "e.g. Matara, or 'Online'",
       "detailsLabel": "Details",
       "detailsPlaceholder": "Share schedule, fees, and anything else parents should know.",
+      "vacancyDetailsLabel": "Vacancy details",
+      "vacancyDetailsPlaceholder": "Share the role, schedule, pay, and requirements.",
       "phoneLabel": "Contact phone",
       "phonePlaceholder": "07X XXX XXXX",
       "submit": "Submit ad for review",
       "posted": "Posted — your ad is now listed above.",
       "newAdPosterType": "You",
       "newAdLocationFallback": "Location not specified",
-      "newAdExpiresLabel": "Expires in 7 days"
+      "newAdExpiresLabel": "Expires in 7 days",
+      "vacancyBadge": "Vacancy"
     }
   },
   "termsPage": {

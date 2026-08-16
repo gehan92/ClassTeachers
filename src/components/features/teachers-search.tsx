@@ -178,6 +178,7 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
     setCategory(categoryFromUrl && isCategory(categoryFromUrl) ? categoryFromUrl : "all");
     setSubject(subjectFromUrl ?? "");
     setLocation(locationFromUrl ?? "");
+    setOnlineOnly(searchParams.get("online") === "true");
     setGrade(gradeFromUrl && isGrade(gradeFromUrl) ? gradeFromUrl : undefined);
     setPriceInterval(priceIntervalFromUrl && isPriceInterval(priceIntervalFromUrl) ? priceIntervalFromUrl : "any");
     setPriceMin(searchParams.get("priceMin") ?? "");

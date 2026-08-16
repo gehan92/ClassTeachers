@@ -18,7 +18,8 @@ export type Listing = {
   /** Structured filter fields for the /teachers search page — display strings above stay as the source of truth for card copy, these are just for matching. */
   location: string;
   online: boolean;
-  gradeBand: GradeBand;
+  /** Null when the listing has no subjects linked yet to infer a level from (and isn't a campus lecturer). */
+  gradeBand: GradeBand | null;
   avatarInitials: string;
   rating: number;
   reviewCount: number;

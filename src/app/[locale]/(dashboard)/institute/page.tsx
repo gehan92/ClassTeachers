@@ -192,6 +192,7 @@ export default async function InstituteDashboardPage({
             initialPhone={profile?.phone ?? ""}
             initialHourlyRate={priceRow?.hourly_rate?.toString() ?? ""}
             initialMonthlyRate={priceRow?.monthly_rate?.toString() ?? ""}
+            initialPublished={classProfile?.status === "approved"}
           />
         ),
       }}

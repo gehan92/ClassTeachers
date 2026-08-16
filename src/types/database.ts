@@ -793,6 +793,39 @@ export type Database = {
         Args: { p_exam_id: string };
         Returns: boolean;
       };
+      list_public_teachers: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          role: string;
+          display_name: string | null;
+          headline: string | null;
+          location: string | null;
+          class_type: string;
+          hourly_rate: number | null;
+          monthly_rate: number | null;
+          rating: number;
+          review_count: number;
+          subjects: string[];
+          grade_band: string | null;
+        }[];
+      };
+      list_public_classes: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          name: string;
+          location: string | null;
+          hourly_rate: number | null;
+          monthly_rate: number | null;
+          rating: number;
+          review_count: number;
+          subjects: string[];
+          grade_band: string | null;
+          online: boolean;
+          teacher_count: number;
+        }[];
+      };
     };
 
     Enums: Record<string, never>;

@@ -1,20 +1,27 @@
 import { useTranslations } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { SearchCard } from "@/components/features/search-card";
 import { RoleCard } from "@/components/features/role-card";
 import { ListingCard } from "@/components/features/listing-card";
-import { featuredListings } from "@/lib/mock-data";
+import { getPublicListings } from "@/lib/public-directory";
+import type { Listing } from "@/types/listing";
 
 export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const { locale } = await params;
   setRequestLocale(locale);
 
+  const [tPage, tSearch] = await Promise.all([
+    getTranslations({ locale, namespace: "teachersPage" }),
+    getTranslations({ locale, namespace: "search" }),
+  ]);
+  const listings = (await getPublicListings(tPage, tSearch)).slice(0, 6);
+
   return (
     <>
       <Hero />
       <RolesSection />
-      <FeaturedSection />
+      <FeaturedSection listings={listings} />
       <TeachCtaSection />
     </>
   );
@@ -92,7 +99,7 @@ function RolesSection() {
   );
 }
 
-function FeaturedSection() {
+function FeaturedSection({ listings }: { listings: Listing[] }) {
   const t = useTranslations("featured");
   const adT = useTranslations("adSlot");
 
@@ -111,11 +118,17 @@ function FeaturedSection() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {featuredListings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
-          ))}
-        </div>
+        {listings.length > 0 ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {listings.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-input bg-background p-10 text-center text-muted-foreground">
+            {t("empty")}
+          </div>
+        )}
 
         <div className="mt-10 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-dashed border-input bg-[repeating-linear-gradient(135deg,#fff,#fff_10px,#fafbfd_10px,#fafbfd_20px)] p-4.5">
           <div>

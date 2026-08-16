@@ -175,6 +175,7 @@ export default async function TeacherDashboardPage({
             initialClassType={teacherProfile?.class_type ?? "physical"}
             initialHourlyRate={priceRow?.hourly_rate?.toString() ?? ""}
             initialMonthlyRate={priceRow?.monthly_rate?.toString() ?? ""}
+            initialPublished={teacherProfile?.status === "approved"}
             teacherName={fullName}
           />
         ),

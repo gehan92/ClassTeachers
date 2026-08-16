@@ -1,19 +1,25 @@
 import { Suspense } from "react";
 import { useTranslations } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { TeachersSearch } from "@/components/features/teachers-search";
-import { allListings } from "@/lib/mock-data";
+import { getPublicListings } from "@/lib/public-directory";
 
 export default async function TeachersPage({ params }: PageProps<"/[locale]/teachers">) {
   const { locale } = await params;
   setRequestLocale(locale);
+
+  const [tPage, tSearch] = await Promise.all([
+    getTranslations({ locale, namespace: "teachersPage" }),
+    getTranslations({ locale, namespace: "search" }),
+  ]);
+  const listings = await getPublicListings(tPage, tSearch);
 
   return (
     <section className="py-12">
       <div className="mx-auto max-w-[1180px] px-7">
         <Header />
         <Suspense>
-          <TeachersSearch listings={allListings} />
+          <TeachersSearch listings={listings} />
         </Suspense>
       </div>
     </section>

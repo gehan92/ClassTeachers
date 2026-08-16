@@ -76,7 +76,8 @@
   "featured": {
     "eyebrow": "Featured this week",
     "title": "Teachers & classes near you",
-    "viewAll": "View all →"
+    "viewAll": "View all →",
+    "empty": "No published listings yet — check back soon."
   },
   "listing": {
     "signInForContact": "Sign in for contact",
@@ -680,6 +681,12 @@
         "hourlyLabel": "Hourly (Rs.)",
         "monthlyLabel": "Monthly (Rs.)",
         "helper": "Applies when a student joins the institute generally, rather than a specific teacher."
+      },
+      "publish": {
+        "title": "Public listing",
+        "helper": "Publish your institute to appear in Find classes search results. Unpublish to hide it while you're still editing.",
+        "live": "Live — visible in search",
+        "draft": "Draft — hidden from search"
       }
     }
   },
@@ -897,7 +904,13 @@
         "both": "Online & physical"
       },
       "pricingHeading": "Pricing",
-      "saveChanges": "Save changes"
+      "saveChanges": "Save changes",
+      "publish": {
+        "title": "Public listing",
+        "helper": "Publish your profile to appear in Find teachers search results. Unpublish to hide it while you're still editing.",
+        "live": "Live — visible in search",
+        "draft": "Draft — hidden from search"
+      }
     },
     "notes": {
       "heading": "Notes & tutorials",
@@ -1142,7 +1155,13 @@
       "teacher": "Teacher",
       "class": "Class / Institute",
       "campus": "Campus Lecturer"
-    }
+    },
+    "roleTeacher": "Individual Teacher",
+    "roleCampusLecturer": "Campus Lecturer",
+    "roleClass": "Class",
+    "online": "Online",
+    "teacherCount": "{count} teachers",
+    "allSubjects": "All subjects"
   },
   "helpPage": {
     "eyebrow": "Help centre",

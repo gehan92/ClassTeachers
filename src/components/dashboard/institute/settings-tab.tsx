@@ -6,7 +6,8 @@ import { School } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateInstituteProfile } from "@/lib/dashboard/actions";
+import { Switch } from "@/components/ui/switch";
+import { updateInstituteProfile, setListingPublished } from "@/lib/dashboard/actions";
 
 export function SettingsTab({
   initialName,
@@ -14,14 +15,32 @@ export function SettingsTab({
   initialPhone,
   initialHourlyRate,
   initialMonthlyRate,
+  initialPublished,
 }: {
   initialName: string;
   initialLocation: string;
   initialPhone: string;
   initialHourlyRate: string;
   initialMonthlyRate: string;
+  initialPublished: boolean;
 }) {
   const t = useTranslations("instituteDashboard.settings");
+
+  const [published, setPublished] = useState(initialPublished);
+  const [publishSaving, setPublishSaving] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+
+  async function handleTogglePublished(checked: boolean) {
+    setPublishSaving(true);
+    setPublishError(null);
+    const result = await setListingPublished({ kind: "class", published: checked });
+    setPublishSaving(false);
+    if (result.error) {
+      setPublishError(result.error);
+      return;
+    }
+    setPublished(checked);
+  }
 
   // "Established" year has no backing column on class_profiles — kept as
   // local-only until there's a schema decision for where it should live.
@@ -173,6 +192,20 @@ export function SettingsTab({
           {rateSaved && <span className="text-sm font-medium text-success">{t("saved")}</span>}
           {rateError && <span className="text-sm font-medium text-destructive">{rateError}</span>}
         </div>
+      </div>
+
+      <div className="rounded-lg border border-border bg-white p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg">{t("publish.title")}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{t("publish.helper")}</p>
+          </div>
+          <Switch checked={published} onCheckedChange={handleTogglePublished} disabled={publishSaving} />
+        </div>
+        <p className={`mt-3 text-sm font-medium ${published ? "text-success" : "text-muted-foreground"}`}>
+          {published ? t("publish.live") : t("publish.draft")}
+        </p>
+        {publishError && <p className="mt-2 text-sm font-medium text-destructive">{publishError}</p>}
       </div>
     </div>
   );

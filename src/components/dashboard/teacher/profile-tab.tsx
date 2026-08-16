@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { avatarGradientClass } from "@/lib/avatar-color";
-import { updateTeacherProfile } from "@/lib/dashboard/actions";
+import { updateTeacherProfile, setListingPublished } from "@/lib/dashboard/actions";
 
 const panelClass = "rounded-lg border border-border bg-white p-5";
 type ClassType = "physical" | "online" | "both";
@@ -19,6 +20,7 @@ export function ProfileTab({
   initialClassType,
   initialHourlyRate,
   initialMonthlyRate,
+  initialPublished,
   teacherName,
 }: {
   initialQualifications: string;
@@ -27,10 +29,27 @@ export function ProfileTab({
   initialClassType: ClassType;
   initialHourlyRate: string;
   initialMonthlyRate: string;
+  initialPublished: boolean;
   teacherName: string;
 }) {
   const t = useTranslations("teacherDashboard.profile");
   const tc = useTranslations("teacherDashboard.common");
+
+  const [published, setPublished] = useState(initialPublished);
+  const [publishSaving, setPublishSaving] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+
+  async function handleTogglePublished(checked: boolean) {
+    setPublishSaving(true);
+    setPublishError(null);
+    const result = await setListingPublished({ kind: "teacher", published: checked });
+    setPublishSaving(false);
+    if (result.error) {
+      setPublishError(result.error);
+      return;
+    }
+    setPublished(checked);
+  }
 
   // "Subjects" is a real many-to-many relation (subject_links) rather than
   // free text, and "grade levels" has no backing column at all — both kept
@@ -163,6 +182,20 @@ export function ProfileTab({
         </Button>
         {saved && <span className="text-sm font-medium text-success">{tc("saved")}</span>}
         {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+      </div>
+
+      <div className={panelClass}>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg">{t("publish.title")}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{t("publish.helper")}</p>
+          </div>
+          <Switch checked={published} onCheckedChange={handleTogglePublished} disabled={publishSaving} />
+        </div>
+        <p className={`mt-3 text-sm font-medium ${published ? "text-success" : "text-muted-foreground"}`}>
+          {published ? t("publish.live") : t("publish.draft")}
+        </p>
+        {publishError && <p className="mt-2 text-sm font-medium text-destructive">{publishError}</p>}
       </div>
     </div>
   );

@@ -73,7 +73,7 @@ export async function signUpAction(
 
   const { fullName, email, phone, password, role } = parsed.data;
   // The role picker's "lecturer" option is a campus lecturer under the hood
-  // (same dashboard as a teacher, see demo-role-switcher.tsx's comment).
+  // (same dashboard as a teacher, see types/dashboard.ts's DemoRole comment).
   const dbRole: UserRole = role === "lecturer" ? "campus_lecturer" : role;
 
   const supabase = await createClient();

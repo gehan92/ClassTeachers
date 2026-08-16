@@ -6,10 +6,9 @@ import { LogOut, Menu } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { DemoRoleSwitcher, type DemoRole } from "./demo-role-switcher";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { logOutAction } from "@/lib/auth/actions";
-import type { DashboardNavGroup } from "@/types/dashboard";
+import type { DashboardNavGroup, DemoRole } from "@/types/dashboard";
 
 /** Master list of destinations, shared with the public SiteHeader's hrefs — which subset shows depends on role, see navKeysByRole below. */
 const siteNavItemDefs = [
@@ -196,7 +195,6 @@ export function DashboardShell({
               {publicProfileLabel} ↗
             </Link>
           )}
-          <DemoRoleSwitcher current={demoRole} />
           <div className="flex items-center gap-2 text-sm">
             <span
               className={`flex size-7 items-center justify-center rounded-full font-display text-xs font-bold text-white ${avatarGradientClass(userLabel)}`}

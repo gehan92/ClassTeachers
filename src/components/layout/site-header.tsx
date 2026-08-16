@@ -17,10 +17,11 @@ import { logOutAction } from "@/lib/auth/actions";
 import { roleDashboardPath, type UserRole } from "@/lib/auth/routes";
 import { cn } from "@/lib/utils";
 
-// Roles/Help stay one click away in the footer (see site-footer.tsx) rather
-// than crowding the top nav — those are secondary links, not what a visitor
-// searching for a teacher or class needs first. Advertise is promoted to the
-// top nav as "Post your ad" since it's a primary business-facing CTA.
+// Roles/Pricing/Help stay one click away in the footer (see site-footer.tsx)
+// rather than crowding the top nav — those are secondary links, not what a
+// visitor searching for a teacher or class needs first. Advertise is
+// promoted to the top nav as "Post your ad" since it's a primary
+// business-facing CTA.
 const searchItems = [
   { href: { pathname: "/teachers", query: { category: "teacher" } }, key: "searchTeachers" },
   { href: { pathname: "/teachers", query: { category: "class" } }, key: "searchInstitutes" },
@@ -37,7 +38,6 @@ export function SiteHeader({ user }: { user: { name: string; role: UserRole } | 
   const searchParams = useSearchParams();
 
   const isSearchActive = pathname === "/teachers";
-  const isPricingActive = pathname === "/pricing";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-sm">
@@ -49,7 +49,9 @@ export function SiteHeader({ user }: { user: { name: string; role: UserRole } | 
           ClassPortals
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
+        <span aria-hidden className="hidden h-6 w-px bg-border md:block" />
+
+        <nav className="hidden flex-1 items-center gap-1 md:flex">
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -90,23 +92,6 @@ export function SiteHeader({ user }: { user: { name: string; role: UserRole } | 
               })}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <Link
-            href="/pricing"
-            aria-current={isPricingActive ? "page" : undefined}
-            className={cn(
-              "relative rounded-md px-3.5 py-2 text-sm font-medium transition-colors",
-              isPricingActive ? "text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary",
-            )}
-          >
-            {t("pricing")}
-            <span
-              className={cn(
-                "pointer-events-none absolute inset-x-3.5 -bottom-[1px] h-[2px] rounded-full bg-primary transition-opacity",
-                isPricingActive ? "opacity-100" : "opacity-0",
-              )}
-            />
-          </Link>
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
@@ -170,18 +155,8 @@ export function SiteHeader({ user }: { user: { name: string; role: UserRole } | 
                   );
                 })}
                 <Link
-                  href="/pricing"
-                  aria-current={isPricingActive ? "page" : undefined}
-                  className={cn(
-                    "mt-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                    isPricingActive ? "bg-secondary text-primary" : "text-foreground hover:bg-muted",
-                  )}
-                >
-                  {t("pricing")}
-                </Link>
-                <Link
                   href="/advertise"
-                  className="rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+                  className="mt-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
                 >
                   {t("postYourAd")}
                 </Link>

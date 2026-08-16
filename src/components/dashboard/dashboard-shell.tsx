@@ -23,15 +23,16 @@ const siteNavItemDefs = [
 type SiteNavKey = (typeof siteNavItemDefs)[number]["key"];
 
 /**
- * Students still browse/discover after logging in, so they keep Find
- * Teachers/Classes in the top nav. Roles/Pricing/Help now live in the
- * dashboard footer instead (see the <footer> below) rather than the top
- * nav, so they're not duplicated in both places. Teachers/institutes/admin
- * have no top-nav browse need, so their bar stays empty (and hidden — see
- * the siteNavItems.length checks below).
+ * Every role's dashboard header stays browse-link-free — Roles/Pricing/Help
+ * live in the dashboard footer instead (see the <footer> below), and
+ * browsing teachers/classes is one click away via the "ClassPortals" logo
+ * back to the homepage's own Search dropdown. Kept as a per-role map (rather
+ * than deleting the mechanism) so a role can pick up nav items later without
+ * a structural change — see the siteNavItems.length checks below, which
+ * hide the nav/menu entirely while every role's list is empty.
  */
 const navKeysByRole: Record<DemoRole, SiteNavKey[]> = {
-  student: ["findTeachers", "findClasses"],
+  student: [],
   teacher: [],
   class: [],
   lecturer: [],

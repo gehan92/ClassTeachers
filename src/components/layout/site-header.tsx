@@ -9,13 +9,13 @@ import { LocaleSwitcher } from "./locale-switcher";
 import { logOutAction } from "@/lib/auth/actions";
 import { roleDashboardPath, type UserRole } from "@/lib/auth/routes";
 
+// Roles/Advertise/Help stay one click away in the footer (see site-footer.tsx)
+// rather than crowding the top nav — those are secondary/business-facing
+// links, not what a visitor searching for a teacher or class needs first.
 const navItems = [
   { href: { pathname: "/teachers", query: { category: "teacher" } }, key: "findTeachers" },
   { href: { pathname: "/teachers", query: { category: "class" } }, key: "findClasses" },
-  { href: "/roles", key: "roles" },
-  { href: "/advertise", key: "advertise" },
   { href: "/pricing", key: "pricing" },
-  { href: "/help", key: "help" },
 ] as const;
 
 export function SiteHeader({ user }: { user: { name: string; role: UserRole } | null }) {

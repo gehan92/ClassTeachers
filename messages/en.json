@@ -646,11 +646,13 @@
       "subtitle": "Promote your institute and manage your ad copy.",
       "panelTitle": "Your promotion",
       "promotionLabel": "Promotion text",
+      "promotionPlaceholder": "e.g. Enrollment for the O/L 2027 group is now open — early-bird pricing until end of month.",
       "save": "Save",
       "saved": "Saved",
       "spotlight": {
         "eyebrow": "Get more visibility",
-        "cta": "See ad plans"
+        "cta": "See ad plans",
+        "empty": "Write your promotion text above to see a live preview here."
       }
     },
     "reviews": {
@@ -1106,11 +1108,13 @@
       "heading": "Advertisement",
       "promotionHeading": "Promotion text",
       "promotionLabel": "Promotion text",
+      "promotionPlaceholder": "e.g. New intake for the 2027 A/L batch opens this month — book a free trial class today.",
       "save": "Save",
       "adSlot": {
         "eyebrow": "Boost your visibility",
         "text": "Want more reach?",
-        "ctaLabel": "See ad plans"
+        "ctaLabel": "See ad plans",
+        "empty": "Write your promotion text above to see a live preview here."
       }
     },
     "settings": {

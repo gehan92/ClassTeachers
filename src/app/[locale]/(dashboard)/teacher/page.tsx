@@ -33,10 +33,17 @@ export default async function TeacherDashboardPage({
   // proxy.ts already gates this route behind an authenticated session.
   const userId = user!.id;
 
-  const [{ data: profile }, { data: teacherProfile }, { data: priceRow }] = await Promise.all([
+  const [{ data: profile }, { data: teacherProfile }, { data: priceRow }, { data: adRow }] = await Promise.all([
     supabase.from("profiles").select("full_name, phone").eq("id", userId).single(),
     supabase.from("teacher_profiles").select("*").eq("id", userId).maybeSingle(),
     supabase.from("prices").select("hourly_rate, monthly_rate").eq("owner_type", "teacher").eq("owner_id", userId).maybeSingle(),
+    supabase
+      .from("advertisements")
+      .select("content")
+      .eq("owner_type", "teacher")
+      .eq("owner_id", userId)
+      .eq("placement", "own_profile")
+      .maybeSingle(),
   ]);
 
   const fullName = profile?.full_name ?? user!.email ?? "Teacher";
@@ -179,7 +186,7 @@ export default async function TeacherDashboardPage({
         students: <StudentsTab />,
         attendance: <AttendanceTab />,
         reviews: <ReviewsTab />,
-        ads: <AdvertisementTab />,
+        ads: <AdvertisementTab initialContent={adRow?.content ?? ""} />,
         settings: <SettingsTab initialPhone={profile?.phone ?? ""} email={user!.email ?? ""} />,
       }}
       defaultTab="overview"

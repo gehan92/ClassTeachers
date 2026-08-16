@@ -36,7 +36,7 @@ export default async function InstituteDashboardPage({
   const userInitial = fullName.charAt(0).toUpperCase();
   const instituteId = classProfile?.id;
 
-  const [{ data: classTeacherRows }, { count: studentsCount }, { data: reviewRows }, { data: priceRow }] =
+  const [{ data: classTeacherRows }, { count: studentsCount }, { data: reviewRows }, { data: priceRow }, { data: adRow }] =
     await Promise.all([
       instituteId
         ? supabase.from("class_teachers").select("teacher_id, is_visible").eq("class_id", instituteId)
@@ -57,6 +57,15 @@ export default async function InstituteDashboardPage({
             .select("hourly_rate, monthly_rate")
             .eq("owner_type", "class")
             .eq("owner_id", instituteId)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      instituteId
+        ? supabase
+            .from("advertisements")
+            .select("content")
+            .eq("owner_type", "class")
+            .eq("owner_id", instituteId)
+            .eq("placement", "own_profile")
             .maybeSingle()
         : Promise.resolve({ data: null }),
     ]);
@@ -174,7 +183,7 @@ export default async function InstituteDashboardPage({
         ),
         teachers: <TeachersTab />,
         batches: <BatchesTab batches={batches} />,
-        ads: <AdvertisementTab />,
+        ads: <AdvertisementTab initialContent={adRow?.content ?? ""} />,
         reviews: <ReviewsTab />,
         settings: (
           <SettingsTab

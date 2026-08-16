@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -83,24 +84,24 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [grade, setGrade] = useState<Grade | undefined>(undefined);
   const onlineOnlyId = useId();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Read once on mount, same reasoning as DashboardShell's ?tab= sync —
-    // this lets homepage/nav links like /teachers?category=teacher&subject=...
-    // preselect filters without touching useState's initializer (which would
-    // read window.location during the first render and mismatch the
-    // server-rendered defaults, breaking hydration).
-    const params = new URLSearchParams(window.location.search);
-    const categoryFromUrl = params.get("category");
-    const subjectFromUrl = params.get("subject");
-    const locationFromUrl = params.get("location");
-    const gradeFromUrl = params.get("grade");
+    // Re-sync whenever the URL's search params actually change (not just on
+    // mount) — nav links like "Find teachers"/"Find classes" navigate
+    // client-side to the same /teachers route with a different ?category=,
+    // which reuses this component instance instead of remounting it. A
+    // mount-only effect would silently keep the previous filters selected.
+    const categoryFromUrl = searchParams.get("category");
+    const subjectFromUrl = searchParams.get("subject");
+    const locationFromUrl = searchParams.get("location");
+    const gradeFromUrl = searchParams.get("grade");
     // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from the URL, not derived render state
-    if (categoryFromUrl && isCategory(categoryFromUrl)) setCategory(categoryFromUrl);
-    if (subjectFromUrl) setSubject(subjectFromUrl);
-    if (locationFromUrl) setLocation(locationFromUrl);
-    if (gradeFromUrl && isGrade(gradeFromUrl)) setGrade(gradeFromUrl);
-  }, []);
+    setCategory(categoryFromUrl && isCategory(categoryFromUrl) ? categoryFromUrl : "all");
+    setSubject(subjectFromUrl ?? "");
+    setLocation(locationFromUrl ?? "");
+    setGrade(gradeFromUrl && isGrade(gradeFromUrl) ? gradeFromUrl : undefined);
+  }, [searchParams]);
 
   const results = useMemo(() => {
     const subjectQuery = subject.trim().toLowerCase();

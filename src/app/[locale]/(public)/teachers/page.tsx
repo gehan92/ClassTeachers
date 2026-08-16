@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { TeachersSearch } from "@/components/features/teachers-search";
@@ -11,7 +12,9 @@ export default async function TeachersPage({ params }: PageProps<"/[locale]/teac
     <section className="py-12">
       <div className="mx-auto max-w-[1180px] px-7">
         <Header />
-        <TeachersSearch listings={allListings} />
+        <Suspense>
+          <TeachersSearch listings={allListings} />
+        </Suspense>
       </div>
     </section>
   );

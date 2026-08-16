@@ -96,6 +96,8 @@ export type Database = {
           class_type: "physical" | "online" | "both";
           location: string | null;
           photo_url: string | null;
+          institution: string | null;
+          academic_title: string | null;
           status: ProfileStatus;
           created_at: string;
           updated_at: string;
@@ -109,6 +111,8 @@ export type Database = {
           class_type?: "physical" | "online" | "both";
           location?: string | null;
           photo_url?: string | null;
+          institution?: string | null;
+          academic_title?: string | null;
           status?: ProfileStatus;
           created_at?: string;
           updated_at?: string;
@@ -122,6 +126,8 @@ export type Database = {
           class_type?: "physical" | "online" | "both";
           location?: string | null;
           photo_url?: string | null;
+          institution?: string | null;
+          academic_title?: string | null;
           status?: ProfileStatus;
           created_at?: string;
           updated_at?: string;
@@ -825,6 +831,10 @@ export type Database = {
           online: boolean;
           teacher_count: number;
         }[];
+      };
+      resolve_subject: {
+        Args: { subject_name: string };
+        Returns: string;
       };
     };
 

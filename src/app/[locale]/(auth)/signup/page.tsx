@@ -5,6 +5,8 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { AuthShell } from "@/components/features/auth-shell";
 import { RoleSelect, type SignupRole } from "@/components/features/role-select";
+import { TeacherFields } from "@/components/features/teacher-fields";
+import { LecturerFields } from "@/components/features/lecturer-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +47,9 @@ export default function SignupPage() {
       <form action={formAction} className="space-y-4">
         <RoleSelect value={role} onChange={setRole} />
 
+        {role === "teacher" && <TeacherFields />}
+        {role === "lecturer" && <LecturerFields />}
+
         <div className="grid gap-1.5">
           <Label htmlFor="name">{t("nameLabel")}</Label>
           <Input id="name" name="name" type="text" placeholder={t("namePlaceholder")} required minLength={2} />
@@ -53,10 +58,12 @@ export default function SignupPage() {
           <Label htmlFor="email">{t("emailLabel")}</Label>
           <Input id="email" name="email" type="email" placeholder={t("emailPlaceholder")} required />
         </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="phone">{t("phoneLabel")}</Label>
-          <Input id="phone" name="phone" type="tel" placeholder={t("phonePlaceholder")} />
-        </div>
+        {role !== "student" && (
+          <div className="grid gap-1.5">
+            <Label htmlFor="phone">{t("phoneLabel")}</Label>
+            <Input id="phone" name="phone" type="tel" placeholder={t("phonePlaceholder")} />
+          </div>
+        )}
         <div className="grid gap-1.5">
           <Label htmlFor="password">{t("passwordLabel")}</Label>
           <Input

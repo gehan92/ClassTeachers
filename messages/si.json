@@ -319,6 +319,40 @@
       { "value": "භූමිකා 4", "label": "එක් ගිණුම් පද්ධතියක්" },
       { "value": "මිනිත්තු 5", "label": "පැතිකඩක් සකසන්නට" }
     ],
+    "teacherFields": {
+      "heading": "ඔබ උගන්වන පාඩම් පිළිබඳ තොරතුරු",
+      "lessonFormatLabel": "පන්ති ක්‍රමය",
+      "inPerson": "සජීවී පන්ති",
+      "online": "මාර්ගගත පන්ති",
+      "subjectLabel": "විෂය",
+      "subjectPlaceholder": "උදා: ගණිතය",
+      "headlineLabel": "දැන්වීමේ මාතෘකාව",
+      "headlinePlaceholder": "උදා: O/L සහ A/L සිසුන් සඳහා සංයුක්ත ගණිත උපදේශක",
+      "descriptionLabel": "විස්තරය",
+      "descriptionPlaceholder": "උදා: මට ව්‍යවහාරික ගණිතයේ උපාධියක් ඇති අතර වසර 2ක් උපදේශන කරමි..."
+    },
+    "lecturerFields": {
+      "heading": "අධ්‍යාපනික විස්තර",
+      "institutionLabel": "ආයතනය / විශ්වවිද්‍යාලය",
+      "institutionPlaceholder": "උදා: කොළඹ විශ්වවිද්‍යාලය, SLIIT",
+      "academicTitleLabel": "අධ්‍යයන තනතුර",
+      "academicTitlePlaceholder": "තනතුරක් තෝරන්න",
+      "academicTitles": {
+        "lecturer": "කථිකාචාර්ය",
+        "senior_lecturer": "ජ්‍යෙෂ්ඨ කථිකාචාර්ය",
+        "assistant_professor": "සහායක මහාචාර්ය",
+        "associate_professor": "සහෝදර මහාචාර්ය",
+        "professor": "මහාචාර්ය",
+        "visiting_lecturer": "නිරීක්ෂක කථිකාචාර්ය"
+      },
+      "qualificationLabel": "ඉහළම සුදුසුකම",
+      "qualificationPlaceholder": "උදා: PhD, MPhil",
+      "subjectLabel": "විෂය / පාඨමාලා ක්ෂේත්‍රය",
+      "subjectPlaceholder": "උදා: දත්ත ව්‍යුහ සහ ඇල්ගොරිතම",
+      "teachingModeLabel": "ඉගැන්වීමේ ක්‍රමය",
+      "onCampus": "කැම්පස් සැසි",
+      "online": "මාර්ගගත පාඨමාලා"
+    },
     "roleSelect": {
       "label": "ඔබේ භූමිකාව තෝරන්න",
       "student": { "tag": "ඉගෙනුම්කරු", "label": "සිසුවා / දෙමාපියා" },

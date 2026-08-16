@@ -319,6 +319,40 @@
       { "value": "4 roles", "label": "One account system" },
       { "value": "5 min", "label": "To set up a profile" }
     ],
+    "teacherFields": {
+      "heading": "Information about the lessons you teach",
+      "lessonFormatLabel": "Lesson format",
+      "inPerson": "In-person lessons",
+      "online": "Online lessons",
+      "subjectLabel": "Subject",
+      "subjectPlaceholder": "e.g. Maths",
+      "headlineLabel": "Ad headline",
+      "headlinePlaceholder": "e.g. Combined Maths tutor for O/L and A/L students",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "e.g. I have a degree in Applied Mathematics and have been tutoring for 2 years..."
+    },
+    "lecturerFields": {
+      "heading": "Academic details",
+      "institutionLabel": "Institution / University",
+      "institutionPlaceholder": "e.g. University of Colombo, SLIIT",
+      "academicTitleLabel": "Academic title",
+      "academicTitlePlaceholder": "Select a title",
+      "academicTitles": {
+        "lecturer": "Lecturer",
+        "senior_lecturer": "Senior Lecturer",
+        "assistant_professor": "Assistant Professor",
+        "associate_professor": "Associate Professor",
+        "professor": "Professor",
+        "visiting_lecturer": "Visiting Lecturer"
+      },
+      "qualificationLabel": "Highest qualification",
+      "qualificationPlaceholder": "e.g. PhD, MPhil",
+      "subjectLabel": "Subject / course area",
+      "subjectPlaceholder": "e.g. Data Structures & Algorithms",
+      "teachingModeLabel": "Teaching mode",
+      "onCampus": "On-campus sessions",
+      "online": "Online courses"
+    },
     "roleSelect": {
       "label": "Choose your role",
       "student": { "tag": "Learner", "label": "Student / Parent" },

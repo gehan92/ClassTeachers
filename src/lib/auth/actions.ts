@@ -13,6 +13,71 @@ export type AuthActionState =
   | { pendingConfirmationEmail: string; error?: undefined }
   | undefined;
 
+type SignupMetadata = {
+  full_name?: string;
+  role?: UserRole;
+  phone?: string | null;
+  // Teacher signup (src/components/features/teacher-fields.tsx)
+  headline?: string;
+  bio?: string;
+  // Campus Lecturer signup (src/components/features/lecturer-fields.tsx)
+  institution?: string;
+  academic_title?: string;
+  qualifications?: string;
+  // Shared by both — teacher_profiles.class_type and the subjects taxonomy
+  subject?: string;
+  class_type?: "physical" | "online" | "both";
+};
+
+/**
+ * Materializes the Teacher/Campus Lecturer signup steps' extra fields onto
+ * teacher_profiles, and links the free-text subject into the subjects
+ * taxonomy via resolve_subject (supabase/migrations/0022) — the same
+ * SECURITY DEFINER pattern as get_teacher_contact, since inserting into
+ * subjects is otherwise admin-only (0007). Lecturer-only columns
+ * (institution/academic_title) simply stay null for a plain teacher.
+ */
+async function ensureTeacherProfileRow(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  metadata: SignupMetadata,
+): Promise<void> {
+  const { error: profileError } = await supabase.from("teacher_profiles").upsert(
+    {
+      id: userId,
+      headline: metadata.headline ?? null,
+      bio: metadata.bio ?? null,
+      institution: metadata.institution ?? null,
+      academic_title: metadata.academic_title ?? null,
+      qualifications: metadata.qualifications ?? null,
+      class_type: metadata.class_type ?? "both",
+    },
+    { onConflict: "id" },
+  );
+  if (profileError) {
+    throw profileError;
+  }
+
+  if (!metadata.subject) {
+    return;
+  }
+
+  const { data: subjectId, error: subjectError } = await supabase.rpc("resolve_subject", {
+    subject_name: metadata.subject,
+  });
+  if (subjectError || !subjectId) {
+    console.error("[ensureTeacherProfileRow] resolve_subject failed:", subjectError?.message);
+    return;
+  }
+
+  const { error: linkError } = await supabase
+    .from("subject_links")
+    .upsert({ owner_type: "teacher", owner_id: userId, subject_id: subjectId }, { onConflict: "owner_type,owner_id,subject_id" });
+  if (linkError) {
+    console.error("[ensureTeacherProfileRow] subject_links upsert failed:", linkError.message);
+  }
+}
+
 /**
  * Every table in supabase/migrations relies on a profiles row existing for
  * the current auth.uid() (RLS policies check it, get_teacher_contact() joins
@@ -28,7 +93,7 @@ async function ensureProfile(supabase: SupabaseClient<Database>, user: User): Pr
     return existing.role;
   }
 
-  const metadata = user.user_metadata as { full_name?: string; role?: UserRole; phone?: string | null };
+  const metadata = user.user_metadata as SignupMetadata;
   const role = metadata.role ?? "student";
 
   const { error } = await supabase.from("profiles").insert({
@@ -39,6 +104,10 @@ async function ensureProfile(supabase: SupabaseClient<Database>, user: User): Pr
   });
   if (error) {
     throw error;
+  }
+
+  if ((role === "teacher" && metadata.headline) || (role === "campus_lecturer" && metadata.institution)) {
+    await ensureTeacherProfileRow(supabase, user.id, metadata);
   }
 
   return role;
@@ -62,6 +131,15 @@ export async function signUpAction(
     phone: formData.get("phone") || undefined,
     password: formData.get("password"),
     role: formData.get("role"),
+    subject: formData.get("subject") || undefined,
+    headline: formData.get("headline") || undefined,
+    description: formData.get("description") || undefined,
+    inPerson: formData.get("inPerson") === "on",
+    online: formData.get("online") === "on",
+    institution: formData.get("institution") || undefined,
+    academicTitle: formData.get("academicTitle") || undefined,
+    qualification: formData.get("qualification") || undefined,
+    onCampus: formData.get("onCampus") === "on",
   });
   if (!parsed.success) {
     console.error(
@@ -71,16 +149,53 @@ export async function signUpAction(
     return { error: t("generic") };
   }
 
-  const { fullName, email, phone, password, role } = parsed.data;
+  const {
+    fullName,
+    email,
+    phone,
+    password,
+    role,
+    subject,
+    headline,
+    description,
+    inPerson,
+    online,
+    institution,
+    academicTitle,
+    qualification,
+    onCampus,
+  } = parsed.data;
   // The role picker's "lecturer" option is a campus lecturer under the hood
   // (same dashboard as a teacher, see types/dashboard.ts's DemoRole comment).
   const dbRole: UserRole = role === "lecturer" ? "campus_lecturer" : role;
+
+  // Stashed on auth user_metadata rather than written straight to
+  // teacher_profiles here: signUp doesn't always return a session (email
+  // confirmation can be required), so materializing these has to wait for
+  // ensureProfile — see its comment in src/lib/auth/actions.ts.
+  let roleMetadata: Record<string, unknown> = {};
+  if (role === "teacher") {
+    roleMetadata = {
+      headline,
+      bio: description,
+      subject,
+      class_type: inPerson && online ? ("both" as const) : online ? ("online" as const) : ("physical" as const),
+    };
+  } else if (role === "lecturer") {
+    roleMetadata = {
+      institution,
+      academic_title: academicTitle,
+      qualifications: qualification,
+      subject,
+      class_type: onCampus && online ? ("both" as const) : online ? ("online" as const) : ("physical" as const),
+    };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName, phone: phone ?? null, role: dbRole } },
+    options: { data: { full_name: fullName, phone: phone ?? null, role: dbRole, ...roleMetadata } },
   });
 
   if (error) {

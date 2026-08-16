@@ -319,6 +319,40 @@
       { "value": "4 பங்குகள்", "label": "ஒரே கணக்கு முறைமை" },
       { "value": "5 நிமிடங்கள்", "label": "சுயவிவரத்தை அமைக்க" }
     ],
+    "teacherFields": {
+      "heading": "நீங்கள் கற்பிக்கும் பாடங்கள் பற்றிய தகவல்",
+      "lessonFormatLabel": "வகுப்பு வடிவம்",
+      "inPerson": "நேரடி வகுப்புகள்",
+      "online": "ஆன்லைன் வகுப்புகள்",
+      "subjectLabel": "பாடம்",
+      "subjectPlaceholder": "எ.கா. கணிதம்",
+      "headlineLabel": "விளம்பரத் தலைப்பு",
+      "headlinePlaceholder": "எ.கா. O/L மற்றும் A/L மாணவர்களுக்கான கூட்டு கணிత ஆசிரியர்",
+      "descriptionLabel": "விளக்கம்",
+      "descriptionPlaceholder": "எ.கா. எனக்கு பயன்பாட்டு கணிதத்தில் பட்டம் உள்ளது, 2 ஆண்டுகளாக கற்பித்து வருகிறேன்..."
+    },
+    "lecturerFields": {
+      "heading": "கல்வி விவரங்கள்",
+      "institutionLabel": "நிறுவனம் / பல்கலைக்கழகம்",
+      "institutionPlaceholder": "எ.கா. கொழும்பு பல்கலைக்கழகம், SLIIT",
+      "academicTitleLabel": "கல்விப் பட்டம்",
+      "academicTitlePlaceholder": "ஒரு பட்டத்தைத் தேர்ந்தெடுக்கவும்",
+      "academicTitles": {
+        "lecturer": "விரிவுரையாளர்",
+        "senior_lecturer": "மூத்த விரிவுரையாளர்",
+        "assistant_professor": "உதவிப் பேராசிரியர்",
+        "associate_professor": "இணைப் பேராசிரியர்",
+        "professor": "பேராசிரியர்",
+        "visiting_lecturer": "வருகைதரும் விரிவுரையாளர்"
+      },
+      "qualificationLabel": "உயர் தகுதி",
+      "qualificationPlaceholder": "எ.கா. PhD, MPhil",
+      "subjectLabel": "பாடம் / பாடநெறி பகுதி",
+      "subjectPlaceholder": "எ.கா. தரவு அமைப்புகள் மற்றும் வழிமுறைகள்",
+      "teachingModeLabel": "கற்பித்தல் முறை",
+      "onCampus": "வளாக அமர்வுகள்",
+      "online": "ஆன்லைன் பாடநெறிகள்"
+    },
     "roleSelect": {
       "label": "உங்கள் பங்கைத் தேர்ந்தெடுங்கள்",
       "student": { "tag": "கற்பவர்", "label": "மாணவர் / பெற்றோர்" },

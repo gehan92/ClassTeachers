@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +13,7 @@ import {
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { localeLabels, locales, type Locale } from "@/i18n/routing";
 
-export function LocaleSwitcher() {
+export function LocaleSwitcher({ className }: { className?: string }) {
   const t = useTranslations("language");
   const activeLocale = useLocale();
   const pathname = usePathname();
@@ -26,7 +27,12 @@ export function LocaleSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" size="sm" aria-label={t("label")} className="gap-1.5 text-primary" />
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={t("label")}
+            className={cn("gap-1.5 text-primary", className)}
+          />
         }
       >
         <Globe className="size-4" />

@@ -6,6 +6,7 @@ import { LogOut, Menu } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { LocaleSwitcher } from "@/components/layout/locale-switcher";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { logOutAction } from "@/lib/auth/actions";
 import type { DashboardNavGroup, DemoRole } from "@/types/dashboard";
@@ -191,6 +192,7 @@ export function DashboardShell({
         )}
 
         <div className="flex items-center gap-3">
+          <LocaleSwitcher className="text-white/70 hover:bg-white/10 hover:text-white" />
           {publicProfileHref && (
             <Link href={publicProfileHref} className="hidden text-sm text-white/70 hover:text-white sm:inline">
               {publicProfileLabel} ↗

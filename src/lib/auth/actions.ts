@@ -24,7 +24,11 @@ type SignupMetadata = {
   institution?: string;
   academic_title?: string;
   qualifications?: string;
-  // Shared by both — teacher_profiles.class_type and the subjects taxonomy
+  // Class/Institute signup (src/components/features/institute-fields.tsx)
+  institute_name?: string;
+  location?: string;
+  // Shared across roles — teacher_profiles/class_profiles.class_type and
+  // the subjects taxonomy
   subject?: string;
   class_type?: "physical" | "online" | "both";
 };
@@ -79,6 +83,76 @@ async function ensureTeacherProfileRow(
 }
 
 /**
+ * Materializes the Class/Institute signup step's extra fields onto
+ * class_profiles, and links its subject the same way
+ * ensureTeacherProfileRow does. class_profiles has no unique constraint on
+ * owner_id (its id is a separate generated uuid, unlike teacher_profiles
+ * whose id *is* the owner), so this can't be a plain upsert — same
+ * select-then-insert-or-update shape as updateInstituteProfile in
+ * src/lib/dashboard/actions.ts.
+ */
+async function ensureInstituteProfileRow(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  metadata: SignupMetadata,
+): Promise<void> {
+  if (!metadata.institute_name) {
+    return;
+  }
+
+  const { data: existing } = await supabase.from("class_profiles").select("id").eq("owner_id", userId).maybeSingle();
+
+  let classId = existing?.id;
+  if (classId) {
+    const { error: classError } = await supabase
+      .from("class_profiles")
+      .update({
+        name: metadata.institute_name,
+        location: metadata.location ?? null,
+        class_type: metadata.class_type ?? "both",
+      })
+      .eq("id", classId);
+    if (classError) {
+      throw classError;
+    }
+  } else {
+    const { data: inserted, error: classError } = await supabase
+      .from("class_profiles")
+      .insert({
+        owner_id: userId,
+        name: metadata.institute_name,
+        location: metadata.location ?? null,
+        class_type: metadata.class_type ?? "both",
+      })
+      .select("id")
+      .single();
+    if (classError || !inserted) {
+      throw classError ?? new Error("class_profiles insert returned no row");
+    }
+    classId = inserted.id;
+  }
+
+  if (!metadata.subject) {
+    return;
+  }
+
+  const { data: subjectId, error: subjectError } = await supabase.rpc("resolve_subject", {
+    subject_name: metadata.subject,
+  });
+  if (subjectError || !subjectId) {
+    console.error("[ensureInstituteProfileRow] resolve_subject failed:", subjectError?.message);
+    return;
+  }
+
+  const { error: linkError } = await supabase
+    .from("subject_links")
+    .upsert({ owner_type: "class", owner_id: classId, subject_id: subjectId }, { onConflict: "owner_type,owner_id,subject_id" });
+  if (linkError) {
+    console.error("[ensureInstituteProfileRow] subject_links upsert failed:", linkError.message);
+  }
+}
+
+/**
  * Every table in supabase/migrations relies on a profiles row existing for
  * the current auth.uid() (RLS policies check it, get_teacher_contact() joins
  * through it, etc). There's no database trigger creating that row — instead
@@ -106,7 +180,9 @@ async function ensureProfile(supabase: SupabaseClient<Database>, user: User): Pr
     throw error;
   }
 
-  if ((role === "teacher" && metadata.headline) || (role === "campus_lecturer" && metadata.institution)) {
+  if (role === "class" && metadata.institute_name) {
+    await ensureInstituteProfileRow(supabase, user.id, metadata);
+  } else if ((role === "teacher" && metadata.headline) || (role === "campus_lecturer" && metadata.institution)) {
     await ensureTeacherProfileRow(supabase, user.id, metadata);
   }
 
@@ -140,6 +216,9 @@ export async function signUpAction(
     academicTitle: formData.get("academicTitle") || undefined,
     qualification: formData.get("qualification") || undefined,
     onCampus: formData.get("onCampus") === "on",
+    instituteName: formData.get("instituteName") || undefined,
+    location: formData.get("location") || undefined,
+    physical: formData.get("physical") === "on",
   });
   if (!parsed.success) {
     console.error(
@@ -164,6 +243,9 @@ export async function signUpAction(
     academicTitle,
     qualification,
     onCampus,
+    instituteName,
+    location,
+    physical,
   } = parsed.data;
   // The role picker's "lecturer" option is a campus lecturer under the hood
   // (same dashboard as a teacher, see types/dashboard.ts's DemoRole comment).
@@ -188,6 +270,13 @@ export async function signUpAction(
       qualifications: qualification,
       subject,
       class_type: onCampus && online ? ("both" as const) : online ? ("online" as const) : ("physical" as const),
+    };
+  } else if (role === "class") {
+    roleMetadata = {
+      institute_name: instituteName,
+      location,
+      subject,
+      class_type: physical && online ? ("both" as const) : online ? ("online" as const) : ("physical" as const),
     };
   }
 

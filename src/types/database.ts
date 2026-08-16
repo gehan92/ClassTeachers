@@ -146,6 +146,7 @@ export type Database = {
           ad_content: string | null;
           photo_url: string | null;
           location: string | null;
+          class_type: "physical" | "online" | "both" | null;
           status: ProfileStatus;
           created_at: string;
           updated_at: string;
@@ -158,6 +159,7 @@ export type Database = {
           ad_content?: string | null;
           photo_url?: string | null;
           location?: string | null;
+          class_type?: "physical" | "online" | "both" | null;
           status?: ProfileStatus;
           created_at?: string;
           updated_at?: string;
@@ -170,6 +172,7 @@ export type Database = {
           ad_content?: string | null;
           photo_url?: string | null;
           location?: string | null;
+          class_type?: "physical" | "online" | "both" | null;
           status?: ProfileStatus;
           created_at?: string;
           updated_at?: string;

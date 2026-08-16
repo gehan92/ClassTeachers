@@ -297,7 +297,9 @@
     "title": "Create your account",
     "subtitle": "Tell us what you're here to do — this decides which tools you'll see.",
     "nameLabel": "Full name",
+    "contactPersonLabel": "Contact person",
     "namePlaceholder": "As it will appear once students join you",
+    "contactPersonPlaceholder": "Who we should contact about this account",
     "emailLabel": "Email",
     "emailPlaceholder": "you@example.com",
     "phoneLabel": "Phone number",
@@ -319,6 +321,18 @@
       { "value": "4 roles", "label": "One account system" },
       { "value": "5 min", "label": "To set up a profile" }
     ],
+    "instituteFields": {
+      "heading": "General information",
+      "instituteNameLabel": "Institute name",
+      "instituteNamePlaceholder": "e.g. Horizon Learning Institute",
+      "subjectLabel": "What do you teach?",
+      "subjectPlaceholder": "e.g. A/L Science stream",
+      "locationLabel": "Location",
+      "locationPlaceholder": "e.g. Colombo 05",
+      "classTypeLabel": "Class type",
+      "physical": "Physical",
+      "online": "Online"
+    },
     "teacherFields": {
       "heading": "Information about the lessons you teach",
       "lessonFormatLabel": "Lesson format",

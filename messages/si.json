@@ -297,6 +297,8 @@
     "title": "ඔබේ ගිණුම සාදන්න",
     "subtitle": "ඔබ මෙහි එන්නේ කුමක් සඳහාද කියා අපට කියන්න — මෙය ඔබට පෙනෙන මෙවලම් තීරණය කරයි.",
     "nameLabel": "සම්පූර්ණ නම",
+    "contactPersonLabel": "සම්බන්ධතා පුද්ගලයා",
+    "contactPersonPlaceholder": "මෙම ගිණුම සම්බන්ධයෙන් අප සම්බන්ධ විය යුත්තේ කවුරුන් සමඟද",
     "namePlaceholder": "සිසුන් ඔබ හා එකතු වූ පසු එය පෙනෙනු ඇති ආකාරයට",
     "emailLabel": "විද්‍යුත් තැපෑල",
     "emailPlaceholder": "you@example.com",
@@ -319,6 +321,18 @@
       { "value": "භූමිකා 4", "label": "එක් ගිණුම් පද්ධතියක්" },
       { "value": "මිනිත්තු 5", "label": "පැතිකඩක් සකසන්නට" }
     ],
+    "instituteFields": {
+      "heading": "සාමාන්‍ය තොරතුරු",
+      "instituteNameLabel": "ආයතනයේ නම",
+      "instituteNamePlaceholder": "උදා: Horizon Learning Institute",
+      "subjectLabel": "ඔබ උගන්වන්නේ මොනවාද?",
+      "subjectPlaceholder": "උදා: A/L විද්‍යා ධාරාව",
+      "locationLabel": "ස්ථානය",
+      "locationPlaceholder": "උදා: කොළඹ 05",
+      "classTypeLabel": "පන්ති ක්‍රමය",
+      "physical": "සජීවී",
+      "online": "මාර්ගගත"
+    },
     "teacherFields": {
       "heading": "ඔබ උගන්වන පාඩම් පිළිබඳ තොරතුරු",
       "lessonFormatLabel": "පන්ති ක්‍රමය",

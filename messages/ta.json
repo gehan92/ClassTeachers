@@ -297,6 +297,8 @@
     "title": "உங்கள் கணக்கை உருவாக்குங்கள்",
     "subtitle": "நீங்கள் இங்கு என்ன செய்ய வந்துள்ளீர்கள் எனக் கூறுங்கள் — இது நீங்கள் காணும் கருவிகளை தீர்மானிக்கும்.",
     "nameLabel": "முழுப் பெயர்",
+    "contactPersonLabel": "தொடர்பு நபர்",
+    "contactPersonPlaceholder": "இந்தக் கணக்கு தொடர்பாக நாங்கள் யாரைத் தொடர்பு கொள்ள வேண்டும்",
     "namePlaceholder": "மாணவர்கள் உங்களுடன் இணைந்தவுடன் தோன்றும் விதத்தில்",
     "emailLabel": "மின்னஞ்சல்",
     "emailPlaceholder": "you@example.com",
@@ -319,6 +321,18 @@
       { "value": "4 பங்குகள்", "label": "ஒரே கணக்கு முறைமை" },
       { "value": "5 நிமிடங்கள்", "label": "சுயவிவரத்தை அமைக்க" }
     ],
+    "instituteFields": {
+      "heading": "பொதுவான தகவல்",
+      "instituteNameLabel": "நிறுவனப் பெயர்",
+      "instituteNamePlaceholder": "எ.கா. Horizon Learning Institute",
+      "subjectLabel": "நீங்கள் என்ன கற்பிக்கிறீர்கள்?",
+      "subjectPlaceholder": "எ.கா. உயர்தர அறிவியல் பிரிவு",
+      "locationLabel": "இடம்",
+      "locationPlaceholder": "எ.கா. கொழும்பு 05",
+      "classTypeLabel": "வகுப்பு வகை",
+      "physical": "நேரடி",
+      "online": "ஆன்லைன்"
+    },
     "teacherFields": {
       "heading": "நீங்கள் கற்பிக்கும் பாடங்கள் பற்றிய தகவல்",
       "lessonFormatLabel": "வகுப்பு வடிவம்",

@@ -14,17 +14,22 @@ export const signupSchema = z
     phone: z.string().trim().optional(),
     password: z.string().min(8),
     role: z.enum(signupRoles),
-    // Teacher only — see the superRefine below.
+    // Shared by Teacher/Lecturer/Class — see the superRefine below.
     subject: z.string().trim().optional(),
+    online: z.boolean().optional(),
+    // Teacher only.
     headline: z.string().trim().optional(),
     description: z.string().trim().optional(),
     inPerson: z.boolean().optional(),
-    online: z.boolean().optional(),
-    // Campus Lecturer only — see the superRefine below.
+    // Campus Lecturer only.
     institution: z.string().trim().optional(),
     academicTitle: z.enum(academicTitles).optional(),
     qualification: z.string().trim().optional(),
     onCampus: z.boolean().optional(),
+    // Class / Institute only.
+    instituteName: z.string().trim().optional(),
+    location: z.string().trim().optional(),
+    physical: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.role === "teacher") {
@@ -57,6 +62,21 @@ export const signupSchema = z
       }
       if (!data.onCampus && !data.online) {
         ctx.addIssue({ code: "custom", path: ["onCampus"], message: "Pick at least one teaching mode" });
+      }
+    }
+
+    if (data.role === "class") {
+      if (!data.instituteName) {
+        ctx.addIssue({ code: "custom", path: ["instituteName"], message: "Institute name is required" });
+      }
+      if (!data.subject) {
+        ctx.addIssue({ code: "custom", path: ["subject"], message: "Subject is required" });
+      }
+      if (!data.location) {
+        ctx.addIssue({ code: "custom", path: ["location"], message: "Location is required" });
+      }
+      if (!data.physical && !data.online) {
+        ctx.addIssue({ code: "custom", path: ["physical"], message: "Pick at least one class type" });
       }
     }
   });

@@ -7,6 +7,7 @@ import { AuthShell } from "@/components/features/auth-shell";
 import { RoleSelect, type SignupRole } from "@/components/features/role-select";
 import { TeacherFields } from "@/components/features/teacher-fields";
 import { LecturerFields } from "@/components/features/lecturer-fields";
+import { InstituteFields } from "@/components/features/institute-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,10 +50,18 @@ export default function SignupPage() {
 
         {role === "teacher" && <TeacherFields />}
         {role === "lecturer" && <LecturerFields />}
+        {role === "class" && <InstituteFields />}
 
         <div className="grid gap-1.5">
-          <Label htmlFor="name">{t("nameLabel")}</Label>
-          <Input id="name" name="name" type="text" placeholder={t("namePlaceholder")} required minLength={2} />
+          <Label htmlFor="name">{role === "class" ? t("contactPersonLabel") : t("nameLabel")}</Label>
+          <Input
+            id="name"
+            name="name"
+            type="text"
+            placeholder={role === "class" ? t("contactPersonPlaceholder") : t("namePlaceholder")}
+            required
+            minLength={2}
+          />
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="email">{t("emailLabel")}</Label>

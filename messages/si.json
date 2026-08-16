@@ -36,6 +36,14 @@
     "onlineOnly": "මාර්ගගත පන්ති පමණක්",
     "level": "මට්ටම",
     "searchButton": "සොයන්න",
+    "price": "මිල (රු.)",
+    "priceMinPlaceholder": "අවම",
+    "priceMaxPlaceholder": "උපරිම",
+    "priceIntervals": {
+      "any": "ඕනෑම",
+      "hr": "පැයට",
+      "mo": "මාසිකව"
+    },
     "grades": {
       "1-5": "1–5",
       "6-9": "6–9",

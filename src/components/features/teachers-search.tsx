@@ -13,9 +13,11 @@ import type { Listing } from "@/types/listing";
 
 type Grade = "1-5" | "6-9" | "10-11" | "12-13" | "campus";
 type Category = "all" | "teacher" | "class" | "campus";
+type PriceInterval = "any" | "hr" | "mo";
 
 const categories: Category[] = ["all", "teacher", "class", "campus"];
 const grades: Grade[] = ["1-5", "6-9", "10-11", "12-13", "campus"];
+const priceIntervals: PriceInterval[] = ["any", "hr", "mo"];
 
 function isCategory(value: string): value is Category {
   return (categories as string[]).includes(value);
@@ -23,6 +25,10 @@ function isCategory(value: string): value is Category {
 
 function isGrade(value: string): value is Grade {
   return (grades as string[]).includes(value);
+}
+
+function isPriceInterval(value: string): value is PriceInterval {
+  return (priceIntervals as string[]).includes(value);
 }
 
 /**
@@ -75,6 +81,74 @@ function CategoryTabs({ value, onChange }: { value: Category; onChange: (categor
   );
 }
 
+function PriceFilter({
+  interval,
+  onIntervalChange,
+  min,
+  onMinChange,
+  max,
+  onMaxChange,
+}: {
+  interval: PriceInterval;
+  onIntervalChange: (interval: PriceInterval) => void;
+  min: string;
+  onMinChange: (value: string) => void;
+  max: string;
+  onMaxChange: (value: string) => void;
+}) {
+  const t = useTranslations("search");
+
+  return (
+    <div>
+      <div className="mb-2 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{t("price")}</div>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <div
+          role="radiogroup"
+          aria-label={t("price")}
+          className="flex overflow-hidden rounded-md border border-input bg-white"
+        >
+          {priceIntervals.map((value) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={interval === value}
+              onClick={() => onIntervalChange(value)}
+              className={cn(
+                "flex-1 border-r border-border px-3 py-2.5 text-center font-mono text-xs text-foreground/80 transition-colors last:border-r-0 hover:bg-secondary",
+                interval === value && "bg-secondary text-secondary-foreground",
+              )}
+            >
+              {t(`priceIntervals.${value}`)}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-1 items-center gap-2">
+          <Input
+            type="number"
+            min={0}
+            inputMode="numeric"
+            value={min}
+            onChange={(e) => onMinChange(e.target.value)}
+            placeholder={t("priceMinPlaceholder")}
+            className="bg-white"
+          />
+          <span className="text-muted-foreground">–</span>
+          <Input
+            type="number"
+            min={0}
+            inputMode="numeric"
+            value={max}
+            onChange={(e) => onMaxChange(e.target.value)}
+            placeholder={t("priceMaxPlaceholder")}
+            className="bg-white"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function TeachersSearch({ listings }: { listings: Listing[] }) {
   const t = useTranslations("teachersPage");
   const tSearch = useTranslations("search");
@@ -83,6 +157,9 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
   const [location, setLocation] = useState("");
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [grade, setGrade] = useState<Grade | undefined>(undefined);
+  const [priceInterval, setPriceInterval] = useState<PriceInterval>("any");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
   const onlineOnlyId = useId();
   const searchParams = useSearchParams();
 
@@ -96,16 +173,22 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
     const subjectFromUrl = searchParams.get("subject");
     const locationFromUrl = searchParams.get("location");
     const gradeFromUrl = searchParams.get("grade");
+    const priceIntervalFromUrl = searchParams.get("priceInterval");
     // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from the URL, not derived render state
     setCategory(categoryFromUrl && isCategory(categoryFromUrl) ? categoryFromUrl : "all");
     setSubject(subjectFromUrl ?? "");
     setLocation(locationFromUrl ?? "");
     setGrade(gradeFromUrl && isGrade(gradeFromUrl) ? gradeFromUrl : undefined);
+    setPriceInterval(priceIntervalFromUrl && isPriceInterval(priceIntervalFromUrl) ? priceIntervalFromUrl : "any");
+    setPriceMin(searchParams.get("priceMin") ?? "");
+    setPriceMax(searchParams.get("priceMax") ?? "");
   }, [searchParams]);
 
   const results = useMemo(() => {
     const subjectQuery = subject.trim().toLowerCase();
     const locationQuery = location.trim().toLowerCase();
+    const minPrice = priceMin.trim() === "" ? undefined : Number(priceMin);
+    const maxPrice = priceMax.trim() === "" ? undefined : Number(priceMax);
 
     return listings.filter((listing) => {
       const matchesSubject =
@@ -118,14 +201,31 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
         (locationQuery === "online" && listing.online);
       const matchesOnline = !onlineOnly || listing.online;
       const matchesGrade = !grade || listing.gradeBand === grade;
+      const matchesPriceInterval = priceInterval === "any" || listing.price.interval === priceInterval;
+      const matchesPriceMin = minPrice === undefined || Number.isNaN(minPrice) || listing.price.amount >= minPrice;
+      const matchesPriceMax = maxPrice === undefined || Number.isNaN(maxPrice) || listing.price.amount <= maxPrice;
       return (
-        matchesCategory(listing, category) && matchesSubject && matchesLocation && matchesOnline && matchesGrade
+        matchesCategory(listing, category) &&
+        matchesSubject &&
+        matchesLocation &&
+        matchesOnline &&
+        matchesGrade &&
+        matchesPriceInterval &&
+        matchesPriceMin &&
+        matchesPriceMax
       );
     });
-  }, [listings, category, subject, location, onlineOnly, grade]);
+  }, [listings, category, subject, location, onlineOnly, grade, priceInterval, priceMin, priceMax]);
 
   const hasFilters =
-    category !== "all" || subject.length > 0 || location.length > 0 || onlineOnly || grade !== undefined;
+    category !== "all" ||
+    subject.length > 0 ||
+    location.length > 0 ||
+    onlineOnly ||
+    grade !== undefined ||
+    priceInterval !== "any" ||
+    priceMin.length > 0 ||
+    priceMax.length > 0;
 
   function clearFilters() {
     setCategory("all");
@@ -133,6 +233,9 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
     setLocation("");
     setOnlineOnly(false);
     setGrade(undefined);
+    setPriceInterval("any");
+    setPriceMin("");
+    setPriceMax("");
   }
 
   return (
@@ -158,6 +261,16 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
           <Label htmlFor={onlineOnlyId} className="cursor-pointer text-sm font-normal text-foreground/80">
             {tSearch("onlineOnly")}
           </Label>
+        </div>
+        <div className="mb-3">
+          <PriceFilter
+            interval={priceInterval}
+            onIntervalChange={setPriceInterval}
+            min={priceMin}
+            onMinChange={setPriceMin}
+            max={priceMax}
+            onMaxChange={setPriceMax}
+          />
         </div>
         <GradeLadder value={grade} onChange={setGrade} />
       </div>

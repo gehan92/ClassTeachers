@@ -36,6 +36,14 @@
     "onlineOnly": "Online classes only",
     "level": "Level",
     "searchButton": "Search",
+    "price": "Price (Rs.)",
+    "priceMinPlaceholder": "Min",
+    "priceMaxPlaceholder": "Max",
+    "priceIntervals": {
+      "any": "Any",
+      "hr": "Hourly",
+      "mo": "Monthly"
+    },
     "grades": {
       "1-5": "1–5",
       "6-9": "6–9",

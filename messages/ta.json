@@ -36,6 +36,14 @@
     "onlineOnly": "ஆன்லைன் வகுப்புகள் மட்டும்",
     "level": "நிலை",
     "searchButton": "தேடு",
+    "price": "விலை (ரூ.)",
+    "priceMinPlaceholder": "குறைந்தபட்சம்",
+    "priceMaxPlaceholder": "அதிகபட்சம்",
+    "priceIntervals": {
+      "any": "எதுவும்",
+      "hr": "மணிக்கு",
+      "mo": "மாதம்"
+    },
     "grades": {
       "1-5": "1–5",
       "6-9": "6–9",

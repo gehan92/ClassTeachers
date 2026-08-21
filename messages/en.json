@@ -770,9 +770,13 @@
       },
       "publish": {
         "title": "Public listing",
-        "helper": "Publish your institute to appear in Find classes search results. Unpublish to hide it while you're still editing.",
+        "pending": "Submitted — awaiting admin review. You'll be able to publish once it's approved.",
+        "rejected": "An admin rejected this listing. Update your details above, then resubmit for review.",
+        "resubmit": "Resubmit for review",
+        "suspended": "This listing has been suspended by an admin.",
+        "helper": "Your institute has been approved. Publish it to appear in Find classes search results, or hide it while you're editing.",
         "live": "Live — visible in search",
-        "draft": "Draft — hidden from search"
+        "hidden": "Hidden from search"
       }
     }
   },
@@ -1001,9 +1005,13 @@
       "saveChanges": "Save changes",
       "publish": {
         "title": "Public listing",
-        "helper": "Publish your profile to appear in Find teachers search results. Unpublish to hide it while you're still editing.",
+        "pending": "Submitted — awaiting admin review. You'll be able to publish once it's approved.",
+        "rejected": "An admin rejected this listing. Update your details above, then resubmit for review.",
+        "resubmit": "Resubmit for review",
+        "suspended": "This listing has been suspended by an admin.",
+        "helper": "Your profile has been approved. Publish it to appear in Find teachers search results, or hide it while you're editing.",
         "live": "Live — visible in search",
-        "draft": "Draft — hidden from search"
+        "hidden": "Hidden from search"
       }
     },
     "notes": {

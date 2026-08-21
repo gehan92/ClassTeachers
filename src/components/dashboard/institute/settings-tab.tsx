@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { updateInstituteProfile, setListingPublished } from "@/lib/dashboard/actions";
+import { updateInstituteProfile, setListingPublished, resubmitListing } from "@/lib/dashboard/actions";
 import { uploadAvatar } from "@/lib/dashboard/avatar-actions";
+import type { ProfileStatus } from "@/types/database";
 
 export function SettingsTab({
   initialName,
@@ -17,7 +18,8 @@ export function SettingsTab({
   initialPhone,
   initialHourlyRate,
   initialMonthlyRate,
-  initialPublished,
+  initialStatus,
+  initialOwnerPublished,
   initialPhotoUrl,
 }: {
   initialName: string;
@@ -26,7 +28,8 @@ export function SettingsTab({
   initialPhone: string;
   initialHourlyRate: string;
   initialMonthlyRate: string;
-  initialPublished: boolean;
+  initialStatus: ProfileStatus;
+  initialOwnerPublished: boolean;
   initialPhotoUrl: string | null;
 }) {
   const t = useTranslations("instituteDashboard.settings");
@@ -62,7 +65,8 @@ export function SettingsTab({
     setTimeout(() => setLogoSaved(false), 2500);
   }
 
-  const [published, setPublished] = useState(initialPublished);
+  const [status, setStatus] = useState(initialStatus);
+  const [published, setPublished] = useState(initialOwnerPublished);
   const [publishSaving, setPublishSaving] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
 
@@ -76,6 +80,18 @@ export function SettingsTab({
       return;
     }
     setPublished(checked);
+  }
+
+  async function handleResubmit() {
+    setPublishSaving(true);
+    setPublishError(null);
+    const result = await resubmitListing({ kind: "class" });
+    setPublishSaving(false);
+    if (result.error) {
+      setPublishError(result.error);
+      return;
+    }
+    setStatus("pending");
   }
 
   const [details, setDetails] = useState({
@@ -247,16 +263,33 @@ export function SettingsTab({
       </div>
 
       <div className="rounded-lg border border-border bg-white p-5">
-        <div className="flex items-center justify-between gap-4">
+        <h3 className="mb-1 text-lg">{t("publish.title")}</h3>
+
+        {status === "pending" && <p className="text-sm text-muted-foreground">{t("publish.pending")}</p>}
+
+        {status === "rejected" && (
           <div>
-            <h3 className="text-lg">{t("publish.title")}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{t("publish.helper")}</p>
+            <p className="mb-3 text-sm text-destructive">{t("publish.rejected")}</p>
+            <Button type="button" size="sm" variant="outline" onClick={handleResubmit} disabled={publishSaving}>
+              {t("publish.resubmit")}
+            </Button>
           </div>
-          <Switch checked={published} onCheckedChange={handleTogglePublished} disabled={publishSaving} />
-        </div>
-        <p className={`mt-3 text-sm font-medium ${published ? "text-success" : "text-muted-foreground"}`}>
-          {published ? t("publish.live") : t("publish.draft")}
-        </p>
+        )}
+
+        {status === "suspended" && <p className="text-sm text-destructive">{t("publish.suspended")}</p>}
+
+        {status === "approved" && (
+          <>
+            <p className="mb-3 text-sm text-muted-foreground">{t("publish.helper")}</p>
+            <div className="flex items-center justify-between gap-4">
+              <p className={`text-sm font-medium ${published ? "text-success" : "text-muted-foreground"}`}>
+                {published ? t("publish.live") : t("publish.hidden")}
+              </p>
+              <Switch checked={published} onCheckedChange={handleTogglePublished} disabled={publishSaving} />
+            </div>
+          </>
+        )}
+
         {publishError && <p className="mt-2 text-sm font-medium text-destructive">{publishError}</p>}
       </div>
     </div>

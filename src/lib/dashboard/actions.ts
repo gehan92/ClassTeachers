@@ -328,13 +328,12 @@ export async function updateInstituteProfile(input: {
 }
 
 /**
- * teacher_profiles/class_profiles.status starts 'pending' and nothing else
- * in the app moves it to 'approved' (there's no admin moderation queue
- * built yet) — so without this, a real profile would never appear in
- * /teachers search results. This lets an owner publish/unpublish their own
- * listing directly, which RLS already permits (owner can update their own
- * row); it's the same status column a future moderation flow would use,
- * just self-served for now instead of admin-gated.
+ * Owner-controlled visibility, independent of admin review. Only ever
+ * touches owner_published (0036) — never status, which is admin-only via
+ * resolveApproval (admin-actions.ts). A listing only shows up publicly when
+ * status = 'approved' AND owner_published, so this errors out if the
+ * listing hasn't been approved yet rather than silently no-opping (there'd
+ * be nothing for the toggle to do until then).
  */
 export async function setListingPublished(input: {
   kind: "teacher" | "class";
@@ -348,18 +347,22 @@ export async function setListingPublished(input: {
     return { error: "You need to be signed in." };
   }
 
-  const status = input.published ? "approved" : "pending";
-
   if (input.kind === "teacher") {
     const { data: existing } = await supabase
       .from("teacher_profiles")
-      .select("id")
+      .select("status")
       .eq("id", user.id)
       .maybeSingle();
     if (!existing) {
       return { error: "Save your profile details first." };
     }
-    const { error } = await supabase.from("teacher_profiles").update({ status }).eq("id", user.id);
+    if (existing.status !== "approved") {
+      return { error: "Your listing needs admin approval before you can publish it." };
+    }
+    const { error } = await supabase
+      .from("teacher_profiles")
+      .update({ owner_published: input.published })
+      .eq("id", user.id);
     if (error) {
       return { error: "Couldn't update your listing visibility. Please try again." };
     }
@@ -368,15 +371,68 @@ export async function setListingPublished(input: {
 
   const { data: classProfile } = await supabase
     .from("class_profiles")
-    .select("id")
+    .select("id, status")
     .eq("owner_id", user.id)
     .maybeSingle();
   if (!classProfile) {
     return { error: "Save your institute details first." };
   }
-  const { error } = await supabase.from("class_profiles").update({ status }).eq("id", classProfile.id);
+  if (classProfile.status !== "approved") {
+    return { error: "Your listing needs admin approval before you can publish it." };
+  }
+  const { error } = await supabase
+    .from("class_profiles")
+    .update({ owner_published: input.published })
+    .eq("id", classProfile.id);
   if (error) {
     return { error: "Couldn't update your listing visibility. Please try again." };
+  }
+  return {};
+}
+
+/**
+ * Lets an owner send a rejected listing back into the Admin -> Approvals
+ * queue after they've made changes, instead of being permanently stuck.
+ * Only valid from 'rejected' — resubmitting a 'pending' listing is a no-op
+ * (it's already in the queue) and an 'approved'/'suspended' one isn't
+ * something this action is meant to touch.
+ */
+export async function resubmitListing(input: { kind: "teacher" | "class" }): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  if (input.kind === "teacher") {
+    const { data: existing } = await supabase
+      .from("teacher_profiles")
+      .select("status")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (!existing || existing.status !== "rejected") {
+      return { error: "This listing isn't awaiting resubmission." };
+    }
+    const { error } = await supabase.from("teacher_profiles").update({ status: "pending" }).eq("id", user.id);
+    if (error) {
+      return { error: "Couldn't resubmit your listing. Please try again." };
+    }
+    return {};
+  }
+
+  const { data: classProfile } = await supabase
+    .from("class_profiles")
+    .select("id, status")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (!classProfile || classProfile.status !== "rejected") {
+    return { error: "This listing isn't awaiting resubmission." };
+  }
+  const { error } = await supabase.from("class_profiles").update({ status: "pending" }).eq("id", classProfile.id);
+  if (error) {
+    return { error: "Couldn't resubmit your listing. Please try again." };
   }
   return {};
 }

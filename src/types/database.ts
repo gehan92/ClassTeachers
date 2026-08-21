@@ -14,7 +14,7 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 type OwnerType = "teacher" | "class";
-type ProfileStatus = "pending" | "approved" | "rejected" | "suspended";
+export type ProfileStatus = "pending" | "approved" | "rejected" | "suspended";
 type GradeBand = "1-5" | "6-9" | "10-11" | "12-13" | "campus";
 
 export type Database = {
@@ -105,6 +105,7 @@ export type Database = {
           institution: string | null;
           academic_title: string | null;
           status: ProfileStatus;
+          owner_published: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -120,6 +121,7 @@ export type Database = {
           institution?: string | null;
           academic_title?: string | null;
           status?: ProfileStatus;
+          owner_published?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -135,6 +137,7 @@ export type Database = {
           institution?: string | null;
           academic_title?: string | null;
           status?: ProfileStatus;
+          owner_published?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -155,6 +158,7 @@ export type Database = {
           established: string | null;
           class_type: "physical" | "online" | "both" | null;
           status: ProfileStatus;
+          owner_published: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -169,6 +173,7 @@ export type Database = {
           established?: string | null;
           class_type?: "physical" | "online" | "both" | null;
           status?: ProfileStatus;
+          owner_published?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -183,6 +188,7 @@ export type Database = {
           established?: string | null;
           class_type?: "physical" | "online" | "both" | null;
           status?: ProfileStatus;
+          owner_published?: boolean;
           created_at?: string;
           updated_at?: string;
         };

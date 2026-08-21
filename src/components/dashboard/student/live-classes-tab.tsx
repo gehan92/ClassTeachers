@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/features/status-badge";
@@ -12,48 +12,44 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { studentLiveClasses, studentEnrollments, attendanceRecords, CURRENT_STUDENT } from "@/lib/mock-data";
-import type { StudentLiveClass } from "@/types/dashboard-student";
-import type { AttendanceRecord } from "@/types/attendance";
+import { markAttendance } from "@/lib/dashboard/live-classes-actions";
 
-/** Static "today" label, matching the hardcoded convention used across the
- * other student-dashboard tabs (see notes-tab.tsx / reviews-tab.tsx). */
-const TODAY_LABEL = "14 Aug 2026";
+export type StudentLiveClassRow = {
+  id: string;
+  title: string;
+  teacherName: string;
+  scheduledAtIso: string;
+  scheduledLabel: string;
+  durationMinutes: number;
+  mode: "online" | "physical";
+  joinLink: string | null;
+};
 
-export function LiveClassesTab() {
+type LiveState = "not_open" | "starting_soon" | "live" | "ended";
+
+function classState(row: StudentLiveClassRow, nowMs: number): LiveState {
+  const start = new Date(row.scheduledAtIso).getTime();
+  const end = start + row.durationMinutes * 60 * 1000;
+  if (nowMs >= start && nowMs <= end) return "live";
+  if (nowMs > end) return "ended";
+  if (start - nowMs <= 15 * 60 * 1000) return "starting_soon";
+  return "not_open";
+}
+
+export function LiveClassesTab({ classes }: { classes: StudentLiveClassRow[] }) {
   const t = useTranslations("studentDashboard.live");
-  const [records, setRecords] = useState<AttendanceRecord[]>(attendanceRecords);
+  const [now, setNow] = useState(() => Date.now());
   const [markedId, setMarkedId] = useState<string | null>(null);
 
-  function handleJoin(liveClass: StudentLiveClass) {
-    // Only classes tied to a batch the student is enrolled in can be auto-marked present.
-    const enrollment = studentEnrollments.find(
-      (e) => e.batchId && e.targetName === liveClass.teacherName,
-    );
-    if (enrollment?.batchId) {
-      const alreadyPresent = records.some(
-        (r) =>
-          r.batchId === enrollment.batchId &&
-          r.studentId === CURRENT_STUDENT.id &&
-          r.sessionLabel === liveClass.title,
-      );
-      if (!alreadyPresent) {
-        setRecords((prev) => [
-          ...prev,
-          {
-            id: `att-${Date.now()}`,
-            batchId: enrollment.batchId!,
-            sessionLabel: liveClass.title,
-            date: TODAY_LABEL,
-            studentId: CURRENT_STUDENT.id,
-            studentName: CURRENT_STUDENT.name,
-            status: "present",
-          },
-        ]);
-      }
-    }
-    setMarkedId(liveClass.id);
-    setTimeout(() => setMarkedId((current) => (current === liveClass.id ? null : current)), 2500);
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  async function handleJoin(row: StudentLiveClassRow) {
+    setMarkedId(row.id);
+    await markAttendance({ liveClassId: row.id });
+    setTimeout(() => setMarkedId((current) => (current === row.id ? null : current)), 2500);
   }
 
   return (
@@ -64,65 +60,71 @@ export function LiveClassesTab() {
       </div>
 
       <div className="rounded-lg border border-border bg-white">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("colTitle")}</TableHead>
-              <TableHead>{t("colTeacher")}</TableHead>
-              <TableHead>{t("colSchedule")}</TableHead>
-              <TableHead>{t("colMode")}</TableHead>
-              <TableHead className="text-right">{t("colAction")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {studentLiveClasses.map((liveClass) => (
-              <LiveClassRow
-                key={liveClass.id}
-                liveClass={liveClass}
-                onJoin={handleJoin}
-                justMarked={markedId === liveClass.id}
-              />
-            ))}
-          </TableBody>
-        </Table>
+        {classes.length === 0 ? (
+          <p className="p-5 text-sm text-muted-foreground">{t("empty")}</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("colTitle")}</TableHead>
+                <TableHead>{t("colTeacher")}</TableHead>
+                <TableHead>{t("colSchedule")}</TableHead>
+                <TableHead>{t("colMode")}</TableHead>
+                <TableHead className="text-right">{t("colAction")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {classes.map((row) => (
+                <LiveClassRow
+                  key={row.id}
+                  row={row}
+                  state={classState(row, now)}
+                  onJoin={handleJoin}
+                  justMarked={markedId === row.id}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
     </div>
   );
 }
 
 function LiveClassRow({
-  liveClass,
+  row,
+  state,
   onJoin,
   justMarked,
 }: {
-  liveClass: StudentLiveClass;
-  onJoin: (liveClass: StudentLiveClass) => void;
+  row: StudentLiveClassRow;
+  state: LiveState;
+  onJoin: (row: StudentLiveClassRow) => void;
   justMarked: boolean;
 }) {
   const t = useTranslations("studentDashboard.live");
 
   return (
     <TableRow>
-      <TableCell className="font-medium whitespace-normal text-foreground">{liveClass.title}</TableCell>
-      <TableCell className="whitespace-normal text-muted-foreground">{liveClass.teacherName}</TableCell>
-      <TableCell className="whitespace-normal text-muted-foreground">{liveClass.scheduledLabel}</TableCell>
+      <TableCell className="font-medium whitespace-normal text-foreground">{row.title}</TableCell>
+      <TableCell className="whitespace-normal text-muted-foreground">{row.teacherName}</TableCell>
+      <TableCell className="whitespace-normal text-muted-foreground">{row.scheduledLabel}</TableCell>
       <TableCell className="whitespace-normal text-muted-foreground">
-        {liveClass.mode === "online" ? t("modeOnline") : t("modePhysical")}
+        {row.mode === "online" ? t("modeOnline") : t("modePhysical")}
       </TableCell>
       <TableCell className="text-right">
-        {liveClass.state === "not_open" && <StatusBadge variant="pending">{t("stateNotOpen")}</StatusBadge>}
-        {liveClass.state === "starting_soon" && (
-          <StatusBadge variant="upcoming">{t("stateStartingSoon")}</StatusBadge>
-        )}
-        {liveClass.state === "live" && liveClass.joinLink && (
+        {state === "not_open" && <StatusBadge variant="pending">{t("stateNotOpen")}</StatusBadge>}
+        {state === "starting_soon" && <StatusBadge variant="upcoming">{t("stateStartingSoon")}</StatusBadge>}
+        {state === "ended" && <StatusBadge variant="active">{t("stateEnded")}</StatusBadge>}
+        {state === "live" && row.joinLink && (
           <div className="flex items-center justify-end gap-2">
             {justMarked && <span className="text-xs font-medium text-success">{t("markedPresent")}</span>}
             <Button
               size="sm"
               nativeButton={false}
               className="bg-success text-success-foreground hover:bg-success/90"
-              render={<a href={liveClass.joinLink} target="_blank" rel="noopener noreferrer" />}
-              onClick={() => onJoin(liveClass)}
+              render={<a href={row.joinLink} target="_blank" rel="noopener noreferrer" />}
+              onClick={() => onJoin(row)}
             >
               {t("joinButton")}
             </Button>

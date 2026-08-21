@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,27 +10,29 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { questionBank, teacherBatches } from "@/lib/mock-data";
+import { createQuestion } from "@/lib/dashboard/question-bank-actions";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
 import type { GradeBand } from "@/types/grade-band";
 import { cn } from "@/lib/utils";
 
 const GRADE_BANDS: GradeBand[] = ["1-5", "6-9", "10-11", "12-13", "campus"];
-const TEACHER_BATCH_IDS = teacherBatches.map((b) => b.id);
 const ALL_GRADES = "all";
 const ALL_BATCHES = "all";
 const NO_BATCH = "none";
 
-function belongsToTeacher(q: QuestionBankItem) {
-  return !q.batchId || TEACHER_BATCH_IDS.includes(q.batchId);
-}
-
-export function QuestionBankTab() {
+export function QuestionBankTab({
+  initialQuestions,
+  batches,
+}: {
+  initialQuestions: QuestionBankItem[];
+  batches: { id: string; title: string }[];
+}) {
   const t = useTranslations("teacherDashboard.questionBank");
   const tc = useTranslations("teacherDashboard.common");
   const tg = useTranslations("search");
+  const router = useRouter();
 
-  const [questions, setQuestions] = useState<QuestionBankItem[]>(() => questionBank.filter(belongsToTeacher));
+  const [questions] = useState<QuestionBankItem[]>(initialQuestions);
 
   const [search, setSearch] = useState("");
   const [gradeFilter, setGradeFilter] = useState<string>(ALL_GRADES);
@@ -46,6 +49,8 @@ export function QuestionBankTab() {
   const [optionTexts, setOptionTexts] = useState(["", "", "", ""]);
   const [correctIndex, setCorrectIndex] = useState("0");
   const [added, setAdded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -69,33 +74,42 @@ export function QuestionBankTab() {
     setCorrectIndex("0");
   }
 
-  function handleAdd() {
+  async function handleAdd() {
     if (!text.trim() || !topic.trim()) return;
-    const id = `q-${Date.now()}`;
-    const newQuestion: QuestionBankItem = {
-      id,
+    const localId = `q-${Date.now()}`;
+    const options =
+      type === "mcq"
+        ? optionTexts.map((optText, i) => ({
+            id: `${localId}-o${i + 1}`,
+            text: optText.trim() || t("form.optionFallback", { number: i + 1 }),
+          }))
+        : undefined;
+    const correctOptionId = type === "mcq" ? options?.[Number(correctIndex)]?.id : undefined;
+
+    setSaving(true);
+    setError(null);
+    const result = await createQuestion({
+      ownerType: "teacher",
       text: text.trim(),
       topic: topic.trim(),
       gradeBand,
       batchId: batchId === NO_BATCH ? undefined : batchId,
       type,
       difficulty,
-      marks: Number(marks) || 1,
-      ...(type === "mcq"
-        ? {
-            options: optionTexts.map((optText, i) => ({
-              id: `${id}-o${i + 1}`,
-              text: optText.trim() || t("form.optionFallback", { number: i + 1 }),
-            })),
-            correctOptionId: `${id}-o${Number(correctIndex) + 1}`,
-          }
-        : {}),
-    };
-    setQuestions((list) => [...list, newQuestion]);
+      marks,
+      options,
+      correctOptionId,
+    });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
     resetForm();
     setAdding(false);
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
+    router.refresh();
   }
 
   function handleCancel() {
@@ -174,7 +188,7 @@ export function QuestionBankTab() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NO_BATCH}>{t("form.batchAny")}</SelectItem>
-                  {teacherBatches.map((batch) => (
+                  {batches.map((batch) => (
                     <SelectItem key={batch.id} value={batch.id}>
                       {batch.title}
                     </SelectItem>
@@ -241,13 +255,14 @@ export function QuestionBankTab() {
               </div>
             )}
           </div>
-          <div className="mt-4 flex gap-3">
-            <Button type="button" onClick={handleAdd}>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button type="button" onClick={handleAdd} disabled={saving}>
               {tc("add")}
             </Button>
-            <Button type="button" variant="outline" onClick={handleCancel}>
+            <Button type="button" variant="outline" onClick={handleCancel} disabled={saving}>
               {tc("cancel")}
             </Button>
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
           </div>
         </div>
       )}
@@ -279,7 +294,7 @@ export function QuestionBankTab() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL_BATCHES}>{t("filters.allBatches")}</SelectItem>
-              {teacherBatches.map((batch) => (
+              {batches.map((batch) => (
                 <SelectItem key={batch.id} value={batch.id}>
                   {batch.title}
                 </SelectItem>
@@ -310,7 +325,7 @@ export function QuestionBankTab() {
                   <TableCell className="text-muted-foreground">{q.topic}</TableCell>
                   <TableCell className="text-muted-foreground">{tg(`grades.${q.gradeBand}`)}</TableCell>
                   <TableCell className="text-muted-foreground">
-                    {q.batchId ? teacherBatches.find((b) => b.id === q.batchId)?.title ?? q.batchId : t("batchAnyLabel")}
+                    {q.batchId ? batches.find((b) => b.id === q.batchId)?.title ?? q.batchId : t("batchAnyLabel")}
                   </TableCell>
                   <TableCell className="text-muted-foreground">{t(`typeLabel.${q.type}`)}</TableCell>
                   <TableCell

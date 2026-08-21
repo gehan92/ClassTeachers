@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,46 +9,57 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/features/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { siteAds } from "@/lib/mock-data";
-import type { SiteAd, SiteAdPlan } from "@/types/dashboard-admin";
+import { createSiteAd } from "@/lib/dashboard/admin-actions";
+import type { SiteAd, SiteAdPlacement, SiteAdPlan } from "@/types/dashboard-admin";
 
-export function SiteAdsTab() {
+export function SiteAdsTab({ initialAds }: { initialAds: SiteAd[] }) {
   const t = useTranslations("adminDashboard.siteAds");
-  const [ads, setAds] = useState<SiteAd[]>(siteAds);
+  const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [sponsor, setSponsor] = useState("");
   const [plan, setPlan] = useState<SiteAdPlan>("basic");
-  const [placement, setPlacement] = useState("");
-  const [expiresDisplay, setExpiresDisplay] = useState("");
+  const [placement, setPlacement] = useState<SiteAdPlacement>("search_results");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const planLabels: Record<SiteAdPlan, string> = {
     basic: t("plans.basic"),
     featured: t("plans.featured"),
-    spotlight: t("plans.spotlight"),
+    homepage_spotlight: t("plans.spotlight"),
+  };
+
+  const placementLabels: Record<SiteAdPlacement, string> = {
+    search_results: t("placements.searchResults"),
+    homepage_banner: t("placements.homepageBanner"),
+    homepage_spotlight: t("placements.homepageSpotlight"),
   };
 
   function resetForm() {
     setSponsor("");
     setPlan("basic");
-    setPlacement("");
-    setExpiresDisplay("");
+    setPlacement("search_results");
+    setExpiresAt("");
     setShowForm(false);
   }
 
-  function handleAdd() {
+  async function handleAdd() {
     if (sponsor.trim().length === 0) return;
-    setAds((prev) => [
-      ...prev,
-      {
-        id: `ad-${Date.now()}`,
-        sponsor: sponsor.trim(),
-        plan,
-        placement: placement.trim(),
-        expiresDisplay: expiresDisplay.trim(),
-        status: "live",
-      },
-    ]);
+    setSaving(true);
+    setError(null);
+    const result = await createSiteAd({
+      sponsor: sponsor.trim(),
+      plan,
+      placement,
+      expiresAt: expiresAt || null,
+    });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
     resetForm();
+    router.refresh();
   }
 
   return (
@@ -59,6 +71,8 @@ export function SiteAdsTab() {
         </div>
         <Button onClick={() => setShowForm((prev) => !prev)}>{t("newAdSlot")}</Button>
       </div>
+
+      {error && <p className="mb-4 text-sm font-medium text-destructive">{error}</p>}
 
       {showForm && (
         <div className="mb-4 rounded-lg border border-border bg-white p-5">
@@ -85,7 +99,7 @@ export function SiteAdsTab() {
                 <SelectContent>
                   <SelectItem value="basic">{t("plans.basic")}</SelectItem>
                   <SelectItem value="featured">{t("plans.featured")}</SelectItem>
-                  <SelectItem value="spotlight">{t("plans.spotlight")}</SelectItem>
+                  <SelectItem value="homepage_spotlight">{t("plans.spotlight")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -93,12 +107,16 @@ export function SiteAdsTab() {
               <Label htmlFor="new-ad-placement" className="mb-1.5 block text-sm text-muted-foreground">
                 {t("newAdForm.placementLabel")}
               </Label>
-              <Input
-                id="new-ad-placement"
-                value={placement}
-                onChange={(e) => setPlacement(e.target.value)}
-                placeholder={t("newAdForm.placementPlaceholder")}
-              />
+              <Select value={placement} onValueChange={(value) => setPlacement(value as SiteAdPlacement)}>
+                <SelectTrigger id="new-ad-placement" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="search_results">{t("placements.searchResults")}</SelectItem>
+                  <SelectItem value="homepage_banner">{t("placements.homepageBanner")}</SelectItem>
+                  <SelectItem value="homepage_spotlight">{t("placements.homepageSpotlight")}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="new-ad-expires" className="mb-1.5 block text-sm text-muted-foreground">
@@ -106,17 +124,17 @@ export function SiteAdsTab() {
               </Label>
               <Input
                 id="new-ad-expires"
-                value={expiresDisplay}
-                onChange={(e) => setExpiresDisplay(e.target.value)}
-                placeholder={t("newAdForm.expiresPlaceholder")}
+                type="date"
+                value={expiresAt}
+                onChange={(e) => setExpiresAt(e.target.value)}
               />
             </div>
           </div>
           <div className="mt-4 flex gap-2">
-            <Button size="sm" onClick={handleAdd}>
+            <Button size="sm" onClick={handleAdd} disabled={saving}>
               {t("newAdForm.add")}
             </Button>
-            <Button size="sm" variant="ghost" onClick={resetForm}>
+            <Button size="sm" variant="ghost" onClick={resetForm} disabled={saving}>
               {t("newAdForm.cancel")}
             </Button>
           </div>
@@ -135,11 +153,11 @@ export function SiteAdsTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {ads.map((ad) => (
+            {initialAds.map((ad) => (
               <TableRow key={ad.id}>
                 <TableCell className="font-medium text-foreground">{ad.sponsor}</TableCell>
                 <TableCell className="text-muted-foreground">{planLabels[ad.plan]}</TableCell>
-                <TableCell className="text-muted-foreground">{ad.placement}</TableCell>
+                <TableCell className="text-muted-foreground">{placementLabels[ad.placement]}</TableCell>
                 <TableCell className="text-muted-foreground">{ad.expiresDisplay}</TableCell>
                 <TableCell>
                   <StatusBadge variant={ad.status === "expiring" ? "pending" : "active"}>
@@ -148,6 +166,13 @@ export function SiteAdsTab() {
                 </TableCell>
               </TableRow>
             ))}
+            {initialAds.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                  {t("empty")}
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>

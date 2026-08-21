@@ -9,8 +9,90 @@ import { AdSlot } from "@/components/features/ad-slot";
 import { LockPill } from "@/components/features/lock-pill";
 import { ReviewItem } from "@/components/features/review-item";
 import { ClassBatchCard } from "@/components/features/class-batch-card";
-import { getClassProfile } from "@/lib/mock-data";
+import { createClient } from "@/lib/supabase/server";
 import type { ClassProfileDetail } from "@/types/class-profile";
+
+async function loadClassProfile(id: string, locale: string): Promise<ClassProfileDetail | null> {
+  const supabase = await createClient();
+
+  const { data: classProfile, error } = await supabase
+    .from("class_profiles")
+    .select("id, name, description, location, class_type, established, photo_url")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !classProfile) {
+    return null;
+  }
+
+  const [
+    { data: priceRow },
+    { data: reviewRows },
+    { data: batchRows },
+    { data: adRow },
+    { count: teacherCount },
+    { data: phone },
+  ] = await Promise.all([
+    supabase.from("prices").select("hourly_rate, monthly_rate").eq("owner_type", "class").eq("owner_id", id).maybeSingle(),
+    supabase.rpc("list_public_reviews", { p_target_type: "class", p_target_id: id }),
+    supabase
+      .from("batches")
+      .select("id, title, mode, location, schedule_note, teacher_label, status")
+      .eq("owner_type", "class")
+      .eq("owner_id", id)
+      .in("status", ["active", "upcoming"])
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("advertisements")
+      .select("content, title")
+      .eq("owner_type", "class")
+      .eq("owner_id", id)
+      .eq("placement", "own_profile")
+      .maybeSingle(),
+    supabase.from("class_teachers").select("teacher_id", { count: "exact", head: true }).eq("class_id", id).eq("is_visible", true),
+    supabase.rpc("get_class_contact", { p_class_id: id }),
+  ]);
+
+  const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const reviews = reviewRows ?? [];
+  const reviewCount = reviews.length;
+  const rating = reviewCount > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount : 0;
+
+  return {
+    id: classProfile.id,
+    name: classProfile.name,
+    description: classProfile.description,
+    location: classProfile.location,
+    classType: (classProfile.class_type as ClassProfileDetail["classType"]) ?? "physical",
+    establishedText: classProfile.established,
+    photoUrl: classProfile.photo_url,
+    teacherCount: teacherCount ?? 0,
+    rating,
+    reviewCount,
+    hourlyRate: priceRow?.hourly_rate ?? undefined,
+    monthlyRate: priceRow?.monthly_rate ?? undefined,
+    adHeadline: adRow?.title ?? undefined,
+    adText: adRow?.content ?? undefined,
+    batches: (batchRows ?? []).map((b) => ({
+      id: b.id,
+      title: b.title,
+      teacherName: b.teacher_label,
+      status: b.status === "upcoming" ? "upcoming" : "started",
+      mode: b.mode as "online" | "physical",
+      location: b.location,
+      scheduleNote: b.schedule_note,
+    })),
+    reviews: reviews.map((r) => ({
+      id: r.id,
+      author: r.author ?? "Anonymous",
+      date: dateFormatter.format(new Date(r.created_at)),
+      rating: r.rating,
+      body: r.body ?? "",
+      reply: r.reply ?? undefined,
+    })),
+    phone,
+  } satisfies ClassProfileDetail;
+}
 
 export default async function ClassProfilePage({
   params,
@@ -18,21 +100,30 @@ export default async function ClassProfilePage({
   const { locale, id } = await params;
   setRequestLocale(locale);
 
-  const classProfile = getClassProfile(id);
+  const classProfile = await loadClassProfile(id, locale);
   if (!classProfile) {
     notFound();
   }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
     <>
       <Hero classProfile={classProfile} />
       <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-8 px-7 py-10 lg:grid-cols-[2fr_1fr]">
         <div className="min-w-0">
-          <AboutPanel classProfile={classProfile} />
-          <AdSlot eyebrow={classProfile.name} text={classProfile.adText} />
-          <div className="mt-5">
-            <BatchesPanel classProfile={classProfile} />
-          </div>
+          <AboutPanel classProfile={classProfile} showGate={!user} />
+          {classProfile.adText && (
+            <AdSlot eyebrow={classProfile.adHeadline ?? classProfile.name} text={classProfile.adText} />
+          )}
+          {classProfile.batches.length > 0 && (
+            <div className="mt-5">
+              <BatchesPanel classProfile={classProfile} />
+            </div>
+          )}
           <ReviewsPanel classProfile={classProfile} />
         </div>
         <div className="flex flex-col gap-5">
@@ -79,23 +170,38 @@ function Hero({ classProfile }: { classProfile: ClassProfileDetail }) {
     <div className="mx-auto max-w-[1180px] px-7 pt-10">
       <div className="rounded-xl bg-gradient-to-br from-primary to-primary-light p-7 text-white sm:p-9">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-          <div className="flex size-20 shrink-0 items-center justify-center rounded-full border-4 border-white bg-white">
-            <School className="size-9 text-primary" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="mb-1.5 font-mono text-xs uppercase tracking-[0.12em] text-white/70">
-              {classProfile.location}
+          {classProfile.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={classProfile.photoUrl}
+              alt=""
+              className="size-20 shrink-0 rounded-full border-4 border-white object-cover"
+            />
+          ) : (
+            <div className="flex size-20 shrink-0 items-center justify-center rounded-full border-4 border-white bg-white">
+              <School className="size-9 text-primary" />
             </div>
+          )}
+          <div className="min-w-0 flex-1">
+            {classProfile.location && (
+              <div className="mb-1.5 font-mono text-xs uppercase tracking-[0.12em] text-white/70">
+                {classProfile.location}
+              </div>
+            )}
             <h1 className="mb-2 text-[28px] text-white sm:text-[34px]">{classProfile.name}</h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-white/85">
-              <span className="flex items-center gap-1.5">
-                <StarRating rating={classProfile.rating} />
-                {classProfile.rating.toFixed(1)} ({classProfile.reviewCount})
-              </span>
-              <span className="flex items-center gap-1">
-                <MapPin className="size-3.5" />
-                {classProfile.location}
-              </span>
+              {classProfile.reviewCount > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <StarRating rating={classProfile.rating} />
+                  {classProfile.rating.toFixed(1)} ({classProfile.reviewCount})
+                </span>
+              )}
+              {classProfile.location && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="size-3.5" />
+                  {classProfile.location}
+                </span>
+              )}
               <span>{t("teachersCount", { count: classProfile.teacherCount })}</span>
               <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs">
                 {classTypeLabel(t, classProfile.classType)}
@@ -122,13 +228,13 @@ function Hero({ classProfile }: { classProfile: ClassProfileDetail }) {
   );
 }
 
-function AboutPanel({ classProfile }: { classProfile: ClassProfileDetail }) {
+function AboutPanel({ classProfile, showGate }: { classProfile: ClassProfileDetail; showGate: boolean }) {
   const t = useTranslations("profilePage");
 
   return (
     <Panel title={t("about")}>
-      <GateNote />
-      <p className="m-0 text-sm text-foreground/85">{classProfile.description}</p>
+      {showGate && <GateNote />}
+      <p className="m-0 text-sm text-foreground/85">{classProfile.description || t("noDescription")}</p>
     </Panel>
   );
 }
@@ -157,9 +263,11 @@ function ReviewsPanel({ classProfile }: { classProfile: ClassProfileDetail }) {
         rating: classProfile.rating.toFixed(1),
       })}
     >
-      {classProfile.reviews.map((review) => (
-        <ReviewItem key={review.id} review={review} />
-      ))}
+      {classProfile.reviews.length > 0 ? (
+        classProfile.reviews.map((review) => <ReviewItem key={review.id} review={review} />)
+      ) : (
+        <p className="m-0 py-2 text-sm text-muted-foreground">{t("noReviews")}</p>
+      )}
     </Panel>
   );
 }
@@ -184,17 +292,21 @@ function DetailsPanel({ classProfile }: { classProfile: ClassProfileDetail }) {
     <Panel title={t("instituteDetailsTitle")}>
       <div className="grid grid-cols-[140px_1fr] gap-x-4 gap-y-3.5 text-sm">
         <div className="text-muted-foreground">{t("establishedLabel")}</div>
-        <div className="font-medium text-foreground">{classProfile.establishedYear}</div>
+        <div className="font-medium text-foreground">{classProfile.establishedText || "—"}</div>
 
         <div className="text-muted-foreground">{t("locationLabel")}</div>
-        <div className="font-medium text-foreground">{classProfile.location}</div>
+        <div className="font-medium text-foreground">{classProfile.location || "—"}</div>
 
         <div className="text-muted-foreground">{t("classTypeLabel")}</div>
         <div className="font-medium text-foreground">{classTypeLabel(t, classProfile.classType)}</div>
 
         <div className="text-muted-foreground">{t("phoneLabel")}</div>
         <div>
-          <LockPill>{t("phoneLocked")}</LockPill>
+          {classProfile.phone ? (
+            <span className="font-medium text-foreground">{classProfile.phone}</span>
+          ) : (
+            <LockPill>{t("phoneLocked")}</LockPill>
+          )}
         </div>
       </div>
     </Panel>

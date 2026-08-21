@@ -1,5 +1,4 @@
 import type { TeachersAtGlance, LinkedTeacher } from "@/types/dashboard-institute";
-import type { ClassBatch } from "@/types/class-batch";
 import type { ReviewDisplay } from "@/types/review";
 
 /**
@@ -104,54 +103,6 @@ export const linkedTeachers: LinkedTeacher[] = [
     visibleOnInstitutePage: false,
     status: "invited",
     teacherHref: "/teacher/t-8",
-  },
-];
-
-export const instituteBatches: ClassBatch[] = [
-  {
-    id: "b-1",
-    title: "A/L Combined Maths — Batch A",
-    teacherName: "Priyantha Kumara",
-    teacherHref: "/teacher/t-1",
-    status: "started",
-    scheduleChips: ["Mon", "Wed", "5:00 PM"],
-    priceAmount: 1500,
-    priceInterval: "hr",
-    studentIds: ["stu-1", "stu-3", "stu-6", "stu-7"],
-  },
-  {
-    id: "b-2",
-    title: "O/L Science — Batch B",
-    teacherName: "Shalini Fernando",
-    teacherHref: "/teacher/t-2",
-    status: "started",
-    scheduleChips: ["Tue", "Thu", "4:00 PM"],
-    priceAmount: 6000,
-    priceInterval: "mo",
-    studentIds: ["ins-stu-1", "ins-stu-2", "ins-stu-3"],
-  },
-  {
-    id: "b-3",
-    title: "O/L English — Batch A",
-    teacherName: "Nadeesha Rodrigo",
-    teacherHref: "/teacher/t-4",
-    status: "started",
-    scheduleChips: ["Sat", "9:00 AM"],
-    priceAmount: 1000,
-    priceInterval: "hr",
-    studentIds: ["ins-stu-4", "ins-stu-5"],
-  },
-  {
-    id: "b-4",
-    title: "A/L Geography — Batch A",
-    teacherName: "Chamara Silva",
-    teacherHref: "/teacher/t-7",
-    status: "upcoming",
-    statusNote: "Not started · opens Sep 1",
-    scheduleChips: ["Fri", "4:00 PM"],
-    priceAmount: 1000,
-    priceInterval: "hr",
-    studentIds: [],
   },
 ];
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { School } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,23 +8,59 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { updateInstituteProfile, setListingPublished } from "@/lib/dashboard/actions";
+import { uploadAvatar } from "@/lib/dashboard/avatar-actions";
 
 export function SettingsTab({
   initialName,
   initialLocation,
+  initialEstablished,
   initialPhone,
   initialHourlyRate,
   initialMonthlyRate,
   initialPublished,
+  initialPhotoUrl,
 }: {
   initialName: string;
   initialLocation: string;
+  initialEstablished: string;
   initialPhone: string;
   initialHourlyRate: string;
   initialMonthlyRate: string;
   initialPublished: boolean;
+  initialPhotoUrl: string | null;
 }) {
   const t = useTranslations("instituteDashboard.settings");
+
+  const [logoUrl, setLogoUrl] = useState(initialPhotoUrl);
+  const [logoSaved, setLogoSaved] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  function handleUploadLogo() {
+    logoInputRef.current?.click();
+  }
+
+  async function handleLogoSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setLogoUploading(true);
+    setLogoError(null);
+    const formData = new FormData();
+    formData.set("file", file);
+    formData.set("ownerType", "class");
+    const result = await uploadAvatar(formData);
+    setLogoUploading(false);
+    if (result.error || !result.url) {
+      setLogoError(result.error ?? "Couldn't upload the image. Please try again.");
+      return;
+    }
+    setLogoUrl(result.url);
+    setLogoSaved(true);
+    setTimeout(() => setLogoSaved(false), 2500);
+  }
 
   const [published, setPublished] = useState(initialPublished);
   const [publishSaving, setPublishSaving] = useState(false);
@@ -42,11 +78,9 @@ export function SettingsTab({
     setPublished(checked);
   }
 
-  // "Established" year has no backing column on class_profiles — kept as
-  // local-only until there's a schema decision for where it should live.
   const [details, setDetails] = useState({
     name: initialName,
-    established: "",
+    established: initialEstablished,
     location: initialLocation,
     phone: initialPhone,
   });
@@ -65,6 +99,7 @@ export function SettingsTab({
     const result = await updateInstituteProfile({
       name: details.name,
       location: details.location,
+      established: details.established,
       phone: details.phone,
       hourlyRate: rate.hourly,
       monthlyRate: rate.monthly,
@@ -84,6 +119,7 @@ export function SettingsTab({
     const result = await updateInstituteProfile({
       name: details.name,
       location: details.location,
+      established: details.established,
       phone: details.phone,
       hourlyRate: rate.hourly,
       monthlyRate: rate.monthly,
@@ -107,10 +143,26 @@ export function SettingsTab({
       <div className="rounded-lg border border-border bg-white p-5">
         <h3 className="mb-4 text-lg">{t("logo.title")}</h3>
         <div className="flex items-center gap-4">
-          <div className="flex size-19 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground">
-            <School className="size-8" />
-          </div>
-          <Button variant="outline">{t("logo.upload")}</Button>
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="" className="size-19 rounded-2xl object-cover" />
+          ) : (
+            <div className="flex size-19 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground">
+              <School className="size-8" />
+            </div>
+          )}
+          <input
+            ref={logoInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleLogoSelected}
+          />
+          <Button type="button" variant="outline" onClick={handleUploadLogo} disabled={logoUploading}>
+            {t("logo.upload")}
+          </Button>
+          {logoSaved && <span className="text-sm font-medium text-success">{t("saved")}</span>}
+          {logoError && <span className="text-sm font-medium text-destructive">{logoError}</span>}
         </div>
       </div>
 

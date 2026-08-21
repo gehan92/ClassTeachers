@@ -4,14 +4,25 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { flaggedReviews } from "@/lib/mock-data";
+import { resolveFlaggedReview } from "@/lib/dashboard/admin-actions";
 import { cn } from "@/lib/utils";
+import type { FlaggedReview } from "@/types/dashboard-admin";
 
-export function FlaggedReviewsTab() {
+export function FlaggedReviewsTab({ initialReviews }: { initialReviews: FlaggedReview[] }) {
   const t = useTranslations("adminDashboard.flagged");
-  const [reviews, setReviews] = useState(flaggedReviews);
+  const [reviews, setReviews] = useState(initialReviews);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  function resolveFlag(id: string) {
+  async function handleResolve(id: string, decision: "keep" | "remove") {
+    setPendingId(id);
+    setError(null);
+    const result = await resolveFlaggedReview({ id, decision });
+    setPendingId(null);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
     setReviews((prev) => prev.filter((review) => review.id !== id));
   }
 
@@ -21,6 +32,8 @@ export function FlaggedReviewsTab() {
         <h1 className="font-display text-2xl text-primary">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
+
+      {error && <p className="mb-4 text-sm font-medium text-destructive">{error}</p>}
 
       <div className="rounded-lg border border-border bg-white p-5">
         {reviews.length === 0 ? (
@@ -42,14 +55,20 @@ export function FlaggedReviewsTab() {
               </div>
               <p className="mb-3 text-sm text-foreground/85">{review.body}</p>
               <div className="flex gap-2">
-                <Button size="sm" variant="ghost" onClick={() => resolveFlag(review.id)}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleResolve(review.id, "keep")}
+                  disabled={pendingId === review.id}
+                >
                   {t("actions.keep")}
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   className="text-lock hover:text-lock"
-                  onClick={() => resolveFlag(review.id)}
+                  onClick={() => handleResolve(review.id, "remove")}
+                  disabled={pendingId === review.id}
                 >
                   {t("actions.remove")}
                 </Button>

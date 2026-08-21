@@ -5,20 +5,27 @@ import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { enrolledStudents } from "@/lib/mock-data";
 import { avatarGradientClass } from "@/lib/avatar-color";
 
-export function StudentsTab() {
+export type TeacherStudentRow = {
+  id: string;
+  name: string;
+  batch: string;
+  joinedAt: string;
+  phone: string | null;
+};
+
+export function StudentsTab({ students }: { students: TeacherStudentRow[] }) {
   const t = useTranslations("teacherDashboard.students");
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return enrolledStudents;
-    return enrolledStudents.filter(
+    if (!q) return students;
+    return students.filter(
       (s) => s.name.toLowerCase().includes(q) || s.batch.toLowerCase().includes(q),
     );
-  }, [query]);
+  }, [students, query]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -44,7 +51,7 @@ export function StudentsTab() {
           </TableHeader>
           <TableBody>
             {filtered.map((student) => (
-              <TableRow key={student.name}>
+              <TableRow key={student.id}>
                 <TableCell>
                   <div className="flex items-center gap-2.5">
                     <Avatar size="sm">

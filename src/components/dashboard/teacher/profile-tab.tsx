@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { avatarGradientClass } from "@/lib/avatar-color";
-import { updateTeacherProfile, setListingPublished } from "@/lib/dashboard/actions";
+import { updateTeacherProfile, updateTeacherSubjects, setListingPublished } from "@/lib/dashboard/actions";
+import { uploadAvatar } from "@/lib/dashboard/avatar-actions";
 
 const panelClass = "rounded-lg border border-border bg-white p-5";
 type ClassType = "physical" | "online" | "both";
@@ -17,20 +18,24 @@ type ClassType = "physical" | "online" | "both";
 export function ProfileTab({
   initialQualifications,
   initialExperienceYears,
+  initialSubjects,
   initialLocation,
   initialClassType,
   initialHourlyRate,
   initialMonthlyRate,
   initialPublished,
+  initialPhotoUrl,
   teacherName,
 }: {
   initialQualifications: string[];
   initialExperienceYears: string;
+  initialSubjects: string[];
   initialLocation: string;
   initialClassType: ClassType;
   initialHourlyRate: string;
   initialMonthlyRate: string;
   initialPublished: boolean;
+  initialPhotoUrl: string | null;
   teacherName: string;
 }) {
   const t = useTranslations("teacherDashboard.profile");
@@ -52,13 +57,15 @@ export function ProfileTab({
     setPublished(checked);
   }
 
-  // "Subjects" is a real many-to-many relation (subject_links) rather than
-  // free text, and "grade levels" has no backing column at all — both kept
-  // as local-only until there's a subject-picker UI / schema decision.
+  // Subjects is a many-to-many relation (subject_links, resolved by name via
+  // the resolve_subject RPC) rather than a column, so it's edited here as a
+  // comma-separated list and diffed against subject_links on save. Grade
+  // levels shown on the public profile aren't a separate field at all — the
+  // RPC that lists teachers derives them from the grade bands of whatever
+  // subjects are linked (0021/0026), so there's no "grade levels" input here.
   const [form, setForm] = useState({
     experience: initialExperienceYears,
-    subjects: "",
-    gradeLevels: "",
+    subjects: initialSubjects.join(", "),
     location: initialLocation,
     classType: initialClassType,
     hourlyRate: initialHourlyRate,
@@ -79,16 +86,40 @@ export function ProfileTab({
     setQualifications((qs) => qs.filter((_, i) => i !== index));
   }
 
+  const [photoUrl, setPhotoUrl] = useState(initialPhotoUrl);
   const [photoSaved, setPhotoSaved] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  function update(field: "experience" | "subjects" | "gradeLevels" | "location" | "hourlyRate" | "monthlyRate") {
+  function update(field: "experience" | "subjects" | "location" | "hourlyRate" | "monthlyRate") {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [field]: e.target.value }));
   }
 
   function handleUploadPhoto() {
+    fileInputRef.current?.click();
+  }
+
+  async function handlePhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setPhotoUploading(true);
+    setPhotoError(null);
+    const formData = new FormData();
+    formData.set("file", file);
+    formData.set("ownerType", "teacher");
+    const result = await uploadAvatar(formData);
+    setPhotoUploading(false);
+    if (result.error || !result.url) {
+      setPhotoError(result.error ?? "Couldn't upload the image. Please try again.");
+      return;
+    }
+    setPhotoUrl(result.url);
     setPhotoSaved(true);
     setTimeout(() => setPhotoSaved(false), 2500);
   }
@@ -96,17 +127,20 @@ export function ProfileTab({
   async function handleSaveChanges() {
     setSaving(true);
     setError(null);
-    const result = await updateTeacherProfile({
-      qualifications,
-      experienceYears: form.experience,
-      location: form.location,
-      classType: form.classType,
-      hourlyRate: form.hourlyRate,
-      monthlyRate: form.monthlyRate,
-    });
+    const [profileResult, subjectsResult] = await Promise.all([
+      updateTeacherProfile({
+        qualifications,
+        experienceYears: form.experience,
+        location: form.location,
+        classType: form.classType,
+        hourlyRate: form.hourlyRate,
+        monthlyRate: form.monthlyRate,
+      }),
+      updateTeacherSubjects(form.subjects.split(",")),
+    ]);
     setSaving(false);
-    if (result.error) {
-      setError(result.error);
+    if (profileResult.error || subjectsResult.error) {
+      setError(profileResult.error ?? subjectsResult.error ?? null);
       return;
     }
     setSaved(true);
@@ -120,15 +154,32 @@ export function ProfileTab({
       <div className={panelClass}>
         <h3 className="mb-4 text-lg">{t("photoHeading")}</h3>
         <div className="flex items-center gap-4">
-          <div
-            className={`flex size-[76px] shrink-0 items-center justify-center rounded-full font-display text-2xl font-bold text-white shadow-sm ${avatarGradientClass(teacherName)}`}
-          >
-            {teacherName.charAt(0).toUpperCase()}
-          </div>
-          <Button type="button" variant="outline" onClick={handleUploadPhoto}>
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={photoUrl}
+              alt=""
+              className="size-[76px] shrink-0 rounded-full object-cover shadow-sm"
+            />
+          ) : (
+            <div
+              className={`flex size-[76px] shrink-0 items-center justify-center rounded-full font-display text-2xl font-bold text-white shadow-sm ${avatarGradientClass(teacherName)}`}
+            >
+              {teacherName.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handlePhotoSelected}
+          />
+          <Button type="button" variant="outline" onClick={handleUploadPhoto} disabled={photoUploading}>
             {t("uploadPhoto")}
           </Button>
           {photoSaved && <span className="text-sm font-medium text-success">{tc("saved")}</span>}
+          {photoError && <span className="text-sm font-medium text-destructive">{photoError}</span>}
         </div>
       </div>
 
@@ -170,13 +221,15 @@ export function ProfileTab({
             <Label htmlFor="experience">{t("fields.experience")}</Label>
             <Input id="experience" type="number" min={0} value={form.experience} onChange={update("experience")} />
           </div>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5 sm:col-span-2">
             <Label htmlFor="subjects">{t("fields.subjects")}</Label>
-            <Input id="subjects" value={form.subjects} onChange={update("subjects")} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="gradeLevels">{t("fields.gradeLevels")}</Label>
-            <Input id="gradeLevels" value={form.gradeLevels} onChange={update("gradeLevels")} />
+            <Input
+              id="subjects"
+              value={form.subjects}
+              onChange={update("subjects")}
+              placeholder={t("subjectsPlaceholder")}
+            />
+            <p className="text-xs text-muted-foreground">{t("subjectsHint")}</p>
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="location">{t("fields.location")}</Label>

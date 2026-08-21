@@ -118,7 +118,8 @@
   "classBatch": {
     "started": "Started",
     "upcoming": "Not started yet",
-    "viewTeacher": "View teacher profile"
+    "modeOnline": "Online",
+    "modePhysical": "Physical"
   },
   "adSlot": {
     "eyebrow": "Site-wide advertisement",
@@ -435,6 +436,7 @@
     "teachersCount": "{count} teachers",
     "about": "About",
     "noBio": "This teacher hasn't added a bio yet.",
+    "noDescription": "This institute hasn't added a description yet.",
     "reviewsHeading": "{count} reviews · {rating} average",
     "noReviews": "No reviews yet.",
     "phoneLocked": "Sign in and join to view",
@@ -485,23 +487,27 @@
         "teachers": "Total teachers",
         "institutes": "Total institutes",
         "students": "Total students",
-        "revenue": "Platform revenue MTD"
+        "revenue": "Platform MRR",
+        "thisWeek": "+{count} this week"
       },
       "attentionHeading": "Needs your attention",
       "attention": {
         "approvals": {
-          "title": "5 pending approvals",
-          "body": "New teacher, institute, and campus lecturer signups are waiting for document review.",
+          "title": "{count} pending approvals",
+          "body": "New teacher, institute, and campus lecturer signups are waiting for review.",
+          "empty": "All caught up — no pending approvals.",
           "cta": "Review approvals"
         },
         "flagged": {
-          "title": "2 flagged reviews",
+          "title": "{count} flagged reviews",
           "body": "Reviews reported as abusive, fake, or off-topic need a moderation decision.",
+          "empty": "No flagged reviews — the queue is clear.",
           "cta": "Review flags"
         },
         "ads": {
-          "title": "1 site ad expiring",
-          "body": "Nimal's Bookshop, ends in 2 days.",
+          "title": "{count} site ads expiring",
+          "body": "{sponsor}, {expires}.",
+          "empty": "No site ads expiring soon.",
           "cta": "Manage ads"
         }
       }
@@ -518,7 +524,6 @@
         "name": "Name",
         "type": "Type",
         "submitted": "Submitted",
-        "documents": "Documents",
         "actions": "Actions"
       },
       "actions": {
@@ -544,16 +549,10 @@
         "student": "Student",
         "campusLecturer": "Campus Lecturer"
       },
-      "plans": {
-        "free": "Free",
-        "standard": "Standard",
-        "premium": "Premium"
-      },
       "columns": {
         "user": "User",
         "role": "Role",
         "joined": "Joined",
-        "plan": "Plan",
         "status": "Status",
         "actions": "Actions"
       },
@@ -562,9 +561,10 @@
         "suspended": "Suspended"
       },
       "actions": {
-        "manage": "Manage",
+        "manage": "Suspend",
         "reactivate": "Reactivate"
       },
+      "confirmSuspend": "Suspend {name}? They won't be able to sign in until reactivated.",
       "empty": "No users match your search."
     },
     "subscriptions": {
@@ -591,14 +591,19 @@
         "featured": "Featured",
         "spotlight": "Homepage Spotlight"
       },
+      "placements": {
+        "searchResults": "Search results",
+        "homepageBanner": "Homepage banner",
+        "homepageSpotlight": "Homepage spotlight"
+      },
+      "noExpiry": "No expiry",
+      "empty": "No active site ads.",
       "newAdForm": {
         "sponsorLabel": "Sponsor name",
         "sponsorPlaceholder": "e.g. Lanka Stationers",
         "planLabel": "Plan",
         "placementLabel": "Placement",
-        "placementPlaceholder": "e.g. Homepage banner",
         "expiresLabel": "Expires",
-        "expiresPlaceholder": "e.g. Ends 30 Sep 2026",
         "add": "Add",
         "cancel": "Cancel"
       },
@@ -617,6 +622,7 @@
     "flagged": {
       "title": "Flagged Reviews",
       "subtitle": "Reported by teachers/institutes as abusive, fake, or off-topic.",
+      "targetLabel": "Review on {name}",
       "actions": {
         "keep": "Keep",
         "remove": "Remove"
@@ -734,7 +740,16 @@
     },
     "reviews": {
       "title": "Institute Reviews",
-      "summary": "{count} reviews · ★★★★★ {rating} average"
+      "summary": "{count} reviews · ★★★★★ {rating} average",
+      "empty": "No reviews yet.",
+      "reply": "Reply",
+      "replyPlaceholder": "Write your reply...",
+      "flag": "Flag",
+      "confirmFlag": "Flag this review for admin moderation?"
+    },
+    "common": {
+      "cancel": "Cancel",
+      "postReply": "Post reply"
     },
     "settings": {
       "title": "Institute Settings",
@@ -814,6 +829,7 @@
     "live": {
       "title": "Live Classes",
       "subtitle": "Scheduled online and physical classes from your teachers.",
+      "empty": "No live classes scheduled yet.",
       "colTitle": "Title",
       "colTeacher": "Teacher",
       "colSchedule": "Schedule",
@@ -822,7 +838,8 @@
       "modeOnline": "Online",
       "modePhysical": "Physical",
       "stateNotOpen": "Not open yet",
-      "stateStartingSoon": "Live in 20 min",
+      "stateStartingSoon": "Starting soon",
+      "stateEnded": "Ended",
       "joinButton": "Join Live Class",
       "markedPresent": "You're marked present"
     },
@@ -885,7 +902,8 @@
       "commentLabel": "Comment",
       "commentPlaceholder": "Share what you liked, or what could be better...",
       "postButton": "Post review",
-      "posted": "Posted"
+      "posted": "Posted",
+      "noTargets": "Join a teacher or institute to leave your first review."
     },
     "profile": {
       "profileTitle": "Profile",
@@ -966,11 +984,12 @@
       "qualificationPlaceholder": "e.g. BSc in Mathematics, University of Colombo (2015)",
       "addQualification": "Add qualification",
       "removeQualification": "Remove qualification",
+      "subjectsPlaceholder": "e.g. Combined Maths, Physics",
+      "subjectsHint": "Comma-separated. The grade levels shown on your public profile are set automatically from these subjects.",
       "fields": {
         "qualifications": "Qualifications",
         "experience": "Experience",
         "subjects": "Subjects",
-        "gradeLevels": "Grade levels",
         "location": "Location",
         "classType": "Class type",
         "hourlyRate": "Hourly rate (Rs.)",
@@ -1155,6 +1174,7 @@
     "live": {
       "heading": "Live classes",
       "subtitle": "Manage your scheduled classes and join links.",
+      "empty": "You haven't scheduled a live class yet.",
       "scheduleClass": "+ Schedule class",
       "columns": {
         "class": "Class",
@@ -1168,12 +1188,13 @@
       "physicalAt": "Physical — {location}",
       "scheduled": "Scheduled",
       "classTitlePlaceholder": "Class title",
-      "dayPlaceholder": "Day",
-      "timePlaceholder": "Time (e.g. 5:00 PM – 7:00 PM)"
+      "locationPlaceholder": "Location (e.g. Room 4, Colombo 05)",
+      "joinLinkPlaceholder": "Join link (e.g. Zoom/Google Meet URL)"
     },
     "students": {
       "heading": "Students",
       "searchPlaceholder": "Search students...",
+      "noBatch": "General enrollment",
       "columns": {
         "student": "Student",
         "batch": "Batch",
@@ -1194,8 +1215,11 @@
     "reviews": {
       "heading": "Reviews",
       "summary": "{count} reviews · ★★★★★ {rating} average",
+      "empty": "No reviews yet.",
       "reply": "Reply",
-      "replyPlaceholder": "Write your reply..."
+      "replyPlaceholder": "Write your reply...",
+      "flag": "Flag",
+      "confirmFlag": "Flag this review for admin moderation?"
     },
     "ads": {
       "heading": "Advertisement",

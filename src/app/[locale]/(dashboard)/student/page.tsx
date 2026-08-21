@@ -10,6 +10,13 @@ import { ProfileTab } from "@/components/dashboard/student/profile-tab";
 import { createClient } from "@/lib/supabase/server";
 import type { MyClassRow, AvailableBatchRow } from "@/components/dashboard/student/classes-tab";
 import type { StudentNoteRow } from "@/components/dashboard/student/notes-tab";
+import type { ReviewTarget, StudentPostedReview } from "@/components/dashboard/student/reviews-tab";
+import type { StudentLiveClassRow } from "@/components/dashboard/student/live-classes-tab";
+import type { StudentExamRow, StudentExamQuestion } from "@/components/dashboard/student/exams-tab";
+
+function isFuture(iso: string): boolean {
+  return new Date(iso).getTime() >= Date.now();
+}
 
 export default async function StudentDashboardPage({
   params,
@@ -30,7 +37,7 @@ export default async function StudentDashboardPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, phone")
+    .select("full_name, phone, grade_level, notification_prefs")
     .eq("id", userId)
     .single();
 
@@ -41,51 +48,61 @@ export default async function StudentDashboardPage({
     await Promise.all([
       supabase.from("enrollments").select("id, owner_type, owner_id, batch_id, joined_at"),
       supabase.from("notes").select("id, owner_type, owner_id, batch_id, title, page_count"),
-      supabase.from("exams").select("id"),
-      supabase.from("exam_submissions").select("exam_id").eq("student_id", userId),
+      supabase
+        .from("exams")
+        .select("id, owner_type, owner_id, title, question_ids, duration_minutes, scheduled_at")
+        .order("scheduled_at", { ascending: true }),
+      supabase
+        .from("exam_submissions")
+        .select("exam_id, status, grade, feedback, submitted_at")
+        .eq("student_id", userId),
     ]);
 
   const classesCount = enrollments?.length ?? 0;
-  const submittedExamIds = new Set((submissionRows ?? []).map((s) => s.exam_id));
-  const examsDueCount = (examRows ?? []).filter((e) => !submittedExamIds.has(e.id)).length;
+  const submissionByExamId = new Map((submissionRows ?? []).map((s) => [s.exam_id, s]));
+  const examsDueCount = (examRows ?? []).filter((e) => submissionByExamId.get(e.id)?.status !== "graded").length;
 
   const teacherIds = (enrollments ?? []).filter((e) => e.owner_type === "teacher").map((e) => e.owner_id);
   const classIds = (enrollments ?? []).filter((e) => e.owner_type === "class").map((e) => e.owner_id);
-  const nowIso = new Date().toISOString();
 
   const [teacherLive, classLive] = await Promise.all([
     teacherIds.length
       ? supabase
           .from("live_classes")
-          .select("title, scheduled_at")
+          .select("id, owner_id, title, mode, scheduled_at, duration_minutes")
           .eq("owner_type", "teacher")
           .in("owner_id", teacherIds)
-          .eq("status", "scheduled")
-          .gte("scheduled_at", nowIso)
+          .neq("status", "cancelled")
           .order("scheduled_at", { ascending: true })
-          .limit(1)
-      : Promise.resolve({ data: [] as { title: string; scheduled_at: string }[] }),
+      : Promise.resolve({ data: [] as { id: string; owner_id: string; title: string; mode: "online" | "physical"; scheduled_at: string; duration_minutes: number }[] }),
     classIds.length
       ? supabase
           .from("live_classes")
-          .select("title, scheduled_at")
+          .select("id, owner_id, title, mode, scheduled_at, duration_minutes")
           .eq("owner_type", "class")
           .in("owner_id", classIds)
-          .eq("status", "scheduled")
-          .gte("scheduled_at", nowIso)
+          .neq("status", "cancelled")
           .order("scheduled_at", { ascending: true })
-          .limit(1)
-      : Promise.resolve({ data: [] as { title: string; scheduled_at: string }[] }),
+      : Promise.resolve({ data: [] as { id: string; owner_id: string; title: string; mode: "online" | "physical"; scheduled_at: string; duration_minutes: number }[] }),
   ]);
 
-  const nextLive = [...(teacherLive.data ?? []), ...(classLive.data ?? [])].sort(
-    (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime(),
-  )[0];
+  const liveClassRows = [
+    ...(teacherLive.data ?? []).map((r) => ({ ...r, ownerType: "teacher" as const })),
+    ...(classLive.data ?? []).map((r) => ({ ...r, ownerType: "class" as const })),
+  ].sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
+
+  const nextLive = liveClassRows.find((row) => isFuture(row.scheduled_at));
   const nextLiveLabel = nextLive
     ? new Intl.DateTimeFormat(locale, { weekday: "short", hour: "numeric", minute: "2-digit" }).format(
         new Date(nextLive.scheduled_at),
       )
     : null;
+
+  const liveClassIds = liveClassRows.map((r) => r.id);
+  const { data: liveClassLinkRows } = liveClassIds.length
+    ? await supabase.from("live_class_links").select("live_class_id, join_link").in("live_class_id", liveClassIds)
+    : { data: [] as { live_class_id: string; join_link: string }[] };
+  const joinLinkByClassId = new Map((liveClassLinkRows ?? []).map((l) => [l.live_class_id, l.join_link]));
 
   const { data: allBatches } = await supabase
     .from("batches")
@@ -99,8 +116,11 @@ export default async function StudentDashboardPage({
   for (const n of noteRows ?? []) (n.owner_type === "teacher" ? teacherOwnerIds : classOwnerIds).add(n.owner_id);
 
   const [{ data: teacherOwners }, { data: classOwners }] = await Promise.all([
+    // Plain `profiles` select would return zero rows here — its only RLS
+    // policy is "your own row or admin" (0003). This RPC (0032) opens it up
+    // specifically for teachers the caller is actually enrolled with.
     teacherOwnerIds.size
-      ? supabase.from("profiles").select("id, full_name").in("id", [...teacherOwnerIds])
+      ? supabase.rpc("get_enrolled_teacher_names", { p_teacher_ids: [...teacherOwnerIds] })
       : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
     classOwnerIds.size
       ? supabase.from("class_profiles").select("id, name").in("id", [...classOwnerIds])
@@ -111,6 +131,21 @@ export default async function StudentDashboardPage({
   function ownerName(ownerType: "teacher" | "class", ownerId: string) {
     return (ownerType === "teacher" ? teacherNameById.get(ownerId) : classNameById.get(ownerId)) ?? "—";
   }
+
+  const liveClasses: StudentLiveClassRow[] = liveClassRows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    teacherName: ownerName(row.ownerType, row.owner_id),
+    scheduledAtIso: row.scheduled_at,
+    scheduledLabel: new Intl.DateTimeFormat(locale, {
+      weekday: "short",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(new Date(row.scheduled_at)),
+    durationMinutes: row.duration_minutes,
+    mode: row.mode,
+    joinLink: joinLinkByClassId.get(row.id) ?? null,
+  }));
 
   const batchById = new Map((allBatches ?? []).map((b) => [b.id, b]));
   const joinedOwnerKeys = new Set((enrollments ?? []).map((e) => `${e.owner_type}:${e.owner_id}`));
@@ -149,6 +184,61 @@ export default async function StudentDashboardPage({
       pageCount: n.page_count,
     }));
 
+  const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+
+  const allQuestionIds = [...new Set((examRows ?? []).flatMap((e) => e.question_ids))];
+  const { data: examQuestionRows } = allQuestionIds.length
+    ? await supabase.from("question_bank_items").select("id, question_text, type, marks").in("id", allQuestionIds)
+    : { data: [] as { id: string; question_text: string; type: "mcq" | "essay"; marks: number }[] };
+  const questionById = new Map((examQuestionRows ?? []).map((q) => [q.id, q]));
+
+  const exams: StudentExamRow[] = (examRows ?? []).map((e) => {
+    const submission = submissionByExamId.get(e.id);
+    return {
+      id: e.id,
+      title: e.title,
+      teacherName: ownerName(e.owner_type, e.owner_id),
+      durationMinutes: e.duration_minutes,
+      scheduledLabel: e.scheduled_at ? dateFormatter.format(new Date(e.scheduled_at)) : "—",
+      isOpen: !e.scheduled_at || !isFuture(e.scheduled_at),
+      questions: e.question_ids
+        .map((qid) => {
+          const q = questionById.get(qid);
+          return q ? { id: q.id, text: q.question_text, type: q.type, marks: q.marks } : null;
+        })
+        .filter((q): q is StudentExamQuestion => q !== null),
+      submission: submission
+        ? {
+            status: submission.status,
+            grade: submission.grade,
+            feedback: submission.feedback,
+            submittedLabel: submission.submitted_at ? dateFormatter.format(new Date(submission.submitted_at)) : null,
+          }
+        : null,
+    };
+  });
+
+  const reviewTargets: ReviewTarget[] = [...joinedOwnerKeys].map((key) => {
+    const [ownerType, ownerId] = key.split(":") as ["teacher" | "class", string];
+    return { ownerType, ownerId, name: ownerName(ownerType, ownerId) };
+  });
+
+  const { data: myReviewRows } = await supabase
+    .from("reviews")
+    .select("id, target_type, target_id, rating, comment, created_at")
+    .eq("reviewer_id", userId)
+    .in("target_type", ["teacher", "class"]);
+
+  const myReviews: StudentPostedReview[] = (myReviewRows ?? []).map((r) => ({
+    id: r.id,
+    ownerType: r.target_type as "teacher" | "class",
+    ownerId: r.target_id,
+    targetName: ownerName(r.target_type as "teacher" | "class", r.target_id),
+    rating: r.rating,
+    body: r.comment ?? "",
+    date: dateFormatter.format(new Date(r.created_at)),
+  }));
+
   return (
     <DashboardShell
       userLabel={fullName}
@@ -185,12 +275,18 @@ export default async function StudentDashboardPage({
           />
         ),
         classes: <ClassesTab myClasses={myClasses} availableBatches={availableBatches} />,
-        live: <LiveClassesTab />,
+        live: <LiveClassesTab classes={liveClasses} />,
         notes: <NotesTab notes={studentNotes} studentName={fullName} />,
-        exams: <ExamsTab />,
-        reviews: <ReviewsTab />,
+        exams: <ExamsTab exams={exams} />,
+        reviews: <ReviewsTab targets={reviewTargets} initialReviews={myReviews} />,
         profile: (
-          <ProfileTab initialName={fullName} initialPhone={profile?.phone ?? ""} email={user!.email ?? ""} />
+          <ProfileTab
+            initialName={fullName}
+            initialPhone={profile?.phone ?? ""}
+            initialGrade={profile?.grade_level ?? ""}
+            initialNotificationPrefs={(profile?.notification_prefs as Record<string, boolean>) ?? {}}
+            email={user!.email ?? ""}
+          />
         ),
       }}
       defaultTab="overview"

@@ -1,48 +1,87 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/features/status-badge";
-import { teacherLiveClasses } from "@/lib/mock-data";
-import type { TeacherLiveClass } from "@/types/dashboard-teacher";
+import { createLiveClass, updateLiveClassLink } from "@/lib/dashboard/live-classes-actions";
 
-export function LiveClassesTab() {
+export type TeacherLiveClassRow = {
+  id: string;
+  title: string;
+  scheduledAtIso: string;
+  scheduledLabel: string;
+  mode: "online" | "physical";
+  location: string | null;
+  joinLink: string | null;
+};
+
+export function LiveClassesTab({ classes }: { classes: TeacherLiveClassRow[] }) {
   const t = useTranslations("teacherDashboard.live");
   const tc = useTranslations("teacherDashboard.common");
+  const router = useRouter();
 
-  const [classes, setClasses] = useState<TeacherLiveClass[]>(teacherLiveClasses);
   const [joinLinks, setJoinLinks] = useState<Record<string, string>>(() =>
-    Object.fromEntries(teacherLiveClasses.map((c) => [c.title, c.joinLink ?? ""])),
+    Object.fromEntries(classes.map((c) => [c.id, c.joinLink ?? ""])),
   );
+  const [savingLinkId, setSavingLinkId] = useState<string | null>(null);
+  const [linkSavedId, setLinkSavedId] = useState<string | null>(null);
 
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [newDay, setNewDay] = useState("");
-  const [newTime, setNewTime] = useState("");
-  const [newMode, setNewMode] = useState<TeacherLiveClass["mode"]>("online");
+  const [newScheduledAt, setNewScheduledAt] = useState("");
+  const [newMode, setNewMode] = useState<"online" | "physical">("online");
+  const [newLocation, setNewLocation] = useState("");
+  const [newJoinLink, setNewJoinLink] = useState("");
   const [added, setAdded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  function handleAdd() {
-    if (!newTitle.trim() || !newDay.trim() || !newTime.trim()) return;
-    setClasses((list) => [...list, { title: newTitle.trim(), day: newDay.trim(), time: newTime.trim(), mode: newMode }]);
+  function resetForm() {
     setNewTitle("");
-    setNewDay("");
-    setNewTime("");
+    setNewScheduledAt("");
     setNewMode("online");
+    setNewLocation("");
+    setNewJoinLink("");
     setAdding(false);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2500);
   }
 
-  function handleCancel() {
-    setNewTitle("");
-    setNewDay("");
-    setNewTime("");
-    setAdding(false);
+  async function handleAdd() {
+    if (!newTitle.trim() || !newScheduledAt) return;
+    setSaving(true);
+    setError(null);
+    const result = await createLiveClass({
+      ownerType: "teacher",
+      title: newTitle,
+      mode: newMode,
+      location: newLocation,
+      scheduledAt: newScheduledAt,
+      durationMinutes: "60",
+      joinLink: newJoinLink,
+    });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    resetForm();
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2500);
+    router.refresh();
+  }
+
+  async function handleSaveLink(classId: string) {
+    setSavingLinkId(classId);
+    const result = await updateLiveClassLink({ liveClassId: classId, joinLink: joinLinks[classId] ?? "" });
+    setSavingLinkId(null);
+    if (!result.error) {
+      setLinkSavedId(classId);
+      setTimeout(() => setLinkSavedId((current) => (current === classId ? null : current)), 2000);
+    }
   }
 
   return (
@@ -69,9 +108,8 @@ export function LiveClassesTab() {
               onChange={(e) => setNewTitle(e.target.value)}
               className="sm:col-span-2"
             />
-            <Input placeholder={t("dayPlaceholder")} value={newDay} onChange={(e) => setNewDay(e.target.value)} />
-            <Input placeholder={t("timePlaceholder")} value={newTime} onChange={(e) => setNewTime(e.target.value)} />
-            <Select value={newMode} onValueChange={(value) => setNewMode(value as TeacherLiveClass["mode"])}>
+            <Input type="datetime-local" value={newScheduledAt} onChange={(e) => setNewScheduledAt(e.target.value)} />
+            <Select value={newMode} onValueChange={(value) => setNewMode(value as "online" | "physical")}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -80,56 +118,79 @@ export function LiveClassesTab() {
                 <SelectItem value="physical">{t("physical")}</SelectItem>
               </SelectContent>
             </Select>
+            {newMode === "physical" ? (
+              <Input
+                placeholder={t("locationPlaceholder")}
+                value={newLocation}
+                onChange={(e) => setNewLocation(e.target.value)}
+                className="sm:col-span-2"
+              />
+            ) : (
+              <Input
+                placeholder={t("joinLinkPlaceholder")}
+                value={newJoinLink}
+                onChange={(e) => setNewJoinLink(e.target.value)}
+                className="sm:col-span-2"
+              />
+            )}
           </div>
-          <div className="mt-4 flex gap-2.5">
-            <Button type="button" onClick={handleAdd}>
+          <div className="mt-4 flex flex-wrap items-center gap-2.5">
+            <Button type="button" onClick={handleAdd} disabled={saving}>
               {tc("add")}
             </Button>
-            <Button type="button" variant="outline" onClick={handleCancel}>
+            <Button type="button" variant="outline" onClick={resetForm} disabled={saving}>
               {tc("cancel")}
             </Button>
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
           </div>
         </div>
       )}
 
       <div className="rounded-lg border border-border bg-white p-5">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("columns.class")}</TableHead>
-              <TableHead>{t("columns.dayTime")}</TableHead>
-              <TableHead>{t("columns.mode")}</TableHead>
-              <TableHead>{t("columns.joinLink")}</TableHead>
-              <TableHead>{t("columns.status")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {classes.map((c, index) => (
-              <TableRow key={`${c.title}-${index}`}>
-                <TableCell className="font-medium text-foreground">{c.title}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {c.day} · {c.time}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {c.mode === "online" ? t("online") : t("physicalAt", { location: c.location ?? "" })}
-                </TableCell>
-                <TableCell className="min-w-56">
-                  {c.mode === "online" ? (
-                    <Input
-                      value={joinLinks[c.title] ?? ""}
-                      onChange={(e) => setJoinLinks((links) => ({ ...links, [c.title]: e.target.value }))}
-                    />
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <StatusBadge variant="active">{t("scheduled")}</StatusBadge>
-                </TableCell>
+        {classes.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("empty")}</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("columns.class")}</TableHead>
+                <TableHead>{t("columns.dayTime")}</TableHead>
+                <TableHead>{t("columns.mode")}</TableHead>
+                <TableHead>{t("columns.joinLink")}</TableHead>
+                <TableHead>{t("columns.status")}</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {classes.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-medium text-foreground">{c.title}</TableCell>
+                  <TableCell className="text-muted-foreground">{c.scheduledLabel}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {c.mode === "online" ? t("online") : t("physicalAt", { location: c.location ?? "" })}
+                  </TableCell>
+                  <TableCell className="min-w-56">
+                    {c.mode === "online" ? (
+                      <div className="flex items-center gap-1.5">
+                        <Input
+                          value={joinLinks[c.id] ?? ""}
+                          onChange={(e) => setJoinLinks((links) => ({ ...links, [c.id]: e.target.value }))}
+                          onBlur={() => handleSaveLink(c.id)}
+                          disabled={savingLinkId === c.id}
+                        />
+                        {linkSavedId === c.id && <span className="text-xs font-medium text-success">{tc("saved")}</span>}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge variant="active">{t("scheduled")}</StatusBadge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
     </div>
   );

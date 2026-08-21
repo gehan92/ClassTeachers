@@ -77,7 +77,10 @@ export default async function InstituteDashboardPage({
     const [{ data: teacherProfiles }, { data: teacherPersonProfiles }, { data: teacherEnrollments }, { data: teacherReviews }] =
       await Promise.all([
         supabase.from("teacher_profiles").select("id, headline, status").in("id", teacherIds),
-        supabase.from("profiles").select("id, full_name").in("id", teacherIds),
+        // Plain `profiles` select would return zero rows here — its only RLS
+        // policy is "your own row or admin" (0003). This RPC (0032) opens it
+        // up specifically for teachers linked to this institute.
+        supabase.rpc("get_linked_teacher_names", { p_class_id: instituteId!, p_teacher_ids: teacherIds }),
         supabase.from("enrollments").select("owner_id").eq("owner_type", "teacher").in("owner_id", teacherIds),
         supabase.from("reviews").select("target_id, rating").eq("target_type", "teacher").in("target_id", teacherIds),
       ]);
@@ -114,6 +117,21 @@ export default async function InstituteDashboardPage({
   const averageRating = reviewRows?.length
     ? (reviewRows.reduce((sum, r) => sum + r.rating, 0) / reviewRows.length).toFixed(1)
     : null;
+
+  // Same RPC the public /class/[id] page uses — masked reviewer names,
+  // consistent with what this institute's own public profile shows.
+  const { data: myReviewRows } = instituteId
+    ? await supabase.rpc("list_public_reviews", { p_target_type: "class", p_target_id: instituteId })
+    : { data: [] as { id: string; author: string | null; rating: number; body: string | null; reply: string | null; created_at: string }[] };
+  const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const reviews = (myReviewRows ?? []).map((r) => ({
+    id: r.id,
+    author: r.author ?? "Anonymous",
+    date: dateFormatter.format(new Date(r.created_at)),
+    rating: r.rating,
+    body: r.body ?? "",
+    reply: r.reply ?? undefined,
+  }));
 
   const [{ data: batchRows }, { data: batchEnrollmentRows }] = await Promise.all([
     instituteId
@@ -184,11 +202,15 @@ export default async function InstituteDashboardPage({
         teachers: <TeachersTab />,
         batches: <BatchesTab batches={batches} />,
         ads: <AdvertisementTab initialContent={adRow?.content ?? ""} />,
-        reviews: <ReviewsTab />,
+        reviews: (
+          <ReviewsTab initialReviews={reviews} averageRating={averageRating ?? "0.0"} reviewCount={reviewRows?.length ?? 0} />
+        ),
         settings: (
           <SettingsTab
             initialName={classProfile?.name ?? fullName}
             initialLocation={classProfile?.location ?? ""}
+            initialEstablished={classProfile?.established ?? ""}
+            initialPhotoUrl={classProfile?.photo_url ?? null}
             initialPhone={profile?.phone ?? ""}
             initialHourlyRate={priceRow?.hourly_rate?.toString() ?? ""}
             initialMonthlyRate={priceRow?.monthly_rate?.toString() ?? ""}

@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/features/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { platformUsers } from "@/lib/mock-data";
+import { setUserSuspended } from "@/lib/dashboard/admin-actions";
 import { avatarGradientClass } from "@/lib/avatar-color";
-import type { PlatformUser, PlatformUserPlan, PlatformUserRole } from "@/types/dashboard-admin";
+import type { PlatformUser, PlatformUserRole } from "@/types/dashboard-admin";
 
 type RoleFilter = "all" | PlatformUserRole;
 
@@ -24,23 +24,19 @@ function initialsFor(name: string) {
     .toUpperCase();
 }
 
-export function UsersTab() {
+export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
   const t = useTranslations("adminDashboard.users");
-  const [users, setUsers] = useState<PlatformUser[]>(platformUsers);
+  const [users, setUsers] = useState<PlatformUser[]>(initialUsers);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<RoleFilter>("all");
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const roleLabels: Record<PlatformUserRole, string> = {
     teacher: t("roles.teacher"),
     institute: t("roles.institute"),
     student: t("roles.student"),
     campus_lecturer: t("roles.campusLecturer"),
-  };
-
-  const planLabels: Record<Exclude<PlatformUserPlan, null>, string> = {
-    free: t("plans.free"),
-    standard: t("plans.standard"),
-    premium: t("plans.premium"),
   };
 
   const filtered = useMemo(() => {
@@ -52,11 +48,20 @@ export function UsersTab() {
     });
   }, [users, search, role]);
 
-  function toggleUserStatus(id: string) {
+  async function toggleUserStatus(user: PlatformUser) {
+    const suspended = user.status !== "active";
+    if (suspended && !window.confirm(t("confirmSuspend", { name: user.name }))) return;
+
+    setPendingId(user.id);
+    setError(null);
+    const result = await setUserSuspended({ userId: user.id, suspended });
+    setPendingId(null);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
     setUsers((prev) =>
-      prev.map((user) =>
-        user.id === id ? { ...user, status: user.status === "active" ? "suspended" : "active" } : user,
-      ),
+      prev.map((u) => (u.id === user.id ? { ...u, status: suspended ? "suspended" : "active" } : u)),
     );
   }
 
@@ -66,6 +71,8 @@ export function UsersTab() {
         <h1 className="font-display text-2xl text-primary">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
+
+      {error && <p className="mb-4 text-sm font-medium text-destructive">{error}</p>}
 
       <div className="mb-4 flex flex-col gap-2.5 sm:flex-row sm:items-center">
         <Input
@@ -95,7 +102,6 @@ export function UsersTab() {
               <TableHead>{t("columns.user")}</TableHead>
               <TableHead>{t("columns.role")}</TableHead>
               <TableHead>{t("columns.joined")}</TableHead>
-              <TableHead>{t("columns.plan")}</TableHead>
               <TableHead>{t("columns.status")}</TableHead>
               <TableHead className="text-right">{t("columns.actions")}</TableHead>
             </TableRow>
@@ -115,7 +121,6 @@ export function UsersTab() {
                 </TableCell>
                 <TableCell className="text-muted-foreground">{roleLabels[user.role]}</TableCell>
                 <TableCell className="text-muted-foreground">{user.joinedAt}</TableCell>
-                <TableCell className="text-muted-foreground">{user.plan ? planLabels[user.plan] : "—"}</TableCell>
                 <TableCell>
                   <StatusBadge variant={user.status === "active" ? "active" : "suspended"}>
                     {user.status === "active" ? t("status.active") : t("status.suspended")}
@@ -123,7 +128,12 @@ export function UsersTab() {
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-end">
-                    <Button size="sm" variant="ghost" onClick={() => toggleUserStatus(user.id)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => toggleUserStatus(user)}
+                      disabled={pendingId === user.id}
+                    >
                       {user.status === "active" ? t("actions.manage") : t("actions.reactivate")}
                     </Button>
                   </div>
@@ -132,7 +142,7 @@ export function UsersTab() {
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
                   {t("empty")}
                 </TableCell>
               </TableRow>

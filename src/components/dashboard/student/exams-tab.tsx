@@ -1,14 +1,12 @@
 "use client";
 
 import { useId, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { StatusBadge } from "@/components/features/status-badge";
 import { LockPill } from "@/components/features/lock-pill";
-import { ExamTimer } from "@/components/features/exam-timer";
 import {
   Table,
   TableBody,
@@ -17,126 +15,36 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  examDefs,
-  examSubmissions,
-  questionBank,
-  studentEnrollments,
-  CURRENT_STUDENT,
-} from "@/lib/mock-data";
-import type { ExamDef, ExamSubmission, QuestionBankItem } from "@/types/dashboard-exams";
+import { submitExam } from "@/lib/dashboard/exams-actions";
 
-/** Static "today" label, matching the hardcoded convention used across the
- * other student-dashboard tabs (see notes-tab.tsx / reviews-tab.tsx). */
-const TODAY_LABEL = "14 Aug 2026";
+export type StudentExamQuestion = { id: string; text: string; type: "mcq" | "essay"; marks: number };
+export type StudentExamRow = {
+  id: string;
+  title: string;
+  teacherName: string;
+  durationMinutes: number;
+  scheduledLabel: string;
+  isOpen: boolean;
+  questions: StudentExamQuestion[];
+  submission: {
+    status: "pending" | "graded";
+    grade: number | null;
+    feedback: string | null;
+    submittedLabel: string | null;
+  } | null;
+};
 
-/** Auto-grades the MCQ portion of an exam against a student's answers. */
-function scoreOf(exam: ExamDef, answers: Record<string, string>) {
-  let autoScore = 0;
-  let maxScore = 0;
-  for (const qid of exam.questionIds) {
-    const q = questionBank.find((item) => item.id === qid);
-    if (!q) continue;
-    maxScore += q.marks;
-    if (q.type === "mcq" && answers[q.id] && answers[q.id] === q.correctOptionId) {
-      autoScore += q.marks;
-    }
-  }
-  return { autoScore, maxScore };
-}
-
-function examHasEssay(exam: ExamDef) {
-  return exam.questionIds.some((qid) => questionBank.find((q) => q.id === qid)?.type === "essay");
-}
-
-/** The enrollment linking the signed-in student to this batch — used to display a teacher name. */
-function teacherNameForBatch(batchId: string) {
-  return studentEnrollments.find((e) => e.batchId === batchId)?.targetName ?? "—";
-}
-
-export function ExamsTab() {
+export function ExamsTab({ exams }: { exams: StudentExamRow[] }) {
   const t = useTranslations("studentDashboard.exams");
-  const [submissions, setSubmissions] = useState<ExamSubmission[]>(examSubmissions);
   const [activeExamId, setActiveExamId] = useState<string | null>(null);
-  const [timerStarts, setTimerStarts] = useState<Record<string, number>>({});
-  const [resubmitExamId, setResubmitExamId] = useState<string | null>(null);
-  const [flash, setFlash] = useState<string | null>(null);
 
-  // Class-scoped visibility: only exams for batches the student is actually enrolled in.
-  const myBatchIds = studentEnrollments
-    .map((e) => e.batchId)
-    .filter((id): id is string => Boolean(id));
-  const visibleExams = examDefs.filter((exam) => myBatchIds.includes(exam.batchId));
-
-  function getSubmission(examId: string) {
-    return submissions.find((s) => s.examId === examId && s.studentId === CURRENT_STUDENT.id);
+  const activeExam = activeExamId ? (exams.find((e) => e.id === activeExamId) ?? null) : null;
+  if (activeExam) {
+    return <ExamWorkspace exam={activeExam} onExit={() => setActiveExamId(null)} />;
   }
 
-  function upsertSubmission(examId: string, patch: Partial<ExamSubmission>) {
-    setSubmissions((prev) => {
-      const idx = prev.findIndex((s) => s.examId === examId && s.studentId === CURRENT_STUDENT.id);
-      if (idx === -1) {
-        const created: ExamSubmission = {
-          id: `sub-${Date.now()}`,
-          examId,
-          studentId: CURRENT_STUDENT.id,
-          studentName: CURRENT_STUDENT.name,
-          state: "not_started",
-          ...patch,
-        };
-        return [...prev, created];
-      }
-      const next = [...prev];
-      next[idx] = { ...next[idx], ...patch };
-      return next;
-    });
-  }
-
-  function flashMessage(message: string) {
-    setFlash(message);
-    setTimeout(() => setFlash(null), 2500);
-  }
-
-  function handleStart(exam: ExamDef) {
-    setTimerStarts((prev) => (prev[exam.id] ? prev : { ...prev, [exam.id]: Date.now() }));
-    upsertSubmission(exam.id, { state: "in_progress", startedAt: TODAY_LABEL });
-    setActiveExamId(exam.id);
-  }
-
-  function handleSubmit(exam: ExamDef, answers: Record<string, string>, essayFiles: string[]) {
-    const { autoScore, maxScore } = scoreOf(exam, answers);
-    const hasEssay = examHasEssay(exam);
-    upsertSubmission(exam.id, {
-      state: hasEssay ? "submitted" : "graded",
-      answers,
-      essayFiles,
-      autoScore,
-      maxScore,
-      submittedAt: TODAY_LABEL,
-    });
-  }
-
-  const activeExam = activeExamId ? (examDefs.find((e) => e.id === activeExamId) ?? null) : null;
-
-  // handleStart always records a timerStarts entry before setActiveExamId, so by the
-  // time this renders the entry is guaranteed to exist — the non-null assertion avoids
-  // calling Date.now() (an impure function) here in the render body as a fallback.
-  if (activeExam && timerStarts[activeExam.id] !== undefined) {
-    return (
-      <ExamWorkspace
-        exam={activeExam}
-        submission={getSubmission(activeExam.id)}
-        startedAtMs={timerStarts[activeExam.id]!}
-        onSubmit={(answers, essayFiles) => handleSubmit(activeExam, answers, essayFiles)}
-        onExit={() => setActiveExamId(null)}
-      />
-    );
-  }
-
-  const dueExams = visibleExams.filter((exam) => getSubmission(exam.id)?.state !== "graded");
-  const pastSubmissions = submissions.filter(
-    (s) => s.studentId === CURRENT_STUDENT.id && s.state === "graded",
-  );
+  const dueExams = exams.filter((exam) => exam.submission?.status !== "graded");
+  const pastExams = exams.filter((exam) => exam.submission?.status === "graded");
 
   return (
     <div>
@@ -145,10 +53,7 @@ export function ExamsTab() {
         <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
 
-      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold text-foreground">{t("dueTitle")}</h2>
-        {flash && <span className="text-sm font-medium text-success">{flash}</span>}
-      </div>
+      <h2 className="mb-1 text-lg font-semibold text-foreground">{t("dueTitle")}</h2>
       <p className="mb-4 text-sm text-muted-foreground">{t("dueSubtitle")}</p>
 
       {dueExams.length === 0 ? (
@@ -158,27 +63,14 @@ export function ExamsTab() {
       ) : (
         <div className="mb-8 flex flex-col gap-4">
           {dueExams.map((exam) => (
-            <ExamCard
-              key={exam.id}
-              exam={exam}
-              submission={getSubmission(exam.id)}
-              onStart={() => handleStart(exam)}
-              isResubmitting={resubmitExamId === exam.id}
-              onOpenResubmit={() => setResubmitExamId(exam.id)}
-              onCloseResubmit={() => setResubmitExamId(null)}
-              onResubmit={(essayFiles) => {
-                upsertSubmission(exam.id, { essayFiles, submittedAt: TODAY_LABEL });
-                setResubmitExamId(null);
-                flashMessage(t("resubmitSuccess"));
-              }}
-            />
+            <ExamCard key={exam.id} exam={exam} onOpen={() => setActiveExamId(exam.id)} />
           ))}
         </div>
       )}
 
       <h2 className="mb-3 text-lg font-semibold text-foreground">{t("pastTitle")}</h2>
       <div className="rounded-lg border border-border bg-white">
-        {pastSubmissions.length === 0 ? (
+        {pastExams.length === 0 ? (
           <div className="p-5 text-sm text-muted-foreground">{t("pastEmpty")}</div>
         ) : (
           <Table>
@@ -192,29 +84,19 @@ export function ExamsTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pastSubmissions.map((sub) => {
-                const exam = examDefs.find((e) => e.id === sub.examId);
-                if (!exam) return null;
-                const score = sub.teacherScore ?? sub.autoScore ?? 0;
-                const grade = sub.maxScore !== undefined ? `${score}/${sub.maxScore}` : `${score}`;
-                return (
-                  <TableRow key={sub.id}>
-                    <TableCell className="font-medium whitespace-normal text-foreground">
-                      {exam.title}
-                    </TableCell>
-                    <TableCell className="whitespace-normal text-muted-foreground">
-                      {teacherNameForBatch(exam.batchId)}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{grade}</TableCell>
-                    <TableCell className="whitespace-normal text-muted-foreground">
-                      {sub.feedback ?? "—"}
-                    </TableCell>
-                    <TableCell className="whitespace-normal text-muted-foreground">
-                      {sub.submittedAt ?? "—"}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {pastExams.map((exam) => (
+                <TableRow key={exam.id}>
+                  <TableCell className="font-medium whitespace-normal text-foreground">{exam.title}</TableCell>
+                  <TableCell className="whitespace-normal text-muted-foreground">{exam.teacherName}</TableCell>
+                  <TableCell className="text-muted-foreground">{exam.submission?.grade ?? "—"}</TableCell>
+                  <TableCell className="whitespace-normal text-muted-foreground">
+                    {exam.submission?.feedback ?? "—"}
+                  </TableCell>
+                  <TableCell className="whitespace-normal text-muted-foreground">
+                    {exam.submission?.submittedLabel ?? "—"}
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         )}
@@ -223,85 +105,48 @@ export function ExamsTab() {
   );
 }
 
-function ExamCard({
-  exam,
-  submission,
-  onStart,
-  isResubmitting,
-  onOpenResubmit,
-  onCloseResubmit,
-  onResubmit,
-}: {
-  exam: ExamDef;
-  submission: ExamSubmission | undefined;
-  onStart: () => void;
-  isResubmitting: boolean;
-  onOpenResubmit: () => void;
-  onCloseResubmit: () => void;
-  onResubmit: (essayFiles: string[]) => void;
-}) {
+function ExamCard({ exam, onOpen }: { exam: StudentExamRow; onOpen: () => void }) {
   const t = useTranslations("studentDashboard.exams");
-  const state = submission?.state ?? "not_started";
 
   return (
     <div className="rounded-lg border border-border bg-white p-4.5">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <div className="font-semibold text-foreground">{exam.title}</div>
-        {exam.status === "upcoming" && <LockPill>{t("notOpenYet")}</LockPill>}
-        {exam.status === "open" && state === "submitted" && (
+        {!exam.isOpen && <LockPill>{t("notOpenYet")}</LockPill>}
+        {exam.isOpen && exam.submission?.status === "pending" && (
           <StatusBadge variant="pending">{t("pendingGrading")}</StatusBadge>
         )}
       </div>
       <p className="mb-3.5 text-sm text-muted-foreground">
-        {t("durationLabel", { minutes: exam.durationMin })} · {exam.scheduledAt}
+        {t("durationLabel", { minutes: exam.durationMinutes })} · {exam.scheduledLabel}
       </p>
 
-      {exam.status === "upcoming" && (
-        <p className="text-sm text-muted-foreground">{t("scheduledLabel", { date: exam.scheduledAt })}</p>
-      )}
+      {!exam.isOpen && <p className="text-sm text-muted-foreground">{t("scheduledLabel", { date: exam.scheduledLabel })}</p>}
 
-      {exam.status === "open" && state === "not_started" && (
-        <Button size="sm" onClick={onStart}>
+      {exam.isOpen && !exam.submission && (
+        <Button size="sm" onClick={onOpen}>
           {t("startExam")}
         </Button>
       )}
 
-      {exam.status === "open" && state === "in_progress" && (
-        <Button size="sm" onClick={onStart}>
-          {t("continueExam")}
-        </Button>
-      )}
-
-      {exam.status === "open" && state === "submitted" && (
+      {exam.isOpen && exam.submission?.status === "pending" && (
         <div>
           <p className="mb-3 text-sm text-foreground/80">{t("submittedBody")}</p>
-          {isResubmitting ? (
-            <ResubmitPanel
-              essayFiles={submission?.essayFiles ?? []}
-              onCancel={onCloseResubmit}
-              onSubmit={onResubmit}
-            />
-          ) : (
-            <Button size="sm" variant="outline" onClick={onOpenResubmit}>
-              {t("resubmit")}
-            </Button>
-          )}
+          <Button size="sm" variant="outline" onClick={onOpen}>
+            {t("resubmit")}
+          </Button>
         </div>
-      )}
-
-      {exam.status === "closed" && !submission && (
-        <p className="text-sm text-muted-foreground">{t("examClosedNotAttempted")}</p>
       )}
     </div>
   );
 }
 
 function PhotoDropzone({
-  photos,
+  files,
   onAdd,
   onRemove,
 }: {
-  photos: string[];
+  files: File[];
   onAdd: (files: FileList | null) => void;
   onRemove: (index: number) => void;
 }) {
@@ -320,7 +165,7 @@ function PhotoDropzone({
       <input
         id={inputId}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         multiple
         className="hidden"
         onChange={(e) => {
@@ -328,14 +173,14 @@ function PhotoDropzone({
           e.target.value = "";
         }}
       />
-      {photos.length > 0 && (
+      {files.length > 0 && (
         <ul className="mt-3 flex flex-col gap-1.5">
-          {photos.map((name, i) => (
+          {files.map((file, i) => (
             <li
-              key={`${name}-${i}`}
+              key={`${file.name}-${i}`}
               className="flex items-center justify-between gap-2 rounded-sm border border-border bg-secondary/20 px-2.5 py-1.5 text-xs text-foreground/80"
             >
-              <span className="truncate">{name}</span>
+              <span className="truncate">{file.name}</span>
               <button
                 type="button"
                 onClick={() => onRemove(i)}
@@ -351,97 +196,47 @@ function PhotoDropzone({
   );
 }
 
-function ResubmitPanel({
-  essayFiles,
-  onCancel,
-  onSubmit,
-}: {
-  essayFiles: string[];
-  onCancel: () => void;
-  onSubmit: (essayFiles: string[]) => void;
-}) {
+function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => void }) {
   const t = useTranslations("studentDashboard.exams");
-  const [photos, setPhotos] = useState<string[]>(essayFiles);
+  const router = useRouter();
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
-  function handleAdd(files: FileList | null) {
-    if (!files) return;
-    setPhotos((prev) => [...prev, ...Array.from(files).map((f) => f.name)]);
+  function handleAdd(fileList: FileList | null) {
+    if (!fileList) return;
+    setPhotos((prev) => [...prev, ...Array.from(fileList)]);
   }
 
   function handleRemove(index: number) {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   }
 
-  return (
-    <div className="rounded-lg border border-border bg-secondary/10 p-4">
-      <h4 className="mb-2 text-sm font-semibold text-foreground">{t("resubmitPanelTitle")}</h4>
-      <PhotoDropzone photos={photos} onAdd={handleAdd} onRemove={handleRemove} />
-      <div className="mt-3 flex gap-2">
-        <Button size="sm" onClick={() => onSubmit(photos)}>
-          {t("resubmitSubmit")}
-        </Button>
-        <Button size="sm" variant="outline" onClick={onCancel}>
-          {t("cancel")}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function ExamWorkspace({
-  exam,
-  submission,
-  startedAtMs,
-  onSubmit,
-  onExit,
-}: {
-  exam: ExamDef;
-  submission: ExamSubmission | undefined;
-  startedAtMs: number;
-  onSubmit: (answers: Record<string, string>, essayFiles: string[]) => void;
-  onExit: () => void;
-}) {
-  const t = useTranslations("studentDashboard.exams");
-  const [answers, setAnswers] = useState<Record<string, string>>(submission?.answers ?? {});
-  const [photos, setPhotos] = useState<string[]>(submission?.essayFiles ?? []);
-  const [result, setResult] = useState<{ autoScore: number; maxScore: number; hasEssay: boolean } | null>(
-    null,
-  );
-
-  const questions = exam.questionIds
-    .map((qid) => questionBank.find((q) => q.id === qid))
-    .filter((q): q is QuestionBankItem => Boolean(q));
-  const mcqQuestions = questions.filter((q) => q.type === "mcq");
-  const essayQuestions = questions.filter((q) => q.type === "essay");
-  const hasEssay = essayQuestions.length > 0;
-
-  function handleAddPhoto(files: FileList | null) {
-    if (!files) return;
-    setPhotos((prev) => [...prev, ...Array.from(files).map((f) => f.name)]);
+  async function handleSubmit() {
+    if (photos.length === 0) return;
+    setSaving(true);
+    setError(null);
+    const formData = new FormData();
+    formData.set("examId", exam.id);
+    for (const photo of photos) formData.append("photos", photo);
+    const result = await submitExam(formData);
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setSubmitted(true);
+    router.refresh();
   }
 
-  function handleRemovePhoto(index: number) {
-    setPhotos((prev) => prev.filter((_, i) => i !== index));
-  }
-
-  function submitNow() {
-    const { autoScore, maxScore } = scoreOf(exam, answers);
-    onSubmit(answers, photos);
-    setResult({ autoScore, maxScore, hasEssay });
-  }
-
-  if (result) {
+  if (submitted) {
     return (
       <div className="mx-auto max-w-160">
         <h1 className="mb-4 text-2xl">{exam.title}</h1>
         <div className="rounded-lg border border-border bg-white p-5">
-          <h3 className="mb-2 text-lg">{result.hasEssay ? t("submittedTitle") : t("gradedResultTitle")}</h3>
-          <p className="mb-2 text-2xl font-semibold text-primary">
-            {t("scoreLabel", { score: result.autoScore, max: result.maxScore })}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {result.hasEssay ? t("essayPendingNote") : t("gradedResultBody")}
-          </p>
+          <h3 className="mb-2 text-lg">{t("submittedTitle")}</h3>
+          <p className="text-sm text-muted-foreground">{t("essayPendingNote")}</p>
           <Button className="mt-4" size="sm" variant="outline" onClick={onExit}>
             {t("backToExams")}
           </Button>
@@ -452,73 +247,34 @@ function ExamWorkspace({
 
   return (
     <div className="mx-auto max-w-160">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="mb-1 text-2xl">{exam.title}</h1>
-          <p className="text-sm text-muted-foreground">{t("durationLabel", { minutes: exam.durationMin })}</p>
-        </div>
-        <ExamTimer startedAt={startedAtMs} durationMin={exam.durationMin} onExpire={submitNow} />
+      <div className="mb-4">
+        <h1 className="mb-1 text-2xl">{exam.title}</h1>
+        <p className="text-sm text-muted-foreground">{t("durationLabel", { minutes: exam.durationMinutes })}</p>
       </div>
 
-      {mcqQuestions.length > 0 && (
-        <div className="mb-6">
-          <h3 className="mb-3 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-            {t("mcqSectionTitle")}
-          </h3>
-          <div className="flex flex-col gap-4">
-            {mcqQuestions.map((q, index) => (
-              <div key={q.id} className="rounded-lg border border-border bg-white p-4">
-                <div className="mb-3 text-sm font-medium text-foreground">
-                  {t("questionLabel", { number: index + 1 })}. {q.text}
-                </div>
-                <RadioGroup
-                  value={answers[q.id] ?? ""}
-                  onValueChange={(value) =>
-                    setAnswers((prev) => ({ ...prev, [q.id]: String(value ?? "") }))
-                  }
-                >
-                  {q.options?.map((opt) => {
-                    const optionInputId = `${q.id}-${opt.id}`;
-                    return (
-                      <div key={opt.id} className="flex items-center gap-2.5">
-                        <RadioGroupItem value={opt.id} id={optionInputId} />
-                        <Label htmlFor={optionInputId} className="font-normal">
-                          {opt.text}
-                        </Label>
-                      </div>
-                    );
-                  })}
-                </RadioGroup>
-              </div>
-            ))}
-          </div>
+      <div className="mb-6">
+        <h3 className="mb-3 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+          {t("essaySectionTitle")}
+        </h3>
+        <div className="mb-3 flex flex-col gap-2 rounded-lg border border-border bg-white p-4">
+          {exam.questions.map((q, index) => (
+            <p key={q.id} className="text-sm text-foreground">
+              {t("questionLabel", { number: index + 1 })}. {q.text}
+            </p>
+          ))}
         </div>
-      )}
+        <p className="mb-2 text-xs text-muted-foreground">{t("essayInstructions")}</p>
+        <PhotoDropzone files={photos} onAdd={handleAdd} onRemove={handleRemove} />
+      </div>
 
-      {hasEssay && (
-        <div className="mb-6">
-          <h3 className="mb-3 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-            {t("essaySectionTitle")}
-          </h3>
-          <div className="mb-3 flex flex-col gap-2 rounded-lg border border-border bg-white p-4">
-            {essayQuestions.map((q, index) => (
-              <p key={q.id} className="text-sm text-foreground">
-                {t("questionLabel", { number: mcqQuestions.length + index + 1 })}. {q.text}
-              </p>
-            ))}
-          </div>
-          <p className="mb-2 text-xs text-muted-foreground">{t("essayInstructions")}</p>
-          <PhotoDropzone photos={photos} onAdd={handleAddPhoto} onRemove={handleRemovePhoto} />
-        </div>
-      )}
-
-      <div className="flex gap-2">
-        <Button onClick={submitNow} disabled={hasEssay && photos.length === 0}>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button onClick={handleSubmit} disabled={photos.length === 0 || saving}>
           {t("submitExam")}
         </Button>
-        <Button variant="outline" onClick={onExit}>
+        <Button variant="outline" onClick={onExit} disabled={saving}>
           {t("backToExams")}
         </Button>
+        {error && <span className="text-sm font-medium text-destructive">{error}</span>}
       </div>
     </div>
   );

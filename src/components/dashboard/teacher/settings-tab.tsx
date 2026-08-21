@@ -7,19 +7,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { updateTeacherAccount } from "@/lib/dashboard/actions";
+import { updateTeacherAccount, updateNotificationPrefs } from "@/lib/dashboard/actions";
 
 const panelClass = "rounded-lg border border-border bg-white p-5";
 
-export function SettingsTab({ initialPhone, email }: { initialPhone: string; email: string }) {
+export function SettingsTab({
+  initialPhone,
+  initialNotificationPrefs,
+  email,
+}: {
+  initialPhone: string;
+  initialNotificationPrefs: Record<string, boolean>;
+  email: string;
+}) {
   const t = useTranslations("teacherDashboard.settings");
   const tc = useTranslations("teacherDashboard.common");
 
   const [notifications, setNotifications] = useState({
-    enrolments: true,
-    reviews: true,
-    submissions: true,
+    enrolments: initialNotificationPrefs.enrolments ?? true,
+    reviews: initialNotificationPrefs.reviews ?? true,
+    submissions: initialNotificationPrefs.submissions ?? true,
   });
+
+  function handleToggleNotification(key: "enrolments" | "reviews" | "submissions") {
+    return (checked: boolean) => {
+      setNotifications((n) => ({ ...n, [key]: checked }));
+      updateNotificationPrefs({ [key]: checked });
+    };
+  }
 
   const [phone, setPhone] = useState(initialPhone);
   const [saved, setSaved] = useState(false);
@@ -75,7 +90,7 @@ export function SettingsTab({ initialPhone, email }: { initialPhone: string; ema
             <Switch
               id="notif-enrolments"
               checked={notifications.enrolments}
-              onCheckedChange={(checked) => setNotifications((n) => ({ ...n, enrolments: checked }))}
+              onCheckedChange={handleToggleNotification("enrolments")}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -83,7 +98,7 @@ export function SettingsTab({ initialPhone, email }: { initialPhone: string; ema
             <Switch
               id="notif-reviews"
               checked={notifications.reviews}
-              onCheckedChange={(checked) => setNotifications((n) => ({ ...n, reviews: checked }))}
+              onCheckedChange={handleToggleNotification("reviews")}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -91,7 +106,7 @@ export function SettingsTab({ initialPhone, email }: { initialPhone: string; ema
             <Switch
               id="notif-submissions"
               checked={notifications.submissions}
-              onCheckedChange={(checked) => setNotifications((n) => ({ ...n, submissions: checked }))}
+              onCheckedChange={handleToggleNotification("submissions")}
             />
           </div>
         </div>

@@ -164,11 +164,20 @@ function Hero({ teacher }: { teacher: TeacherProfileDetail }) {
     <div className="mx-auto max-w-[1180px] px-7 pt-10">
       <div className="rounded-xl bg-gradient-to-br from-primary to-primary-light p-7 text-white sm:p-9">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-          <div
-            className={`flex size-20 shrink-0 items-center justify-center rounded-full border-4 border-white font-display text-2xl font-bold text-white shadow-sm ${avatarGradientClass(teacher.id)}`}
-          >
-            {teacher.avatarInitials}
-          </div>
+          {teacher.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={teacher.photoUrl}
+              alt=""
+              className="size-20 shrink-0 rounded-full border-4 border-white object-cover shadow-sm"
+            />
+          ) : (
+            <div
+              className={`flex size-20 shrink-0 items-center justify-center rounded-full border-4 border-white font-display text-2xl font-bold text-white shadow-sm ${avatarGradientClass(teacher.id)}`}
+            >
+              {teacher.avatarInitials}
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             {teacher.headline && (
               <div className="mb-1.5 font-mono text-xs uppercase tracking-[0.12em] text-white/70">

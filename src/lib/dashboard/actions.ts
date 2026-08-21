@@ -8,9 +8,14 @@ type ActionResult = { error: string } | { error?: undefined };
 const studentProfileSchema = z.object({
   fullName: z.string().trim().min(2),
   phone: z.string().trim().optional(),
+  gradeLevel: z.string().trim().optional(),
 });
 
-export async function updateStudentProfile(input: { fullName: string; phone: string }): Promise<ActionResult> {
+export async function updateStudentProfile(input: {
+  fullName: string;
+  phone: string;
+  gradeLevel: string;
+}): Promise<ActionResult> {
   const parsed = studentProfileSchema.safeParse(input);
   if (!parsed.success) {
     return { error: "Please check your name and try again." };
@@ -26,10 +31,44 @@ export async function updateStudentProfile(input: { fullName: string; phone: str
 
   const { error } = await supabase
     .from("profiles")
-    .update({ full_name: parsed.data.fullName, phone: parsed.data.phone || null })
+    .update({
+      full_name: parsed.data.fullName,
+      phone: parsed.data.phone || null,
+      grade_level: parsed.data.gradeLevel || null,
+    })
     .eq("id", user.id);
   if (error) {
     return { error: "Couldn't save your changes. Please try again." };
+  }
+  return {};
+}
+
+/**
+ * One jsonb column backs both the student and teacher notification-toggle
+ * sets (each is a different set of keys, but a profile row is only ever one
+ * role, so there's no collision). Merges rather than overwrites so a caller
+ * only needs to send the keys it actually renders.
+ */
+export async function updateNotificationPrefs(prefs: Record<string, boolean>): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("notification_prefs")
+    .eq("id", user.id)
+    .single();
+
+  const merged = { ...(existing?.notification_prefs as Record<string, boolean> | null), ...prefs };
+
+  const { error } = await supabase.from("profiles").update({ notification_prefs: merged }).eq("id", user.id);
+  if (error) {
+    return { error: "Couldn't save your notification settings. Please try again." };
   }
   return {};
 }
@@ -106,6 +145,57 @@ export async function updateTeacherProfile(input: {
   return {};
 }
 
+/**
+ * `subjects` is an admin-curated taxonomy (0007) a teacher can't insert
+ * into directly, so this reuses `resolve_subject()` (0022) — the same
+ * find-or-create-by-English-name RPC signup already uses for a single
+ * subject — for each name, then replaces the teacher's `subject_links` rows
+ * to match. A teacher's grade band on their public profile (0021, 0026) is
+ * derived from these links' subjects, not stored separately.
+ */
+export async function updateTeacherSubjects(subjectNames: string[]): Promise<ActionResult> {
+  const names = [...new Set(subjectNames.map((n) => n.trim()).filter(Boolean))];
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const subjectIds: string[] = [];
+  for (const name of names) {
+    const { data: subjectId, error: resolveError } = await supabase.rpc("resolve_subject", {
+      subject_name: name,
+    });
+    if (resolveError || !subjectId) {
+      return { error: `Couldn't save "${name}". Please try again.` };
+    }
+    subjectIds.push(subjectId);
+  }
+
+  const { error: deleteError } = await supabase
+    .from("subject_links")
+    .delete()
+    .eq("owner_type", "teacher")
+    .eq("owner_id", user.id);
+  if (deleteError) {
+    return { error: "Couldn't save your subjects. Please try again." };
+  }
+
+  if (subjectIds.length > 0) {
+    const { error: insertError } = await supabase
+      .from("subject_links")
+      .insert(subjectIds.map((subjectId) => ({ owner_type: "teacher" as const, owner_id: user.id, subject_id: subjectId })));
+    if (insertError) {
+      return { error: "Couldn't save your subjects. Please try again." };
+    }
+  }
+
+  return {};
+}
+
 const teacherAccountSchema = z.object({
   phone: z.string().trim().optional(),
 });
@@ -138,6 +228,7 @@ const instituteSettingsSchema = z.object({
   name: z.string().trim().min(2),
   location: z.string().trim().optional(),
   phone: z.string().trim().optional(),
+  established: z.string().trim().optional(),
   hourlyRate: z.coerce.number().min(0).optional(),
   monthlyRate: z.coerce.number().min(0).optional(),
 });
@@ -146,6 +237,7 @@ export async function updateInstituteProfile(input: {
   name: string;
   location: string;
   phone: string;
+  established: string;
   hourlyRate: string;
   monthlyRate: string;
 }): Promise<ActionResult> {
@@ -153,6 +245,7 @@ export async function updateInstituteProfile(input: {
     name: input.name,
     location: input.location,
     phone: input.phone,
+    established: input.established,
     hourlyRate: input.hourlyRate || undefined,
     monthlyRate: input.monthlyRate || undefined,
   });
@@ -182,7 +275,11 @@ export async function updateInstituteProfile(input: {
   if (instituteId) {
     const { error: classError } = await supabase
       .from("class_profiles")
-      .update({ name: parsed.data.name, location: parsed.data.location || null })
+      .update({
+        name: parsed.data.name,
+        location: parsed.data.location || null,
+        established: parsed.data.established || null,
+      })
       .eq("id", instituteId);
     if (classError) {
       return { error: "Couldn't save your changes. Please try again." };
@@ -190,7 +287,12 @@ export async function updateInstituteProfile(input: {
   } else {
     const { data: inserted, error: classError } = await supabase
       .from("class_profiles")
-      .insert({ owner_id: user.id, name: parsed.data.name, location: parsed.data.location || null })
+      .insert({
+        owner_id: user.id,
+        name: parsed.data.name,
+        location: parsed.data.location || null,
+        established: parsed.data.established || null,
+      })
       .select("id")
       .single();
     if (classError || !inserted) {

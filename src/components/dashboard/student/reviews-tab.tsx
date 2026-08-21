@@ -13,32 +13,70 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StarRatingInput } from "@/components/features/star-rating-input";
-import { studentEnrollments, studentReviews } from "@/lib/mock-data";
-import type { StudentReview } from "@/types/dashboard-student";
+import { postReview } from "@/lib/dashboard/reviews-actions";
 
-const TODAY_LABEL = "14 Aug 2026";
+export type ReviewTarget = { ownerType: "teacher" | "class"; ownerId: string; name: string };
+export type StudentPostedReview = {
+  id: string;
+  ownerType: "teacher" | "class";
+  ownerId: string;
+  targetName: string;
+  rating: number;
+  body: string;
+  date: string;
+};
 
-export function ReviewsTab() {
+export function ReviewsTab({
+  targets,
+  initialReviews,
+}: {
+  targets: ReviewTarget[];
+  initialReviews: StudentPostedReview[];
+}) {
   const t = useTranslations("studentDashboard.reviews");
-  const [reviews, setReviews] = useState<StudentReview[]>(studentReviews);
-  const [targetId, setTargetId] = useState(studentEnrollments[0]?.id ?? "");
+  const [reviews, setReviews] = useState<StudentPostedReview[]>(initialReviews);
+  const [targetKey, setTargetKey] = useState(targets[0] ? `${targets[0].ownerType}:${targets[0].ownerId}` : "");
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [ratingResetKey, setRatingResetKey] = useState(0);
   const [posted, setPosted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  function handlePost() {
-    const target = studentEnrollments.find((enrollment) => enrollment.id === targetId);
+  async function handlePost() {
+    const target = targets.find((t) => `${t.ownerType}:${t.ownerId}` === targetKey);
     if (!target || rating === 0 || comment.trim() === "") return;
 
-    const newReview: StudentReview = {
-      id: `rev-${Date.now()}`,
-      targetName: target.targetName,
+    setSaving(true);
+    setError(null);
+    const result = await postReview({
+      targetType: target.ownerType,
+      targetId: target.ownerId,
       rating,
-      body: comment.trim(),
-      date: TODAY_LABEL,
-    };
-    setReviews((prev) => [newReview, ...prev]);
+      comment: comment.trim(),
+    });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    setReviews((prev) => {
+      const existing = prev.find((r) => r.ownerType === target.ownerType && r.ownerId === target.ownerId);
+      const updated: StudentPostedReview = {
+        id: existing?.id ?? `local-${target.ownerType}-${target.ownerId}`,
+        ownerType: target.ownerType,
+        ownerId: target.ownerId,
+        targetName: target.name,
+        rating,
+        body: comment.trim(),
+        date: existing?.date ?? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date()),
+      };
+      if (existing) {
+        return prev.map((r) => (r.id === existing.id ? updated : r));
+      }
+      return [updated, ...prev];
+    });
     setComment("");
     setRating(0);
     setRatingResetKey((key) => key + 1);
@@ -53,68 +91,79 @@ export function ReviewsTab() {
         <p className="text-sm text-muted-foreground">{t("pageSubtitle")}</p>
       </div>
 
-      <div className="mb-6 rounded-lg border border-border bg-white p-5">
-        <h3 className="mb-4 text-lg">{t("leftTitle")}</h3>
-        {reviews.map((review) => (
-          <div key={review.id} className="border-b border-border py-4 last:border-b-0 first:pt-0">
-            <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-              <span className="font-semibold text-foreground">{review.targetName}</span>
-              <span className="text-xs text-muted-foreground">{review.date}</span>
-            </div>
-            <div className="mb-2 flex items-center gap-0.5 text-cta">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="size-3.5" fill={i < review.rating ? "currentColor" : "none"} />
-              ))}
-            </div>
-            <p className="text-sm text-foreground/85">{review.body}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="rounded-lg border border-border bg-white p-5">
-        <h3 className="mb-4 text-lg">{t("composerTitle")}</h3>
-        <div className="flex flex-col gap-4">
-          <div>
-            <Label className="mb-1.5">{t("targetLabel")}</Label>
-            <Select value={targetId} onValueChange={(value) => setTargetId(value ?? "")}>
-              <SelectTrigger className="w-full sm:w-80">
-                <SelectValue placeholder={t("targetLabel")} />
-              </SelectTrigger>
-              <SelectContent>
-                {studentEnrollments.map((enrollment) => (
-                  <SelectItem key={enrollment.id} value={enrollment.id}>
-                    {enrollment.targetName}
-                  </SelectItem>
+      {reviews.length > 0 && (
+        <div className="mb-6 rounded-lg border border-border bg-white p-5">
+          <h3 className="mb-4 text-lg">{t("leftTitle")}</h3>
+          {reviews.map((review) => (
+            <div key={review.id} className="border-b border-border py-4 last:border-b-0 first:pt-0">
+              <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                <span className="font-semibold text-foreground">{review.targetName}</span>
+                <span className="text-xs text-muted-foreground">{review.date}</span>
+              </div>
+              <div className="mb-2 flex items-center gap-0.5 text-cta">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="size-3.5" fill={i < review.rating ? "currentColor" : "none"} />
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
+              </div>
+              <p className="text-sm text-foreground/85">{review.body}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
-          <div>
-            <Label className="mb-1.5">{t("ratingLabel")}</Label>
-            <StarRatingInput key={ratingResetKey} name="review-rating" value={rating} onChange={setRating} />
-          </div>
+      {targets.length > 0 ? (
+        <div className="rounded-lg border border-border bg-white p-5">
+          <h3 className="mb-4 text-lg">{t("composerTitle")}</h3>
+          <div className="flex flex-col gap-4">
+            <div>
+              <Label className="mb-1.5">{t("targetLabel")}</Label>
+              <Select value={targetKey} onValueChange={(value) => setTargetKey(value ?? "")}>
+                <SelectTrigger className="w-full sm:w-80">
+                  <SelectValue placeholder={t("targetLabel")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {targets.map((target) => (
+                    <SelectItem key={`${target.ownerType}:${target.ownerId}`} value={`${target.ownerType}:${target.ownerId}`}>
+                      {target.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div>
-            <Label htmlFor="review-comment" className="mb-1.5">
-              {t("commentLabel")}
-            </Label>
-            <textarea
-              id="review-comment"
-              rows={4}
-              placeholder={t("commentPlaceholder")}
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              className="h-auto w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            />
-          </div>
+            <div>
+              <Label className="mb-1.5">{t("ratingLabel")}</Label>
+              <StarRatingInput key={ratingResetKey} name="review-rating" value={rating} onChange={setRating} />
+            </div>
 
-          <div className="flex items-center gap-3">
-            <Button onClick={handlePost}>{t("postButton")}</Button>
-            {posted && <span className="text-sm font-medium text-success">{t("posted")}</span>}
+            <div>
+              <Label htmlFor="review-comment" className="mb-1.5">
+                {t("commentLabel")}
+              </Label>
+              <textarea
+                id="review-comment"
+                rows={4}
+                placeholder={t("commentPlaceholder")}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="h-auto w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Button onClick={handlePost} disabled={saving}>
+                {t("postButton")}
+              </Button>
+              {posted && <span className="text-sm font-medium text-success">{t("posted")}</span>}
+              {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <p className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
+          {t("noTargets")}
+        </p>
+      )}
     </div>
   );
 }

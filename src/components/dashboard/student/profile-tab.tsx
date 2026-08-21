@@ -7,21 +7,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { updateStudentProfile } from "@/lib/dashboard/actions";
+import { updateStudentProfile, updateNotificationPrefs } from "@/lib/dashboard/actions";
 
 export function ProfileTab({
   initialName,
   initialPhone,
+  initialGrade,
+  initialNotificationPrefs,
   email,
 }: {
   initialName: string;
   initialPhone: string;
+  initialGrade: string;
+  initialNotificationPrefs: Record<string, boolean>;
   email: string;
 }) {
   return (
     <div className="flex flex-col gap-5">
-      <ProfilePanel initialName={initialName} initialPhone={initialPhone} email={email} />
-      <NotificationsPanel />
+      <ProfilePanel initialName={initialName} initialPhone={initialPhone} initialGrade={initialGrade} email={email} />
+      <NotificationsPanel initialPrefs={initialNotificationPrefs} />
     </div>
   );
 }
@@ -29,10 +33,12 @@ export function ProfileTab({
 function ProfilePanel({
   initialName,
   initialPhone,
+  initialGrade,
   email,
 }: {
   initialName: string;
   initialPhone: string;
+  initialGrade: string;
   email: string;
 }) {
   const t = useTranslations("studentDashboard.profile");
@@ -41,10 +47,8 @@ function ProfilePanel({
   const emailId = useId();
   const phoneId = useId();
 
-  // "Grade" has no backing column in `profiles` yet — kept as local-only
-  // input until there's a schema decision for where it should live.
   const [name, setName] = useState(initialName);
-  const [grade, setGrade] = useState("");
+  const [grade, setGrade] = useState(initialGrade);
   const [phone, setPhone] = useState(initialPhone);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +57,7 @@ function ProfilePanel({
   async function handleSave() {
     setSaving(true);
     setError(null);
-    const result = await updateStudentProfile({ fullName: name, phone });
+    const result = await updateStudentProfile({ fullName: name, phone, gradeLevel: grade });
     setSaving(false);
     if (result.error) {
       setError(result.error);
@@ -106,14 +110,21 @@ function ProfilePanel({
   );
 }
 
-function NotificationsPanel() {
+function NotificationsPanel({ initialPrefs }: { initialPrefs: Record<string, boolean> }) {
   const t = useTranslations("studentDashboard.profile");
-  const [newNotes, setNewNotes] = useState(true);
-  const [liveReminders, setLiveReminders] = useState(true);
-  const [examGraded, setExamGraded] = useState(true);
+  const [newNotes, setNewNotes] = useState(initialPrefs.newNotes ?? true);
+  const [liveReminders, setLiveReminders] = useState(initialPrefs.liveReminders ?? true);
+  const [examGraded, setExamGraded] = useState(initialPrefs.examGraded ?? true);
   const newNotesId = useId();
   const liveRemindersId = useId();
   const examGradedId = useId();
+
+  function handleToggle(key: string, setter: (value: boolean) => void) {
+    return (checked: boolean) => {
+      setter(checked);
+      updateNotificationPrefs({ [key]: checked });
+    };
+  }
 
   return (
     <div className="rounded-lg border border-border bg-white p-5">
@@ -121,15 +132,23 @@ function NotificationsPanel() {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
           <Label htmlFor={newNotesId}>{t("notifNewNotes")}</Label>
-          <Switch id={newNotesId} checked={newNotes} onCheckedChange={setNewNotes} />
+          <Switch id={newNotesId} checked={newNotes} onCheckedChange={handleToggle("newNotes", setNewNotes)} />
         </div>
         <div className="flex items-center justify-between gap-3">
           <Label htmlFor={liveRemindersId}>{t("notifLiveReminders")}</Label>
-          <Switch id={liveRemindersId} checked={liveReminders} onCheckedChange={setLiveReminders} />
+          <Switch
+            id={liveRemindersId}
+            checked={liveReminders}
+            onCheckedChange={handleToggle("liveReminders", setLiveReminders)}
+          />
         </div>
         <div className="flex items-center justify-between gap-3">
           <Label htmlFor={examGradedId}>{t("notifExamGraded")}</Label>
-          <Switch id={examGradedId} checked={examGraded} onCheckedChange={setExamGraded} />
+          <Switch
+            id={examGradedId}
+            checked={examGraded}
+            onCheckedChange={handleToggle("examGraded", setExamGraded)}
+          />
         </div>
       </div>
     </div>

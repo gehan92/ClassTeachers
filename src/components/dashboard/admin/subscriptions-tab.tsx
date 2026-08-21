@@ -1,22 +1,57 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { updatePlatformSetting } from "@/lib/dashboard/admin-actions";
 
-export function SubscriptionsTab() {
+export function SubscriptionsTab({
+  freeCount,
+  standardCount,
+  premiumCount,
+  standardMrrDisplay,
+  premiumMrrDisplay,
+  churnDisplay,
+  initialStandardPrice,
+  initialPremiumPrice,
+}: {
+  freeCount: number;
+  standardCount: number;
+  premiumCount: number;
+  standardMrrDisplay: string;
+  premiumMrrDisplay: string;
+  churnDisplay: string;
+  initialStandardPrice: string;
+  initialPremiumPrice: string;
+}) {
   const t = useTranslations("adminDashboard.subscriptions");
   const tCommon = useTranslations("adminDashboard");
-  const [standardPrice, setStandardPrice] = useState("2500");
-  const [premiumPrice, setPremiumPrice] = useState("4900");
+  const router = useRouter();
+  const [standardPrice, setStandardPrice] = useState(initialStandardPrice);
+  const [premiumPrice, setPremiumPrice] = useState(initialPremiumPrice);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSave() {
+  async function handleSave() {
+    setSaving(true);
+    setError(null);
+    const [standardResult, premiumResult] = await Promise.all([
+      updatePlatformSetting({ key: "standard_price", value: standardPrice }),
+      updatePlatformSetting({ key: "premium_price", value: premiumPrice }),
+    ]);
+    setSaving(false);
+    if (standardResult.error || premiumResult.error) {
+      setError(standardResult.error ?? premiumResult.error ?? null);
+      return;
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+    router.refresh();
   }
 
   return (
@@ -26,10 +61,10 @@ export function SubscriptionsTab() {
       </div>
 
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label={t("stats.free")} value="1,240" />
-        <StatCard label={t("stats.standard")} value="690" delta="Rs. 8.3M MRR" />
-        <StatCard label={t("stats.premium")} value="144" delta="Rs. 4.1M MRR" />
-        <StatCard label={t("stats.churn")} value="2.1%" delta="+0.3pp" deltaDown />
+        <StatCard label={t("stats.free")} value={freeCount} />
+        <StatCard label={t("stats.standard")} value={standardCount} delta={standardMrrDisplay} />
+        <StatCard label={t("stats.premium")} value={premiumCount} delta={premiumMrrDisplay} />
+        <StatCard label={t("stats.churn")} value={churnDisplay} />
       </div>
 
       <div className="mt-6 rounded-lg border border-border bg-white p-5">
@@ -59,8 +94,11 @@ export function SubscriptionsTab() {
           </div>
         </div>
         <div className="mt-4 flex items-center gap-3">
-          <Button onClick={handleSave}>{t("pricing.save")}</Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {t("pricing.save")}
+          </Button>
           {saved && <span className="text-sm font-medium text-success">{tCommon("saved")}</span>}
+          {error && <span className="text-sm font-medium text-destructive">{error}</span>}
         </div>
       </div>
     </div>

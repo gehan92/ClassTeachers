@@ -57,6 +57,8 @@ export type Database = {
           full_name: string;
           phone: string | null;
           avatar_url: string | null;
+          grade_level: string | null;
+          notification_prefs: Json;
           preferred_locale: string;
           created_at: string;
           updated_at: string;
@@ -67,6 +69,8 @@ export type Database = {
           full_name: string;
           phone?: string | null;
           avatar_url?: string | null;
+          grade_level?: string | null;
+          notification_prefs?: Json;
           preferred_locale?: string;
           created_at?: string;
           updated_at?: string;
@@ -77,6 +81,8 @@ export type Database = {
           full_name?: string;
           phone?: string | null;
           avatar_url?: string | null;
+          grade_level?: string | null;
+          notification_prefs?: Json;
           preferred_locale?: string;
           created_at?: string;
           updated_at?: string;
@@ -146,6 +152,7 @@ export type Database = {
           ad_content: string | null;
           photo_url: string | null;
           location: string | null;
+          established: string | null;
           class_type: "physical" | "online" | "both" | null;
           status: ProfileStatus;
           created_at: string;
@@ -159,6 +166,7 @@ export type Database = {
           ad_content?: string | null;
           photo_url?: string | null;
           location?: string | null;
+          established?: string | null;
           class_type?: "physical" | "online" | "both" | null;
           status?: ProfileStatus;
           created_at?: string;
@@ -172,6 +180,7 @@ export type Database = {
           ad_content?: string | null;
           photo_url?: string | null;
           location?: string | null;
+          established?: string | null;
           class_type?: "physical" | "online" | "both" | null;
           status?: ProfileStatus;
           created_at?: string;
@@ -360,9 +369,15 @@ export type Database = {
           owner_id: string;
           subject_id: string | null;
           question_text: string;
-          type: "theory" | "practical";
+          type: "mcq" | "essay";
           difficulty: "easy" | "medium" | "hard";
           correct_answer: string | null;
+          topic: string | null;
+          marks: number;
+          grade_band: "1-5" | "6-9" | "10-11" | "12-13" | "campus" | null;
+          batch_id: string | null;
+          options: Json | null;
+          correct_option_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -372,9 +387,15 @@ export type Database = {
           owner_id: string;
           subject_id?: string | null;
           question_text: string;
-          type: "theory" | "practical";
+          type: "mcq" | "essay";
           difficulty?: "easy" | "medium" | "hard";
           correct_answer?: string | null;
+          topic?: string | null;
+          marks?: number;
+          grade_band?: "1-5" | "6-9" | "10-11" | "12-13" | "campus" | null;
+          batch_id?: string | null;
+          options?: Json | null;
+          correct_option_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -384,9 +405,15 @@ export type Database = {
           owner_id?: string;
           subject_id?: string | null;
           question_text?: string;
-          type?: "theory" | "practical";
+          type?: "mcq" | "essay";
           difficulty?: "easy" | "medium" | "hard";
           correct_answer?: string | null;
+          topic?: string | null;
+          marks?: number;
+          grade_band?: "1-5" | "6-9" | "10-11" | "12-13" | "campus" | null;
+          batch_id?: string | null;
+          options?: Json | null;
+          correct_option_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -536,6 +563,33 @@ export type Database = {
         Update: {
           live_class_id?: string;
           join_link?: string;
+        };
+        // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
+        // every table declares no relationships rather than a guessed one.
+        Relationships: [];
+      };
+
+      attendance_records: {
+        Row: {
+          id: string;
+          live_class_id: string;
+          student_id: string;
+          status: "present" | "absent" | "late";
+          marked_at: string;
+        };
+        Insert: {
+          id?: string;
+          live_class_id: string;
+          student_id: string;
+          status?: "present" | "absent" | "late";
+          marked_at?: string;
+        };
+        Update: {
+          id?: string;
+          live_class_id?: string;
+          student_id?: string;
+          status?: "present" | "absent" | "late";
+          marked_at?: string;
         };
         // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
         // every table declares no relationships rather than a guessed one.
@@ -737,6 +791,27 @@ export type Database = {
         Relationships: [];
       };
 
+      platform_settings: {
+        Row: {
+          key: string;
+          value: string;
+          updated_at: string;
+        };
+        Insert: {
+          key: string;
+          value: string;
+          updated_at?: string;
+        };
+        Update: {
+          key?: string;
+          value?: string;
+          updated_at?: string;
+        };
+        // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
+        // every table declares no relationships rather than a guessed one.
+        Relationships: [];
+      };
+
       audit_log: {
         Row: {
           id: string;
@@ -797,6 +872,22 @@ export type Database = {
       get_teacher_contact: {
         Args: { p_teacher_id: string };
         Returns: string | null;
+      };
+      get_class_contact: {
+        Args: { p_class_id: string };
+        Returns: string | null;
+      };
+      get_enrolled_teacher_names: {
+        Args: { p_teacher_ids: string[] };
+        Returns: { id: string; full_name: string }[];
+      };
+      get_roster_student_info: {
+        Args: { p_student_ids: string[] };
+        Returns: { id: string; full_name: string; phone: string | null }[];
+      };
+      get_linked_teacher_names: {
+        Args: { p_class_id: string; p_teacher_ids: string[] };
+        Returns: { id: string; full_name: string }[];
       };
       owns_exam: {
         Args: { p_exam_id: string };

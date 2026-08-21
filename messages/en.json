@@ -962,8 +962,11 @@
       "photoHeading": "Profile photo",
       "uploadPhoto": "Upload new photo",
       "qualificationsHeading": "Qualifications",
+      "qualificationPlaceholder": "e.g. BSc in Mathematics, University of Colombo (2015)",
+      "addQualification": "Add qualification",
+      "removeQualification": "Remove qualification",
       "fields": {
-        "degree": "Degree",
+        "qualifications": "Qualifications",
         "experience": "Experience",
         "subjects": "Subjects",
         "gradeLevels": "Grade levels",

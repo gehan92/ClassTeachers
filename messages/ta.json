@@ -962,8 +962,11 @@
       "photoHeading": "சுயவிவரப் புகைப்படம்",
       "uploadPhoto": "புதிய புகைப்படத்தைப் பதிவேற்றவும்",
       "qualificationsHeading": "தகுதிகள்",
+      "qualificationPlaceholder": "எ.கா. கணிதத்தில் இளங்கலை (BSc), கொழும்பு பல்கலைக்கழகம் (2015)",
+      "addQualification": "தகுதியைச் சேர்",
+      "removeQualification": "தகுதியை அகற்று",
       "fields": {
-        "degree": "பட்டம்",
+        "qualifications": "தகுதிகள்",
         "experience": "அனுபவம்",
         "subjects": "பாடங்கள்",
         "gradeLevels": "தரங்கள்",

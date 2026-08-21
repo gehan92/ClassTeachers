@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ export function ProfileTab({
   initialPublished,
   teacherName,
 }: {
-  initialQualifications: string;
+  initialQualifications: string[];
   initialExperienceYears: string;
   initialLocation: string;
   initialClassType: ClassType;
@@ -55,7 +56,6 @@ export function ProfileTab({
   // free text, and "grade levels" has no backing column at all — both kept
   // as local-only until there's a subject-picker UI / schema decision.
   const [form, setForm] = useState({
-    qualifications: initialQualifications,
     experience: initialExperienceYears,
     subjects: "",
     gradeLevels: "",
@@ -65,14 +65,26 @@ export function ProfileTab({
     monthlyRate: initialMonthlyRate,
   });
 
+  const [qualifications, setQualifications] = useState(initialQualifications);
+
+  function updateQualification(index: number, value: string) {
+    setQualifications((qs) => qs.map((q, i) => (i === index ? value : q)));
+  }
+
+  function addQualification() {
+    setQualifications((qs) => [...qs, ""]);
+  }
+
+  function removeQualification(index: number) {
+    setQualifications((qs) => qs.filter((_, i) => i !== index));
+  }
+
   const [photoSaved, setPhotoSaved] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  function update(
-    field: "qualifications" | "experience" | "subjects" | "gradeLevels" | "location" | "hourlyRate" | "monthlyRate",
-  ) {
+  function update(field: "experience" | "subjects" | "gradeLevels" | "location" | "hourlyRate" | "monthlyRate") {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [field]: e.target.value }));
   }
 
@@ -85,7 +97,7 @@ export function ProfileTab({
     setSaving(true);
     setError(null);
     const result = await updateTeacherProfile({
-      qualifications: form.qualifications,
+      qualifications,
       experienceYears: form.experience,
       location: form.location,
       classType: form.classType,
@@ -122,11 +134,38 @@ export function ProfileTab({
 
       <div className={panelClass}>
         <h3 className="mb-4 text-lg">{t("qualificationsHeading")}</h3>
+
+        <div className="mb-5 flex flex-col gap-1.5">
+          <Label>{t("fields.qualifications")}</Label>
+          {qualifications.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {qualifications.map((qualification, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={qualification}
+                    placeholder={t("qualificationPlaceholder")}
+                    onChange={(e) => updateQualification(index, e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("removeQualification")}
+                    onClick={() => removeQualification(index)}
+                  >
+                    <X className="size-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          <Button type="button" variant="outline" size="sm" className="mt-1 self-start" onClick={addQualification}>
+            <Plus className="size-4" />
+            {t("addQualification")}
+          </Button>
+        </div>
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="degree">{t("fields.degree")}</Label>
-            <Input id="degree" value={form.qualifications} onChange={update("qualifications")} />
-          </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="experience">{t("fields.experience")}</Label>
             <Input id="experience" type="number" min={0} value={form.experience} onChange={update("experience")} />

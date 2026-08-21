@@ -53,7 +53,7 @@ async function ensureTeacherProfileRow(
       bio: metadata.bio ?? null,
       institution: metadata.institution ?? null,
       academic_title: metadata.academic_title ?? null,
-      qualifications: metadata.qualifications ?? null,
+      qualifications: metadata.qualifications ? [metadata.qualifications] : null,
       class_type: metadata.class_type ?? "both",
     },
     { onConflict: "id" },

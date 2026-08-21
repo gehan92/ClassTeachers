@@ -35,7 +35,7 @@ export async function updateStudentProfile(input: { fullName: string; phone: str
 }
 
 const teacherProfileSchema = z.object({
-  qualifications: z.string().trim().optional(),
+  qualifications: z.array(z.string().trim().min(1)).optional(),
   experienceYears: z.coerce.number().int().min(0).optional(),
   location: z.string().trim().optional(),
   classType: z.enum(["physical", "online", "both"]),
@@ -44,7 +44,7 @@ const teacherProfileSchema = z.object({
 });
 
 export async function updateTeacherProfile(input: {
-  qualifications: string;
+  qualifications: string[];
   experienceYears: string;
   location: string;
   classType: string;
@@ -52,7 +52,7 @@ export async function updateTeacherProfile(input: {
   monthlyRate: string;
 }): Promise<ActionResult> {
   const parsed = teacherProfileSchema.safeParse({
-    qualifications: input.qualifications,
+    qualifications: input.qualifications.map((q) => q.trim()).filter(Boolean),
     experienceYears: input.experienceYears || undefined,
     location: input.location,
     classType: input.classType,
@@ -77,7 +77,7 @@ export async function updateTeacherProfile(input: {
   const { error: profileError } = await supabase.from("teacher_profiles").upsert(
     {
       id: user.id,
-      qualifications: parsed.data.qualifications || null,
+      qualifications: parsed.data.qualifications && parsed.data.qualifications.length > 0 ? parsed.data.qualifications : null,
       experience_years: parsed.data.experienceYears ?? null,
       location: parsed.data.location || null,
       class_type: parsed.data.classType,

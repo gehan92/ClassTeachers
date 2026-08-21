@@ -169,7 +169,7 @@ export default async function TeacherDashboardPage({
         ),
         profile: (
           <ProfileTab
-            initialQualifications={teacherProfile?.qualifications ?? ""}
+            initialQualifications={teacherProfile?.qualifications ?? []}
             initialExperienceYears={teacherProfile?.experience_years?.toString() ?? ""}
             initialLocation={teacherProfile?.location ?? ""}
             initialClassType={teacherProfile?.class_type ?? "physical"}

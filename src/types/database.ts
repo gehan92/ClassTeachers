@@ -91,7 +91,7 @@ export type Database = {
           id: string;
           headline: string | null;
           bio: string | null;
-          qualifications: string | null;
+          qualifications: string[] | null;
           experience_years: number | null;
           class_type: "physical" | "online" | "both";
           location: string | null;
@@ -106,7 +106,7 @@ export type Database = {
           id: string;
           headline?: string | null;
           bio?: string | null;
-          qualifications?: string | null;
+          qualifications?: string[] | null;
           experience_years?: number | null;
           class_type?: "physical" | "online" | "both";
           location?: string | null;
@@ -121,7 +121,7 @@ export type Database = {
           id?: string;
           headline?: string | null;
           bio?: string | null;
-          qualifications?: string | null;
+          qualifications?: string[] | null;
           experience_years?: number | null;
           class_type?: "physical" | "online" | "both";
           location?: string | null;

@@ -962,8 +962,11 @@
       "photoHeading": "පැතිකඩ ඡායාරූපය",
       "uploadPhoto": "නව ඡායාරූපයක් උඩුගත කරන්න",
       "qualificationsHeading": "සුදුසුකම්",
+      "qualificationPlaceholder": "උදා. විද්‍යාවේදී (BSc) ගණිතය, කොළඹ විශ්වවිද්‍යාලය (2015)",
+      "addQualification": "සුදුසුකමක් එකතු කරන්න",
+      "removeQualification": "සුදුසුකම ඉවත් කරන්න",
       "fields": {
-        "degree": "උපාධිය",
+        "qualifications": "සුදුසුකම්",
         "experience": "පළපුරුද්ද",
         "subjects": "විෂයයන්",
         "gradeLevels": "ශ්‍රේණි මට්ටම්",

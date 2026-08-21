@@ -1,34 +1,36 @@
 import type { ReviewDisplay } from "./review";
 
 /**
- * Full detail shape for a public teacher profile page. Mirrors
- * teacher_profiles (0004) + prices (0016, owner_type 'teacher') +
- * notes (0008, owner_type 'teacher') + live_classes (0012, owner_type
- * 'teacher') + reviews (0015). `name`/`masked` follow the same masking
- * convention as `Listing` — masking is baked into the mock string, not
- * computed at render time. Phone is deliberately NOT part of this type:
- * per 0004's get_teacher_contact(), it's never fetched for the public
- * profile and is always rendered as a locked placeholder instead.
+ * Full detail shape for a public teacher profile page, built from
+ * get_public_teacher_profile() (0026) + a direct batches select (0020,
+ * publicly readable) + notes (0008, RLS-gated — only populated when the
+ * current viewer is the owner, an enrolled student, or an admin) +
+ * advertisements (0017, owner's own_profile placement ad, optional).
+ * `name` always comes pre-masked from mask_display_name() — there is no
+ * unmasked variant to fall back to on this page.
  */
 export type TeacherProfileDetail = {
   id: string;
   name: string;
-  masked: boolean;
-  headline: string;
-  bio: string;
-  location: string;
+  headline: string | null;
+  bio: string | null;
+  location: string | null;
   classType: "physical" | "online" | "both";
-  experienceYears: number;
-  degree: string;
+  experienceYears: number | null;
+  qualifications: string[];
+  photoUrl: string | null;
   subjects: string[];
-  gradeLevels: string;
+  gradeBand: string | null;
   rating: number;
   reviewCount: number;
   avatarInitials: string;
   hourlyRate?: number;
   monthlyRate?: number;
-  adText: string;
-  notes: { title: string; pages: number }[];
-  schedule: { day: string; title: string; time: string }[];
+  adHeadline?: string;
+  adText?: string;
+  notesCount: number;
+  notes: { id: string; title: string; pageCount: number | null }[];
+  schedule: { id: string; title: string; mode: "online" | "physical"; location: string | null; scheduleNote: string | null; gradeBand: string | null }[];
   reviews: ReviewDisplay[];
+  phone: string | null;
 };

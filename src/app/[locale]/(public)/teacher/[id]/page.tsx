@@ -1,16 +1,94 @@
 import { notFound } from "next/navigation";
-import { useTranslations } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
-import { CheckCircle2, FileText, MapPin, Star } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { FileText, MapPin, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { GateNote } from "@/components/features/gate-note";
 import { PriceBox } from "@/components/features/price-box";
 import { AdSlot } from "@/components/features/ad-slot";
 import { LockPill } from "@/components/features/lock-pill";
 import { ReviewItem } from "@/components/features/review-item";
-import { getTeacherProfile } from "@/lib/mock-data";
+import { createClient } from "@/lib/supabase/server";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import type { TeacherProfileDetail } from "@/types/teacher-profile";
+
+async function loadTeacherProfile(
+  id: string,
+  locale: string,
+): Promise<TeacherProfileDetail | null> {
+  const supabase = await createClient();
+
+  const [{ data: rows, error }, { data: reviewRows }, { data: batchRows }, { data: noteRows }, { data: phone }, { data: adRow }] =
+    await Promise.all([
+      supabase.rpc("get_public_teacher_profile", { p_teacher_id: id }),
+      supabase.rpc("list_public_reviews", { p_target_type: "teacher", p_target_id: id }),
+      supabase
+        .from("batches")
+        .select("id, title, mode, location, schedule_note, grade_band")
+        .eq("owner_type", "teacher")
+        .eq("owner_id", id)
+        .eq("status", "active"),
+      // RLS-gated (0008): only returns rows when the current viewer is the
+      // owner, an enrolled student, or an admin — everyone else gets an
+      // empty array here, which is the correct "you can't see these" signal.
+      supabase.from("notes").select("id, title, page_count").eq("owner_type", "teacher").eq("owner_id", id),
+      supabase.rpc("get_teacher_contact", { p_teacher_id: id }),
+      supabase
+        .from("advertisements")
+        .select("content, title")
+        .eq("owner_type", "teacher")
+        .eq("owner_id", id)
+        .eq("placement", "own_profile")
+        .maybeSingle(),
+    ]);
+
+  if (error || !rows || rows.length === 0) {
+    return null;
+  }
+  const teacher = rows[0];
+
+  const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+
+  return {
+    id: teacher.id,
+    name: teacher.display_name ?? "Teacher",
+    headline: teacher.headline,
+    bio: teacher.bio,
+    location: teacher.location,
+    classType: (teacher.class_type as TeacherProfileDetail["classType"]) ?? "physical",
+    experienceYears: teacher.experience_years,
+    qualifications: teacher.qualifications ?? [],
+    photoUrl: teacher.photo_url,
+    subjects: teacher.subjects ?? [],
+    gradeBand: teacher.grade_band,
+    rating: teacher.rating,
+    reviewCount: teacher.review_count,
+    avatarInitials: (teacher.display_name ?? "T").charAt(0).toUpperCase(),
+    hourlyRate: teacher.hourly_rate ?? undefined,
+    monthlyRate: teacher.monthly_rate ?? undefined,
+    adHeadline: adRow?.title ?? undefined,
+    adText: adRow?.content ?? undefined,
+    notesCount: teacher.notes_count,
+    notes: (noteRows ?? []).map((n) => ({ id: n.id, title: n.title, pageCount: n.page_count })),
+    schedule: (batchRows ?? []).map((b) => ({
+      id: b.id,
+      title: b.title,
+      mode: b.mode as "online" | "physical",
+      location: b.location,
+      scheduleNote: b.schedule_note,
+      gradeBand: b.grade_band,
+    })),
+    reviews: (reviewRows ?? []).map((r) => ({
+      id: r.id,
+      author: r.author ?? "Anonymous",
+      date: dateFormatter.format(new Date(r.created_at)),
+      rating: r.rating,
+      body: r.body ?? "",
+      reply: r.reply ?? undefined,
+    })),
+    phone,
+  } satisfies TeacherProfileDetail;
+}
 
 export default async function TeacherProfilePage({
   params,
@@ -18,31 +96,33 @@ export default async function TeacherProfilePage({
   const { locale, id } = await params;
   setRequestLocale(locale);
 
-  const teacher = getTeacherProfile(id);
+  const teacher = await loadTeacherProfile(id, locale);
   if (!teacher) {
     notFound();
   }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
     <>
       <Hero teacher={teacher} />
       <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-8 px-7 py-10 lg:grid-cols-[2fr_1fr]">
         <div className="min-w-0">
-          <AboutPanel teacher={teacher} />
+          <AboutPanel teacher={teacher} showGate={!user} />
           <QualificationsPanel teacher={teacher} />
-          <NotesPanel teacher={teacher} />
-          <SchedulePanel teacher={teacher} />
+          {(teacher.notes.length > 0 || teacher.notesCount > 0) && <NotesPanel teacher={teacher} />}
+          {teacher.schedule.length > 0 && <SchedulePanel teacher={teacher} />}
           <QuestionBankPanel />
           <ReviewsPanel teacher={teacher} />
         </div>
         <div className="flex flex-col gap-5">
-          <PriceBox
-            hourlyRate={teacher.hourlyRate}
-            monthlyRate={teacher.monthlyRate}
-            joinHref="/signup"
-          />
-          <AdSlot size="sm" eyebrow={teacher.headline} text={teacher.adText} />
-          <VerificationPanel />
+          <PriceBox hourlyRate={teacher.hourlyRate} monthlyRate={teacher.monthlyRate} joinHref="/signup" />
+          {teacher.adText && (
+            <AdSlot size="sm" eyebrow={teacher.adHeadline ?? teacher.headline ?? ""} text={teacher.adText} />
+          )}
         </div>
       </div>
     </>
@@ -90,23 +170,31 @@ function Hero({ teacher }: { teacher: TeacherProfileDetail }) {
             {teacher.avatarInitials}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="mb-1.5 font-mono text-xs uppercase tracking-[0.12em] text-white/70">
-              {teacher.headline}
-            </div>
+            {teacher.headline && (
+              <div className="mb-1.5 font-mono text-xs uppercase tracking-[0.12em] text-white/70">
+                {teacher.headline}
+              </div>
+            )}
             <h1 className="mb-2 text-[28px] text-white sm:text-[34px]">{teacher.name}</h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-white/85">
-              <span className="flex items-center gap-1.5">
-                <StarRating rating={teacher.rating} />
-                {teacher.rating.toFixed(1)} ({teacher.reviewCount})
-              </span>
-              <span className="flex items-center gap-1">
-                <MapPin className="size-3.5" />
-                {teacher.location}
-              </span>
+              {teacher.reviewCount > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <StarRating rating={teacher.rating} />
+                  {teacher.rating.toFixed(1)} ({teacher.reviewCount})
+                </span>
+              )}
+              {teacher.location && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="size-3.5" />
+                  {teacher.location}
+                </span>
+              )}
               <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs">
                 {classTypeLabel(t, teacher.classType)}
               </span>
-              <span>{t("yearsExperience", { years: teacher.experienceYears })}</span>
+              {teacher.experienceYears != null && (
+                <span>{t("yearsExperience", { years: teacher.experienceYears })}</span>
+              )}
             </div>
           </div>
           <div className="flex shrink-0 gap-2.5">
@@ -129,13 +217,13 @@ function Hero({ teacher }: { teacher: TeacherProfileDetail }) {
   );
 }
 
-function AboutPanel({ teacher }: { teacher: TeacherProfileDetail }) {
+function AboutPanel({ teacher, showGate }: { teacher: TeacherProfileDetail; showGate: boolean }) {
   const t = useTranslations("profilePage");
 
   return (
     <Panel title={t("about")}>
-      <GateNote />
-      <p className="m-0 text-sm text-foreground/85">{teacher.bio}</p>
+      {showGate && <GateNote />}
+      <p className="m-0 text-sm text-foreground/85">{teacher.bio || t("noBio")}</p>
     </Panel>
   );
 }
@@ -147,25 +235,41 @@ function QualificationsPanel({ teacher }: { teacher: TeacherProfileDetail }) {
     <Panel title={t("qualifications")}>
       <div className="grid grid-cols-[140px_1fr] gap-x-4 gap-y-3.5 text-sm">
         <div className="text-muted-foreground">{t("degreeLabel")}</div>
-        <div className="font-medium text-foreground">{teacher.degree}</div>
+        <div className="font-medium text-foreground">
+          {teacher.qualifications.length > 0 ? (
+            <ul className="m-0 list-disc space-y-1 pl-4">
+              {teacher.qualifications.map((q, i) => (
+                <li key={i}>{q}</li>
+              ))}
+            </ul>
+          ) : (
+            "—"
+          )}
+        </div>
 
         <div className="text-muted-foreground">{t("experienceLabel")}</div>
         <div className="font-medium text-foreground">
-          {t("yearsExperience", { years: teacher.experienceYears })}
+          {teacher.experienceYears != null ? t("yearsExperience", { years: teacher.experienceYears }) : "—"}
         </div>
 
         <div className="text-muted-foreground">{t("subjectsLabel")}</div>
-        <div className="font-medium text-foreground">{teacher.subjects.join(", ")}</div>
+        <div className="font-medium text-foreground">
+          {teacher.subjects.length > 0 ? teacher.subjects.join(", ") : "—"}
+        </div>
 
         <div className="text-muted-foreground">{t("gradeLevelsLabel")}</div>
-        <div className="font-medium text-foreground">{teacher.gradeLevels}</div>
+        <div className="font-medium text-foreground">{teacher.gradeBand ?? "—"}</div>
 
         <div className="text-muted-foreground">{t("classTypeLabel")}</div>
         <div className="font-medium text-foreground">{classTypeLabel(t, teacher.classType)}</div>
 
         <div className="text-muted-foreground">{t("phoneLabel")}</div>
         <div>
-          <LockPill>{t("phoneLocked")}</LockPill>
+          {teacher.phone ? (
+            <span className="font-medium text-foreground">{teacher.phone}</span>
+          ) : (
+            <LockPill>{t("phoneLocked")}</LockPill>
+          )}
         </div>
       </div>
     </Panel>
@@ -177,21 +281,32 @@ function NotesPanel({ teacher }: { teacher: TeacherProfileDetail }) {
 
   return (
     <Panel title={t("notesTitle")}>
-      {teacher.notes.map((note) => (
-        <div
-          key={note.title}
-          className="flex items-center gap-3 border-b border-border py-3 last:border-b-0"
-        >
-          <FileText className="size-4 shrink-0 text-primary" />
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium text-foreground">{note.title}</div>
-            <div className="text-xs text-muted-foreground">
-              {t("notesSubtitle", { pages: note.pages })}
+      {teacher.notes.length > 0 ? (
+        teacher.notes.map((note) => (
+          <div key={note.id} className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
+            <FileText className="size-4 shrink-0 text-primary" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-medium text-foreground">{note.title}</div>
+              {note.pageCount != null && (
+                <div className="text-xs text-muted-foreground">{t("notesSubtitle", { pages: note.pageCount })}</div>
+              )}
             </div>
+            <Link
+              href={`/student/notes/${note.id}/file`}
+              className="rounded-sm border border-input px-2.5 py-1 text-xs font-semibold text-primary"
+            >
+              {t("notesView")}
+            </Link>
           </div>
+        ))
+      ) : (
+        <div className="flex items-center justify-between gap-3 py-1">
+          <p className="m-0 text-sm text-muted-foreground">
+            {t("notesCountTeaser", { count: teacher.notesCount })}
+          </p>
           <LockPill>{t("notesLocked")}</LockPill>
         </div>
-      ))}
+      )}
     </Panel>
   );
 }
@@ -201,16 +316,13 @@ function SchedulePanel({ teacher }: { teacher: TeacherProfileDetail }) {
 
   return (
     <Panel title={t("scheduleTitle")}>
-      {teacher.schedule.map((item, i) => (
-        <div
-          key={`${item.day}-${i}`}
-          className="flex items-center gap-3 border-b border-border py-3 last:border-b-0"
-        >
-          <span className="w-10 shrink-0 font-mono text-xs uppercase text-accent-deep">
-            {item.day}
+      {teacher.schedule.map((item) => (
+        <div key={item.id} className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
+          <span className="w-16 shrink-0 font-mono text-xs uppercase text-accent-deep">
+            {item.mode === "online" ? t("classTypeOnline") : t("classTypePhysical")}
           </span>
           <span className="flex-1 text-sm font-medium text-foreground">{item.title}</span>
-          <span className="text-xs text-muted-foreground">{item.time}</span>
+          <span className="text-xs text-muted-foreground">{item.scheduleNote ?? item.location ?? "—"}</span>
         </div>
       ))}
     </Panel>
@@ -234,31 +346,12 @@ function ReviewsPanel({ teacher }: { teacher: TeacherProfileDetail }) {
   const t = useTranslations("profilePage");
 
   return (
-    <Panel
-      title={t("reviewsHeading", { count: teacher.reviewCount, rating: teacher.rating.toFixed(1) })}
-    >
-      {teacher.reviews.map((review) => (
-        <ReviewItem key={review.id} review={review} />
-      ))}
-    </Panel>
-  );
-}
-
-function VerificationPanel() {
-  const t = useTranslations("profilePage");
-
-  return (
-    <Panel title={t("verificationTitle")}>
-      <div className="flex flex-col gap-2.5 text-sm">
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="size-4 shrink-0 text-success" />
-          <span className="text-foreground">{t("verificationDegree")}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="size-4 shrink-0 text-success" />
-          <span className="text-foreground">{t("verificationNic")}</span>
-        </div>
-      </div>
+    <Panel title={t("reviewsHeading", { count: teacher.reviewCount, rating: teacher.rating.toFixed(1) })}>
+      {teacher.reviews.length > 0 ? (
+        teacher.reviews.map((review) => <ReviewItem key={review.id} review={review} />)
+      ) : (
+        <p className="m-0 py-2 text-sm text-muted-foreground">{t("noReviews")}</p>
+      )}
     </Panel>
   );
 }

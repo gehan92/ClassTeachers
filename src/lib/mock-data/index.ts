@@ -1,5 +1,4 @@
 export * from "./listings";
-export * from "./teacher-profile";
 export * from "./class-profile";
 export * from "./dashboard-teacher";
 export * from "./dashboard-institute";

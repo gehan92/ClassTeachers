@@ -839,6 +839,38 @@ export type Database = {
         Args: { subject_name: string };
         Returns: string;
       };
+      get_public_teacher_profile: {
+        Args: { p_teacher_id: string };
+        Returns: {
+          id: string;
+          display_name: string | null;
+          headline: string | null;
+          bio: string | null;
+          location: string | null;
+          class_type: string;
+          experience_years: number | null;
+          qualifications: string[] | null;
+          photo_url: string | null;
+          hourly_rate: number | null;
+          monthly_rate: number | null;
+          rating: number;
+          review_count: number;
+          notes_count: number;
+          subjects: string[];
+          grade_band: string | null;
+        }[];
+      };
+      list_public_reviews: {
+        Args: { p_target_type: string; p_target_id: string };
+        Returns: {
+          id: string;
+          author: string | null;
+          rating: number;
+          body: string | null;
+          reply: string | null;
+          created_at: string;
+        }[];
+      };
     };
 
     Enums: Record<string, never>;

@@ -21,7 +21,16 @@ export async function proxy(request: NextRequest) {
   const locale = localeMatch ? localeMatch[1] : routing.defaultLocale;
   const path = localeMatch ? pathname.slice(localeMatch[0].length) || "/" : pathname;
 
-  const isProtected = protectedPathPrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+  // "/teacher" (the dashboard, no sub-routes of its own) collides with
+  // "/teacher/[id]" (the PUBLIC profile page — src/app/[locale]/(public)/
+  // teacher/[id]) since both start with the same segment. Every other
+  // protected prefix either has no public counterpart (institute's public
+  // page lives at /class/[id] instead) or genuinely needs its sub-routes
+  // gated (student/notes/[id]/file), so only "/teacher" needs the narrower,
+  // exact-only match.
+  const isProtected = protectedPathPrefixes.some((prefix) =>
+    prefix === "/teacher" ? path === prefix : path === prefix || path.startsWith(`${prefix}/`),
+  );
   const isGuestOnly = path === "/login" || path === "/signup";
 
   if (isProtected && !user) {

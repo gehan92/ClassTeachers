@@ -889,6 +889,10 @@ export type Database = {
         Args: { p_class_id: string; p_teacher_ids: string[] };
         Returns: { id: string; full_name: string }[];
       };
+      find_teacher_by_email: {
+        Args: { p_email: string };
+        Returns: { id: string; full_name: string }[];
+      };
       owns_exam: {
         Args: { p_exam_id: string };
         Returns: boolean;

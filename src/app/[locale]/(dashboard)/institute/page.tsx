@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { OverviewTab } from "@/components/dashboard/institute/overview-tab";
-import { TeachersTab } from "@/components/dashboard/institute/teachers-tab";
+import { TeachersTab, type InstituteTeacherRow } from "@/components/dashboard/institute/teachers-tab";
 import { BatchesTab } from "@/components/dashboard/institute/batches-tab";
 import { AdvertisementTab } from "@/components/dashboard/institute/advertisement-tab";
 import { ReviewsTab } from "@/components/dashboard/institute/reviews-tab";
@@ -72,22 +72,32 @@ export default async function InstituteDashboardPage({
 
   const teacherIds = (classTeacherRows ?? []).map((row) => row.teacher_id);
 
+  const isVisibleById = new Map((classTeacherRows ?? []).map((row) => [row.teacher_id, row.is_visible]));
+
   let teachersAtGlance: TeachersAtGlance[] = [];
+  let instituteTeachers: InstituteTeacherRow[] = [];
   if (teacherIds.length > 0) {
-    const [{ data: teacherProfiles }, { data: teacherPersonProfiles }, { data: teacherEnrollments }, { data: teacherReviews }] =
-      await Promise.all([
-        supabase.from("teacher_profiles").select("id, headline, status").in("id", teacherIds),
-        // Plain `profiles` select would return zero rows here — its only RLS
-        // policy is "your own row or admin" (0003). This RPC (0032) opens it
-        // up specifically for teachers linked to this institute.
-        supabase.rpc("get_linked_teacher_names", { p_class_id: instituteId!, p_teacher_ids: teacherIds }),
-        supabase.from("enrollments").select("owner_id").eq("owner_type", "teacher").in("owner_id", teacherIds),
-        supabase.from("reviews").select("target_id, rating").eq("target_type", "teacher").in("target_id", teacherIds),
-      ]);
+    const [
+      { data: teacherProfiles },
+      { data: teacherPersonProfiles },
+      { data: teacherEnrollments },
+      { data: teacherReviews },
+      { data: teacherPrices },
+    ] = await Promise.all([
+      supabase.from("teacher_profiles").select("id, headline, status").in("id", teacherIds),
+      // Plain `profiles` select would return zero rows here — its only RLS
+      // policy is "your own row or admin" (0003). This RPC (0032) opens it
+      // up specifically for teachers linked to this institute.
+      supabase.rpc("get_linked_teacher_names", { p_class_id: instituteId!, p_teacher_ids: teacherIds }),
+      supabase.from("enrollments").select("owner_id").eq("owner_type", "teacher").in("owner_id", teacherIds),
+      supabase.from("reviews").select("target_id, rating").eq("target_type", "teacher").in("target_id", teacherIds),
+      supabase.from("prices").select("owner_id, hourly_rate, monthly_rate").eq("owner_type", "teacher").in("owner_id", teacherIds),
+    ]);
 
     const nameById = new Map((teacherPersonProfiles ?? []).map((p) => [p.id, p.full_name]));
     const headlineById = new Map((teacherProfiles ?? []).map((p) => [p.id, p.headline]));
     const statusById = new Map((teacherProfiles ?? []).map((p) => [p.id, p.status]));
+    const priceById = new Map((teacherPrices ?? []).map((p) => [p.owner_id, p]));
 
     const enrollmentCountById = new Map<string, number>();
     for (const row of teacherEnrollments ?? []) {
@@ -110,6 +120,25 @@ export default async function InstituteDashboardPage({
         studentCount: enrollmentCountById.get(teacherId) ?? 0,
         rating: ratings.length ? Number((ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)) : 0,
         status: status === "approved" ? "active" : "pending",
+      };
+    });
+
+    instituteTeachers = teacherIds.map((teacherId) => {
+      const price = priceById.get(teacherId);
+      const rateDisplay =
+        price?.hourly_rate != null
+          ? `Rs. ${Number(price.hourly_rate).toLocaleString()}/hr`
+          : price?.monthly_rate != null
+            ? `Rs. ${Number(price.monthly_rate).toLocaleString()}/mo`
+            : "—";
+      return {
+        id: teacherId,
+        name: nameById.get(teacherId) ?? "—",
+        subject: headlineById.get(teacherId) ?? "",
+        rateDisplay,
+        studentCount: enrollmentCountById.get(teacherId) ?? 0,
+        visible: isVisibleById.get(teacherId) ?? true,
+        teacherHref: `/teacher/${teacherId}`,
       };
     });
   }
@@ -199,7 +228,7 @@ export default async function InstituteDashboardPage({
             teachersAtGlance={teachersAtGlance}
           />
         ),
-        teachers: <TeachersTab />,
+        teachers: <TeachersTab teachers={instituteTeachers} />,
         batches: <BatchesTab batches={batches} />,
         ads: <AdvertisementTab initialContent={adRow?.content ?? ""} />,
         reviews: (

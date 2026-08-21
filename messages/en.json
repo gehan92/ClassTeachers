@@ -671,17 +671,15 @@
     "teachers": {
       "title": "Teachers",
       "subtitle": "Manage the teachers linked to your institute.",
-      "inviteTeacher": "+ Invite a teacher",
-      "invited": "Invited",
+      "addTeacher": "+ Add a teacher",
       "confirmRemove": "Remove {name} from your institute?",
-      "inviteForm": {
-        "title": "Invite a teacher",
-        "emailOrPhoneLabel": "Teacher's email or phone",
-        "emailOrPhonePlaceholder": "e.g. teacher@email.com or 077 123 4567",
-        "subjectLabel": "Subject they'll teach",
-        "subjectPlaceholder": "e.g. Combined Maths",
-        "helper": "We'll send them an invite to join Horizon Learning Institute on ClassPortals. They can accept it from their email or phone.",
-        "submit": "Send invite",
+      "empty": "No teachers linked yet. Add one by their email below.",
+      "addForm": {
+        "title": "Add a teacher",
+        "emailLabel": "Teacher's email",
+        "emailPlaceholder": "e.g. teacher@email.com",
+        "helper": "They'll be added immediately if this email belongs to an existing ClassPortals teacher account.",
+        "submit": "Add teacher",
         "cancel": "Cancel"
       },
       "table": {
@@ -692,10 +690,7 @@
         "visible": "Visible on institute page",
         "actions": "Actions",
         "view": "View",
-        "remove": "Remove",
-        "inviteSent": "Invite sent",
-        "resend": "Resend",
-        "resentConfirm": "Invite resent"
+        "remove": "Remove"
       }
     },
     "batches": {

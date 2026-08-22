@@ -54,6 +54,8 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
       name: row.display_name,
       masked: true,
       roleLabel,
+      headline: row.ad_title,
+      excerpt: row.ad_content ?? undefined,
       gradeChip: gradeChip(row.grade_band, subjects, tPage, tSearch),
       location: row.location ?? "",
       online,

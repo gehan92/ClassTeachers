@@ -27,6 +27,12 @@ export function ListingCard({ listing }: { listing: Listing }) {
       <div className="flex flex-1 flex-col px-4 pb-4 pt-7.5">
         <div className="font-display text-[17px] tracking-wide text-primary">{listing.name}</div>
         <div className="mb-2.5 text-[12.5px] text-muted-foreground">{listing.roleLabel}</div>
+        {listing.headline && (
+          <div className="mb-1 line-clamp-2 text-[13.5px] font-semibold text-foreground">{listing.headline}</div>
+        )}
+        {listing.excerpt && (
+          <p className="mb-2.5 line-clamp-2 text-[12.5px] text-muted-foreground">{listing.excerpt}</p>
+        )}
         <div className="mb-3 flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
           <span className="flex items-center gap-0.5 text-cta">
             {Array.from({ length: 5 }).map((_, i) => (

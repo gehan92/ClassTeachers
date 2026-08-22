@@ -1335,6 +1335,8 @@
   },
   "adPage": {
     "teacherFallback": "ගුරුවරයා",
+    "breadcrumbHome": "ගුරුවරුන් සොයන්න",
+    "aboutHeading": "මෙම පන්තිය ගැන",
     "online": "මාර්ගගත",
     "physical": "භෞතික",
     "schedule": "කාලසටහන",

@@ -14,6 +14,9 @@ export type Listing = {
   name: string;
   masked: boolean;
   roleLabel: string;
+  /** Ad title/excerpt — only populated for ad-driven teacher listings (0040); undefined for classes, which have no ad system yet. */
+  headline?: string;
+  excerpt?: string;
   gradeChip: string;
   /** Structured filter fields for the /teachers search page — display strings above stay as the source of truth for card copy, these are just for matching. */
   location: string;

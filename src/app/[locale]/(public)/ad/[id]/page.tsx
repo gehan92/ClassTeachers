@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { MapPin, Star } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { JoinRequestBox } from "@/components/features/join-request-box";
 import { createClient } from "@/lib/supabase/server";
 import { avatarGradientClass } from "@/lib/avatar-color";
@@ -56,6 +57,26 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
 
   return (
     <div className="mx-auto max-w-[860px] px-7 py-10">
+      <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+        <Link href="/teachers" className="hover:text-primary">
+          {t("breadcrumbHome")}
+        </Link>
+        {ad.subject && (
+          <>
+            <span>/</span>
+            <Link href={`/teachers?subject=${encodeURIComponent(ad.subject)}`} className="hover:text-primary">
+              {ad.subject}
+            </Link>
+          </>
+        )}
+        {ad.location && (
+          <>
+            <span>/</span>
+            <span>{ad.location}</span>
+          </>
+        )}
+      </nav>
+
       <div className="mb-6 rounded-xl bg-gradient-to-br from-primary to-primary-light p-7 text-white">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
           {ad.photo_url ? (
@@ -103,9 +124,11 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
         </div>
       </div>
 
+      <h2 className="mt-7 mb-4 text-2xl text-primary sm:text-[26px]">{ad.ad_title}</h2>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
-          <h2 className="mb-3 text-lg">{ad.ad_title}</h2>
+          <h3 className="mb-3 text-lg">{t("aboutHeading")}</h3>
           <p className="whitespace-pre-line text-sm text-foreground/85">{ad.ad_content}</p>
           {ad.schedule_note && (
             <p className="mt-4 text-sm text-muted-foreground">

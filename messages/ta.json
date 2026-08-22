@@ -1335,6 +1335,8 @@
   },
   "adPage": {
     "teacherFallback": "ஆசிரியர்",
+    "breadcrumbHome": "ஆசிரியர்களைத் தேடுங்கள்",
+    "aboutHeading": "இந்த வகுப்பைப் பற்றி",
     "online": "ஆன்லைன்",
     "physical": "நேரடி",
     "schedule": "கால அட்டவணை",

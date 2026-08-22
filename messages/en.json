@@ -1335,6 +1335,8 @@
   },
   "adPage": {
     "teacherFallback": "Teacher",
+    "breadcrumbHome": "Find teachers",
+    "aboutHeading": "About this class",
     "online": "Online",
     "physical": "Physical",
     "schedule": "Schedule",

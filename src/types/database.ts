@@ -612,6 +612,7 @@ export type Database = {
           owner_type: OwnerType;
           owner_id: string;
           batch_id: string | null;
+          status: "pending" | "accepted" | "declined";
           joined_at: string;
         };
         Insert: {
@@ -620,6 +621,7 @@ export type Database = {
           owner_type: OwnerType;
           owner_id: string;
           batch_id?: string | null;
+          status?: "pending" | "accepted" | "declined";
           joined_at?: string;
         };
         Update: {
@@ -628,6 +630,7 @@ export type Database = {
           owner_type?: OwnerType;
           owner_id?: string;
           batch_id?: string | null;
+          status?: "pending" | "accepted" | "declined";
           joined_at?: string;
         };
         // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
@@ -646,6 +649,8 @@ export type Database = {
           placement: "own_profile" | "search_results" | "homepage_banner" | "homepage_spotlight";
           plan: "basic" | "featured" | "homepage_spotlight";
           status: "active" | "expired" | "removed";
+          subject_id: string | null;
+          batch_id: string | null;
           starts_at: string;
           expires_at: string | null;
           created_at: string;
@@ -660,6 +665,8 @@ export type Database = {
           placement?: "own_profile" | "search_results" | "homepage_banner" | "homepage_spotlight";
           plan: "basic" | "featured" | "homepage_spotlight";
           status?: "active" | "expired" | "removed";
+          subject_id?: string | null;
+          batch_id?: string | null;
           starts_at?: string;
           expires_at?: string | null;
           created_at?: string;
@@ -674,6 +681,8 @@ export type Database = {
           placement?: "own_profile" | "search_results" | "homepage_banner" | "homepage_spotlight";
           plan?: "basic" | "featured" | "homepage_spotlight";
           status?: "active" | "expired" | "removed";
+          subject_id?: string | null;
+          batch_id?: string | null;
           starts_at?: string;
           expires_at?: string | null;
           created_at?: string;

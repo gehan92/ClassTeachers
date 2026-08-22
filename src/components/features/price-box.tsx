@@ -29,6 +29,7 @@ export function PriceBox({
   const t = useTranslations("priceBox");
   const [interval, setInterval] = useState<"hr" | "mo">(hourlyRate ? "hr" : "mo");
   const amount = interval === "hr" ? hourlyRate : monthlyRate;
+  const showPrice = hourlyRate !== undefined || monthlyRate !== undefined;
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", contact: "", message: "" });
@@ -52,37 +53,41 @@ export function PriceBox({
 
   return (
     <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
-      <div className="mb-3 flex overflow-hidden rounded-md border border-input">
-        {hourlyRate !== undefined && (
-          <button
-            type="button"
-            onClick={() => setInterval("hr")}
-            className={cn(
-              "flex-1 py-2 text-center text-xs font-semibold transition-colors",
-              interval === "hr" ? "bg-primary text-primary-foreground" : "bg-white text-muted-foreground hover:bg-secondary",
+      {showPrice && (
+        <>
+          <div className="mb-3 flex overflow-hidden rounded-md border border-input">
+            {hourlyRate !== undefined && (
+              <button
+                type="button"
+                onClick={() => setInterval("hr")}
+                className={cn(
+                  "flex-1 py-2 text-center text-xs font-semibold transition-colors",
+                  interval === "hr" ? "bg-primary text-primary-foreground" : "bg-white text-muted-foreground hover:bg-secondary",
+                )}
+              >
+                {t("hourly")}
+              </button>
             )}
-          >
-            {t("hourly")}
-          </button>
-        )}
-        {monthlyRate !== undefined && (
-          <button
-            type="button"
-            onClick={() => setInterval("mo")}
-            className={cn(
-              "flex-1 py-2 text-center text-xs font-semibold transition-colors",
-              interval === "mo" ? "bg-primary text-primary-foreground" : "bg-white text-muted-foreground hover:bg-secondary",
+            {monthlyRate !== undefined && (
+              <button
+                type="button"
+                onClick={() => setInterval("mo")}
+                className={cn(
+                  "flex-1 py-2 text-center text-xs font-semibold transition-colors",
+                  interval === "mo" ? "bg-primary text-primary-foreground" : "bg-white text-muted-foreground hover:bg-secondary",
+                )}
+              >
+                {t("monthly")}
+              </button>
             )}
-          >
-            {t("monthly")}
-          </button>
-        )}
-      </div>
+          </div>
 
-      <div className="mb-1 font-mono text-3xl font-semibold text-primary">
-        Rs. {amount?.toLocaleString()}
-        <span className="ml-1 text-sm font-normal text-muted-foreground">/{interval}</span>
-      </div>
+          <div className="mb-1 font-mono text-3xl font-semibold text-primary">
+            Rs. {amount?.toLocaleString()}
+            <span className="ml-1 text-sm font-normal text-muted-foreground">/{interval}</span>
+          </div>
+        </>
+      )}
       {helperText && <p className="mb-4 text-xs text-muted-foreground">{helperText}</p>}
 
       <Link

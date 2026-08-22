@@ -216,8 +216,6 @@ export default async function InstituteDashboardPage({
 
   return (
     <DashboardShell
-      publicProfileHref={instituteId ? `/class/${instituteId}` : undefined}
-      publicProfileLabel={t("publicProfile")}
       userLabel={fullName}
       userInitial={userInitial}
       logoutLabel={t("logout")}

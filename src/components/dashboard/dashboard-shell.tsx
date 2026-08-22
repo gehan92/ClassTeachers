@@ -138,8 +138,6 @@ function NavList({
 
 export function DashboardShell({
   brandBadge,
-  publicProfileHref,
-  publicProfileLabel,
   userLabel,
   userInitial,
   logoutLabel,
@@ -149,8 +147,6 @@ export function DashboardShell({
   defaultTab,
 }: {
   brandBadge?: string;
-  publicProfileHref?: string;
-  publicProfileLabel?: string;
   userLabel: string;
   userInitial: string;
   logoutLabel: string;
@@ -204,8 +200,10 @@ export function DashboardShell({
           )}
         </Link>
 
-        {showProviderNav && (
-          <nav className="hidden items-center gap-1 lg:flex">
+        {showProviderNav && <span aria-hidden className="hidden h-6 w-px bg-white/20 lg:block" />}
+
+        <nav className="hidden flex-1 items-center gap-1 lg:flex">
+          {showProviderNav && (
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
@@ -226,22 +224,17 @@ export function DashboardShell({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-          </nav>
-        )}
-
-        {siteNavItems.length > 0 && (
-          <nav className="hidden items-center gap-5 lg:flex">
-            {siteNavItems.map((item) => (
-              <Link
-                key={item.key}
-                href={item.href}
-                className="text-sm text-white/70 transition-colors hover:text-white"
-              >
-                {t(item.key)}
-              </Link>
-            ))}
-          </nav>
-        )}
+          )}
+          {siteNavItems.map((item) => (
+            <Link
+              key={item.key}
+              href={item.href}
+              className="px-3.5 py-2 text-sm text-white/70 transition-colors hover:text-white"
+            >
+              {t(item.key)}
+            </Link>
+          ))}
+        </nav>
 
         <div className="flex items-center gap-3">
           {showProviderNav && (
@@ -271,19 +264,13 @@ export function DashboardShell({
             </button>
           )}
           <LocaleSwitcher className="text-white/70 hover:bg-white/10 hover:text-white" />
-          {publicProfileHref && (
-            <Link href={publicProfileHref} className="hidden text-sm text-white/70 hover:text-white sm:inline">
-              {publicProfileLabel} ↗
-            </Link>
-          )}
-          <div className="flex items-center gap-2 text-sm">
-            <span
-              className={`flex size-7 items-center justify-center rounded-full font-display text-xs font-bold text-white ${avatarGradientClass(userLabel)}`}
-            >
-              {userInitial}
-            </span>
-            <span className="hidden sm:inline">{userLabel}</span>
-          </div>
+          <span
+            title={userLabel}
+            aria-label={userLabel}
+            className={`flex size-7 items-center justify-center rounded-full font-display text-xs font-bold text-white ${avatarGradientClass(userLabel)}`}
+          >
+            {userInitial}
+          </span>
           <form action={logOutAction}>
             <button
               type="submit"

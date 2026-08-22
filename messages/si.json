@@ -647,7 +647,6 @@
     }
   },
   "instituteDashboard": {
-    "publicProfile": "පොදු පැතිකඩ බලන්න",
     "logout": "පිටවන්න",
     "groupInstitute": "ආයතනය",
     "groupManage": "කළමනාකරණය",
@@ -937,7 +936,6 @@
     }
   },
   "teacherDashboard": {
-    "publicProfile": "පොදු පැතිකඩ",
     "logout": "පිටවන්න",
     "groupTeach": "ඉගැන්වීම",
     "groupManage": "කළමනාකරණය",

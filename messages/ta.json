@@ -647,7 +647,6 @@
     }
   },
   "instituteDashboard": {
-    "publicProfile": "பொது சுயவிவரத்தைக் காண்க",
     "logout": "வெளியேறு",
     "groupInstitute": "நிறுவனம்",
     "groupManage": "நிர்வகி",
@@ -937,7 +936,6 @@
     }
   },
   "teacherDashboard": {
-    "publicProfile": "பொது சுயவிவரம்",
     "logout": "வெளியேறு",
     "groupTeach": "கற்பித்தல்",
     "groupManage": "நிர்வகி",

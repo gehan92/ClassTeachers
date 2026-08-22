@@ -295,8 +295,6 @@ export default async function TeacherDashboardPage({
 
   return (
     <DashboardShell
-      publicProfileHref={`/teacher/${userId}`}
-      publicProfileLabel={t("publicProfile")}
       userLabel={fullName}
       userInitial={userInitial}
       logoutLabel={t("logout")}

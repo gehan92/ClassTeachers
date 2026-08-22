@@ -647,7 +647,6 @@
     }
   },
   "instituteDashboard": {
-    "publicProfile": "View public profile",
     "logout": "Log out",
     "groupInstitute": "Institute",
     "groupManage": "Manage",
@@ -937,7 +936,6 @@
     }
   },
   "teacherDashboard": {
-    "publicProfile": "Public profile",
     "logout": "Log out",
     "groupTeach": "Teach",
     "groupManage": "Manage",

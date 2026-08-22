@@ -258,15 +258,31 @@ function SchedulePanel({ teacher }: { teacher: TeacherProfileDetail }) {
 
   return (
     <Panel title={t("scheduleTitle")}>
-      {teacher.schedule.map((item) => (
-        <div key={item.id} className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
-          <span className="w-16 shrink-0 font-mono text-xs uppercase text-accent-deep">
-            {item.mode === "online" ? t("classTypeOnline") : t("classTypePhysical")}
-          </span>
-          <span className="flex-1 text-sm font-medium text-foreground">{item.title}</span>
-          <span className="text-xs text-muted-foreground">{item.scheduleNote ?? item.location ?? "—"}</span>
-        </div>
-      ))}
+      {teacher.schedule.map((item) => {
+        const row = (
+          <>
+            <span className="w-16 shrink-0 font-mono text-xs uppercase text-accent-deep">
+              {item.mode === "online" ? t("classTypeOnline") : t("classTypePhysical")}
+            </span>
+            <span className="flex-1 text-sm font-medium text-foreground">{item.title}</span>
+            <span className="text-xs text-muted-foreground">{item.scheduleNote ?? item.location ?? "—"}</span>
+            {item.adId && <span className="shrink-0 text-xs font-semibold text-primary">{t("viewPricing")}</span>}
+          </>
+        );
+        return item.adId ? (
+          <Link
+            key={item.id}
+            href={`/ad/${item.adId}`}
+            className="flex items-center gap-3 border-b border-border py-3 transition-colors last:border-b-0 hover:bg-secondary/50"
+          >
+            {row}
+          </Link>
+        ) : (
+          <div key={item.id} className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
+            {row}
+          </div>
+        );
+      })}
     </Panel>
   );
 }

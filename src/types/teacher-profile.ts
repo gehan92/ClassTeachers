@@ -31,7 +31,16 @@ export type TeacherProfileDetail = {
   adText?: string;
   notesCount: number;
   notes: { id: string; title: string; pageCount: number | null }[];
-  schedule: { id: string; title: string; mode: "online" | "physical"; location: string | null; scheduleNote: string | null; gradeBand: string | null }[];
+  schedule: {
+    id: string;
+    title: string;
+    mode: "online" | "physical";
+    location: string | null;
+    scheduleNote: string | null;
+    gradeBand: string | null;
+    /** Active search_results ad for this batch, if any — lets a viewer click through to its price/details (0041 removed pricing from this page). */
+    adId: string | null;
+  }[];
   reviews: ReviewDisplay[];
   phone: string | null;
 };

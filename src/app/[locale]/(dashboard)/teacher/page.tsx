@@ -373,14 +373,18 @@ export default async function TeacherDashboardPage({
     notes: notes.map((n) => ({ id: n.id, title: n.title, pageCount: n.pageCount })),
     schedule: (batchRows ?? [])
       .filter((b) => b.status === "active")
-      .map((b) => ({
-        id: b.id,
-        title: b.title,
-        mode: b.mode as "online" | "physical",
-        location: b.location,
-        scheduleNote: b.schedule_note,
-        gradeBand: b.grade_band,
-      })),
+      .map((b) => {
+        const ad = batchAdByBatchId.get(b.id);
+        return {
+          id: b.id,
+          title: b.title,
+          mode: b.mode as "online" | "physical",
+          location: b.location,
+          scheduleNote: b.schedule_note,
+          gradeBand: b.grade_band,
+          adId: ad?.status === "active" ? ad.id : null,
+        };
+      }),
     reviews,
     phone: liveProfilePhone,
   };

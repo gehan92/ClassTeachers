@@ -39,6 +39,18 @@ async function loadTeacherProfile(
   }
   const teacher = rows[0];
 
+  // Active search_results ads for this teacher's batches, so the schedule
+  // list below can link each class through to the ad that has its price
+  // (0041 removed the single profile-level price from this page).
+  const { data: batchAdRows } = await supabase
+    .from("advertisements")
+    .select("id, batch_id")
+    .eq("owner_type", "teacher")
+    .eq("owner_id", id)
+    .eq("placement", "search_results")
+    .eq("status", "active");
+  const adIdByBatchId = new Map((batchAdRows ?? []).filter((a) => a.batch_id).map((a) => [a.batch_id as string, a.id]));
+
   const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
 
   return {
@@ -70,6 +82,7 @@ async function loadTeacherProfile(
       location: b.location,
       scheduleNote: b.schedule_note,
       gradeBand: b.grade_band,
+      adId: adIdByBatchId.get(b.id) ?? null,
     })),
     reviews: (reviewRows ?? []).map((r) => ({
       id: r.id,

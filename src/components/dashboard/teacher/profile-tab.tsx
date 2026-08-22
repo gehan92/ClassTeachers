@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Eye, MapPin, Pencil, Plus, X } from "lucide-react";
+import { Eye, Pencil, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -228,52 +228,6 @@ export function ProfileTab({
           <Eye className="size-4" />
           {t("preview.viewLive")}
         </Button>
-      </div>
-
-      <div>
-        <div className="rounded-xl bg-gradient-to-br from-primary to-primary-light p-6 text-white sm:p-7">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <span className="font-mono text-[11px] tracking-[0.12em] text-white/60 uppercase">
-              {t("preview.eyebrow")}
-            </span>
-          </div>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            {photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={photoUrl}
-                alt=""
-                className="size-16 shrink-0 rounded-full border-4 border-white object-cover shadow-sm"
-              />
-            ) : (
-              <div
-                className={`flex size-16 shrink-0 items-center justify-center rounded-full border-4 border-white font-display text-xl font-bold text-white shadow-sm ${avatarGradientClass(teacherName)}`}
-              >
-                {teacherName.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              {form.headline && (
-                <div className="mb-1 font-mono text-xs tracking-[0.1em] text-white/70 uppercase">{form.headline}</div>
-              )}
-              <h2 className="mb-1.5 text-xl font-semibold text-white sm:text-2xl">{teacherName}</h2>
-              <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-white/85">
-                {form.location && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="size-3.5" />
-                    {form.location}
-                  </span>
-                )}
-                <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5">
-                  {t(`classTypeOptions.${form.classType}`)}
-                </span>
-                {form.experience && <span>{t("preview.yearsExperience", { years: form.experience })}</span>}
-              </div>
-            </div>
-          </div>
-          <p className="mt-4 text-sm text-white/90">{form.bio || t("preview.noBio")}</p>
-        </div>
-        <p className="mt-2 text-xs text-muted-foreground">{t("preview.note")}</p>
       </div>
 
       <div className={panelClass}>

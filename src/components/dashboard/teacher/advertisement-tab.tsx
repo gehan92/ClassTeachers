@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { AdSlot } from "@/components/features/ad-slot";
-import { updateOwnProfileAd, upsertBatchAd, setBatchAdActive } from "@/lib/dashboard/ads-actions";
+import { updateOwnProfileAd, upsertBatchAd, setBatchAdActive, createIndividualAd } from "@/lib/dashboard/ads-actions";
+import type { GradeBand } from "@/types/grade-band";
 
 const textareaClass =
   "min-h-28 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40";
+
+const GRADE_BANDS: GradeBand[] = ["1-5", "6-9", "10-11", "12-13", "campus"];
 
 export type TeacherAdBatchRow = {
   id: string;
@@ -61,17 +65,17 @@ export function AdvertisementTab({
         <h3 className="mb-1 text-lg">{t("classAds.heading")}</h3>
         <p className="mb-4 text-sm text-muted-foreground">{t("classAds.subtitle")}</p>
 
-        {batches.length === 0 ? (
-          <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
-            {t("classAds.noBatches")}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {batches.map((batch) => (
-              <BatchAdCard key={batch.id} batch={batch} subjectOptions={subjectOptions} />
-            ))}
-          </div>
-        )}
+        <div className="flex flex-col gap-4">
+          <IndividualAdCreator subjectOptions={subjectOptions} />
+
+          {batches.length === 0 ? (
+            <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
+              {t("classAds.noBatches")}
+            </div>
+          ) : (
+            batches.map((batch) => <BatchAdCard key={batch.id} batch={batch} subjectOptions={subjectOptions} />)
+          )}
+        </div>
       </div>
 
       <div className="rounded-lg border border-border bg-white p-5">
@@ -229,6 +233,143 @@ function BatchAdCard({
               {t("save")}
             </Button>
             <Button type="button" size="sm" variant="outline" onClick={() => setEditing(false)}>
+              {tc("cancel")}
+            </Button>
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Advertising used to require an existing batch (a scheduled class), which
+ * meant a teacher who just does flexible one-on-one tutoring — no fixed
+ * class or timetable — couldn't post an ad at all. This creates a
+ * lightweight batch behind the scenes alongside the ad, so posting an ad is
+ * one step regardless of whether a "class" exists yet; always shown, not
+ * just when the teacher has zero batches, since even someone with scheduled
+ * classes may also want to offer flexible individual tutoring.
+ */
+function IndividualAdCreator({ subjectOptions }: { subjectOptions: { id: string; name: string }[] }) {
+  const t = useTranslations("teacherDashboard.ads.individualAd");
+  const tc = useTranslations("teacherDashboard.common");
+  const tg = useTranslations("search");
+  const router = useRouter();
+
+  const [open, setOpen] = useState(false);
+  const [subjectId, setSubjectId] = useState(subjectOptions[0]?.id ?? "");
+  const [mode, setMode] = useState<"online" | "physical">("online");
+  const [gradeBand, setGradeBand] = useState<GradeBand>("12-13");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave() {
+    if (!subjectId || !title.trim() || !content.trim()) return;
+    setSaving(true);
+    setError(null);
+    const result = await createIndividualAd({ subjectId, mode, gradeBand, title, content });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setOpen(false);
+    setTitle("");
+    setContent("");
+    router.refresh();
+  }
+
+  if (!open) {
+    return (
+      <div className="rounded-lg border border-dashed border-input bg-white p-5">
+        <h4 className="mb-1 text-base font-medium text-foreground">{t("heading")}</h4>
+        <p className="mb-3 text-sm text-muted-foreground">{t("subtitle")}</p>
+        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
+          {t("createAd")}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-white p-5">
+      <h4 className="mb-3 text-base font-medium text-foreground">{t("heading")}</h4>
+      {subjectOptions.length === 0 ? (
+        <p className="text-sm text-destructive">{t("noSubjects")}</p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="individual-subject">{t("subjectLabel")}</Label>
+              <Select value={subjectId} onValueChange={(value) => setSubjectId(value ?? "")}>
+                <SelectTrigger id="individual-subject" className="w-full">
+                  <SelectValue placeholder={t("subjectPlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjectOptions.map((subject) => (
+                    <SelectItem key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="individual-mode">{t("modeLabel")}</Label>
+              <Select value={mode} onValueChange={(value) => setMode((value as "online" | "physical") ?? "online")}>
+                <SelectTrigger id="individual-mode" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="online">{t("modeOnline")}</SelectItem>
+                  <SelectItem value="physical">{t("modePhysical")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="individual-grade">{t("gradeLabel")}</Label>
+              <Select value={gradeBand} onValueChange={(value) => setGradeBand((value as GradeBand) ?? "12-13")}>
+                <SelectTrigger id="individual-grade" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {GRADE_BANDS.map((band) => (
+                    <SelectItem key={band} value={band}>
+                      {tg(`grades.${band}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="individual-title">{t("titleLabel")}</Label>
+            <Input
+              id="individual-title"
+              placeholder={t("titlePlaceholder")}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="individual-content">{t("contentLabel")}</Label>
+            <textarea
+              id="individual-content"
+              className={textareaClass}
+              placeholder={t("contentPlaceholder")}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
+              {t("save")}
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setOpen(false)}>
               {tc("cancel")}
             </Button>
             {error && <span className="text-sm font-medium text-destructive">{error}</span>}

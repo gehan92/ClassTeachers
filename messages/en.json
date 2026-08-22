@@ -1272,7 +1272,7 @@
       "classAds": {
         "heading": "Class advertisements",
         "subtitle": "Advertise one of your classes in search results, tied to the subject it teaches, so students looking for that subject can find it and request to join.",
-        "noBatches": "You haven't added any classes yet. Add one in the Classes tab first, then come back here to advertise it.",
+        "noBatches": "No scheduled classes yet — that's fine, use \"Advertise individual tutoring\" above, or add a class in the Classes tab if you run a fixed schedule.",
         "noSubjectYet": "No subject set yet",
         "batchSubject": "Subject: {subject}",
         "noAdYet": "No ad yet — not shown in search results.",
@@ -1287,6 +1287,23 @@
         "titlePlaceholder": "e.g. Combined Maths — Grade 12/13, weekday evenings",
         "contentLabel": "Ad details",
         "contentPlaceholder": "What makes this class worth joining?",
+        "save": "Save ad"
+      },
+      "individualAd": {
+        "heading": "Advertise individual tutoring",
+        "subtitle": "No fixed class or schedule? Create a flexible listing instead — no need to add a class first.",
+        "createAd": "Create ad",
+        "subjectLabel": "Subject",
+        "subjectPlaceholder": "Select a subject",
+        "noSubjects": "Add a subject to your profile first (Profile → Subjects), then come back here.",
+        "modeLabel": "Mode",
+        "modeOnline": "Online",
+        "modePhysical": "Physical",
+        "gradeLabel": "Grade level",
+        "titleLabel": "Ad title",
+        "titlePlaceholder": "e.g. Combined Maths — one-on-one, flexible timing",
+        "contentLabel": "Ad details",
+        "contentPlaceholder": "What makes lessons with you worth it?",
         "save": "Save ad"
       },
       "promotionHeading": "Promotion text",

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { LogOut, Menu } from "lucide-react";
+import { Bell, LogOut, Menu } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -162,6 +162,11 @@ export function DashboardShell({
   const navKeys = navKeysByRole[demoRole];
   const siteNavItems = siteNavItemDefs.filter((item) => navKeys.includes(item.key));
 
+  // Reuses the count already passed into groups for the sidebar's own
+  // "Inquiries" badge (see teacher/institute page.tsx) — no separate prop
+  // needed. Only roles that pass an "inquiries" nav item get the bell.
+  const inquiriesItem = groups.flatMap((g) => g.items).find((item) => item.key === "inquiries");
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-50 flex h-15 shrink-0 items-center justify-between border-b border-primary-dark bg-primary-dark px-5 text-white">
@@ -192,6 +197,21 @@ export function DashboardShell({
         )}
 
         <div className="flex items-center gap-3">
+          {inquiriesItem && (
+            <button
+              type="button"
+              onClick={() => select("inquiries")}
+              aria-label={inquiriesItem.label}
+              className="relative flex size-8 items-center justify-center rounded-md text-white/70 hover:bg-white/10 hover:text-white"
+            >
+              <Bell className="size-4.5" />
+              {!!inquiriesItem.count && (
+                <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-cta font-mono text-[9px] font-bold text-cta-foreground">
+                  {inquiriesItem.count > 9 ? "9+" : inquiriesItem.count}
+                </span>
+              )}
+            </button>
+          )}
           <LocaleSwitcher className="text-white/70 hover:bg-white/10 hover:text-white" />
           {publicProfileHref && (
             <Link href={publicProfileHref} className="hidden text-sm text-white/70 hover:text-white sm:inline">

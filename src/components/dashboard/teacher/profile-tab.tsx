@@ -205,7 +205,6 @@ export function ProfileTab({
             </span>
             <Link
               href={`/teacher/${teacherId}`}
-              target="_blank"
               className="text-xs font-medium text-white/70 hover:text-white"
             >
               {t("preview.viewLive")} ↗

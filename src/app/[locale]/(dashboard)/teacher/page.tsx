@@ -340,6 +340,9 @@ export default async function TeacherDashboardPage({
         ),
         profile: (
           <ProfileTab
+            teacherId={userId}
+            initialHeadline={teacherProfile?.headline ?? ""}
+            initialBio={teacherProfile?.bio ?? ""}
             initialQualifications={teacherProfile?.qualifications ?? []}
             initialExperienceYears={teacherProfile?.experience_years?.toString() ?? ""}
             initialSubjects={subjectNames}

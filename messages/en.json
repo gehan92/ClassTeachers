@@ -995,6 +995,9 @@
       "heading": "Profile",
       "photoHeading": "Profile photo",
       "uploadPhoto": "Upload new photo",
+      "headlineHeading": "Headline & bio",
+      "headlinePlaceholder": "e.g. A/L Combined Maths specialist",
+      "bioPlaceholder": "Tell students about your teaching style, experience, and what makes your classes special.",
       "qualificationsHeading": "Qualifications",
       "qualificationPlaceholder": "e.g. BSc in Mathematics, University of Colombo (2015)",
       "addQualification": "Add qualification",
@@ -1002,6 +1005,8 @@
       "subjectsPlaceholder": "e.g. Combined Maths, Physics",
       "subjectsHint": "Comma-separated. The grade levels shown on your public profile are set automatically from these subjects.",
       "fields": {
+        "headline": "Headline",
+        "bio": "About you",
         "qualifications": "Qualifications",
         "experience": "Experience",
         "subjects": "Subjects",
@@ -1016,6 +1021,13 @@
         "physical": "Physical",
         "online": "Online",
         "both": "Online & physical"
+      },
+      "preview": {
+        "eyebrow": "Live preview",
+        "viewLive": "View live page",
+        "yearsExperience": "{years} years experience",
+        "noBio": "Add a bio so students know more about you.",
+        "note": "This is how your profile appears to visitors as you edit below."
       },
       "pricingHeading": "Pricing",
       "saveChanges": "Save changes",

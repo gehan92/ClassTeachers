@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Plus, X } from "lucide-react";
+import { MapPin, Plus, X } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -14,9 +15,14 @@ import { uploadAvatar } from "@/lib/dashboard/avatar-actions";
 import type { ProfileStatus } from "@/types/database";
 
 const panelClass = "rounded-lg border border-border bg-white p-5";
+const textareaClass =
+  "min-h-24 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm";
 type ClassType = "physical" | "online" | "both";
 
 export function ProfileTab({
+  teacherId,
+  initialHeadline,
+  initialBio,
   initialQualifications,
   initialExperienceYears,
   initialSubjects,
@@ -29,6 +35,9 @@ export function ProfileTab({
   initialPhotoUrl,
   teacherName,
 }: {
+  teacherId: string;
+  initialHeadline: string;
+  initialBio: string;
   initialQualifications: string[];
   initialExperienceYears: string;
   initialSubjects: string[];
@@ -80,6 +89,8 @@ export function ProfileTab({
   // RPC that lists teachers derives them from the grade bands of whatever
   // subjects are linked (0021/0026), so there's no "grade levels" input here.
   const [form, setForm] = useState({
+    headline: initialHeadline,
+    bio: initialBio,
     experience: initialExperienceYears,
     subjects: initialSubjects.join(", "),
     location: initialLocation,
@@ -111,7 +122,7 @@ export function ProfileTab({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  function update(field: "experience" | "subjects" | "location" | "hourlyRate" | "monthlyRate") {
+  function update(field: "headline" | "experience" | "subjects" | "location" | "hourlyRate" | "monthlyRate") {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [field]: e.target.value }));
   }
 
@@ -145,6 +156,8 @@ export function ProfileTab({
     setError(null);
     const [profileResult, subjectsResult] = await Promise.all([
       updateTeacherProfile({
+        headline: form.headline,
+        bio: form.bio,
         qualifications,
         experienceYears: form.experience,
         location: form.location,
@@ -166,6 +179,59 @@ export function ProfileTab({
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl">{t("heading")}</h1>
+
+      <div>
+        <div className="rounded-xl bg-gradient-to-br from-primary to-primary-light p-6 text-white sm:p-7">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <span className="font-mono text-[11px] tracking-[0.12em] text-white/60 uppercase">
+              {t("preview.eyebrow")}
+            </span>
+            <Link
+              href={`/teacher/${teacherId}`}
+              target="_blank"
+              className="text-xs font-medium text-white/70 hover:text-white"
+            >
+              {t("preview.viewLive")} ↗
+            </Link>
+          </div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            {photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={photoUrl}
+                alt=""
+                className="size-16 shrink-0 rounded-full border-4 border-white object-cover shadow-sm"
+              />
+            ) : (
+              <div
+                className={`flex size-16 shrink-0 items-center justify-center rounded-full border-4 border-white font-display text-xl font-bold text-white shadow-sm ${avatarGradientClass(teacherName)}`}
+              >
+                {teacherName.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              {form.headline && (
+                <div className="mb-1 font-mono text-xs tracking-[0.1em] text-white/70 uppercase">{form.headline}</div>
+              )}
+              <h2 className="mb-1.5 text-xl font-semibold text-white sm:text-2xl">{teacherName}</h2>
+              <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-white/85">
+                {form.location && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="size-3.5" />
+                    {form.location}
+                  </span>
+                )}
+                <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5">
+                  {t(`classTypeOptions.${form.classType}`)}
+                </span>
+                {form.experience && <span>{t("preview.yearsExperience", { years: form.experience })}</span>}
+              </div>
+            </div>
+          </div>
+          <p className="mt-4 text-sm text-white/90">{form.bio || t("preview.noBio")}</p>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">{t("preview.note")}</p>
+      </div>
 
       <div className={panelClass}>
         <h3 className="mb-4 text-lg">{t("photoHeading")}</h3>
@@ -196,6 +262,31 @@ export function ProfileTab({
           </Button>
           {photoSaved && <span className="text-sm font-medium text-success">{tc("saved")}</span>}
           {photoError && <span className="text-sm font-medium text-destructive">{photoError}</span>}
+        </div>
+      </div>
+
+      <div className={panelClass}>
+        <h3 className="mb-4 text-lg">{t("headlineHeading")}</h3>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="headline">{t("fields.headline")}</Label>
+            <Input
+              id="headline"
+              value={form.headline}
+              onChange={update("headline")}
+              placeholder={t("headlinePlaceholder")}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bio">{t("fields.bio")}</Label>
+            <textarea
+              id="bio"
+              className={textareaClass}
+              value={form.bio}
+              onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
+              placeholder={t("bioPlaceholder")}
+            />
+          </div>
         </div>
       </div>
 

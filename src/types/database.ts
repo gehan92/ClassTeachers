@@ -333,6 +333,8 @@ export type Database = {
           teacher_label: string | null;
           grade_band: GradeBand | null;
           status: "active" | "upcoming" | "closed";
+          hourly_rate: number | null;
+          monthly_rate: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -348,6 +350,8 @@ export type Database = {
           teacher_label?: string | null;
           grade_band?: GradeBand | null;
           status?: "active" | "upcoming" | "closed";
+          hourly_rate?: number | null;
+          monthly_rate?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -363,6 +367,8 @@ export type Database = {
           teacher_label?: string | null;
           grade_band?: GradeBand | null;
           status?: "active" | "upcoming" | "closed";
+          hourly_rate?: number | null;
+          monthly_rate?: number | null;
           created_at?: string;
           updated_at?: string;
         };

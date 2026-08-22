@@ -1287,6 +1287,11 @@
         "titlePlaceholder": "e.g. Combined Maths — Grade 12/13, weekday evenings",
         "contentLabel": "Ad details",
         "contentPlaceholder": "What makes this class worth joining?",
+        "hourlyRateLabel": "Hourly rate (optional)",
+        "monthlyRateLabel": "Monthly rate (optional)",
+        "ratePlaceholderDefault": "Default: Rs. {rate}",
+        "ratePlaceholderNone": "Rs.",
+        "rateHelper": "Leave blank to use your default rate from Profile. Set one here to charge differently for this class — e.g. more for individual tutoring than a group class.",
         "save": "Save ad"
       },
       "individualAd": {
@@ -1304,6 +1309,11 @@
         "titlePlaceholder": "e.g. Combined Maths — one-on-one, flexible timing",
         "contentLabel": "Ad details",
         "contentPlaceholder": "What makes lessons with you worth it?",
+        "hourlyRateLabel": "Hourly rate (optional)",
+        "monthlyRateLabel": "Monthly rate (optional)",
+        "ratePlaceholderDefault": "Default: Rs. {rate}",
+        "ratePlaceholderNone": "Rs.",
+        "rateHelper": "Leave blank to use your default rate from Profile. Set one here to charge differently for individual tutoring than your group classes.",
         "save": "Save ad"
       },
       "promotionHeading": "Promotion text",

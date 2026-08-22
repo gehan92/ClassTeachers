@@ -75,19 +75,25 @@ const upsertBatchAdSchema = z.object({
   subjectId: z.string().uuid(),
   title: z.string().trim().min(2),
   content: z.string().trim().min(1),
+  hourlyRate: z.number().positive().optional(),
+  monthlyRate: z.number().positive().optional(),
 });
 
 /**
  * A search-results ad promotes one specific batch (0039), unlike the single
  * own_profile promotion above. Saving here also stamps the batch's
  * subject_id if it isn't set yet — there's no separate "edit batch" UI, so
- * this is the one place a teacher assigns a batch's subject.
+ * this is the one place a teacher assigns a batch's subject. hourlyRate/
+ * monthlyRate (0041) are per-batch overrides of the teacher's profile rate —
+ * omitted/undefined clears the override back to "inherit the default".
  */
 export async function upsertBatchAd(input: {
   batchId: string;
   subjectId: string;
   title: string;
   content: string;
+  hourlyRate?: number;
+  monthlyRate?: number;
 }): Promise<ActionResult> {
   const parsed = upsertBatchAdSchema.safeParse(input);
   if (!parsed.success) {
@@ -124,14 +130,16 @@ export async function upsertBatchAd(input: {
     return { error: "Add that subject to your profile first, then try again." };
   }
 
-  if (batch.subject_id !== parsed.data.subjectId) {
-    const { error: batchError } = await supabase
-      .from("batches")
-      .update({ subject_id: parsed.data.subjectId })
-      .eq("id", batch.id);
-    if (batchError) {
-      return { error: "Couldn't save this ad. Please try again." };
-    }
+  const { error: batchError } = await supabase
+    .from("batches")
+    .update({
+      subject_id: parsed.data.subjectId,
+      hourly_rate: parsed.data.hourlyRate ?? null,
+      monthly_rate: parsed.data.monthlyRate ?? null,
+    })
+    .eq("id", batch.id);
+  if (batchError) {
+    return { error: "Couldn't save this ad. Please try again." };
   }
 
   const { data: existing } = await supabase
@@ -198,6 +206,8 @@ const createIndividualAdSchema = z.object({
   gradeBand: z.enum(gradeBands),
   title: z.string().trim().min(2),
   content: z.string().trim().min(1),
+  hourlyRate: z.number().positive().optional(),
+  monthlyRate: z.number().positive().optional(),
 });
 
 /**
@@ -216,6 +226,8 @@ export async function createIndividualAd(input: {
   gradeBand: string;
   title: string;
   content: string;
+  hourlyRate?: number;
+  monthlyRate?: number;
 }): Promise<ActionResult> {
   const parsed = createIndividualAdSchema.safeParse(input);
   if (!parsed.success) {
@@ -257,6 +269,8 @@ export async function createIndividualAd(input: {
       mode: parsed.data.mode,
       grade_band: parsed.data.gradeBand,
       subject_id: parsed.data.subjectId,
+      hourly_rate: parsed.data.hourlyRate ?? null,
+      monthly_rate: parsed.data.monthlyRate ?? null,
     })
     .select("id")
     .single();

@@ -118,7 +118,7 @@ export default async function TeacherDashboardPage({
     await Promise.all([
       supabase
         .from("batches")
-        .select("id, title, mode, location, schedule_note, grade_band, status, subject_id")
+        .select("id, title, mode, location, schedule_note, grade_band, status, subject_id, hourly_rate, monthly_rate")
         .eq("owner_type", "teacher")
         .eq("owner_id", userId)
         .order("created_at", { ascending: false }),
@@ -179,6 +179,8 @@ export default async function TeacherDashboardPage({
       title: b.title,
       subjectId: b.subject_id,
       subjectName: b.subject_id ? (subjectNameById.get(b.subject_id) ?? null) : null,
+      hourlyRate: b.hourly_rate,
+      monthlyRate: b.monthly_rate,
       ad: ad ? { id: ad.id, title: ad.title, content: ad.content ?? "", status: ad.status } : null,
     };
   });
@@ -461,6 +463,8 @@ export default async function TeacherDashboardPage({
             initialContent={adRow?.content ?? ""}
             batches={adBatches}
             subjectOptions={subjectOptions}
+            defaultHourlyRate={priceRow?.hourly_rate}
+            defaultMonthlyRate={priceRow?.monthly_rate}
           />
         ),
         settings: (

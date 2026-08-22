@@ -22,6 +22,8 @@ export type TeacherAdBatchRow = {
   title: string;
   subjectId: string | null;
   subjectName: string | null;
+  hourlyRate: number | null;
+  monthlyRate: number | null;
   ad: { id: string; title: string; content: string; status: "active" | "expired" | "removed" } | null;
 };
 
@@ -29,10 +31,14 @@ export function AdvertisementTab({
   initialContent,
   batches,
   subjectOptions,
+  defaultHourlyRate,
+  defaultMonthlyRate,
 }: {
   initialContent: string;
   batches: TeacherAdBatchRow[];
   subjectOptions: { id: string; name: string }[];
+  defaultHourlyRate?: number | null;
+  defaultMonthlyRate?: number | null;
 }) {
   const t = useTranslations("teacherDashboard.ads");
   const tc = useTranslations("teacherDashboard.common");
@@ -66,14 +72,26 @@ export function AdvertisementTab({
         <p className="mb-4 text-sm text-muted-foreground">{t("classAds.subtitle")}</p>
 
         <div className="flex flex-col gap-4">
-          <IndividualAdCreator subjectOptions={subjectOptions} />
+          <IndividualAdCreator
+            subjectOptions={subjectOptions}
+            defaultHourlyRate={defaultHourlyRate}
+            defaultMonthlyRate={defaultMonthlyRate}
+          />
 
           {batches.length === 0 ? (
             <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
               {t("classAds.noBatches")}
             </div>
           ) : (
-            batches.map((batch) => <BatchAdCard key={batch.id} batch={batch} subjectOptions={subjectOptions} />)
+            batches.map((batch) => (
+              <BatchAdCard
+                key={batch.id}
+                batch={batch}
+                subjectOptions={subjectOptions}
+                defaultHourlyRate={defaultHourlyRate}
+                defaultMonthlyRate={defaultMonthlyRate}
+              />
+            ))
           )}
         </div>
       </div>
@@ -113,9 +131,13 @@ export function AdvertisementTab({
 function BatchAdCard({
   batch,
   subjectOptions,
+  defaultHourlyRate,
+  defaultMonthlyRate,
 }: {
   batch: TeacherAdBatchRow;
   subjectOptions: { id: string; name: string }[];
+  defaultHourlyRate?: number | null;
+  defaultMonthlyRate?: number | null;
 }) {
   const t = useTranslations("teacherDashboard.ads.classAds");
   const tc = useTranslations("teacherDashboard.common");
@@ -124,6 +146,8 @@ function BatchAdCard({
   const [subjectId, setSubjectId] = useState(batch.subjectId ?? subjectOptions[0]?.id ?? "");
   const [title, setTitle] = useState(batch.ad?.title ?? "");
   const [content, setContent] = useState(batch.ad?.content ?? "");
+  const [hourlyRate, setHourlyRate] = useState(batch.hourlyRate != null ? String(batch.hourlyRate) : "");
+  const [monthlyRate, setMonthlyRate] = useState(batch.monthlyRate != null ? String(batch.monthlyRate) : "");
   const [active, setActive] = useState(batch.ad?.status === "active");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -133,7 +157,14 @@ function BatchAdCard({
     if (!subjectId || !title.trim() || !content.trim()) return;
     setSaving(true);
     setError(null);
-    const result = await upsertBatchAd({ batchId: batch.id, subjectId, title, content });
+    const result = await upsertBatchAd({
+      batchId: batch.id,
+      subjectId,
+      title,
+      content,
+      hourlyRate: hourlyRate.trim() ? Number(hourlyRate) : undefined,
+      monthlyRate: monthlyRate.trim() ? Number(monthlyRate) : undefined,
+    });
     setSaving(false);
     if (result.error) {
       setError(result.error);
@@ -228,6 +259,39 @@ function BatchAdCard({
               onChange={(e) => setContent(e.target.value)}
             />
           </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor={`ad-hourly-${batch.id}`}>{t("hourlyRateLabel")}</Label>
+              <Input
+                id={`ad-hourly-${batch.id}`}
+                type="number"
+                min="0"
+                inputMode="decimal"
+                placeholder={
+                  defaultHourlyRate != null ? t("ratePlaceholderDefault", { rate: defaultHourlyRate }) : t("ratePlaceholderNone")
+                }
+                value={hourlyRate}
+                onChange={(e) => setHourlyRate(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor={`ad-monthly-${batch.id}`}>{t("monthlyRateLabel")}</Label>
+              <Input
+                id={`ad-monthly-${batch.id}`}
+                type="number"
+                min="0"
+                inputMode="decimal"
+                placeholder={
+                  defaultMonthlyRate != null
+                    ? t("ratePlaceholderDefault", { rate: defaultMonthlyRate })
+                    : t("ratePlaceholderNone")
+                }
+                value={monthlyRate}
+                onChange={(e) => setMonthlyRate(e.target.value)}
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
           <div className="flex items-center gap-3">
             <Button type="button" size="sm" onClick={handleSave} disabled={saving || subjectOptions.length === 0}>
               {t("save")}
@@ -252,7 +316,15 @@ function BatchAdCard({
  * just when the teacher has zero batches, since even someone with scheduled
  * classes may also want to offer flexible individual tutoring.
  */
-function IndividualAdCreator({ subjectOptions }: { subjectOptions: { id: string; name: string }[] }) {
+function IndividualAdCreator({
+  subjectOptions,
+  defaultHourlyRate,
+  defaultMonthlyRate,
+}: {
+  subjectOptions: { id: string; name: string }[];
+  defaultHourlyRate?: number | null;
+  defaultMonthlyRate?: number | null;
+}) {
   const t = useTranslations("teacherDashboard.ads.individualAd");
   const tc = useTranslations("teacherDashboard.common");
   const tg = useTranslations("search");
@@ -264,6 +336,8 @@ function IndividualAdCreator({ subjectOptions }: { subjectOptions: { id: string;
   const [gradeBand, setGradeBand] = useState<GradeBand>("12-13");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [hourlyRate, setHourlyRate] = useState("");
+  const [monthlyRate, setMonthlyRate] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -271,7 +345,15 @@ function IndividualAdCreator({ subjectOptions }: { subjectOptions: { id: string;
     if (!subjectId || !title.trim() || !content.trim()) return;
     setSaving(true);
     setError(null);
-    const result = await createIndividualAd({ subjectId, mode, gradeBand, title, content });
+    const result = await createIndividualAd({
+      subjectId,
+      mode,
+      gradeBand,
+      title,
+      content,
+      hourlyRate: hourlyRate.trim() ? Number(hourlyRate) : undefined,
+      monthlyRate: monthlyRate.trim() ? Number(monthlyRate) : undefined,
+    });
     setSaving(false);
     if (result.error) {
       setError(result.error);
@@ -280,6 +362,8 @@ function IndividualAdCreator({ subjectOptions }: { subjectOptions: { id: string;
     setOpen(false);
     setTitle("");
     setContent("");
+    setHourlyRate("");
+    setMonthlyRate("");
     router.refresh();
   }
 
@@ -365,6 +449,39 @@ function IndividualAdCreator({ subjectOptions }: { subjectOptions: { id: string;
               onChange={(e) => setContent(e.target.value)}
             />
           </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="individual-hourly">{t("hourlyRateLabel")}</Label>
+              <Input
+                id="individual-hourly"
+                type="number"
+                min="0"
+                inputMode="decimal"
+                placeholder={
+                  defaultHourlyRate != null ? t("ratePlaceholderDefault", { rate: defaultHourlyRate }) : t("ratePlaceholderNone")
+                }
+                value={hourlyRate}
+                onChange={(e) => setHourlyRate(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="individual-monthly">{t("monthlyRateLabel")}</Label>
+              <Input
+                id="individual-monthly"
+                type="number"
+                min="0"
+                inputMode="decimal"
+                placeholder={
+                  defaultMonthlyRate != null
+                    ? t("ratePlaceholderDefault", { rate: defaultMonthlyRate })
+                    : t("ratePlaceholderNone")
+                }
+                value={monthlyRate}
+                onChange={(e) => setMonthlyRate(e.target.value)}
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
           <div className="flex items-center gap-3">
             <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
               {t("save")}

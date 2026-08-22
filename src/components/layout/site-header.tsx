@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { Menu, LogOut, ChevronDown } from "lucide-react";
+import { Bell, Menu, LogOut, ChevronDown } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -32,12 +32,19 @@ const searchItems = [
   },
 ] as const;
 
-export function SiteHeader({ user }: { user: { name: string; role: UserRole } | null }) {
+export function SiteHeader({
+  user,
+  inquiriesCount,
+}: {
+  user: { name: string; role: UserRole } | null;
+  inquiriesCount?: number;
+}) {
   const t = useTranslations("nav");
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const isSearchActive = pathname === "/teachers";
+  const inquiriesHref = user ? `${roleDashboardPath[user.role]}?tab=inquiries` : "/login";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-sm">
@@ -101,6 +108,20 @@ export function SiteHeader({ user }: { user: { name: string; role: UserRole } | 
           <LocaleSwitcher />
           {user ? (
             <>
+              {inquiriesCount !== undefined && (
+                <Link
+                  href={inquiriesHref}
+                  aria-label={t("inquiries")}
+                  className="relative flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
+                >
+                  <Bell className="size-4.5" />
+                  {inquiriesCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-cta font-mono text-[9px] font-bold text-cta-foreground">
+                      {inquiriesCount > 9 ? "9+" : inquiriesCount}
+                    </span>
+                  )}
+                </Link>
+              )}
               <Button size="sm" nativeButton={false} render={<Link href={roleDashboardPath[user.role]} />}>
                 {t("dashboard")}
               </Button>
@@ -163,6 +184,22 @@ export function SiteHeader({ user }: { user: { name: string; role: UserRole } | 
                 <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
                   {user ? (
                     <>
+                      {inquiriesCount !== undefined && (
+                        <Link
+                          href={inquiriesHref}
+                          className="flex items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Bell className="size-4" />
+                            {t("inquiries")}
+                          </span>
+                          {inquiriesCount > 0 && (
+                            <span className="flex size-5 items-center justify-center rounded-full bg-cta font-mono text-[10px] font-bold text-cta-foreground">
+                              {inquiriesCount > 9 ? "9+" : inquiriesCount}
+                            </span>
+                          )}
+                        </Link>
+                      )}
                       <Button nativeButton={false} render={<Link href={roleDashboardPath[user.role]} />}>
                         {t("dashboard")}
                       </Button>

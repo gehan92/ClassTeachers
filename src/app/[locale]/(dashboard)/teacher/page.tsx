@@ -19,7 +19,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { TeacherProfileDetail } from "@/types/teacher-profile";
 import type { TeacherBatchRow, BatchRosterEntry } from "@/components/dashboard/teacher/classes-tab";
 import type { TeacherNoteRow } from "@/components/dashboard/teacher/notes-tab";
-import type { TeacherStudentRow } from "@/components/dashboard/teacher/students-tab";
+import type { TeacherStudentRow, TeacherJoinRequestRow } from "@/components/dashboard/teacher/students-tab";
 import type { TeacherLiveClassRow } from "@/components/dashboard/teacher/live-classes-tab";
 import type { AttendanceSession } from "@/components/dashboard/teacher/attendance-tab";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
@@ -71,7 +71,8 @@ export default async function TeacherDashboardPage({
       .from("enrollments")
       .select("id", { count: "exact", head: true })
       .eq("owner_type", "teacher")
-      .eq("owner_id", userId),
+      .eq("owner_id", userId)
+      .eq("status", "accepted"),
     supabase.from("reviews").select("rating").eq("target_type", "teacher").eq("target_id", userId),
     supabase.from("exams").select("id").eq("owner_type", "teacher").eq("owner_id", userId),
     supabase.from("exam_submissions").select("id, exam_id").eq("status", "pending"),
@@ -123,7 +124,7 @@ export default async function TeacherDashboardPage({
         .order("created_at", { ascending: false }),
       supabase
         .from("enrollments")
-        .select("id, student_id, batch_id, joined_at")
+        .select("id, student_id, batch_id, joined_at, status")
         .eq("owner_type", "teacher")
         .eq("owner_id", userId),
       supabase
@@ -185,14 +186,19 @@ export default async function TeacherDashboardPage({
   const studentIds = [...new Set((enrollmentRows ?? []).map((e) => e.student_id))];
   // Plain `profiles` select would return zero rows here — its only RLS
   // policy is "your own row or admin" (0003). This RPC (0032) opens it up
-  // specifically for students actually enrolled with this teacher.
+  // for any student who has a relationship (accepted or a pending request)
+  // with this teacher — the owner needs to see who a request is *from* to
+  // decide whether to accept it, not just who's already an accepted student.
   const { data: studentProfiles } = studentIds.length
     ? await supabase.rpc("get_roster_student_info", { p_student_ids: studentIds })
     : { data: [] as { id: string; full_name: string; phone: string | null }[] };
   const studentById = new Map((studentProfiles ?? []).map((p) => [p.id, p]));
 
+  const acceptedEnrollments = (enrollmentRows ?? []).filter((e) => e.status === "accepted");
+  const pendingEnrollments = (enrollmentRows ?? []).filter((e) => e.status === "pending");
+
   const rosterByBatch: Record<string, BatchRosterEntry[]> = {};
-  for (const enrollment of enrollmentRows ?? []) {
+  for (const enrollment of acceptedEnrollments) {
     if (!enrollment.batch_id) continue;
     const student = studentById.get(enrollment.student_id);
     const entry: BatchRosterEntry = {
@@ -210,7 +216,7 @@ export default async function TeacherDashboardPage({
     pageCount: n.page_count,
   }));
 
-  const students: TeacherStudentRow[] = (enrollmentRows ?? []).map((enrollment) => {
+  const students: TeacherStudentRow[] = acceptedEnrollments.map((enrollment) => {
     const student = studentById.get(enrollment.student_id);
     return {
       id: enrollment.id,
@@ -218,6 +224,16 @@ export default async function TeacherDashboardPage({
       batch: (enrollment.batch_id && batches.find((b) => b.id === enrollment.batch_id)?.title) || t("students.noBatch"),
       joinedAt: dateFormatter.format(new Date(enrollment.joined_at)),
       phone: student?.phone ?? null,
+    };
+  });
+
+  const requests: TeacherJoinRequestRow[] = pendingEnrollments.map((enrollment) => {
+    const student = studentById.get(enrollment.student_id);
+    return {
+      id: enrollment.id,
+      studentName: student?.full_name ?? "—",
+      batch: (enrollment.batch_id && batches.find((b) => b.id === enrollment.batch_id)?.title) || t("students.noBatch"),
+      requestedAt: dateFormatter.format(new Date(enrollment.joined_at)),
     };
   });
 
@@ -436,7 +452,7 @@ export default async function TeacherDashboardPage({
         questionBank: <QuestionBankTab initialQuestions={questions} batches={batches} />,
         exams: <ExamsTab exams={exams} submissions={examSubmissions} questions={questions} />,
         live: <LiveClassesTab classes={liveClasses} />,
-        students: <StudentsTab students={students} />,
+        students: <StudentsTab students={students} requests={requests} />,
         attendance: <AttendanceTab sessions={attendanceSessions} />,
         inquiries: <InquiriesTab inquiries={inquiries} />,
         reviews: <ReviewsTab initialReviews={reviews} averageRating={averageRating ?? "0.0"} reviewCount={reviewRows?.length ?? 0} />,

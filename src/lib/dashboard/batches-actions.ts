@@ -76,9 +76,18 @@ export async function createBatch(input: {
   return {};
 }
 
-export async function joinBatch(batchId: string): Promise<ActionResult> {
+/**
+ * Used both from the ad-landing page (/ad/[id]) and the student dashboard's
+ * batch browser. For a teacher, this is a pending request the teacher must
+ * accept before it unlocks anything (0039/0040) — the enrollments insert
+ * policy enforces status='pending' for owner_type='teacher', so this can't
+ * be bypassed into an instant accept. Institute ('class') joins stay
+ * instant/accepted for now — there's no institute-side accept/decline UI
+ * yet, so the RLS policy requires 'accepted' there instead; see 0040.
+ */
+export async function requestToJoin(batchId: string): Promise<ActionResult> {
   if (!batchId) {
-    return { error: "Invalid batch." };
+    return { error: "Invalid class." };
   }
 
   const supabase = await createClient();
@@ -103,12 +112,36 @@ export async function joinBatch(batchId: string): Promise<ActionResult> {
     owner_type: batch.owner_type,
     owner_id: batch.owner_id,
     batch_id: batchId,
+    status: batch.owner_type === "teacher" ? "pending" : "accepted",
   });
   if (error) {
     if (error.code === "23505") {
-      return { error: "You've already joined this class." };
+      return { error: "You've already sent a request (or joined) this teacher." };
     }
-    return { error: "Couldn't join this class. Please try again." };
+    return { error: "Couldn't send your request. Please try again." };
   }
   return {};
 }
+
+export async function respondToJoinRequest(
+  enrollmentId: string,
+  accept: boolean,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error } = await supabase
+    .from("enrollments")
+    .update({ status: accept ? "accepted" : "declined" })
+    .eq("id", enrollmentId);
+  if (error) {
+    return { error: "Couldn't update this request. Please try again." };
+  }
+  return {};
+}
+

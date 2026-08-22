@@ -22,43 +22,48 @@ function priceFrom(hourlyRate: number | null, monthlyRate: number | null): Listi
 }
 
 /**
- * Real replacement for src/lib/mock-data/listings.ts. Reads from
- * list_public_teachers()/list_public_classes() (supabase/migrations/
- * 0021_public_directory.sql) instead of the profiles/class_profiles tables
- * directly — teacher names go through get_teacher_contact-style masking
- * server-side, see that migration for why a plain join can't be used here.
+ * Real replacement for src/lib/mock-data/listings.ts. Class listings still
+ * read from list_public_classes() (supabase/migrations/0021) — teacher
+ * listings instead read from list_teacher_ads() (0040): "Find teachers" now
+ * lists active, batch-scoped ads rather than every approved profile, so a
+ * teacher with no ad simply isn't discoverable here (list_public_teachers
+ * still exists for other callers, e.g. an already-enrolled student's own
+ * dashboard). Each card links to the limited-detail /ad/[id] landing page,
+ * not the full /teacher/[id] profile.
  */
 export async function getPublicListings(tPage: Translator, tSearch: Translator): Promise<Listing[]> {
   const supabase = await createClient();
-  const [{ data: teacherRows }, { data: classRows }] = await Promise.all([
-    supabase.rpc("list_public_teachers"),
+  const [{ data: adRows }, { data: classRows }] = await Promise.all([
+    supabase.rpc("list_teacher_ads"),
     supabase.rpc("list_public_classes"),
   ]);
 
-  const teacherListings: Listing[] = (teacherRows ?? []).flatMap((row) => {
+  const teacherListings: Listing[] = (adRows ?? []).flatMap((row) => {
     const price = priceFrom(row.hourly_rate, row.monthly_rate);
     if (!price || !row.display_name) return [];
 
-    const online = row.class_type !== "physical";
-    const roleBase = row.role === "campus_lecturer" ? tPage("roleCampusLecturer") : tPage("roleTeacher");
-    const roleLabel = [roleBase, row.location, online ? tPage("online") : null].filter(Boolean).join(" · ");
+    const online = row.mode === "online";
+    const subjects = row.subject ? [row.subject] : [];
+    const roleLabel = [tPage("roleTeacher"), row.location, online ? tPage("online") : null]
+      .filter(Boolean)
+      .join(" · ");
 
     const listing: Listing = {
-      id: row.id,
+      id: row.ad_id,
       kind: "teacher",
       name: row.display_name,
       masked: true,
       roleLabel,
-      gradeChip: gradeChip(row.grade_band, row.subjects, tPage, tSearch),
+      gradeChip: gradeChip(row.grade_band, subjects, tPage, tSearch),
       location: row.location ?? "",
       online,
       gradeBand: (row.grade_band as GradeBand | null) ?? null,
       avatarInitials: row.display_name.split(" ")[0] ?? row.display_name,
       rating: Number(row.rating),
       reviewCount: Number(row.review_count),
-      subjects: row.subjects,
+      subjects,
       price,
-      href: `/teacher/${row.id}`,
+      href: `/ad/${row.ad_id}`,
     };
     return [listing];
   });

@@ -1034,6 +1034,46 @@ export type Database = {
           created_at: string;
         }[];
       };
+      list_teacher_ads: {
+        Args: Record<string, never>;
+        Returns: {
+          ad_id: string;
+          teacher_id: string;
+          display_name: string | null;
+          photo_url: string | null;
+          ad_title: string;
+          ad_content: string | null;
+          subject: string | null;
+          grade_band: string | null;
+          location: string | null;
+          mode: string;
+          hourly_rate: number | null;
+          monthly_rate: number | null;
+          rating: number;
+          review_count: number;
+        }[];
+      };
+      get_public_ad: {
+        Args: { p_ad_id: string };
+        Returns: {
+          ad_id: string;
+          teacher_id: string;
+          batch_id: string;
+          display_name: string | null;
+          photo_url: string | null;
+          ad_title: string;
+          ad_content: string | null;
+          subject: string | null;
+          grade_band: string | null;
+          location: string | null;
+          mode: string;
+          schedule_note: string | null;
+          hourly_rate: number | null;
+          monthly_rate: number | null;
+          rating: number;
+          review_count: number;
+        }[];
+      };
     };
 
     Enums: Record<string, never>;

@@ -46,7 +46,7 @@ export default async function StudentDashboardPage({
 
   const [{ data: enrollments }, { data: noteRows }, { data: examRows }, { data: submissionRows }] =
     await Promise.all([
-      supabase.from("enrollments").select("id, owner_type, owner_id, batch_id, joined_at"),
+      supabase.from("enrollments").select("id, owner_type, owner_id, batch_id, joined_at, status"),
       supabase.from("notes").select("id, owner_type, owner_id, batch_id, title, page_count"),
       supabase
         .from("exams")
@@ -58,12 +58,13 @@ export default async function StudentDashboardPage({
         .eq("student_id", userId),
     ]);
 
-  const classesCount = enrollments?.length ?? 0;
+  const acceptedEnrollments = (enrollments ?? []).filter((e) => e.status === "accepted");
+  const classesCount = acceptedEnrollments.length;
   const submissionByExamId = new Map((submissionRows ?? []).map((s) => [s.exam_id, s]));
   const examsDueCount = (examRows ?? []).filter((e) => submissionByExamId.get(e.id)?.status !== "graded").length;
 
-  const teacherIds = (enrollments ?? []).filter((e) => e.owner_type === "teacher").map((e) => e.owner_id);
-  const classIds = (enrollments ?? []).filter((e) => e.owner_type === "class").map((e) => e.owner_id);
+  const teacherIds = acceptedEnrollments.filter((e) => e.owner_type === "teacher").map((e) => e.owner_id);
+  const classIds = acceptedEnrollments.filter((e) => e.owner_type === "class").map((e) => e.owner_id);
 
   const [teacherLive, classLive] = await Promise.all([
     teacherIds.length
@@ -151,17 +152,20 @@ export default async function StudentDashboardPage({
   const joinedOwnerKeys = new Set((enrollments ?? []).map((e) => `${e.owner_type}:${e.owner_id}`));
   const enrolledBatchIds = new Set((enrollments ?? []).map((e) => e.batch_id).filter((id): id is string => Boolean(id)));
 
-  const myClasses: MyClassRow[] = (enrollments ?? []).map((e) => {
-    const batch = e.batch_id ? batchById.get(e.batch_id) : undefined;
-    return {
-      enrollmentId: e.id,
-      batchTitle: batch?.title ?? null,
-      ownerName: ownerName(e.owner_type, e.owner_id),
-      ownerType: e.owner_type,
-      mode: batch?.mode ?? null,
-      scheduleNote: batch?.schedule_note ?? null,
-    };
-  });
+  const myClasses: MyClassRow[] = (enrollments ?? [])
+    .filter((e) => e.status !== "declined")
+    .map((e) => {
+      const batch = e.batch_id ? batchById.get(e.batch_id) : undefined;
+      return {
+        enrollmentId: e.id,
+        batchTitle: batch?.title ?? null,
+        ownerName: ownerName(e.owner_type, e.owner_id),
+        ownerType: e.owner_type,
+        mode: batch?.mode ?? null,
+        scheduleNote: batch?.schedule_note ?? null,
+        status: e.status,
+      };
+    });
 
   const availableBatches: AvailableBatchRow[] = (allBatches ?? [])
     .filter((b) => !joinedOwnerKeys.has(`${b.owner_type}:${b.owner_id}`))

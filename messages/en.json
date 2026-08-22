@@ -836,11 +836,13 @@
       "typeClass": "Class",
       "viewProfile": "View profile",
       "emptyState": "You haven't joined any classes yet.",
+      "pendingTitle": "Pending requests",
+      "pendingStatus": "Waiting for the teacher to respond",
       "browseTitle": "Browse classes to join",
       "browseEmpty": "No classes are open to join right now.",
       "modeOnline": "Online",
       "modePhysical": "Physical",
-      "join": "Join"
+      "requestToJoin": "Request to join"
     },
     "live": {
       "title": "Live Classes",
@@ -1239,6 +1241,11 @@
         "batch": "Batch",
         "joined": "Joined",
         "contact": "Contact"
+      },
+      "requests": {
+        "heading": "Join requests",
+        "accept": "Accept",
+        "decline": "Decline"
       }
     },
     "attendance": {
@@ -1325,6 +1332,27 @@
     "online": "Online",
     "teacherCount": "{count} teachers",
     "allSubjects": "All subjects"
+  },
+  "adPage": {
+    "teacherFallback": "Teacher",
+    "online": "Online",
+    "physical": "Physical",
+    "schedule": "Schedule",
+    "limitedNote": "This is a limited preview. Full profile details unlock once the teacher accepts your request to join.",
+    "join": {
+      "requestToJoin": "Request to join",
+      "notePlaceholder": "Add a note for the teacher (optional)",
+      "namePlaceholder": "Your name",
+      "contactPlaceholder": "Phone or email",
+      "send": "Send request",
+      "requestSent": "Request sent — the teacher will follow up soon.",
+      "pending": "Request sent — waiting for the teacher to respond.",
+      "accepted": "You're already connected with this teacher.",
+      "declined": "Your request was declined.",
+      "notStudent": "Only student accounts can request to join.",
+      "viewProfile": "View full profile",
+      "anonymousHint": "No account needed — the teacher will get in touch using the contact details above."
+    }
   },
   "helpPage": {
     "eyebrow": "Help centre",

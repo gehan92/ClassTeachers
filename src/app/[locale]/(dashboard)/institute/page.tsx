@@ -6,6 +6,7 @@ import { BatchesTab } from "@/components/dashboard/institute/batches-tab";
 import { AdvertisementTab } from "@/components/dashboard/institute/advertisement-tab";
 import { ReviewsTab } from "@/components/dashboard/institute/reviews-tab";
 import { SettingsTab } from "@/components/dashboard/institute/settings-tab";
+import { InquiriesTab, type InquiryRow } from "@/components/dashboard/inquiries-tab";
 import { createClient } from "@/lib/supabase/server";
 import type { TeachersAtGlance } from "@/types/dashboard-institute";
 import type { InstituteBatchRow } from "@/components/dashboard/institute/batches-tab";
@@ -36,39 +37,53 @@ export default async function InstituteDashboardPage({
   const userInitial = fullName.charAt(0).toUpperCase();
   const instituteId = classProfile?.id;
 
-  const [{ data: classTeacherRows }, { count: studentsCount }, { data: reviewRows }, { data: priceRow }, { data: adRow }] =
-    await Promise.all([
-      instituteId
-        ? supabase.from("class_teachers").select("teacher_id, is_visible").eq("class_id", instituteId)
-        : Promise.resolve({ data: [] as { teacher_id: string; is_visible: boolean }[] }),
-      instituteId
-        ? supabase
-            .from("enrollments")
-            .select("id", { count: "exact", head: true })
-            .eq("owner_type", "class")
-            .eq("owner_id", instituteId)
-        : Promise.resolve({ count: 0 }),
-      instituteId
-        ? supabase.from("reviews").select("rating").eq("target_type", "class").eq("target_id", instituteId)
-        : Promise.resolve({ data: [] as { rating: number }[] }),
-      instituteId
-        ? supabase
-            .from("prices")
-            .select("hourly_rate, monthly_rate")
-            .eq("owner_type", "class")
-            .eq("owner_id", instituteId)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-      instituteId
-        ? supabase
-            .from("advertisements")
-            .select("content")
-            .eq("owner_type", "class")
-            .eq("owner_id", instituteId)
-            .eq("placement", "own_profile")
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-    ]);
+  const [
+    { data: classTeacherRows },
+    { count: studentsCount },
+    { data: reviewRows },
+    { data: priceRow },
+    { data: adRow },
+    { data: inquiryRows },
+  ] = await Promise.all([
+    instituteId
+      ? supabase.from("class_teachers").select("teacher_id, is_visible").eq("class_id", instituteId)
+      : Promise.resolve({ data: [] as { teacher_id: string; is_visible: boolean }[] }),
+    instituteId
+      ? supabase
+          .from("enrollments")
+          .select("id", { count: "exact", head: true })
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+      : Promise.resolve({ count: 0 }),
+    instituteId
+      ? supabase.from("reviews").select("rating").eq("target_type", "class").eq("target_id", instituteId)
+      : Promise.resolve({ data: [] as { rating: number }[] }),
+    instituteId
+      ? supabase
+          .from("prices")
+          .select("hourly_rate, monthly_rate")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    instituteId
+      ? supabase
+          .from("advertisements")
+          .select("content")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+          .eq("placement", "own_profile")
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    instituteId
+      ? supabase
+          .from("inquiries")
+          .select("id, sender_name, sender_contact, message, status, created_at")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] as { id: string; sender_name: string; sender_contact: string; message: string; status: "new" | "read"; created_at: string }[] }),
+  ]);
 
   const teacherIds = (classTeacherRows ?? []).map((row) => row.teacher_id);
 
@@ -153,6 +168,14 @@ export default async function InstituteDashboardPage({
     ? await supabase.rpc("list_public_reviews", { p_target_type: "class", p_target_id: instituteId })
     : { data: [] as { id: string; author: string | null; rating: number; body: string | null; reply: string | null; created_at: string }[] };
   const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const inquiries: InquiryRow[] = (inquiryRows ?? []).map((row) => ({
+    id: row.id,
+    senderName: row.sender_name,
+    senderContact: row.sender_contact,
+    message: row.message,
+    status: row.status,
+    createdLabel: dateFormatter.format(new Date(row.created_at)),
+  }));
   const reviews = (myReviewRows ?? []).map((r) => ({
     id: r.id,
     author: r.author ?? "Anonymous",
@@ -211,6 +234,11 @@ export default async function InstituteDashboardPage({
         {
           label: t("groupManage"),
           items: [
+            {
+              key: "inquiries",
+              label: t("tabs.inquiries"),
+              count: inquiries.filter((i) => i.status === "new").length,
+            },
             { key: "ads", label: t("tabs.ads") },
             { key: "reviews", label: t("tabs.reviews"), count: reviewRows?.length ?? 0 },
             { key: "settings", label: t("tabs.settings") },
@@ -230,6 +258,7 @@ export default async function InstituteDashboardPage({
         ),
         teachers: <TeachersTab teachers={instituteTeachers} />,
         batches: <BatchesTab batches={batches} />,
+        inquiries: <InquiriesTab inquiries={inquiries} />,
         ads: <AdvertisementTab initialContent={adRow?.content ?? ""} />,
         reviews: (
           <ReviewsTab initialReviews={reviews} averageRating={averageRating ?? "0.0"} reviewCount={reviewRows?.length ?? 0} />

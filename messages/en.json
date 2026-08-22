@@ -109,7 +109,22 @@
     "hourly": "Hourly",
     "monthly": "Monthly",
     "join": "Join",
-    "message": "Message"
+    "message": "Message",
+    "namePlaceholder": "Your name",
+    "contactPlaceholder": "Your email or phone number",
+    "messagePlaceholder": "What would you like to ask?",
+    "sendMessage": "Send message",
+    "messageSent": "Message sent — they'll get back to you soon."
+  },
+  "inquiriesTab": {
+    "heading": "Inquiries",
+    "subtitle": "Messages from people who found your profile but haven't joined yet.",
+    "empty": "No messages yet.",
+    "newBadge": "New",
+    "contactLabel": "Contact",
+    "markRead": "Mark as read",
+    "delete": "Delete",
+    "confirmDelete": "Delete this message?"
   },
   "comingSoon": {
     "badge": "Coming soon",
@@ -639,6 +654,7 @@
       "overview": "Overview",
       "teachers": "Teachers",
       "batches": "Classes & Batches",
+      "inquiries": "Inquiries",
       "ads": "Advertisement",
       "reviews": "Reviews",
       "settings": "Settings"
@@ -942,6 +958,7 @@
       "live": "Live classes",
       "students": "Students",
       "attendance": "Attendance",
+      "inquiries": "Inquiries",
       "reviews": "Reviews",
       "ads": "Advertisement",
       "settings": "Settings"

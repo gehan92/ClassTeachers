@@ -725,6 +725,45 @@ export type Database = {
         Relationships: [];
       };
 
+      inquiries: {
+        Row: {
+          id: string;
+          owner_type: OwnerType;
+          owner_id: string;
+          inquirer_id: string | null;
+          sender_name: string;
+          sender_contact: string;
+          message: string;
+          status: "new" | "read";
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_type: OwnerType;
+          owner_id: string;
+          inquirer_id?: string | null;
+          sender_name: string;
+          sender_contact: string;
+          message: string;
+          status?: "new" | "read";
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_type?: OwnerType;
+          owner_id?: string;
+          inquirer_id?: string | null;
+          sender_name?: string;
+          sender_contact?: string;
+          message?: string;
+          status?: "new" | "read";
+          created_at?: string;
+        };
+        // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
+        // every table declares no relationships rather than a guessed one.
+        Relationships: [];
+      };
+
       prices: {
         Row: {
           id: string;
@@ -898,6 +937,16 @@ export type Database = {
       find_teacher_by_email: {
         Args: { p_email: string };
         Returns: { id: string; full_name: string }[];
+      };
+      submit_inquiry: {
+        Args: {
+          p_owner_type: string;
+          p_owner_id: string;
+          p_sender_name: string;
+          p_sender_contact: string;
+          p_message: string;
+        };
+        Returns: undefined;
       };
       owns_exam: {
         Args: { p_exam_id: string };

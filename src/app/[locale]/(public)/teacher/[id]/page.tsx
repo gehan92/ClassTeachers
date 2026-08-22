@@ -119,7 +119,13 @@ export default async function TeacherProfilePage({
           <ReviewsPanel teacher={teacher} />
         </div>
         <div className="flex flex-col gap-5">
-          <PriceBox hourlyRate={teacher.hourlyRate} monthlyRate={teacher.monthlyRate} joinHref="/signup" />
+          <PriceBox
+            hourlyRate={teacher.hourlyRate}
+            monthlyRate={teacher.monthlyRate}
+            joinHref="/signup"
+            ownerType="teacher"
+            ownerId={teacher.id}
+          />
           {teacher.adText && (
             <AdSlot size="sm" eyebrow={teacher.adHeadline ?? teacher.headline ?? ""} text={teacher.adText} />
           )}

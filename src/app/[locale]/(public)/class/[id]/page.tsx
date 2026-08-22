@@ -281,6 +281,8 @@ function PriceBoxSidebar({ classProfile }: { classProfile: ClassProfileDetail })
       monthlyRate={classProfile.monthlyRate}
       joinHref="/signup"
       helperText={t("generalRateHelper")}
+      ownerType="class"
+      ownerId={classProfile.id}
     />
   );
 }

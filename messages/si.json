@@ -109,7 +109,22 @@
     "hourly": "පැයකට",
     "monthly": "මාසිකව",
     "join": "එකතු වන්න",
-    "message": "පණිවිඩය"
+    "message": "පණිවිඩය",
+    "namePlaceholder": "ඔබේ නම",
+    "contactPlaceholder": "ඔබේ විද්‍යුත් තැපෑල හෝ දුරකථන අංකය",
+    "messagePlaceholder": "ඔබ අසන්නට කැමති දේ කුමක්ද?",
+    "sendMessage": "පණිවිඩය යවන්න",
+    "messageSent": "පණිවිඩය යවා ඇත — ඔවුන් ඉක්මනින් ඔබට පිළිතුරු දෙනු ඇත."
+  },
+  "inquiriesTab": {
+    "heading": "විමසීම්",
+    "subtitle": "ඔබේ පැතිකඩ සොයාගත් නමුත් තවම එකතු නොවූ පුද්ගලයින්ගෙන් පණිවිඩ.",
+    "empty": "තවම පණිවිඩ නැත.",
+    "newBadge": "නව",
+    "contactLabel": "සම්බන්ධතාවය",
+    "markRead": "කියවූ ලෙස සලකුණු කරන්න",
+    "delete": "මකන්න",
+    "confirmDelete": "මෙම පණිවිඩය මකන්නද?"
   },
   "comingSoon": {
     "badge": "ඉක්මනින්",
@@ -639,6 +654,7 @@
       "overview": "දළ විශ්ලේෂණය",
       "teachers": "ගුරුවරුන්",
       "batches": "පන්ති සහ කණ්ඩායම්",
+      "inquiries": "විමසීම්",
       "ads": "දැන්වීම",
       "reviews": "සමාලෝචන",
       "settings": "සැකසුම්"
@@ -942,6 +958,7 @@
       "live": "සජීවී පන්ති",
       "students": "සිසුන්",
       "attendance": "පැමිණීම",
+      "inquiries": "විමසීම්",
       "reviews": "සමාලෝචන",
       "ads": "දැන්වීම",
       "settings": "සැකසුම්"

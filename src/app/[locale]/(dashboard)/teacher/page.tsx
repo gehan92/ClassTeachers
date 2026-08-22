@@ -10,6 +10,7 @@ import { LiveClassesTab } from "@/components/dashboard/teacher/live-classes-tab"
 import { StudentsTab } from "@/components/dashboard/teacher/students-tab";
 import { AttendanceTab } from "@/components/dashboard/teacher/attendance-tab";
 import { ReviewsTab } from "@/components/dashboard/teacher/reviews-tab";
+import { InquiriesTab } from "@/components/dashboard/inquiries-tab";
 import { AdvertisementTab } from "@/components/dashboard/teacher/advertisement-tab";
 import { SettingsTab } from "@/components/dashboard/teacher/settings-tab";
 import { createClient } from "@/lib/supabase/server";
@@ -20,6 +21,7 @@ import type { TeacherLiveClassRow } from "@/components/dashboard/teacher/live-cl
 import type { AttendanceSession } from "@/components/dashboard/teacher/attendance-tab";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
 import type { TeacherExamRow, ExamSubmissionRow } from "@/components/dashboard/teacher/exams-tab";
+import type { InquiryRow } from "@/components/dashboard/inquiries-tab";
 
 export default async function TeacherDashboardPage({
   params,
@@ -60,6 +62,7 @@ export default async function TeacherDashboardPage({
     { data: reviewRows },
     { data: examRows },
     { data: pendingSubmissionRows },
+    { data: inquiryRows },
   ] = await Promise.all([
     supabase
       .from("enrollments")
@@ -69,7 +72,22 @@ export default async function TeacherDashboardPage({
     supabase.from("reviews").select("rating").eq("target_type", "teacher").eq("target_id", userId),
     supabase.from("exams").select("id").eq("owner_type", "teacher").eq("owner_id", userId),
     supabase.from("exam_submissions").select("id, exam_id").eq("status", "pending"),
+    supabase
+      .from("inquiries")
+      .select("id, sender_name, sender_contact, message, status, created_at")
+      .eq("owner_type", "teacher")
+      .eq("owner_id", userId)
+      .order("created_at", { ascending: false }),
   ]);
+
+  const inquiries: InquiryRow[] = (inquiryRows ?? []).map((row) => ({
+    id: row.id,
+    senderName: row.sender_name,
+    senderContact: row.sender_contact,
+    message: row.message,
+    status: row.status,
+    createdLabel: dateFormatter.format(new Date(row.created_at)),
+  }));
 
   const examIds = new Set((examRows ?? []).map((e) => e.id));
   const pendingSubmissionsCount = (pendingSubmissionRows ?? []).filter((s) => examIds.has(s.exam_id)).length;
@@ -301,6 +319,11 @@ export default async function TeacherDashboardPage({
           items: [
             { key: "students", label: t("tabs.students"), count: studentsCount ?? 0 },
             { key: "attendance", label: t("tabs.attendance") },
+            {
+              key: "inquiries",
+              label: t("tabs.inquiries"),
+              count: inquiries.filter((i) => i.status === "new").length,
+            },
             { key: "reviews", label: t("tabs.reviews"), count: reviewRows?.length ?? 0 },
             { key: "ads", label: t("tabs.ads") },
             { key: "settings", label: t("tabs.settings") },
@@ -339,6 +362,7 @@ export default async function TeacherDashboardPage({
         live: <LiveClassesTab classes={liveClasses} />,
         students: <StudentsTab students={students} />,
         attendance: <AttendanceTab sessions={attendanceSessions} />,
+        inquiries: <InquiriesTab inquiries={inquiries} />,
         reviews: <ReviewsTab initialReviews={reviews} averageRating={averageRating ?? "0.0"} reviewCount={reviewRows?.length ?? 0} />,
         ads: <AdvertisementTab initialContent={adRow?.content ?? ""} />,
         settings: (

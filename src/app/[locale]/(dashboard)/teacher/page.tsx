@@ -404,7 +404,7 @@ export default async function TeacherDashboardPage({
             initialOwnerPublished={teacherProfile?.owner_published ?? true}
             initialPhotoUrl={teacherProfile?.photo_url ?? null}
             teacherName={fullName}
-            liveView={<TeacherProfileView teacher={liveProfile} showGate={false} />}
+            liveView={<TeacherProfileView teacher={liveProfile} showGate={false} isOwnerView />}
           />
         ),
         notes: <NotesTab notes={notes} batches={batches} />,

@@ -14,13 +14,16 @@ import type { TeacherProfileDetail } from "@/types/teacher-profile";
 export function TeacherProfileView({
   teacher,
   showGate,
+  isOwnerView = false,
 }: {
   teacher: TeacherProfileDetail;
   showGate: boolean;
+  /** True when the teacher is viewing their own profile from the dashboard — hides visitor-only actions like "Join teacher". */
+  isOwnerView?: boolean;
 }) {
   return (
     <>
-      <Hero teacher={teacher} />
+      <Hero teacher={teacher} isOwnerView={isOwnerView} />
       <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-8 px-7 py-10 lg:grid-cols-[2fr_1fr]">
         <div className="min-w-0">
           <AboutPanel teacher={teacher} showGate={showGate} />
@@ -75,7 +78,7 @@ function classTypeLabel(
   return t("classTypeBoth");
 }
 
-function Hero({ teacher }: { teacher: TeacherProfileDetail }) {
+function Hero({ teacher, isOwnerView }: { teacher: TeacherProfileDetail; isOwnerView: boolean }) {
   const t = useTranslations("profilePage");
 
   return (
@@ -124,20 +127,22 @@ function Hero({ teacher }: { teacher: TeacherProfileDetail }) {
               )}
             </div>
           </div>
-          <div className="flex shrink-0 gap-2.5">
-            <button
-              type="button"
-              className="rounded-sm border border-white/40 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
-            >
-              {t("save")}
-            </button>
-            <Link
-              href="/signup"
-              className="inline-flex items-center justify-center rounded-sm bg-cta px-4 py-2 text-sm font-semibold text-cta-foreground transition-all hover:-translate-y-px hover:bg-cta-hover"
-            >
-              {t("joinTeacher")}
-            </Link>
-          </div>
+          {!isOwnerView && (
+            <div className="flex shrink-0 gap-2.5">
+              <button
+                type="button"
+                className="rounded-sm border border-white/40 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                {t("save")}
+              </button>
+              <Link
+                href="/signup"
+                className="inline-flex items-center justify-center rounded-sm bg-cta px-4 py-2 text-sm font-semibold text-cta-foreground transition-all hover:-translate-y-px hover:bg-cta-hover"
+              >
+                {t("joinTeacher")}
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

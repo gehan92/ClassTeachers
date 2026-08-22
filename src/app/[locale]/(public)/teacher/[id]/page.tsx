@@ -58,6 +58,7 @@ async function loadTeacherProfile(
     classType: (teacher.class_type as TeacherProfileDetail["classType"]) ?? "physical",
     experienceYears: teacher.experience_years,
     qualifications: teacher.qualifications ?? [],
+    workExperience: teacher.work_experience ?? [],
     photoUrl: teacher.photo_url,
     subjects: teacher.subjects ?? [],
     gradeBand: teacher.grade_band,
@@ -261,6 +262,19 @@ function QualificationsPanel({ teacher }: { teacher: TeacherProfileDetail }) {
             "—"
           )}
         </div>
+
+        {teacher.workExperience.length > 0 && (
+          <>
+            <div className="text-muted-foreground">{t("workExperienceLabel")}</div>
+            <div className="font-medium text-foreground">
+              <ul className="m-0 list-disc space-y-1 pl-4">
+                {teacher.workExperience.map((w, i) => (
+                  <li key={i}>{w}</li>
+                ))}
+              </ul>
+            </div>
+          </>
+        )}
 
         <div className="text-muted-foreground">{t("experienceLabel")}</div>
         <div className="font-medium text-foreground">

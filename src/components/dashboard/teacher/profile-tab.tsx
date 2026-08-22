@@ -24,6 +24,7 @@ export function ProfileTab({
   initialHeadline,
   initialBio,
   initialQualifications,
+  initialWorkExperience,
   initialExperienceYears,
   initialSubjects,
   initialLocation,
@@ -39,6 +40,7 @@ export function ProfileTab({
   initialHeadline: string;
   initialBio: string;
   initialQualifications: string[];
+  initialWorkExperience: string[];
   initialExperienceYears: string;
   initialSubjects: string[];
   initialLocation: string;
@@ -113,6 +115,20 @@ export function ProfileTab({
     setQualifications((qs) => qs.filter((_, i) => i !== index));
   }
 
+  const [workExperience, setWorkExperience] = useState(initialWorkExperience);
+
+  function updateWorkExperience(index: number, value: string) {
+    setWorkExperience((ws) => ws.map((w, i) => (i === index ? value : w)));
+  }
+
+  function addWorkExperience() {
+    setWorkExperience((ws) => [...ws, ""]);
+  }
+
+  function removeWorkExperience(index: number) {
+    setWorkExperience((ws) => ws.filter((_, i) => i !== index));
+  }
+
   const [photoUrl, setPhotoUrl] = useState(initialPhotoUrl);
   const [photoSaved, setPhotoSaved] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -159,6 +175,7 @@ export function ProfileTab({
         headline: form.headline,
         bio: form.bio,
         qualifications,
+        workExperience,
         experienceYears: form.experience,
         location: form.location,
         classType: form.classType,
@@ -320,6 +337,36 @@ export function ProfileTab({
           <Button type="button" variant="outline" size="sm" className="mt-1 self-start" onClick={addQualification}>
             <Plus className="size-4" />
             {t("addQualification")}
+          </Button>
+        </div>
+
+        <div className="mb-5 flex flex-col gap-1.5">
+          <Label>{t("fields.workExperience")}</Label>
+          {workExperience.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {workExperience.map((entry, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={entry}
+                    placeholder={t("workExperiencePlaceholder")}
+                    onChange={(e) => updateWorkExperience(index, e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("removeWorkExperience")}
+                    onClick={() => removeWorkExperience(index)}
+                  >
+                    <X className="size-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          <Button type="button" variant="outline" size="sm" className="mt-1 self-start" onClick={addWorkExperience}>
+            <Plus className="size-4" />
+            {t("addWorkExperience")}
           </Button>
         </div>
 

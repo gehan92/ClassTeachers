@@ -344,6 +344,7 @@ export default async function TeacherDashboardPage({
             initialHeadline={teacherProfile?.headline ?? ""}
             initialBio={teacherProfile?.bio ?? ""}
             initialQualifications={teacherProfile?.qualifications ?? []}
+            initialWorkExperience={teacherProfile?.work_experience ?? []}
             initialExperienceYears={teacherProfile?.experience_years?.toString() ?? ""}
             initialSubjects={subjectNames}
             initialLocation={teacherProfile?.location ?? ""}

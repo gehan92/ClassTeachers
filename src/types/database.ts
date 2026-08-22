@@ -98,6 +98,7 @@ export type Database = {
           headline: string | null;
           bio: string | null;
           qualifications: string[] | null;
+          work_experience: string[] | null;
           experience_years: number | null;
           class_type: "physical" | "online" | "both";
           location: string | null;
@@ -114,6 +115,7 @@ export type Database = {
           headline?: string | null;
           bio?: string | null;
           qualifications?: string[] | null;
+          work_experience?: string[] | null;
           experience_years?: number | null;
           class_type?: "physical" | "online" | "both";
           location?: string | null;
@@ -130,6 +132,7 @@ export type Database = {
           headline?: string | null;
           bio?: string | null;
           qualifications?: string[] | null;
+          work_experience?: string[] | null;
           experience_years?: number | null;
           class_type?: "physical" | "online" | "both";
           location?: string | null;
@@ -1000,6 +1003,7 @@ export type Database = {
           class_type: string;
           experience_years: number | null;
           qualifications: string[] | null;
+          work_experience: string[] | null;
           photo_url: string | null;
           hourly_rate: number | null;
           monthly_rate: number | null;

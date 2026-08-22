@@ -18,6 +18,7 @@ export type TeacherProfileDetail = {
   classType: "physical" | "online" | "both";
   experienceYears: number | null;
   qualifications: string[];
+  workExperience: string[];
   photoUrl: string | null;
   subjects: string[];
   gradeBand: string | null;

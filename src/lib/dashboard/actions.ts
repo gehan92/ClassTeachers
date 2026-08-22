@@ -77,6 +77,7 @@ const teacherProfileSchema = z.object({
   headline: z.string().trim().optional(),
   bio: z.string().trim().optional(),
   qualifications: z.array(z.string().trim().min(1)).optional(),
+  workExperience: z.array(z.string().trim().min(1)).optional(),
   experienceYears: z.coerce.number().int().min(0).optional(),
   location: z.string().trim().optional(),
   classType: z.enum(["physical", "online", "both"]),
@@ -88,6 +89,7 @@ export async function updateTeacherProfile(input: {
   headline: string;
   bio: string;
   qualifications: string[];
+  workExperience: string[];
   experienceYears: string;
   location: string;
   classType: string;
@@ -98,6 +100,7 @@ export async function updateTeacherProfile(input: {
     headline: input.headline,
     bio: input.bio,
     qualifications: input.qualifications.map((q) => q.trim()).filter(Boolean),
+    workExperience: input.workExperience.map((w) => w.trim()).filter(Boolean),
     experienceYears: input.experienceYears || undefined,
     location: input.location,
     classType: input.classType,
@@ -125,6 +128,7 @@ export async function updateTeacherProfile(input: {
       headline: parsed.data.headline || null,
       bio: parsed.data.bio || null,
       qualifications: parsed.data.qualifications && parsed.data.qualifications.length > 0 ? parsed.data.qualifications : null,
+      work_experience: parsed.data.workExperience && parsed.data.workExperience.length > 0 ? parsed.data.workExperience : null,
       experience_years: parsed.data.experienceYears ?? null,
       location: parsed.data.location || null,
       class_type: parsed.data.classType,

@@ -12,6 +12,7 @@ import { AttendanceTab } from "@/components/dashboard/teacher/attendance-tab";
 import { ReviewsTab } from "@/components/dashboard/teacher/reviews-tab";
 import { InquiriesTab } from "@/components/dashboard/inquiries-tab";
 import { AdvertisementTab } from "@/components/dashboard/teacher/advertisement-tab";
+import type { TeacherAdBatchRow } from "@/components/dashboard/teacher/advertisement-tab";
 import { SettingsTab } from "@/components/dashboard/teacher/settings-tab";
 import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { createClient } from "@/lib/supabase/server";
@@ -116,7 +117,7 @@ export default async function TeacherDashboardPage({
     await Promise.all([
       supabase
         .from("batches")
-        .select("id, title, mode, location, schedule_note, grade_band, status")
+        .select("id, title, mode, location, schedule_note, grade_band, status, subject_id")
         .eq("owner_type", "teacher")
         .eq("owner_id", userId)
         .order("created_at", { ascending: false }),
@@ -136,11 +137,13 @@ export default async function TeacherDashboardPage({
 
   const subjectIds = (subjectLinkRows ?? []).map((s) => s.subject_id);
   const { data: subjectRows } = subjectIds.length
-    ? await supabase.from("subjects").select("translations, grade_band").in("id", subjectIds)
-    : { data: [] as { translations: unknown; grade_band: string | null }[] };
-  const subjectNames = (subjectRows ?? [])
-    .map((s) => (s.translations as Record<string, string> | null)?.en)
-    .filter((name): name is string => Boolean(name));
+    ? await supabase.from("subjects").select("id, translations, grade_band").in("id", subjectIds)
+    : { data: [] as { id: string; translations: unknown; grade_band: string | null }[] };
+  const subjectOptions = (subjectRows ?? [])
+    .map((s) => ({ id: s.id, name: (s.translations as Record<string, string> | null)?.en ?? "" }))
+    .filter((s) => s.name);
+  const subjectNameById = new Map(subjectOptions.map((s) => [s.id, s.name]));
+  const subjectNames = subjectOptions.map((s) => s.name);
   const subjectGradeBandCounts = new Map<string, number>();
   for (const s of subjectRows ?? []) {
     if (!s.grade_band) continue;
@@ -157,6 +160,27 @@ export default async function TeacherDashboardPage({
     scheduleNote: b.schedule_note,
     gradeBand: b.grade_band,
   }));
+
+  // Batch-scoped "search results" ads (0039) — one per batch, distinct from
+  // the single own_profile promo box fetched above.
+  const { data: batchAdRows } = await supabase
+    .from("advertisements")
+    .select("id, batch_id, title, content, status")
+    .eq("owner_type", "teacher")
+    .eq("owner_id", userId)
+    .eq("placement", "search_results");
+  const batchAdByBatchId = new Map((batchAdRows ?? []).filter((a) => a.batch_id).map((a) => [a.batch_id as string, a]));
+
+  const adBatches: TeacherAdBatchRow[] = (batchRows ?? []).map((b) => {
+    const ad = batchAdByBatchId.get(b.id);
+    return {
+      id: b.id,
+      title: b.title,
+      subjectId: b.subject_id,
+      subjectName: b.subject_id ? (subjectNameById.get(b.subject_id) ?? null) : null,
+      ad: ad ? { id: ad.id, title: ad.title, content: ad.content ?? "", status: ad.status } : null,
+    };
+  });
 
   const studentIds = [...new Set((enrollmentRows ?? []).map((e) => e.student_id))];
   // Plain `profiles` select would return zero rows here — its only RLS
@@ -416,7 +440,13 @@ export default async function TeacherDashboardPage({
         attendance: <AttendanceTab sessions={attendanceSessions} />,
         inquiries: <InquiriesTab inquiries={inquiries} />,
         reviews: <ReviewsTab initialReviews={reviews} averageRating={averageRating ?? "0.0"} reviewCount={reviewRows?.length ?? 0} />,
-        ads: <AdvertisementTab initialContent={adRow?.content ?? ""} />,
+        ads: (
+          <AdvertisementTab
+            initialContent={adRow?.content ?? ""}
+            batches={adBatches}
+            subjectOptions={subjectOptions}
+          />
+        ),
         settings: (
           <SettingsTab
             initialPhone={profile?.phone ?? ""}

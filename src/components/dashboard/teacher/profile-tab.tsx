@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { MapPin, Pencil, Plus, X } from "lucide-react";
+import { Eye, MapPin, Pencil, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -222,7 +222,13 @@ export function ProfileTab({
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl">{t("heading")}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl">{t("heading")}</h1>
+        <Button type="button" variant="outline" onClick={() => setMode("live")}>
+          <Eye className="size-4" />
+          {t("preview.viewLive")}
+        </Button>
+      </div>
 
       <div>
         <div className="rounded-xl bg-gradient-to-br from-primary to-primary-light p-6 text-white sm:p-7">
@@ -230,13 +236,6 @@ export function ProfileTab({
             <span className="font-mono text-[11px] tracking-[0.12em] text-white/60 uppercase">
               {t("preview.eyebrow")}
             </span>
-            <button
-              type="button"
-              onClick={() => setMode("live")}
-              className="text-xs font-medium text-white/70 hover:text-white"
-            >
-              {t("preview.viewLive")} ↗
-            </button>
           </div>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             {photoUrl ? (

@@ -2,7 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Bell, ChevronDown, LogOut, Menu } from "lucide-react";
+import {
+  Bell,
+  ChevronDown,
+  LogOut,
+  Menu,
+  LayoutDashboard,
+  UserCircle,
+  BookOpen,
+  Video,
+  FileText,
+  ListChecks,
+  ClipboardList,
+  Users,
+  CalendarCheck,
+  Star,
+  MessageSquare,
+  Megaphone,
+  Settings as SettingsIcon,
+  type LucideIcon,
+} from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -58,6 +77,29 @@ const navKeysByRole: Record<DemoRole, SiteNavKey[]> = {
   admin: [],
 };
 
+/**
+ * Icons are looked up by tab key here, in the client component, rather than
+ * passed in via `groups` — a server page can't hand a component reference
+ * (a function) to a client component as a prop, so this must live wherever
+ * `groups` is actually rendered. Only the teacher dashboard's tabs are
+ * covered for now; an unmatched key just renders without an icon.
+ */
+const TAB_ICONS: Partial<Record<string, LucideIcon>> = {
+  overview: LayoutDashboard,
+  profile: UserCircle,
+  classes: BookOpen,
+  live: Video,
+  notes: FileText,
+  questionBank: ListChecks,
+  exams: ClipboardList,
+  students: Users,
+  attendance: CalendarCheck,
+  reviews: Star,
+  inquiries: MessageSquare,
+  ads: Megaphone,
+  settings: SettingsIcon,
+};
+
 function updateTabParam(tab: string) {
   const url = new URL(window.location.href);
   url.searchParams.set("tab", tab);
@@ -78,23 +120,26 @@ function NavList({
   if (orientation === "horizontal") {
     return (
       <nav className="flex gap-1.5 overflow-x-auto px-4 py-2.5">
-        {groups.flatMap((g) => g.items).map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            onClick={() => onSelect(item.key)}
-            className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.75 text-[13px] font-medium whitespace-nowrap transition-colors",
-              activeTab === item.key
-                ? "bg-primary text-primary-foreground"
-                : "bg-white text-muted-foreground hover:bg-secondary",
-            )}
-          >
-            {item.icon && <item.icon className="size-3.5" />}
-            {item.label}
-            {item.count !== undefined && <span className="ml-1.5 opacity-70">{item.count}</span>}
-          </button>
-        ))}
+        {groups.flatMap((g) => g.items).map((item) => {
+          const Icon = TAB_ICONS[item.key];
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => onSelect(item.key)}
+              className={cn(
+                "flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.75 text-[13px] font-medium whitespace-nowrap transition-colors",
+                activeTab === item.key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-white text-muted-foreground hover:bg-secondary",
+              )}
+            >
+              {Icon && <Icon className="size-3.5" />}
+              {item.label}
+              {item.count !== undefined && <span className="ml-1.5 opacity-70">{item.count}</span>}
+            </button>
+          );
+        })}
       </nav>
     );
   }
@@ -109,27 +154,30 @@ function NavList({
             </div>
           )}
           <div className="flex flex-col gap-0.5">
-            {group.items.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => onSelect(item.key)}
-                className={cn(
-                  "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors",
-                  activeTab === item.key
-                    ? "bg-secondary text-secondary-foreground"
-                    : "text-foreground/80 hover:bg-muted",
-                )}
-              >
-                {item.icon && <item.icon className="size-4 shrink-0" />}
-                <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                {item.count !== undefined && (
-                  <span className="shrink-0 rounded-full bg-background px-1.5 py-0.25 font-mono text-[11px] text-muted-foreground">
-                    {item.count}
-                  </span>
-                )}
-              </button>
-            ))}
+            {group.items.map((item) => {
+              const Icon = TAB_ICONS[item.key];
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => onSelect(item.key)}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors",
+                    activeTab === item.key
+                      ? "bg-secondary text-secondary-foreground"
+                      : "text-foreground/80 hover:bg-muted",
+                  )}
+                >
+                  {Icon && <Icon className="size-4 shrink-0" />}
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                  {item.count !== undefined && (
+                    <span className="shrink-0 rounded-full bg-background px-1.5 py-0.25 font-mono text-[11px] text-muted-foreground">
+                      {item.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       ))}

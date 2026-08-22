@@ -1,19 +1,4 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import {
-  LayoutDashboard,
-  UserCircle,
-  BookOpen,
-  Video,
-  FileText,
-  ListChecks,
-  ClipboardList,
-  Users,
-  CalendarCheck,
-  Star,
-  MessageSquare,
-  Megaphone,
-  Settings as SettingsIcon,
-} from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { OverviewTab } from "@/components/dashboard/teacher/overview-tab";
 import { ProfileTab } from "@/components/dashboard/teacher/profile-tab";
@@ -412,43 +397,42 @@ export default async function TeacherDashboardPage({
       demoRole="teacher"
       groups={[
         {
-          items: [{ key: "overview", label: t("tabs.overview"), icon: LayoutDashboard }],
+          items: [{ key: "overview", label: t("tabs.overview") }],
         },
         {
           label: t("groupTeaching"),
           items: [
-            { key: "profile", label: t("tabs.profile"), icon: UserCircle },
-            { key: "classes", label: t("tabs.classes"), count: batches.length, icon: BookOpen },
-            { key: "live", label: t("tabs.live"), icon: Video },
+            { key: "profile", label: t("tabs.profile") },
+            { key: "classes", label: t("tabs.classes"), count: batches.length },
+            { key: "live", label: t("tabs.live") },
           ],
         },
         {
           label: t("groupContent"),
           items: [
-            { key: "notes", label: t("tabs.notes"), count: notes.length, icon: FileText },
-            { key: "questionBank", label: t("tabs.questionBank"), count: 12, icon: ListChecks },
-            { key: "exams", label: t("tabs.exams"), count: examRows?.length ?? 0, icon: ClipboardList },
+            { key: "notes", label: t("tabs.notes"), count: notes.length },
+            { key: "questionBank", label: t("tabs.questionBank"), count: 12 },
+            { key: "exams", label: t("tabs.exams"), count: examRows?.length ?? 0 },
           ],
         },
         {
           label: t("groupStudents"),
           items: [
-            { key: "students", label: t("tabs.students"), count: studentsCount ?? 0, icon: Users },
-            { key: "attendance", label: t("tabs.attendance"), icon: CalendarCheck },
-            { key: "reviews", label: t("tabs.reviews"), count: reviewRows?.length ?? 0, icon: Star },
+            { key: "students", label: t("tabs.students"), count: studentsCount ?? 0 },
+            { key: "attendance", label: t("tabs.attendance") },
+            { key: "reviews", label: t("tabs.reviews"), count: reviewRows?.length ?? 0 },
             {
               key: "inquiries",
               label: t("tabs.inquiries"),
               count: inquiries.filter((i) => i.status === "new").length,
-              icon: MessageSquare,
             },
           ],
         },
         {
           label: t("groupMore"),
           items: [
-            { key: "ads", label: t("tabs.ads"), icon: Megaphone },
-            { key: "settings", label: t("tabs.settings"), icon: SettingsIcon },
+            { key: "ads", label: t("tabs.ads") },
+            { key: "settings", label: t("tabs.settings") },
           ],
         },
       ]}

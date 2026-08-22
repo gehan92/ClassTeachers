@@ -1,10 +1,7 @@
-import type { LucideIcon } from "lucide-react";
-
 export type DashboardTabDef = {
   key: string;
   label: string;
   count?: number;
-  icon?: LucideIcon;
 };
 
 export type DashboardNavGroup = {

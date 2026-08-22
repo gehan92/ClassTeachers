@@ -187,7 +187,7 @@ export function DashboardShell({
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-50 flex h-15 shrink-0 items-center justify-between border-b border-primary-dark bg-primary-dark px-5 text-white">
+      <header className="sticky top-0 z-50 flex h-15 shrink-0 items-center justify-between gap-4 border-b border-primary-dark bg-primary-dark px-5 text-white">
         <Link href="/" className="flex items-center gap-2.5 font-display text-lg font-bold text-white">
           <span className="flex size-7 items-center justify-center rounded-[6px] bg-secondary font-mono text-xs font-bold text-primary-dark">
             CP

@@ -84,12 +84,13 @@ function NavList({
             type="button"
             onClick={() => onSelect(item.key)}
             className={cn(
-              "shrink-0 rounded-full px-3.5 py-1.75 text-[13px] font-medium whitespace-nowrap transition-colors",
+              "flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.75 text-[13px] font-medium whitespace-nowrap transition-colors",
               activeTab === item.key
                 ? "bg-primary text-primary-foreground"
                 : "bg-white text-muted-foreground hover:bg-secondary",
             )}
           >
+            {item.icon && <item.icon className="size-3.5" />}
             {item.label}
             {item.count !== undefined && <span className="ml-1.5 opacity-70">{item.count}</span>}
           </button>
@@ -100,11 +101,13 @@ function NavList({
 
   return (
     <nav className="flex flex-col gap-5 p-4">
-      {groups.map((group) => (
-        <div key={group.label}>
-          <div className="mb-1.5 px-2.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-            {group.label}
-          </div>
+      {groups.map((group, i) => (
+        <div key={group.label ?? `group-${i}`}>
+          {group.label && (
+            <div className="mb-1.5 px-2.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+              {group.label}
+            </div>
+          )}
           <div className="flex flex-col gap-0.5">
             {group.items.map((item) => (
               <button
@@ -112,15 +115,16 @@ function NavList({
                 type="button"
                 onClick={() => onSelect(item.key)}
                 className={cn(
-                  "flex items-center justify-between rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors",
+                  "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors",
                   activeTab === item.key
                     ? "bg-secondary text-secondary-foreground"
                     : "text-foreground/80 hover:bg-muted",
                 )}
               >
-                {item.label}
+                {item.icon && <item.icon className="size-4 shrink-0" />}
+                <span className="min-w-0 flex-1 truncate">{item.label}</span>
                 {item.count !== undefined && (
-                  <span className="rounded-full bg-background px-1.5 py-0.25 font-mono text-[11px] text-muted-foreground">
+                  <span className="shrink-0 rounded-full bg-background px-1.5 py-0.25 font-mono text-[11px] text-muted-foreground">
                     {item.count}
                   </span>
                 )}

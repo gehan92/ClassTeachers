@@ -941,8 +941,10 @@
   },
   "teacherDashboard": {
     "logout": "வெளியேறு",
-    "groupTeach": "கற்பித்தல்",
-    "groupManage": "நிர்வகி",
+    "groupTeaching": "கற்பித்தல்",
+    "groupContent": "உள்ளடக்கம்",
+    "groupStudents": "சமூகம்",
+    "groupMore": "மேலும்",
     "common": {
       "save": "சேமி",
       "saved": "சேமிக்கப்பட்டது",

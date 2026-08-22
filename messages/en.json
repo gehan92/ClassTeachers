@@ -941,8 +941,10 @@
   },
   "teacherDashboard": {
     "logout": "Log out",
-    "groupTeach": "Teach",
-    "groupManage": "Manage",
+    "groupTeaching": "Teaching",
+    "groupContent": "Content",
+    "groupStudents": "Community",
+    "groupMore": "More",
     "common": {
       "save": "Save",
       "saved": "Saved",

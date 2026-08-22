@@ -1,11 +1,15 @@
+import type { LucideIcon } from "lucide-react";
+
 export type DashboardTabDef = {
   key: string;
   label: string;
   count?: number;
+  icon?: LucideIcon;
 };
 
 export type DashboardNavGroup = {
-  label: string;
+  /** Omit to render this group's items with no section header — used for a standalone "Overview" entry at the top of the sidebar. */
+  label?: string;
   items: DashboardTabDef[];
 };
 

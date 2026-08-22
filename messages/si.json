@@ -941,8 +941,10 @@
   },
   "teacherDashboard": {
     "logout": "පිටවන්න",
-    "groupTeach": "ඉගැන්වීම",
-    "groupManage": "කළමනාකරණය",
+    "groupTeaching": "ඉගැන්වීම",
+    "groupContent": "අන්තර්ගතය",
+    "groupStudents": "ප්‍රජාව",
+    "groupMore": "තවත්",
     "common": {
       "save": "සුරකින්න",
       "saved": "සුරකින ලදී",

@@ -2,8 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { MapPin, Plus, X } from "lucide-react";
-import { Link } from "@/i18n/navigation";
+import { ArrowLeft, MapPin, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,6 @@ const textareaClass =
 type ClassType = "physical" | "online" | "both";
 
 export function ProfileTab({
-  teacherId,
   initialHeadline,
   initialBio,
   initialQualifications,
@@ -35,8 +33,8 @@ export function ProfileTab({
   initialOwnerPublished,
   initialPhotoUrl,
   teacherName,
+  liveView,
 }: {
-  teacherId: string;
   initialHeadline: string;
   initialBio: string;
   initialQualifications: string[];
@@ -51,10 +49,12 @@ export function ProfileTab({
   initialOwnerPublished: boolean;
   initialPhotoUrl: string | null;
   teacherName: string;
+  liveView: React.ReactNode;
 }) {
   const t = useTranslations("teacherDashboard.profile");
   const tc = useTranslations("teacherDashboard.common");
 
+  const [mode, setMode] = useState<"edit" | "live">("edit");
   const [status, setStatus] = useState(initialStatus);
   const [published, setPublished] = useState(initialOwnerPublished);
   const [publishSaving, setPublishSaving] = useState(false);
@@ -193,6 +193,22 @@ export function ProfileTab({
     setTimeout(() => setSaved(false), 2500);
   }
 
+  if (mode === "live") {
+    return (
+      <div className="flex flex-col gap-6">
+        <button
+          type="button"
+          onClick={() => setMode("edit")}
+          className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+        >
+          <ArrowLeft className="size-4" />
+          {t("preview.backToEdit")}
+        </button>
+        <div className="overflow-hidden rounded-xl border border-border bg-muted/30">{liveView}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl">{t("heading")}</h1>
@@ -203,12 +219,13 @@ export function ProfileTab({
             <span className="font-mono text-[11px] tracking-[0.12em] text-white/60 uppercase">
               {t("preview.eyebrow")}
             </span>
-            <Link
-              href={`/teacher/${teacherId}`}
+            <button
+              type="button"
+              onClick={() => setMode("live")}
               className="text-xs font-medium text-white/70 hover:text-white"
             >
               {t("preview.viewLive")} ↗
-            </Link>
+            </button>
           </div>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             {photoUrl ? (

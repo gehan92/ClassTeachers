@@ -13,7 +13,9 @@ import { ReviewsTab } from "@/components/dashboard/teacher/reviews-tab";
 import { InquiriesTab } from "@/components/dashboard/inquiries-tab";
 import { AdvertisementTab } from "@/components/dashboard/teacher/advertisement-tab";
 import { SettingsTab } from "@/components/dashboard/teacher/settings-tab";
+import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { createClient } from "@/lib/supabase/server";
+import type { TeacherProfileDetail } from "@/types/teacher-profile";
 import type { TeacherBatchRow, BatchRosterEntry } from "@/components/dashboard/teacher/classes-tab";
 import type { TeacherNoteRow } from "@/components/dashboard/teacher/notes-tab";
 import type { TeacherStudentRow } from "@/components/dashboard/teacher/students-tab";
@@ -47,7 +49,7 @@ export default async function TeacherDashboardPage({
     supabase.from("prices").select("hourly_rate, monthly_rate").eq("owner_type", "teacher").eq("owner_id", userId).maybeSingle(),
     supabase
       .from("advertisements")
-      .select("content")
+      .select("content, title")
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
       .eq("placement", "own_profile")
@@ -114,7 +116,7 @@ export default async function TeacherDashboardPage({
     await Promise.all([
       supabase
         .from("batches")
-        .select("id, title, mode, location, schedule_note, grade_band")
+        .select("id, title, mode, location, schedule_note, grade_band, status")
         .eq("owner_type", "teacher")
         .eq("owner_id", userId)
         .order("created_at", { ascending: false }),
@@ -134,11 +136,18 @@ export default async function TeacherDashboardPage({
 
   const subjectIds = (subjectLinkRows ?? []).map((s) => s.subject_id);
   const { data: subjectRows } = subjectIds.length
-    ? await supabase.from("subjects").select("translations").in("id", subjectIds)
-    : { data: [] as { translations: unknown }[] };
+    ? await supabase.from("subjects").select("translations, grade_band").in("id", subjectIds)
+    : { data: [] as { translations: unknown; grade_band: string | null }[] };
   const subjectNames = (subjectRows ?? [])
     .map((s) => (s.translations as Record<string, string> | null)?.en)
     .filter((name): name is string => Boolean(name));
+  const subjectGradeBandCounts = new Map<string, number>();
+  for (const s of subjectRows ?? []) {
+    if (!s.grade_band) continue;
+    subjectGradeBandCounts.set(s.grade_band, (subjectGradeBandCounts.get(s.grade_band) ?? 0) + 1);
+  }
+  const topGradeBand =
+    [...subjectGradeBandCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 
   const batches: TeacherBatchRow[] = (batchRows ?? []).map((b) => ({
     id: b.id,
@@ -293,6 +302,47 @@ export default async function TeacherDashboardPage({
     })),
   }));
 
+  // Same RPC the public /teacher/[id] page uses to gate the phone number —
+  // called here too so the dashboard's inline "view live page" shows the
+  // number exactly as this teacher (viewing their own profile) would see it.
+  const { data: liveProfilePhone } = await supabase.rpc("get_teacher_contact", { p_teacher_id: userId });
+
+  const liveProfile: TeacherProfileDetail = {
+    id: userId,
+    name: fullName,
+    headline: teacherProfile?.headline ?? null,
+    bio: teacherProfile?.bio ?? null,
+    location: teacherProfile?.location ?? null,
+    classType: (teacherProfile?.class_type as TeacherProfileDetail["classType"]) ?? "physical",
+    experienceYears: teacherProfile?.experience_years ?? null,
+    qualifications: teacherProfile?.qualifications ?? [],
+    workExperience: teacherProfile?.work_experience ?? [],
+    photoUrl: teacherProfile?.photo_url ?? null,
+    subjects: subjectNames,
+    gradeBand: topGradeBand,
+    rating: averageRating ? Number(averageRating) : 0,
+    reviewCount: reviewRows?.length ?? 0,
+    avatarInitials: userInitial,
+    hourlyRate: priceRow?.hourly_rate ?? undefined,
+    monthlyRate: priceRow?.monthly_rate ?? undefined,
+    adHeadline: adRow?.title ?? undefined,
+    adText: adRow?.content ?? undefined,
+    notesCount: notes.length,
+    notes: notes.map((n) => ({ id: n.id, title: n.title, pageCount: n.pageCount })),
+    schedule: (batchRows ?? [])
+      .filter((b) => b.status === "active")
+      .map((b) => ({
+        id: b.id,
+        title: b.title,
+        mode: b.mode as "online" | "physical",
+        location: b.location,
+        scheduleNote: b.schedule_note,
+        gradeBand: b.grade_band,
+      })),
+    reviews,
+    phone: liveProfilePhone,
+  };
+
   return (
     <DashboardShell
       userLabel={fullName}
@@ -340,7 +390,6 @@ export default async function TeacherDashboardPage({
         ),
         profile: (
           <ProfileTab
-            teacherId={userId}
             initialHeadline={teacherProfile?.headline ?? ""}
             initialBio={teacherProfile?.bio ?? ""}
             initialQualifications={teacherProfile?.qualifications ?? []}
@@ -355,6 +404,7 @@ export default async function TeacherDashboardPage({
             initialOwnerPublished={teacherProfile?.owner_published ?? true}
             initialPhotoUrl={teacherProfile?.photo_url ?? null}
             teacherName={fullName}
+            liveView={<TeacherProfileView teacher={liveProfile} showGate={false} />}
           />
         ),
         notes: <NotesTab notes={notes} batches={batches} />,

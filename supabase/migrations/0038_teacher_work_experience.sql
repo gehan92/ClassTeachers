@@ -6,7 +6,12 @@
 
 alter table teacher_profiles add column if not exists work_experience text[];
 
-create or replace function public.get_public_teacher_profile(p_teacher_id uuid)
+-- Postgres won't let CREATE OR REPLACE change a table-returning function's
+-- output columns (errors with "cannot change return type of existing
+-- function") — has to be dropped first when adding work_experience below.
+drop function if exists public.get_public_teacher_profile(uuid);
+
+create function public.get_public_teacher_profile(p_teacher_id uuid)
 returns table (
   id uuid,
   display_name text,
@@ -72,3 +77,7 @@ as $$
   ) sj on true
   where tp.id = p_teacher_id and tp.status = 'approved' and tp.owner_published;
 $$;
+
+-- DROP FUNCTION above wipes the function's grants too (unlike CREATE OR
+-- REPLACE, which preserves them) — has to be re-declared explicitly.
+grant execute on function public.get_public_teacher_profile(uuid) to anon, authenticated;

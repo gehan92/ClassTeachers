@@ -55,6 +55,15 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
   const t = await getTranslations("adPage");
   const tg = await getTranslations("search");
 
+  // Ad content is free text — teachers write it as one point per line
+  // (e.g. "Program Highlights:", "Interactive lessons...", ...). Rendered
+  // as a real list once there's more than one line; a single line (or none)
+  // stays a plain paragraph rather than showing one lonely bullet.
+  const contentLines = (ad.ad_content ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
   return (
     <div className="mx-auto max-w-[860px] px-7 py-10">
       <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
@@ -129,7 +138,15 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
           <h3 className="mb-3 text-lg">{t("aboutHeading")}</h3>
-          <p className="whitespace-pre-line text-sm text-foreground/85">{ad.ad_content}</p>
+          {contentLines.length > 1 ? (
+            <ul className="list-disc space-y-1.5 pl-5 text-sm text-foreground/85">
+              {contentLines.map((line, i) => (
+                <li key={i}>{line}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-foreground/85">{contentLines[0] ?? ""}</p>
+          )}
           {ad.schedule_note && (
             <p className="mt-4 text-sm text-muted-foreground">
               {t("schedule")}: {ad.schedule_note}

@@ -29,46 +29,68 @@ export function JoinRequestBox({
   existingStatus: "pending" | "accepted" | "declined" | null;
 }) {
   const t = useTranslations("adPage.join");
+  const tp = useTranslations("priceBox");
+  const [interval, setInterval] = useState<"hr" | "mo">(hourlyRate !== undefined ? "hr" : "mo");
+  const amount = interval === "hr" ? hourlyRate : monthlyRate;
 
   return (
     <div className="flex h-fit flex-col gap-4 rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
       {(hourlyRate !== undefined || monthlyRate !== undefined) && (
         <div>
-          {hourlyRate !== undefined && (
-            <div className="font-mono text-2xl font-semibold text-primary">
-              Rs. {hourlyRate.toLocaleString()}
-              <span className="ml-1 text-sm font-normal text-muted-foreground">/hr</span>
+          {hourlyRate !== undefined && monthlyRate !== undefined && (
+            <div className="mb-3 flex overflow-hidden rounded-md border border-input">
+              <button
+                type="button"
+                onClick={() => setInterval("hr")}
+                className={cn(
+                  "flex-1 py-2 text-center text-xs font-semibold transition-colors",
+                  interval === "hr" ? "bg-primary text-primary-foreground" : "bg-white text-muted-foreground hover:bg-secondary",
+                )}
+              >
+                {tp("hourly")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setInterval("mo")}
+                className={cn(
+                  "flex-1 py-2 text-center text-xs font-semibold transition-colors",
+                  interval === "mo" ? "bg-primary text-primary-foreground" : "bg-white text-muted-foreground hover:bg-secondary",
+                )}
+              >
+                {tp("monthly")}
+              </button>
             </div>
           )}
-          {monthlyRate !== undefined && (
-            <div className="font-mono text-sm text-muted-foreground">
-              Rs. {monthlyRate.toLocaleString()} /mo
-            </div>
-          )}
+          <div className="font-mono text-3xl font-semibold text-primary">
+            Rs. {amount?.toLocaleString()}
+            <span className="ml-1 text-sm font-normal text-muted-foreground">/{interval}</span>
+          </div>
         </div>
       )}
 
-      {existingStatus === "accepted" ? (
-        <div>
-          <p className="mb-3 text-sm font-medium text-success">{t("accepted")}</p>
-          <Link
-            href={`/teacher/${teacherId}`}
-            className="flex w-full items-center justify-center rounded-md bg-cta px-5 py-2.75 text-sm font-semibold text-cta-foreground transition-all hover:-translate-y-px hover:bg-cta-hover"
-          >
-            {t("viewProfile")}
-          </Link>
-        </div>
-      ) : existingStatus === "pending" ? (
-        <p className="text-sm font-medium text-muted-foreground">{t("pending")}</p>
-      ) : existingStatus === "declined" ? (
-        <p className="text-sm font-medium text-destructive">{t("declined")}</p>
-      ) : loggedIn && isStudent ? (
-        <StudentRequestForm batchId={batchId} />
-      ) : loggedIn ? (
-        <p className="text-sm text-muted-foreground">{t("notStudent")}</p>
-      ) : (
-        <AnonymousRequestForm teacherId={teacherId} />
-      )}
+      <div className="border-t border-border pt-4">
+        {existingStatus === "accepted" ? (
+          <div>
+            <p className="mb-3 text-sm font-medium text-success">{t("accepted")}</p>
+            <Link
+              href={`/teacher/${teacherId}`}
+              className="flex w-full items-center justify-center rounded-md bg-cta px-5 py-2.75 text-sm font-semibold text-cta-foreground transition-all hover:-translate-y-px hover:bg-cta-hover"
+            >
+              {t("viewProfile")}
+            </Link>
+          </div>
+        ) : existingStatus === "pending" ? (
+          <p className="text-sm font-medium text-muted-foreground">{t("pending")}</p>
+        ) : existingStatus === "declined" ? (
+          <p className="text-sm font-medium text-destructive">{t("declined")}</p>
+        ) : loggedIn && isStudent ? (
+          <StudentRequestForm batchId={batchId} />
+        ) : loggedIn ? (
+          <p className="text-sm text-muted-foreground">{t("notStudent")}</p>
+        ) : (
+          <AnonymousRequestForm teacherId={teacherId} />
+        )}
+      </div>
     </div>
   );
 }
@@ -97,7 +119,8 @@ function StudentRequestForm({ batchId }: { batchId: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2.5">
+      <p className="text-sm font-semibold text-foreground">{t("requestToJoin")}</p>
       <textarea
         className={cn(fieldClass, "min-h-18 resize-none py-1.75")}
         placeholder={t("notePlaceholder")}
@@ -106,7 +129,7 @@ function StudentRequestForm({ batchId }: { batchId: string }) {
       />
       {error && <span className="text-xs font-medium text-destructive">{error}</span>}
       <Button type="button" onClick={handleSend} disabled={sending}>
-        {t("requestToJoin")}
+        {t("send")}
       </Button>
     </div>
   );
@@ -136,8 +159,8 @@ function AnonymousRequestForm({ teacherId }: { teacherId: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-sm font-medium text-foreground">{t("requestToJoin")}</p>
+    <div className="flex flex-col gap-2.5">
+      <p className="text-sm font-semibold text-foreground">{t("requestToJoin")}</p>
       <input
         className={fieldClass}
         placeholder={t("namePlaceholder")}

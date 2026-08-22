@@ -29,9 +29,6 @@ const searchItems = [
   },
 ] as const;
 
-/** Roles that get the Search dropdown + "Post your ad" CTA in their dashboard header, mirroring the public SiteHeader — everyone else (student, admin) keeps the plainer header. */
-const providerRoles: DemoRole[] = ["teacher", "class", "lecturer"];
-
 /** Master list of destinations, shared with the public SiteHeader's hrefs — which subset shows depends on role, see navKeysByRole below. */
 const siteNavItemDefs = [
   { href: { pathname: "/teachers", query: { category: "teacher" } }, key: "findTeachers" },
@@ -178,7 +175,6 @@ export function DashboardShell({
 
   const navKeys = navKeysByRole[demoRole];
   const siteNavItems = siteNavItemDefs.filter((item) => navKeys.includes(item.key));
-  const showProviderNav = providerRoles.includes(demoRole);
 
   // Reuses the count already passed into groups for the sidebar's own
   // "Inquiries" badge (see teacher/institute page.tsx) — no separate prop
@@ -200,31 +196,29 @@ export function DashboardShell({
           )}
         </Link>
 
-        {showProviderNav && <span aria-hidden className="hidden h-6 w-px bg-white/20 lg:block" />}
+        <span aria-hidden className="hidden h-6 w-px bg-white/20 lg:block" />
 
         <nav className="hidden flex-1 items-center gap-1 lg:flex">
-          {showProviderNav && (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <button
-                    type="button"
-                    className="group flex items-center gap-1 rounded-md px-3.5 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-                  />
-                }
-              >
-                {t("search")}
-                <ChevronDown className="size-3.5 transition-transform group-aria-expanded:rotate-180" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                {searchItems.map((item) => (
-                  <DropdownMenuItem key={item.key} render={<Link href={item.href} />} className="py-2">
-                    {t(item.key)}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button
+                  type="button"
+                  className="group flex items-center gap-1 rounded-md px-3.5 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                />
+              }
+            >
+              {t("search")}
+              <ChevronDown className="size-3.5 transition-transform group-aria-expanded:rotate-180" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              {searchItems.map((item) => (
+                <DropdownMenuItem key={item.key} render={<Link href={item.href} />} className="py-2">
+                  {t(item.key)}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           {siteNavItems.map((item) => (
             <Link
               key={item.key}
@@ -237,17 +231,15 @@ export function DashboardShell({
         </nav>
 
         <div className="flex items-center gap-3">
-          {showProviderNav && (
-            <Button
-              variant="outline"
-              size="sm"
-              nativeButton={false}
-              render={<Link href="/advertise" />}
-              className="hidden border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white sm:inline-flex"
-            >
-              {t("postYourAd")}
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            nativeButton={false}
+            render={<Link href="/advertise" />}
+            className="hidden border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white sm:inline-flex"
+          >
+            {t("postYourAd")}
+          </Button>
           {inquiriesItem && (
             <button
               type="button"
@@ -280,52 +272,46 @@ export function DashboardShell({
               <span className="hidden sm:inline">{logoutLabel}</span>
             </button>
           </form>
-          {(siteNavItems.length > 0 || showProviderNav) && (
-            <Sheet>
-              <SheetTrigger
-                aria-label={t("menu")}
-                className="flex size-8 items-center justify-center rounded-md text-white/70 hover:bg-white/10 hover:text-white lg:hidden"
-              >
-                <Menu className="size-4.5" />
-              </SheetTrigger>
-              <SheetContent side="right" className="w-72">
-                <SheetTitle className="sr-only">{t("menu")}</SheetTitle>
-                <nav className="mt-10 flex flex-col gap-1 px-4">
-                  {showProviderNav && (
-                    <>
-                      <div className="px-3 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-                        {t("search")}
-                      </div>
-                      {searchItems.map((item) => (
-                        <Link
-                          key={item.key}
-                          href={item.href}
-                          className="rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
-                        >
-                          {t(item.key)}
-                        </Link>
-                      ))}
-                      <Link
-                        href="/advertise"
-                        className="mt-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
-                      >
-                        {t("postYourAd")}
-                      </Link>
-                    </>
-                  )}
-                  {siteNavItems.map((item) => (
-                    <Link
-                      key={item.key}
-                      href={item.href}
-                      className="rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
-                    >
-                      {t(item.key)}
-                    </Link>
-                  ))}
-                </nav>
-              </SheetContent>
-            </Sheet>
-          )}
+          <Sheet>
+            <SheetTrigger
+              aria-label={t("menu")}
+              className="flex size-8 items-center justify-center rounded-md text-white/70 hover:bg-white/10 hover:text-white lg:hidden"
+            >
+              <Menu className="size-4.5" />
+            </SheetTrigger>
+            <SheetContent side="right" className="w-72">
+              <SheetTitle className="sr-only">{t("menu")}</SheetTitle>
+              <nav className="mt-10 flex flex-col gap-1 px-4">
+                <div className="px-3 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                  {t("search")}
+                </div>
+                {searchItems.map((item) => (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    className="rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+                  >
+                    {t(item.key)}
+                  </Link>
+                ))}
+                <Link
+                  href="/advertise"
+                  className="mt-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+                >
+                  {t("postYourAd")}
+                </Link>
+                {siteNavItems.map((item) => (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    className="rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+                  >
+                    {t(item.key)}
+                  </Link>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </header>
 

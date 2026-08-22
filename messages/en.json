@@ -1030,7 +1030,9 @@
       "preview": {
         "eyebrow": "Live preview",
         "viewLive": "View live page",
-        "backToEdit": "Back to edit",
+        "editProfile": "Edit profile",
+        "notLiveYet": "This is a preview — your profile isn't public yet. It'll appear here once an admin approves it.",
+        "hiddenNote": "This is a preview — your profile is currently hidden from search. Edit your profile to turn it back on.",
         "yearsExperience": "{years} years experience",
         "noBio": "Add a bio so students know more about you.",
         "note": "This is how your profile appears to visitors as you edit below."

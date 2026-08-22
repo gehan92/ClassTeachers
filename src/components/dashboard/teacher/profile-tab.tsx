@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, MapPin, Plus, X } from "lucide-react";
+import { MapPin, Pencil, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,7 @@ export function ProfileTab({
   const t = useTranslations("teacherDashboard.profile");
   const tc = useTranslations("teacherDashboard.common");
 
-  const [mode, setMode] = useState<"edit" | "live">("edit");
+  const [mode, setMode] = useState<"edit" | "live">("live");
   const [status, setStatus] = useState(initialStatus);
   const [published, setPublished] = useState(initialOwnerPublished);
   const [publishSaving, setPublishSaving] = useState(false);
@@ -196,14 +196,25 @@ export function ProfileTab({
   if (mode === "live") {
     return (
       <div className="flex flex-col gap-6">
-        <button
-          type="button"
-          onClick={() => setMode("edit")}
-          className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-        >
-          <ArrowLeft className="size-4" />
-          {t("preview.backToEdit")}
-        </button>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl">{t("heading")}</h1>
+          <Button type="button" onClick={() => setMode("edit")}>
+            <Pencil className="size-4" />
+            {t("preview.editProfile")}
+          </Button>
+        </div>
+
+        {status !== "approved" && (
+          <p className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+            {t("preview.notLiveYet")}
+          </p>
+        )}
+        {status === "approved" && !published && (
+          <p className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+            {t("preview.hiddenNote")}
+          </p>
+        )}
+
         <div className="overflow-hidden rounded-xl border border-border bg-muted/30">{liveView}</div>
       </div>
     );

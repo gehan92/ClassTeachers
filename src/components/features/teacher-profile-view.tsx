@@ -162,60 +162,65 @@ function AboutPanel({ teacher, showGate }: { teacher: TeacherProfileDetail; show
 function QualificationsPanel({ teacher }: { teacher: TeacherProfileDetail }) {
   const t = useTranslations("profilePage");
 
+  const facts: { label: string; value: React.ReactNode }[] = [
+    {
+      label: t("experienceLabel"),
+      value: teacher.experienceYears != null ? t("yearsExperience", { years: teacher.experienceYears }) : "—",
+    },
+    { label: t("subjectsLabel"), value: teacher.subjects.length > 0 ? teacher.subjects.join(", ") : "—" },
+    { label: t("gradeLevelsLabel"), value: teacher.gradeBand ?? "—" },
+    { label: t("classTypeLabel"), value: classTypeLabel(t, teacher.classType) },
+  ];
+
   return (
     <Panel title={t("qualifications")}>
-      <div className="grid grid-cols-[140px_1fr] gap-x-4 gap-y-3.5 text-sm">
-        <div className="text-muted-foreground">{t("degreeLabel")}</div>
-        <div className="font-medium text-foreground">
+      <div className="flex flex-col gap-5 text-sm">
+        {/* Lists get their own full-width block instead of squeezing into a
+           fixed label column — on a phone that column left almost no room
+           for the bullet text to wrap into. */}
+        <div>
+          <div className="mb-1.5 font-medium text-muted-foreground">{t("degreeLabel")}</div>
           {teacher.qualifications.length > 0 ? (
-            <ul className="m-0 list-disc space-y-1 pl-4">
+            <ul className="m-0 list-disc space-y-1 pl-4.5 text-foreground">
               {teacher.qualifications.map((q, i) => (
                 <li key={i}>{q}</li>
               ))}
             </ul>
           ) : (
-            "—"
+            <p className="m-0 text-foreground">—</p>
           )}
         </div>
 
         {teacher.workExperience.length > 0 && (
-          <>
-            <div className="text-muted-foreground">{t("workExperienceLabel")}</div>
-            <div className="font-medium text-foreground">
-              <ul className="m-0 list-disc space-y-1 pl-4">
-                {teacher.workExperience.map((w, i) => (
-                  <li key={i}>{w}</li>
-                ))}
-              </ul>
-            </div>
-          </>
+          <div>
+            <div className="mb-1.5 font-medium text-muted-foreground">{t("workExperienceLabel")}</div>
+            <ul className="m-0 list-disc space-y-1 pl-4.5 text-foreground">
+              {teacher.workExperience.map((w, i) => (
+                <li key={i}>{w}</li>
+              ))}
+            </ul>
+          </div>
         )}
 
-        <div className="text-muted-foreground">{t("experienceLabel")}</div>
-        <div className="font-medium text-foreground">
-          {teacher.experienceYears != null ? t("yearsExperience", { years: teacher.experienceYears }) : "—"}
-        </div>
-
-        <div className="text-muted-foreground">{t("subjectsLabel")}</div>
-        <div className="font-medium text-foreground">
-          {teacher.subjects.length > 0 ? teacher.subjects.join(", ") : "—"}
-        </div>
-
-        <div className="text-muted-foreground">{t("gradeLevelsLabel")}</div>
-        <div className="font-medium text-foreground">{teacher.gradeBand ?? "—"}</div>
-
-        <div className="text-muted-foreground">{t("classTypeLabel")}</div>
-        <div className="font-medium text-foreground">{classTypeLabel(t, teacher.classType)}</div>
-
-        <div className="text-muted-foreground">{t("phoneLabel")}</div>
-        <div>
-          {teacher.phone ? (
-            <span className="font-medium text-foreground">{teacher.phone}</span>
-          ) : teacher.contactMode === "messaging_only" ? (
-            <span className="text-sm text-muted-foreground">{t("phoneMessagingOnly")}</span>
-          ) : (
-            <LockPill>{t("phoneLocked")}</LockPill>
-          )}
+        {/* Short scalar facts get a responsive 1/2-column grid — stacked on
+           a phone, side by side once there's room for it. */}
+        <div className="grid grid-cols-1 gap-x-4 gap-y-4 border-t border-border pt-4 sm:grid-cols-2">
+          {facts.map((fact) => (
+            <div key={fact.label} className="min-w-0">
+              <div className="mb-1 text-muted-foreground">{fact.label}</div>
+              <div className="font-medium break-words text-foreground">{fact.value}</div>
+            </div>
+          ))}
+          <div className="min-w-0">
+            <div className="mb-1 text-muted-foreground">{t("phoneLabel")}</div>
+            {teacher.phone ? (
+              <span className="font-medium text-foreground">{teacher.phone}</span>
+            ) : teacher.contactMode === "messaging_only" ? (
+              <span className="text-sm text-muted-foreground">{t("phoneMessagingOnly")}</span>
+            ) : (
+              <LockPill>{t("phoneLocked")}</LockPill>
+            )}
+          </div>
         </div>
       </div>
     </Panel>

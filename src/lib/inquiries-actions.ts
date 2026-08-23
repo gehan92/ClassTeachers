@@ -65,6 +65,41 @@ export async function markInquiryRead(id: string): Promise<ActionResult> {
   return {};
 }
 
+const replySchema = z.object({
+  id: z.string().uuid(),
+  reply: z.string().trim().min(1),
+});
+
+/**
+ * A single reply, not a thread — the sender may not even have an account
+ * (anonymous inquiries are allowed, 0037), so there's nowhere for a
+ * back-and-forth to live on their side. This just closes the loop on the
+ * teacher's end of the original one-way contact form.
+ */
+export async function replyToInquiry(id: string, reply: string): Promise<ActionResult> {
+  const parsed = replySchema.safeParse({ id, reply });
+  if (!parsed.success) {
+    return { error: "Please write a reply first." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error } = await supabase
+    .from("inquiries")
+    .update({ reply: parsed.data.reply, replied_at: new Date().toISOString(), status: "read" })
+    .eq("id", parsed.data.id);
+  if (error) {
+    return { error: "Couldn't send your reply. Please try again." };
+  }
+  return {};
+}
+
 export async function deleteInquiry(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const {

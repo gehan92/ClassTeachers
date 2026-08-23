@@ -211,6 +211,8 @@ function QualificationsPanel({ teacher }: { teacher: TeacherProfileDetail }) {
         <div>
           {teacher.phone ? (
             <span className="font-medium text-foreground">{teacher.phone}</span>
+          ) : teacher.contactMode === "messaging_only" ? (
+            <span className="text-sm text-muted-foreground">{t("phoneMessagingOnly")}</span>
           ) : (
             <LockPill>{t("phoneLocked")}</LockPill>
           )}

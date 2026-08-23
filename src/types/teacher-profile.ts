@@ -43,4 +43,6 @@ export type TeacherProfileDetail = {
   }[];
   reviews: ReviewDisplay[];
   phone: string | null;
+  /** 'messaging_only' means `phone` is deliberately null even for an enrolled viewer — the teacher opted out of sharing it (0042). Distinguishes that from "not enrolled yet" so the UI can show the right reason. */
+  contactMode: "phone" | "messaging_only";
 };

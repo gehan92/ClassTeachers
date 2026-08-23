@@ -44,3 +44,24 @@ export type FlaggedReview = {
   rating: number;
   body: string;
 };
+
+// Read-only oversight of first contact between students and
+// teachers/institutes (inquiries + join requests) — for spam/misuse
+// monitoring, not a moderation queue like flagged reviews above.
+export type ConnectionInquiry = {
+  id: string;
+  senderName: string;
+  senderContact: string;
+  targetLabel: string;
+  message: string;
+  status: "new" | "read";
+  createdAt: string;
+};
+
+export type ConnectionJoinRequest = {
+  id: string;
+  studentName: string;
+  targetLabel: string;
+  status: "pending" | "accepted" | "declined";
+  createdAt: string;
+};

@@ -78,11 +78,21 @@ export default async function InstituteDashboardPage({
     instituteId
       ? supabase
           .from("inquiries")
-          .select("id, sender_name, sender_contact, message, status, created_at")
+          .select("id, sender_name, sender_contact, message, status, reply, created_at")
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
           .order("created_at", { ascending: false })
-      : Promise.resolve({ data: [] as { id: string; sender_name: string; sender_contact: string; message: string; status: "new" | "read"; created_at: string }[] }),
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            sender_name: string;
+            sender_contact: string;
+            message: string;
+            status: "new" | "read";
+            reply: string | null;
+            created_at: string;
+          }[],
+        }),
   ]);
 
   const teacherIds = (classTeacherRows ?? []).map((row) => row.teacher_id);
@@ -174,6 +184,7 @@ export default async function InstituteDashboardPage({
     senderContact: row.sender_contact,
     message: row.message,
     status: row.status,
+    reply: row.reply,
     createdLabel: dateFormatter.format(new Date(row.created_at)),
   }));
   const reviews = (myReviewRows ?? []).map((r) => ({

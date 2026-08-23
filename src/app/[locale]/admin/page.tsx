@@ -7,11 +7,14 @@ import { UsersTab } from "@/components/dashboard/admin/users-tab";
 import { SubscriptionsTab } from "@/components/dashboard/admin/subscriptions-tab";
 import { SiteAdsTab } from "@/components/dashboard/admin/site-ads-tab";
 import { FlaggedReviewsTab } from "@/components/dashboard/admin/flagged-reviews-tab";
+import { ConnectionsTab } from "@/components/dashboard/admin/connections-tab";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { roleDashboardPath } from "@/lib/auth/routes";
 import type {
   ApprovalEntityType,
+  ConnectionInquiry,
+  ConnectionJoinRequest,
   FlaggedReview,
   PendingApproval,
   PlatformUser,
@@ -184,6 +187,58 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     };
   });
 
+  // Read-only oversight of first contact between students and
+  // teachers/institutes — inquiries and join requests already have
+  // is_admin() in their SELECT policies (0037, 0013), so this is a plain
+  // query, no new RLS/RPC needed. Capped at the 50 most recent of each.
+  const [{ data: recentInquiryRows }, { data: recentEnrollmentRows }] = await Promise.all([
+    supabase
+      .from("inquiries")
+      .select("id, owner_type, owner_id, sender_name, sender_contact, message, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("enrollments")
+      .select("id, student_id, owner_type, owner_id, status, joined_at")
+      .order("joined_at", { ascending: false })
+      .limit(50),
+  ]);
+
+  const profileNameById = new Map((allProfiles ?? []).map((p) => [p.id, p.full_name]));
+
+  const connectionClassIds = [
+    ...new Set([
+      ...(recentInquiryRows ?? []).filter((r) => r.owner_type === "class").map((r) => r.owner_id),
+      ...(recentEnrollmentRows ?? []).filter((r) => r.owner_type === "class").map((r) => r.owner_id),
+    ]),
+  ];
+  const { data: connectionClassRows } = connectionClassIds.length
+    ? await supabase.from("class_profiles").select("id, name").in("id", connectionClassIds)
+    : { data: [] as { id: string; name: string }[] };
+  const connectionClassNameById = new Map((connectionClassRows ?? []).map((c) => [c.id, c.name]));
+
+  function connectionOwnerLabel(ownerType: string, ownerId: string): string {
+    return ownerType === "class" ? (connectionClassNameById.get(ownerId) ?? "—") : (profileNameById.get(ownerId) ?? "—");
+  }
+
+  const connectionInquiries: ConnectionInquiry[] = (recentInquiryRows ?? []).map((row) => ({
+    id: row.id,
+    senderName: row.sender_name,
+    senderContact: row.sender_contact,
+    targetLabel: connectionOwnerLabel(row.owner_type, row.owner_id),
+    message: row.message,
+    status: row.status,
+    createdAt: dateFormatter.format(new Date(row.created_at)),
+  }));
+
+  const connectionRequests: ConnectionJoinRequest[] = (recentEnrollmentRows ?? []).map((row) => ({
+    id: row.id,
+    studentName: profileNameById.get(row.student_id) ?? "—",
+    targetLabel: connectionOwnerLabel(row.owner_type, row.owner_id),
+    status: row.status,
+    createdAt: dateFormatter.format(new Date(row.joined_at)),
+  }));
+
   const [{ data: subscriptionRows }, { data: settingsRows }, { data: teacherProfileRows }, { data: classProfileRows }] =
     await Promise.all([
       supabase.from("platform_subscriptions").select("plan, status, updated_at"),
@@ -254,7 +309,10 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
         },
         {
           label: t("groupTrust"),
-          items: [{ key: "flagged", label: t("tabs.flagged"), count: flaggedReviews.length }],
+          items: [
+            { key: "flagged", label: t("tabs.flagged"), count: flaggedReviews.length },
+            { key: "connections", label: t("tabs.connections") },
+          ],
         },
       ]}
       panels={{
@@ -289,6 +347,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
         ),
         siteAds: <SiteAdsTab initialAds={siteAds} />,
         flagged: <FlaggedReviewsTab initialReviews={flaggedReviews} />,
+        connections: <ConnectionsTab inquiries={connectionInquiries} requests={connectionRequests} />,
       }}
       defaultTab="overview"
     />

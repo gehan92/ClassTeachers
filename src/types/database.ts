@@ -107,6 +107,7 @@ export type Database = {
           academic_title: string | null;
           status: ProfileStatus;
           owner_published: boolean;
+          contact_mode: "phone" | "messaging_only";
           created_at: string;
           updated_at: string;
         };
@@ -124,6 +125,7 @@ export type Database = {
           academic_title?: string | null;
           status?: ProfileStatus;
           owner_published?: boolean;
+          contact_mode?: "phone" | "messaging_only";
           created_at?: string;
           updated_at?: string;
         };
@@ -141,6 +143,7 @@ export type Database = {
           academic_title?: string | null;
           status?: ProfileStatus;
           owner_published?: boolean;
+          contact_mode?: "phone" | "messaging_only";
           created_at?: string;
           updated_at?: string;
         };
@@ -753,6 +756,8 @@ export type Database = {
           sender_contact: string;
           message: string;
           status: "new" | "read";
+          reply: string | null;
+          replied_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -764,6 +769,8 @@ export type Database = {
           sender_contact: string;
           message: string;
           status?: "new" | "read";
+          reply?: string | null;
+          replied_at?: string | null;
           created_at?: string;
         };
         Update: {
@@ -775,6 +782,8 @@ export type Database = {
           sender_contact?: string;
           message?: string;
           status?: "new" | "read";
+          reply?: string | null;
+          replied_at?: string | null;
           created_at?: string;
         };
         // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
@@ -1027,6 +1036,7 @@ export type Database = {
           notes_count: number;
           subjects: string[];
           grade_band: string | null;
+          contact_mode: string;
         }[];
       };
       list_public_reviews: {

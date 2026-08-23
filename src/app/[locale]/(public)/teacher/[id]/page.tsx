@@ -93,6 +93,7 @@ async function loadTeacherProfile(
       reply: r.reply ?? undefined,
     })),
     phone,
+    contactMode: (teacher.contact_mode as TeacherProfileDetail["contactMode"]) ?? "phone",
   } satisfies TeacherProfileDetail;
 }
 

@@ -236,6 +236,34 @@ export async function updateTeacherAccount(input: { phone: string }): Promise<Ac
   return {};
 }
 
+/**
+ * Lives on teacher_profiles, not profiles — it's specific to the teacher
+ * role's contact reveal (get_teacher_contact, 0042), not a general account
+ * setting. Upsert rather than update: a brand-new account may not have a
+ * teacher_profiles row yet (same reasoning as updateTeacherProfile above).
+ */
+export async function updateContactMode(mode: "phone" | "messaging_only"): Promise<ActionResult> {
+  if (mode !== "phone" && mode !== "messaging_only") {
+    return { error: "Invalid contact preference." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error } = await supabase
+    .from("teacher_profiles")
+    .upsert({ id: user.id, contact_mode: mode }, { onConflict: "id" });
+  if (error) {
+    return { error: "Couldn't save your changes. Please try again." };
+  }
+  return {};
+}
+
 const instituteSettingsSchema = z.object({
   name: z.string().trim().min(2),
   location: z.string().trim().optional(),

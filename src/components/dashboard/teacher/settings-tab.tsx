@@ -7,21 +7,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { updateTeacherAccount, updateNotificationPrefs } from "@/lib/dashboard/actions";
+import { updateTeacherAccount, updateNotificationPrefs, updateContactMode } from "@/lib/dashboard/actions";
 
 const panelClass = "rounded-lg border border-border bg-white p-5";
 
 export function SettingsTab({
   initialPhone,
   initialNotificationPrefs,
+  initialContactMode,
   email,
 }: {
   initialPhone: string;
   initialNotificationPrefs: Record<string, boolean>;
+  initialContactMode: "phone" | "messaging_only";
   email: string;
 }) {
   const t = useTranslations("teacherDashboard.settings");
   const tc = useTranslations("teacherDashboard.common");
+
+  const [messagingOnly, setMessagingOnly] = useState(initialContactMode === "messaging_only");
+
+  function handleToggleContactMode(checked: boolean) {
+    setMessagingOnly(checked);
+    updateContactMode(checked ? "messaging_only" : "phone");
+  }
 
   const [notifications, setNotifications] = useState({
     enrolments: initialNotificationPrefs.enrolments ?? true,
@@ -79,6 +88,15 @@ export function SettingsTab({
           </Button>
           {saved && <span className="text-sm font-medium text-success">{tc("saved")}</span>}
           {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+        </div>
+      </div>
+
+      <div className={panelClass}>
+        <h3 className="mb-1 text-lg">{t("contactHeading")}</h3>
+        <p className="mb-4 text-sm text-muted-foreground">{t("contactSubtitle")}</p>
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="contact-messaging-only">{t("contactMessagingOnly")}</Label>
+          <Switch id="contact-messaging-only" checked={messagingOnly} onCheckedChange={handleToggleContactMode} />
         </div>
       </div>
 

@@ -125,7 +125,12 @@
     "contactLabel": "සම්බන්ධතාවය",
     "markRead": "කියවූ ලෙස සලකුණු කරන්න",
     "delete": "මකන්න",
-    "confirmDelete": "මෙම පණිවිඩය මකන්නද?"
+    "confirmDelete": "මෙම පණිවිඩය මකන්නද?",
+    "reply": "පිළිතුරු දෙන්න",
+    "replyPlaceholder": "ඔබේ පිළිතුර ලියන්න...",
+    "sendReply": "පිළිතුර යවන්න",
+    "cancelReply": "අවලංගු කරන්න",
+    "yourReply": "ඔබේ පිළිතුර"
   },
   "comingSoon": {
     "badge": "ඉක්මනින්",
@@ -456,6 +461,7 @@
     "reviewsHeading": "සමාලෝචන {count} · සාමාන්‍යය {rating}",
     "noReviews": "තවම සමාලෝචන නැත.",
     "phoneLocked": "බැලීමට පිවිස එකතු වන්න",
+    "phoneMessagingOnly": "මෙම ගුරුවරයා පණිවුඩ වඩාත් කැමතියි — ඔවුන්ගේ දැන්වීමේ Message භාවිතා කරන්න",
     "qualifications": "සුදුසුකම් සහ පළපුරුද්ද",
     "degreeLabel": "සුදුසුකම්",
     "workExperienceLabel": "රැකියා පළපුරුද්ද",
@@ -496,7 +502,8 @@
       "users": "පරිශීලකයන්",
       "subscriptions": "දායකත්ව",
       "siteAds": "වේදිකා-ව්‍යාප්ත දැන්වීම්",
-      "flagged": "සලකුණු කළ සමාලෝචන"
+      "flagged": "සලකුණු කළ සමාලෝචන",
+      "connections": "සම්බන්ධතා"
     },
     "overview": {
       "title": "වේදිකාවේ දළ විශ්ලේෂණය",
@@ -646,6 +653,26 @@
         "remove": "ඉවත් කරන්න"
       },
       "noFlaggedReviews": "සලකුණු කළ සමාලෝචන නොමැත — පෝලිම හිස්ය."
+    },
+    "connections": {
+      "title": "සම්බන්ධතා",
+      "subtitle": "ශිෂ්‍යයන් සහ ගුරුවරුන්/ආයතන අතර මෑත ප්‍රථම සම්බන්ධතා — වංචා සහ අනිසි භාවිතය නිරීක්ෂණය සඳහා, මධ්‍යස්ථභාවය සඳහා නොවේ.",
+      "inquiriesHeading": "මෑත විමසීම්",
+      "inquiryLine": "{sender} → {target}",
+      "contactLabel": "සම්බන්ධතාවය",
+      "noInquiries": "තවම විමසීම් නැත.",
+      "inquiryStatus": {
+        "new": "නව",
+        "read": "කියවා ඇත"
+      },
+      "requestsHeading": "මෑත එකතු වීමේ ඉල්ලීම්",
+      "requestLine": "{student} → {target}",
+      "noRequests": "තවම එකතු වීමේ ඉල්ලීම් නැත.",
+      "requestStatus": {
+        "pending": "පොරොත්තුවෙන්",
+        "accepted": "පිළිගත්තා",
+        "declined": "ප්‍රතික්ෂේප කළා"
+      }
     }
   },
   "instituteDashboard": {
@@ -1334,6 +1361,9 @@
       "heading": "සැකසුම්",
       "accountHeading": "ගිණුම",
       "changePassword": "මුරපදය වෙනස් කරන්න",
+      "contactHeading": "සම්බන්ධතා මනාපය",
+      "contactSubtitle": "ඔබ ශිෂ්‍යයෙකුගේ එකතු වීමේ ඉල්ලීම පිළිගත් පසු ඔවුන් දකින දේ මෙයින් පාලනය වේ.",
+      "contactMessagingOnly": "පණිවුඩ පමණයි — මගේ දුරකථන අංකය සඟවන්න, ශිෂ්‍යයන්ට වේදිකාව හරහා පමණක් මා අමතන්න පුළුවන්",
       "notificationsHeading": "දැනුම්දීම්",
       "notifications": {
         "enrolments": "නව ලියාපදිංචි වීම්",

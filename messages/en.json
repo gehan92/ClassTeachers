@@ -125,7 +125,12 @@
     "contactLabel": "Contact",
     "markRead": "Mark as read",
     "delete": "Delete",
-    "confirmDelete": "Delete this message?"
+    "confirmDelete": "Delete this message?",
+    "reply": "Reply",
+    "replyPlaceholder": "Write your reply...",
+    "sendReply": "Send reply",
+    "cancelReply": "Cancel",
+    "yourReply": "Your reply"
   },
   "comingSoon": {
     "badge": "Coming soon",
@@ -456,6 +461,7 @@
     "reviewsHeading": "{count} reviews · {rating} average",
     "noReviews": "No reviews yet.",
     "phoneLocked": "Sign in and join to view",
+    "phoneMessagingOnly": "This teacher prefers messages — use Message on their ad",
     "qualifications": "Qualifications & experience",
     "degreeLabel": "Qualifications",
     "workExperienceLabel": "Work experience",
@@ -496,7 +502,8 @@
       "users": "Users",
       "subscriptions": "Subscriptions",
       "siteAds": "Site-wide Ads",
-      "flagged": "Flagged Reviews"
+      "flagged": "Flagged Reviews",
+      "connections": "Connections"
     },
     "overview": {
       "title": "Platform Overview",
@@ -646,6 +653,26 @@
         "remove": "Remove"
       },
       "noFlaggedReviews": "No flagged reviews — the queue is clear."
+    },
+    "connections": {
+      "title": "Connections",
+      "subtitle": "Recent first contact between students and teachers/institutes — for spam and misuse monitoring, not moderation.",
+      "inquiriesHeading": "Recent inquiries",
+      "inquiryLine": "{sender} → {target}",
+      "contactLabel": "Contact",
+      "noInquiries": "No inquiries yet.",
+      "inquiryStatus": {
+        "new": "New",
+        "read": "Read"
+      },
+      "requestsHeading": "Recent join requests",
+      "requestLine": "{student} → {target}",
+      "noRequests": "No join requests yet.",
+      "requestStatus": {
+        "pending": "Pending",
+        "accepted": "Accepted",
+        "declined": "Declined"
+      }
     }
   },
   "instituteDashboard": {
@@ -1334,6 +1361,9 @@
       "heading": "Settings",
       "accountHeading": "Account",
       "changePassword": "Change password",
+      "contactHeading": "Contact preference",
+      "contactSubtitle": "Controls what a student sees once you accept their request to join.",
+      "contactMessagingOnly": "Messaging only — hide my phone number, students can only reach me through the platform",
       "notificationsHeading": "Notifications",
       "notifications": {
         "enrolments": "New enrolments",

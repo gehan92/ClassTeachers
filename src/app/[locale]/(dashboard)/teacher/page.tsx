@@ -78,7 +78,7 @@ export default async function TeacherDashboardPage({
     supabase.from("exam_submissions").select("id, exam_id").eq("status", "pending"),
     supabase
       .from("inquiries")
-      .select("id, sender_name, sender_contact, message, status, created_at")
+      .select("id, sender_name, sender_contact, message, status, reply, created_at")
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
       .order("created_at", { ascending: false }),
@@ -90,6 +90,7 @@ export default async function TeacherDashboardPage({
     senderContact: row.sender_contact,
     message: row.message,
     status: row.status,
+    reply: row.reply,
     createdLabel: dateFormatter.format(new Date(row.created_at)),
   }));
 
@@ -387,6 +388,7 @@ export default async function TeacherDashboardPage({
       }),
     reviews,
     phone: liveProfilePhone,
+    contactMode: (teacherProfile?.contact_mode as TeacherProfileDetail["contactMode"]) ?? "phone",
   };
 
   return (
@@ -487,6 +489,7 @@ export default async function TeacherDashboardPage({
           <SettingsTab
             initialPhone={profile?.phone ?? ""}
             initialNotificationPrefs={(profile?.notification_prefs as Record<string, boolean>) ?? {}}
+            initialContactMode={teacherProfile?.contact_mode ?? "phone"}
             email={user!.email ?? ""}
           />
         ),

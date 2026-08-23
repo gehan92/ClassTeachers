@@ -346,7 +346,7 @@ export default async function TeacherDashboardPage({
 
   const { data: assignmentRows } = await supabase
     .from("assignments")
-    .select("id, title, lesson_id, file_path, due_at")
+    .select("id, title, batch_id, lesson_id, file_path, due_at")
     .eq("owner_type", "teacher")
     .eq("owner_id", userId)
     .order("created_at", { ascending: false });
@@ -362,9 +362,13 @@ export default async function TeacherDashboardPage({
     }
   }
 
+  const batchTitleById = new Map(batches.map((b) => [b.id, b.title]));
+
   const assignments: TeacherAssignmentRow[] = (assignmentRows ?? []).map((a) => ({
     id: a.id,
     title: a.title,
+    batchId: a.batch_id,
+    batchTitle: a.batch_id ? (batchTitleById.get(a.batch_id) ?? null) : null,
     lessonTitle: a.lesson_id ? (lessonTitleById.get(a.lesson_id) ?? null) : null,
     dueLabel: a.due_at ? dateFormatter.format(new Date(a.due_at)) : null,
     fileUrl: assignmentFileUrlByPath.get(a.file_path) ?? "",
@@ -553,7 +557,12 @@ export default async function TeacherDashboardPage({
         questionBank: <QuestionBankTab initialQuestions={questions} batches={batches} />,
         exams: <ExamsTab exams={exams} submissions={examSubmissions} questions={questions} />,
         assignments: (
-          <AssignmentsTab assignments={assignments} submissions={assignmentSubmissions} lessons={lessonOptions} />
+          <AssignmentsTab
+            assignments={assignments}
+            submissions={assignmentSubmissions}
+            batches={batches}
+            lessons={lessonOptions}
+          />
         ),
         live: <LiveClassesTab classes={liveClasses} />,
         students: <StudentsTab students={students} requests={requests} />,

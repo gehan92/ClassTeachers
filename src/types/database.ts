@@ -535,6 +535,7 @@ export type Database = {
           id: string;
           owner_type: OwnerType;
           owner_id: string;
+          batch_id: string | null;
           lesson_id: string | null;
           title: string;
           file_path: string;
@@ -546,6 +547,7 @@ export type Database = {
           id?: string;
           owner_type: OwnerType;
           owner_id: string;
+          batch_id?: string | null;
           lesson_id?: string | null;
           title: string;
           file_path: string;
@@ -557,6 +559,7 @@ export type Database = {
           id?: string;
           owner_type?: OwnerType;
           owner_id?: string;
+          batch_id?: string | null;
           lesson_id?: string | null;
           title?: string;
           file_path?: string;

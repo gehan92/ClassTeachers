@@ -231,7 +231,7 @@ export default async function StudentDashboardPage({
   const [{ data: assignmentRows }, { data: assignmentSubmissionRows }] = await Promise.all([
     supabase
       .from("assignments")
-      .select("id, owner_type, owner_id, lesson_id, title, file_path, due_at")
+      .select("id, owner_type, owner_id, batch_id, lesson_id, title, file_path, due_at")
       .order("created_at", { ascending: false }),
     supabase
       .from("assignment_submissions")
@@ -254,12 +254,20 @@ export default async function StudentDashboardPage({
     }
   }
 
-  const assignments: StudentAssignmentRow[] = (assignmentRows ?? []).map((a) => {
+  // Same batch-scoping notes already apply (0008): a batch-scoped assignment
+  // is only visible to a student enrolled in that specific batch, not just
+  // any batch of that teacher's — RLS only checks the owner-level enrollment.
+  const visibleAssignmentRows = (assignmentRows ?? []).filter(
+    (a) => !a.batch_id || enrolledBatchIds.has(a.batch_id),
+  );
+
+  const assignments: StudentAssignmentRow[] = visibleAssignmentRows.map((a) => {
     const submission = assignmentSubmissionByAssignmentId.get(a.id);
     return {
       id: a.id,
       title: a.title,
       teacherName: ownerName(a.owner_type, a.owner_id),
+      batchTitle: a.batch_id ? (batchById.get(a.batch_id)?.title ?? null) : null,
       lessonTitle: a.lesson_id ? (lessonTitleById.get(a.lesson_id) ?? null) : null,
       dueLabel: a.due_at ? dateFormatter.format(new Date(a.due_at)) : null,
       fileUrl: assignmentFileUrlByPath.get(a.file_path) ?? "",
@@ -273,7 +281,7 @@ export default async function StudentDashboardPage({
         : null,
     };
   });
-  const assignmentsDueCount = (assignmentRows ?? []).filter(
+  const assignmentsDueCount = visibleAssignmentRows.filter(
     (a) => assignmentSubmissionByAssignmentId.get(a.id)?.status !== "graded",
   ).length;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,26 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
   const [editError, setEditError] = useState<string | null>(null);
   const publicCount = notes.filter((n) => n.isPublic).length;
   const viewingNote = notes.find((n) => n.id === viewingNoteId) ?? null;
+
+  // Grouped by class/batch so a teacher running several classes isn't
+  // hunting through one flat list — same organizing principle as the
+  // Assignments tab. Batches with notes appear in the same order as
+  // `batches` (the teacher's own class list), unassigned ones trail behind.
+  const groupedNotes = useMemo(() => {
+    const byBatch = new Map<string, TeacherNoteRow[]>();
+    for (const n of notes) {
+      const key = n.batchId ?? GENERAL_BATCH;
+      (byBatch.get(key) ?? byBatch.set(key, []).get(key)!).push(n);
+    }
+    const groups: { key: string; title: string; rows: TeacherNoteRow[] }[] = [];
+    for (const batch of batches) {
+      const rows = byBatch.get(batch.id);
+      if (rows) groups.push({ key: batch.id, title: batch.title, rows });
+    }
+    const general = byBatch.get(GENERAL_BATCH);
+    if (general) groups.push({ key: GENERAL_BATCH, title: t("form.batchGeneral"), rows: general });
+    return groups;
+  }, [notes, batches, t]);
 
   function resetForm() {
     setTitle("");
@@ -238,11 +258,15 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
         </div>
       )}
 
-      <div className="rounded-lg border border-border bg-white p-5">
-        {notes.length === 0 ? (
+      {notes.length === 0 ? (
+        <div className="rounded-lg border border-border bg-white p-5">
           <p className="py-6 text-center text-sm text-muted-foreground">{t("emptyState")}</p>
-        ) : (
-          <Table>
+        </div>
+      ) : (
+        groupedNotes.map((group) => (
+          <div key={group.key} className="rounded-lg border border-border bg-white p-5">
+            <h3 className="mb-3 text-sm font-semibold text-foreground">{group.title}</h3>
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>{t("columns.title")}</TableHead>
@@ -254,7 +278,7 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
               </TableRow>
             </TableHeader>
             <TableBody>
-              {notes.map((note) => {
+              {group.rows.map((note) => {
                 const isEditing = editingNoteId === note.id;
                 return (
                   <TableRow key={note.id}>
@@ -331,9 +355,10 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
                 );
               })}
             </TableBody>
-          </Table>
-        )}
-      </div>
+            </Table>
+          </div>
+        ))
+      )}
     </div>
   );
 }

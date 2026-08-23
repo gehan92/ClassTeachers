@@ -8,6 +8,7 @@ type ActionResult = { error: string } | { error?: undefined };
 const createAssignmentSchema = z.object({
   ownerType: z.enum(["teacher", "class"]),
   title: z.string().trim().min(2),
+  batchId: z.string().uuid().optional(),
   lessonId: z.string().uuid().optional(),
   dueAt: z.string().optional(),
 });
@@ -24,6 +25,7 @@ export async function createAssignment(formData: FormData): Promise<ActionResult
   const parsed = createAssignmentSchema.safeParse({
     ownerType: formData.get("ownerType"),
     title: formData.get("title"),
+    batchId: formData.get("batchId") || undefined,
     lessonId: formData.get("lessonId") || undefined,
     dueAt: formData.get("dueAt") || undefined,
   });
@@ -67,6 +69,7 @@ export async function createAssignment(formData: FormData): Promise<ActionResult
     id: assignmentId,
     owner_type: parsed.data.ownerType,
     owner_id: ownerId,
+    batch_id: parsed.data.batchId ?? null,
     lesson_id: parsed.data.lessonId ?? null,
     title: parsed.data.title,
     file_path: filePath,

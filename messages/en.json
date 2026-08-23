@@ -1046,6 +1046,9 @@
       "submittedTitle": "Submitted — your teacher will grade this soon",
       "submittedPendingNote": "We've received your answer photos. You'll see your grade and feedback here once it's ready.",
       "backToAssignments": "Back to assignments"
+    },
+    "common": {
+      "close": "Close"
     }
   },
   "teacherDashboard": {
@@ -1060,7 +1063,8 @@
       "add": "Add",
       "added": "Added",
       "cancel": "Cancel",
-      "postReply": "Post reply"
+      "postReply": "Post reply",
+      "close": "Close"
     },
     "tabs": {
       "overview": "Overview",
@@ -1484,7 +1488,9 @@
         "noLesson": "No specific lesson",
         "dueLabel": "Due date (optional)",
         "fileLabel": "Worksheet PDF",
-        "missingFields": "Please add a title and choose a PDF file."
+        "missingFields": "Please add a title and choose a PDF file.",
+        "batchLabel": "Class",
+        "noBatch": "No specific class (general)"
       },
       "grading": {
         "heading": "Grading — {title}",
@@ -1500,7 +1506,8 @@
         "feedbackPlaceholder": "Write feedback for the student...",
         "saveGrade": "Save grade",
         "editGrade": "Edit grade",
-        "totalScore": "Total: {score}"
+        "totalScore": "Total: {score}",
+        "viewFilesCount": "View submitted files ({count})"
       }
     }
   },

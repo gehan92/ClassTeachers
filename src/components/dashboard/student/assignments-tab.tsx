@@ -14,12 +14,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { PdfViewerPanel } from "@/components/dashboard/inline-file-viewer";
 import { submitAssignment } from "@/lib/dashboard/assignments-actions";
 
 export type StudentAssignmentRow = {
   id: string;
   title: string;
   teacherName: string;
+  batchTitle: string | null;
   lessonTitle: string | null;
   dueLabel: string | null;
   fileUrl: string;
@@ -33,13 +35,36 @@ export type StudentAssignmentRow = {
 
 export function AssignmentsTab({ assignments }: { assignments: StudentAssignmentRow[] }) {
   const t = useTranslations("studentDashboard.assignments");
+  const tc = useTranslations("studentDashboard.common");
   const [activeAssignmentId, setActiveAssignmentId] = useState<string | null>(null);
+  const [viewingWorksheetId, setViewingWorksheetId] = useState<string | null>(null);
+
+  const viewingWorksheet = viewingWorksheetId
+    ? (assignments.find((a) => a.id === viewingWorksheetId) ?? null)
+    : null;
+  if (viewingWorksheet) {
+    return (
+      <PdfViewerPanel
+        title={viewingWorksheet.title}
+        subtitle={viewingWorksheet.teacherName}
+        fileUrl={viewingWorksheet.fileUrl}
+        closeLabel={tc("close")}
+        onClose={() => setViewingWorksheetId(null)}
+      />
+    );
+  }
 
   const activeAssignment = activeAssignmentId
     ? (assignments.find((a) => a.id === activeAssignmentId) ?? null)
     : null;
   if (activeAssignment) {
-    return <SubmitWorkspace assignment={activeAssignment} onExit={() => setActiveAssignmentId(null)} />;
+    return (
+      <SubmitWorkspace
+        assignment={activeAssignment}
+        onExit={() => setActiveAssignmentId(null)}
+        onViewWorksheet={() => setViewingWorksheetId(activeAssignment.id)}
+      />
+    );
   }
 
   const dueAssignments = assignments.filter((a) => a.submission?.status !== "graded");
@@ -62,7 +87,12 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
       ) : (
         <div className="mb-8 flex flex-col gap-4">
           {dueAssignments.map((assignment) => (
-            <AssignmentCard key={assignment.id} assignment={assignment} onOpen={() => setActiveAssignmentId(assignment.id)} />
+            <AssignmentCard
+              key={assignment.id}
+              assignment={assignment}
+              onOpen={() => setActiveAssignmentId(assignment.id)}
+              onViewWorksheet={() => setViewingWorksheetId(assignment.id)}
+            />
           ))}
         </div>
       )}
@@ -104,7 +134,15 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
   );
 }
 
-function AssignmentCard({ assignment, onOpen }: { assignment: StudentAssignmentRow; onOpen: () => void }) {
+function AssignmentCard({
+  assignment,
+  onOpen,
+  onViewWorksheet,
+}: {
+  assignment: StudentAssignmentRow;
+  onOpen: () => void;
+  onViewWorksheet: () => void;
+}) {
   const t = useTranslations("studentDashboard.assignments");
 
   return (
@@ -117,19 +155,15 @@ function AssignmentCard({ assignment, onOpen }: { assignment: StudentAssignmentR
       </div>
       <p className="mb-3.5 text-sm text-muted-foreground">
         {assignment.teacherName}
+        {assignment.batchTitle ? ` · ${assignment.batchTitle}` : ""}
         {assignment.lessonTitle ? ` · ${assignment.lessonTitle}` : ""}
         {assignment.dueLabel ? ` · ${t("dueLabel", { date: assignment.dueLabel })}` : ""}
       </p>
 
       <div className="flex flex-wrap items-center gap-2.5">
-        <a
-          href={assignment.fileUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm font-semibold text-primary hover:underline"
-        >
+        <Button type="button" variant="ghost" size="sm" className="h-auto p-0 font-semibold text-primary hover:underline" onClick={onViewWorksheet}>
           {t("viewWorksheet")}
-        </a>
+        </Button>
         {!assignment.submission && (
           <Button size="sm" onClick={onOpen}>
             {t("submitAnswer")}
@@ -200,7 +234,15 @@ function PhotoDropzone({
   );
 }
 
-function SubmitWorkspace({ assignment, onExit }: { assignment: StudentAssignmentRow; onExit: () => void }) {
+function SubmitWorkspace({
+  assignment,
+  onExit,
+  onViewWorksheet,
+}: {
+  assignment: StudentAssignmentRow;
+  onExit: () => void;
+  onViewWorksheet: () => void;
+}) {
   const t = useTranslations("studentDashboard.assignments");
   const router = useRouter();
   const [photos, setPhotos] = useState<File[]>([]);
@@ -259,14 +301,15 @@ function SubmitWorkspace({ assignment, onExit }: { assignment: StudentAssignment
       </div>
 
       <div className="mb-6">
-        <a
-          href={assignment.fileUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mb-3 inline-block text-sm font-semibold text-primary hover:underline"
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="mb-3 h-auto p-0 font-semibold text-primary hover:underline"
+          onClick={onViewWorksheet}
         >
           {t("viewWorksheet")}
-        </a>
+        </Button>
         <p className="mb-2 text-xs text-muted-foreground">{t("submitInstructions")}</p>
         <PhotoDropzone files={photos} onAdd={handleAdd} onRemove={handleRemove} />
       </div>

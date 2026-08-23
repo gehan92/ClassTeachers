@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/features/status-badge";
+import { PhotoViewerPanel } from "@/components/dashboard/inline-file-viewer";
 import { createExam, gradeSubmission } from "@/lib/dashboard/exams-actions";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
 
@@ -302,6 +303,7 @@ function SubmissionCard({
   const [feedbackDraft, setFeedbackDraft] = useState(submission.feedback ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewingFiles, setViewingFiles] = useState(false);
 
   async function handleSave() {
     setSaving(true);
@@ -335,20 +337,17 @@ function SubmissionCard({
         </div>
         {submission.photoUrls.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("grading.noFiles")}</p>
+        ) : viewingFiles ? (
+          <PhotoViewerPanel
+            title={t("grading.filesHeading")}
+            photoUrls={submission.photoUrls}
+            closeLabel={t("grading.hideFiles")}
+            onClose={() => setViewingFiles(false)}
+          />
         ) : (
-          <div className="flex flex-wrap gap-2">
-            {submission.photoUrls.map((url, i) => (
-              <a
-                key={url}
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-sm border border-input px-2.5 py-1 text-xs font-semibold text-primary hover:bg-secondary/40"
-              >
-                {t("grading.viewPhoto", { number: i + 1 })}
-              </a>
-            ))}
-          </div>
+          <Button type="button" variant="outline" size="sm" onClick={() => setViewingFiles(true)}>
+            {t("grading.viewFiles", { count: submission.photoUrls.length })}
+          </Button>
         )}
       </div>
 

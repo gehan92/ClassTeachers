@@ -185,6 +185,7 @@ export default async function StudentDashboardPage({
     .map((n) => ({
       id: n.id,
       title: n.title,
+      batchId: n.batch_id,
       batchTitle: n.batch_id ? (batchById.get(n.batch_id)?.title ?? null) : null,
       ownerName: ownerName(n.owner_type, n.owner_id),
       pageCount: n.page_count,
@@ -267,6 +268,7 @@ export default async function StudentDashboardPage({
       id: a.id,
       title: a.title,
       teacherName: ownerName(a.owner_type, a.owner_id),
+      batchId: a.batch_id,
       batchTitle: a.batch_id ? (batchById.get(a.batch_id)?.title ?? null) : null,
       lessonTitle: a.lesson_id ? (lessonTitleById.get(a.lesson_id) ?? null) : null,
       dueLabel: a.due_at ? dateFormatter.format(new Date(a.due_at)) : null,

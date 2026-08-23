@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Camera, X } from "lucide-react";
@@ -16,11 +16,13 @@ import {
 } from "@/components/ui/table";
 import { PdfViewerPanel } from "@/components/dashboard/inline-file-viewer";
 import { submitAssignment } from "@/lib/dashboard/assignments-actions";
+import { groupByClass } from "@/lib/dashboard/group-by-class";
 
 export type StudentAssignmentRow = {
   id: string;
   title: string;
   teacherName: string;
+  batchId: string | null;
   batchTitle: string | null;
   lessonTitle: string | null;
   dueLabel: string | null;
@@ -38,6 +40,13 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
   const tc = useTranslations("studentDashboard.common");
   const [activeAssignmentId, setActiveAssignmentId] = useState<string | null>(null);
   const [viewingWorksheetId, setViewingWorksheetId] = useState<string | null>(null);
+
+  const dueAssignments = assignments.filter((a) => a.submission?.status !== "graded");
+  const pastAssignments = assignments.filter((a) => a.submission?.status === "graded");
+  const groupedDue = useMemo(
+    () => groupByClass(dueAssignments.map((a) => ({ ...a, ownerName: a.teacherName }))),
+    [dueAssignments],
+  );
 
   const viewingWorksheet = viewingWorksheetId
     ? (assignments.find((a) => a.id === viewingWorksheetId) ?? null)
@@ -67,9 +76,6 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
     );
   }
 
-  const dueAssignments = assignments.filter((a) => a.submission?.status !== "graded");
-  const pastAssignments = assignments.filter((a) => a.submission?.status === "graded");
-
   return (
     <div>
       <div className="mb-5">
@@ -85,14 +91,21 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
           {t("dueEmpty")}
         </div>
       ) : (
-        <div className="mb-8 flex flex-col gap-4">
-          {dueAssignments.map((assignment) => (
-            <AssignmentCard
-              key={assignment.id}
-              assignment={assignment}
-              onOpen={() => setActiveAssignmentId(assignment.id)}
-              onViewWorksheet={() => setViewingWorksheetId(assignment.id)}
-            />
+        <div className="mb-8 flex flex-col gap-5">
+          {groupedDue.map((group) => (
+            <div key={group.key}>
+              <h3 className="mb-2 text-sm font-semibold text-foreground">{group.heading}</h3>
+              <div className="flex flex-col gap-3">
+                {group.rows.map((assignment) => (
+                  <AssignmentCard
+                    key={assignment.id}
+                    assignment={assignment}
+                    onOpen={() => setActiveAssignmentId(assignment.id)}
+                    onViewWorksheet={() => setViewingWorksheetId(assignment.id)}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -153,12 +166,13 @@ function AssignmentCard({
           <StatusBadge variant="pending">{t("pendingGrading")}</StatusBadge>
         )}
       </div>
-      <p className="mb-3.5 text-sm text-muted-foreground">
-        {assignment.teacherName}
-        {assignment.batchTitle ? ` · ${assignment.batchTitle}` : ""}
-        {assignment.lessonTitle ? ` · ${assignment.lessonTitle}` : ""}
-        {assignment.dueLabel ? ` · ${t("dueLabel", { date: assignment.dueLabel })}` : ""}
-      </p>
+      {(assignment.lessonTitle || assignment.dueLabel) && (
+        <p className="mb-3.5 text-sm text-muted-foreground">
+          {[assignment.lessonTitle, assignment.dueLabel ? t("dueLabel", { date: assignment.dueLabel }) : null]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+      )}
 
       <div className="flex flex-wrap items-center gap-2.5">
         <Button type="button" variant="ghost" size="sm" className="h-auto p-0 font-semibold text-primary hover:underline" onClick={onViewWorksheet}>

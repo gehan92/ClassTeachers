@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { groupByClass } from "@/lib/dashboard/group-by-class";
 
 export type StudentNoteRow = {
   id: string;
   title: string;
+  batchId: string | null;
   batchTitle: string | null;
   ownerName: string;
   pageCount: number | null;
@@ -17,6 +19,7 @@ export function NotesTab({ notes, studentName }: { notes: StudentNoteRow[]; stud
   const t = useTranslations("studentDashboard.notes");
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
   const openNote = notes.find((note) => note.id === openNoteId) ?? null;
+  const groupedNotes = useMemo(() => groupByClass(notes), [notes]);
 
   return (
     <div>
@@ -32,24 +35,28 @@ export function NotesTab({ notes, studentName }: { notes: StudentNoteRow[]; stud
           {t("emptyState")}
         </div>
       ) : (
-        <div className="rounded-lg border border-border bg-white">
-          {notes.map((note) => (
-            <div
-              key={note.id}
-              className="flex items-center gap-3 border-b border-border p-4 last:border-b-0"
-            >
-              <FileText className="size-4 shrink-0 text-primary" />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium text-foreground">{note.title}</div>
-                <div className="text-xs text-muted-foreground">
-                  {note.ownerName}
-                  {note.batchTitle ? ` · ${note.batchTitle}` : ""}
-                  {note.pageCount ? ` · ${t("pagesLabel", { pages: note.pageCount })}` : ""}
-                </div>
+        <div className="flex flex-col gap-5">
+          {groupedNotes.map((group) => (
+            <div key={group.key}>
+              <h3 className="mb-2 text-sm font-semibold text-foreground">{group.heading}</h3>
+              <div className="rounded-lg border border-border bg-white">
+                {group.rows.map((note) => (
+                  <div key={note.id} className="flex items-center gap-3 border-b border-border p-4 last:border-b-0">
+                    <FileText className="size-4 shrink-0 text-primary" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-foreground">{note.title}</div>
+                      {note.pageCount && (
+                        <div className="text-xs text-muted-foreground">
+                          {t("pagesLabel", { pages: note.pageCount })}
+                        </div>
+                      )}
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => setOpenNoteId(note.id)}>
+                      {t("openViewer")}
+                    </Button>
+                  </div>
+                ))}
               </div>
-              <Button size="sm" variant="outline" onClick={() => setOpenNoteId(note.id)}>
-                {t("openViewer")}
-              </Button>
             </div>
           ))}
         </div>

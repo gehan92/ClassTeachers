@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { MapPin, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { JoinRequestBox } from "@/components/features/join-request-box";
+import { ShareButtons } from "@/components/features/share-buttons";
 import { createClient } from "@/lib/supabase/server";
 import { avatarGradientClass } from "@/lib/avatar-color";
 
@@ -84,6 +85,8 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
             <span>{ad.location}</span>
           </>
         )}
+        <span>/</span>
+        <span className="max-w-[220px] truncate text-muted-foreground/70">{ad.ad_title}</span>
       </nav>
 
       <div className="mb-6 rounded-xl bg-gradient-to-br from-primary to-primary-light p-7 text-white">
@@ -155,15 +158,26 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
           <p className="mt-6 text-xs text-muted-foreground">{t("limitedNote")}</p>
         </div>
 
-        <JoinRequestBox
-          batchId={ad.batch_id}
-          teacherId={ad.teacher_id}
-          hourlyRate={ad.hourly_rate ?? undefined}
-          monthlyRate={ad.monthly_rate ?? undefined}
-          loggedIn={Boolean(user)}
-          isStudent={viewerRole === "student"}
-          existingStatus={existingStatus}
-        />
+        <div className="flex flex-col gap-6">
+          {ad.grade_band && (
+            <div className="flex h-fit flex-col gap-1.5 rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+              <h3 className="text-sm font-semibold text-foreground">{t("levelHeading")}</h3>
+              <p className="text-sm text-foreground/85">{tg(`grades.${ad.grade_band}`)}</p>
+            </div>
+          )}
+
+          <JoinRequestBox
+            batchId={ad.batch_id}
+            teacherId={ad.teacher_id}
+            hourlyRate={ad.hourly_rate ?? undefined}
+            monthlyRate={ad.monthly_rate ?? undefined}
+            loggedIn={Boolean(user)}
+            isStudent={viewerRole === "student"}
+            existingStatus={existingStatus}
+          />
+
+          <ShareButtons title={ad.ad_title} />
+        </div>
       </div>
     </div>
   );

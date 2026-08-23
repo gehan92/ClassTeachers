@@ -1408,6 +1408,10 @@
     "physical": "Physical",
     "schedule": "Schedule",
     "limitedNote": "This is a limited preview. Full profile details unlock once the teacher accepts your request to join.",
+    "levelHeading": "Level of the lessons",
+    "share": {
+      "heading": "Share this ad"
+    },
     "join": {
       "requestToJoin": "Request to join",
       "notePlaceholder": "Add a note for the teacher (optional)",

@@ -928,7 +928,9 @@
       "browseEmpty": "தற்போது இணைய வகுப்புகள் எதுவும் இல்லை.",
       "modeOnline": "ஆன்லைன்",
       "modePhysical": "நேரடி",
-      "requestToJoin": "இணைய கோரிக்கை அனுப்பு"
+      "requestToJoin": "இணைய கோரிக்கை அனுப்பு",
+      "viewNotes": "குறிப்புகளைக் காண்க",
+      "viewAssignments": "பணிகளைக் காண்க"
     },
     "live": {
       "title": "நேரடி வகுப்புகள்",
@@ -1048,7 +1050,9 @@
       "backToAssignments": "பணிகளுக்குத் திரும்பு"
     },
     "common": {
-      "close": "மூடு"
+      "close": "மூடு",
+      "filteredBanner": "காட்டுவது: {heading}",
+      "showAllClasses": "அனைத்து வகுப்புகளையும் காட்டு"
     }
   },
   "teacherDashboard": {

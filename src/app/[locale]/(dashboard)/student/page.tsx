@@ -160,6 +160,8 @@ export default async function StudentDashboardPage({
       const batch = e.batch_id ? batchById.get(e.batch_id) : undefined;
       return {
         enrollmentId: e.id,
+        ownerId: e.owner_id,
+        batchId: e.batch_id,
         batchTitle: batch?.title ?? null,
         ownerName: ownerName(e.owner_type, e.owner_id),
         ownerType: e.owner_type,
@@ -185,6 +187,7 @@ export default async function StudentDashboardPage({
     .map((n) => ({
       id: n.id,
       title: n.title,
+      ownerId: n.owner_id,
       batchId: n.batch_id,
       batchTitle: n.batch_id ? (batchById.get(n.batch_id)?.title ?? null) : null,
       ownerName: ownerName(n.owner_type, n.owner_id),
@@ -268,6 +271,7 @@ export default async function StudentDashboardPage({
       id: a.id,
       title: a.title,
       teacherName: ownerName(a.owner_type, a.owner_id),
+      ownerId: a.owner_id,
       batchId: a.batch_id,
       batchTitle: a.batch_id ? (batchById.get(a.batch_id)?.title ?? null) : null,
       lessonTitle: a.lesson_id ? (lessonTitleById.get(a.lesson_id) ?? null) : null,

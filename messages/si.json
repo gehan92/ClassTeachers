@@ -928,7 +928,9 @@
       "browseEmpty": "දැනට එකතු විය හැකි පන්ති නොමැත.",
       "modeOnline": "මාර්ගගත",
       "modePhysical": "භෞතික",
-      "requestToJoin": "එකතු වීමට ඉල්ලන්න"
+      "requestToJoin": "එකතු වීමට ඉල්ලන්න",
+      "viewNotes": "සටහන් බලන්න",
+      "viewAssignments": "පැවරුම් බලන්න"
     },
     "live": {
       "title": "සජීවී පන්ති",
@@ -1048,7 +1050,9 @@
       "backToAssignments": "පැවරුම් වෙත ආපසු"
     },
     "common": {
-      "close": "වසන්න"
+      "close": "වසන්න",
+      "filteredBanner": "පෙන්වන්නේ: {heading}",
+      "showAllClasses": "සියලුම පන්ති පෙන්වන්න"
     }
   },
   "teacherDashboard": {

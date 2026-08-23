@@ -5,7 +5,7 @@ import { GateNote } from "@/components/features/gate-note";
 import { PriceBox } from "@/components/features/price-box";
 import { AdSlot } from "@/components/features/ad-slot";
 import { LockPill } from "@/components/features/lock-pill";
-import { ReviewItem } from "@/components/features/review-item";
+import { ReviewsPanel } from "@/components/features/reviews-panel";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import type { TeacherProfileDetail } from "@/types/teacher-profile";
 
@@ -31,7 +31,7 @@ export function TeacherProfileView({
           {(teacher.notes.length > 0 || teacher.notesCount > 0) && <NotesPanel teacher={teacher} />}
           {teacher.schedule.length > 0 && <SchedulePanel teacher={teacher} />}
           <QuestionBankPanel />
-          <ReviewsPanel teacher={teacher} />
+          <ReviewsPanel reviews={teacher.reviews} reviewCount={teacher.reviewCount} rating={teacher.rating} />
         </div>
         <div className="flex flex-col gap-5">
           {/* Pricing now lives on individual ads (see /ad/[id]), not the
@@ -49,7 +49,7 @@ export function TeacherProfileView({
   );
 }
 
-function Panel({ title, children }: { title?: string; children: React.ReactNode }) {
+export function Panel({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
     <div className="mb-5 rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
       {title && <h2 className="mb-4 text-lg">{title}</h2>}
@@ -250,23 +250,25 @@ function NotesPanel({ teacher }: { teacher: TeacherProfileDetail }) {
   return (
     <Panel title={t("notesTitle")}>
       {teacher.notes.length > 0 ? (
-        teacher.notes.map((note) => (
-          <div key={note.id} className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
-            <FileText className="size-4 shrink-0 text-primary" />
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium text-foreground">{note.title}</div>
-              {note.pageCount != null && (
-                <div className="text-xs text-muted-foreground">{t("notesSubtitle", { pages: note.pageCount })}</div>
-              )}
+        <div className="max-h-[22rem] overflow-y-auto pr-1">
+          {teacher.notes.map((note) => (
+            <div key={note.id} className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
+              <FileText className="size-4 shrink-0 text-primary" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium text-foreground">{note.title}</div>
+                {note.pageCount != null && (
+                  <div className="text-xs text-muted-foreground">{t("notesSubtitle", { pages: note.pageCount })}</div>
+                )}
+              </div>
+              <Link
+                href={`/student/notes/${note.id}/file`}
+                className="rounded-sm border border-input px-2.5 py-1 text-xs font-semibold text-primary"
+              >
+                {t("notesView")}
+              </Link>
             </div>
-            <Link
-              href={`/student/notes/${note.id}/file`}
-              className="rounded-sm border border-input px-2.5 py-1 text-xs font-semibold text-primary"
-            >
-              {t("notesView")}
-            </Link>
-          </div>
-        ))
+          ))}
+        </div>
       ) : (
         <div className="flex items-center justify-between gap-3 py-1">
           <p className="m-0 text-sm text-muted-foreground">
@@ -284,31 +286,33 @@ function SchedulePanel({ teacher }: { teacher: TeacherProfileDetail }) {
 
   return (
     <Panel title={t("scheduleTitle")}>
-      {teacher.schedule.map((item) => {
-        const row = (
-          <>
-            <span className="w-16 shrink-0 font-mono text-xs uppercase text-accent-deep">
-              {item.mode === "online" ? t("classTypeOnline") : t("classTypePhysical")}
-            </span>
-            <span className="flex-1 text-sm font-medium text-foreground">{item.title}</span>
-            <span className="text-xs text-muted-foreground">{item.scheduleNote ?? item.location ?? "—"}</span>
-            {item.adId && <span className="shrink-0 text-xs font-semibold text-primary">{t("viewPricing")}</span>}
-          </>
-        );
-        return item.adId ? (
-          <Link
-            key={item.id}
-            href={`/ad/${item.adId}`}
-            className="flex items-center gap-3 border-b border-border py-3 transition-colors last:border-b-0 hover:bg-secondary/50"
-          >
-            {row}
-          </Link>
-        ) : (
-          <div key={item.id} className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
-            {row}
-          </div>
-        );
-      })}
+      <div className="max-h-[22rem] overflow-y-auto pr-1">
+        {teacher.schedule.map((item) => {
+          const row = (
+            <>
+              <span className="w-16 shrink-0 font-mono text-xs uppercase text-accent-deep">
+                {item.mode === "online" ? t("classTypeOnline") : t("classTypePhysical")}
+              </span>
+              <span className="flex-1 text-sm font-medium text-foreground">{item.title}</span>
+              <span className="text-xs text-muted-foreground">{item.scheduleNote ?? item.location ?? "—"}</span>
+              {item.adId && <span className="shrink-0 text-xs font-semibold text-primary">{t("viewPricing")}</span>}
+            </>
+          );
+          return item.adId ? (
+            <Link
+              key={item.id}
+              href={`/ad/${item.adId}`}
+              className="flex items-center gap-3 border-b border-border py-3 transition-colors last:border-b-0 hover:bg-secondary/50"
+            >
+              {row}
+            </Link>
+          ) : (
+            <div key={item.id} className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
+              {row}
+            </div>
+          );
+        })}
+      </div>
     </Panel>
   );
 }
@@ -326,16 +330,3 @@ function QuestionBankPanel() {
   );
 }
 
-function ReviewsPanel({ teacher }: { teacher: TeacherProfileDetail }) {
-  const t = useTranslations("profilePage");
-
-  return (
-    <Panel title={t("reviewsHeading", { count: teacher.reviewCount, rating: teacher.rating.toFixed(1) })}>
-      {teacher.reviews.length > 0 ? (
-        teacher.reviews.map((review) => <ReviewItem key={review.id} review={review} />)
-      ) : (
-        <p className="m-0 py-2 text-sm text-muted-foreground">{t("noReviews")}</p>
-      )}
-    </Panel>
-  );
-}

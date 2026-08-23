@@ -144,12 +144,16 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
     const locationFromUrl = searchParams.get("location");
     const gradeFromUrl = searchParams.get("grade");
     const priceIntervalFromUrl = searchParams.get("priceInterval");
+    const resolvedCategory = categoryFromUrl && isCategory(categoryFromUrl) ? categoryFromUrl : "all";
     // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from the URL, not derived render state
-    setCategory(categoryFromUrl && isCategory(categoryFromUrl) ? categoryFromUrl : "all");
+    setCategory(resolvedCategory);
     setSubject(subjectFromUrl ?? "");
     setLocation(locationFromUrl ?? "");
     setOnlineOnly(searchParams.get("online") === "true");
-    setGrade(gradeFromUrl && isGrade(gradeFromUrl) ? gradeFromUrl : undefined);
+    // Campus lecturers are a single grade band by definition — the ladder
+    // isn't shown for this category (see render below), so no leftover grade
+    // filter from a previous view should silently keep narrowing results here.
+    setGrade(resolvedCategory !== "campus" && gradeFromUrl && isGrade(gradeFromUrl) ? gradeFromUrl : undefined);
     setPriceInterval(priceIntervalFromUrl && isPriceInterval(priceIntervalFromUrl) ? priceIntervalFromUrl : "any");
     setPriceMin(searchParams.get("priceMin") ?? "");
     setPriceMax(searchParams.get("priceMax") ?? "");
@@ -219,7 +223,7 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
           <Input
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            placeholder={tSearch("subjectPlaceholder")}
+            placeholder={category === "campus" ? tSearch("subjectPlaceholderCampus") : tSearch("subjectPlaceholder")}
             className="bg-white"
           />
           <Input
@@ -245,7 +249,7 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
             onMaxChange={setPriceMax}
           />
         </div>
-        <GradeLadder value={grade} onChange={setGrade} />
+        {category !== "campus" && <GradeLadder value={grade} onChange={setGrade} />}
       </div>
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">

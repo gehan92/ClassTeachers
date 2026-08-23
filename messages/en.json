@@ -39,6 +39,7 @@
   "search": {
     "whatLearning": "What are you learning?",
     "subjectPlaceholder": "Subject — e.g. Combined Maths, Organic Chemistry",
+    "subjectPlaceholderCampus": "Subject / course area — e.g. Data Structures & Algorithms",
     "locationPlaceholder": "Location — e.g. Matara, or 'Online'",
     "onlineOnly": "Online classes only",
     "level": "Level",

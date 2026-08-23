@@ -1243,10 +1243,15 @@
       "addQuestion": "+ கேள்வியைச் சேர்க்கவும்",
       "emptyState": "உங்கள் வடிகட்டிகளுக்குப் பொருந்தும் கேள்விகள் இல்லை.",
       "batchAnyLabel": "எனது அனைத்து வகுப்புகளும்",
+      "view": "காண்க",
+      "hide": "மறை",
+      "edit": "திருத்து",
+      "delete": "நீக்கு",
       "filters": {
         "searchPlaceholder": "தலைப்பு அல்லது உரையால் தேடுங்கள்...",
         "allGrades": "அனைத்து தரங்களும்",
-        "allBatches": "அனைத்து தொகுதிகளும்"
+        "allBatches": "அனைத்து தொகுதிகளும்",
+        "allLanguages": "அனைத்து மொழிகளும்"
       },
       "columns": {
         "question": "கேள்வி",
@@ -1254,12 +1259,19 @@
         "grade": "தரம்",
         "batch": "தொகுதி",
         "type": "வகை",
+        "language": "மொழி",
         "difficulty": "கடினத்தன்மை",
-        "marks": "மதிப்பெண்கள்"
+        "marks": "மதிப்பெண்கள்",
+        "actions": "செயல்கள்"
       },
       "typeLabel": {
         "mcq": "பலவுள் தேர்வு",
         "essay": "கட்டுரை"
+      },
+      "languages": {
+        "en": "ஆங்கிலம்",
+        "si": "சிங்களம்",
+        "ta": "தமிழ்"
       },
       "difficultyLabel": {
         "easy": "எளிது",
@@ -1268,6 +1280,7 @@
       },
       "form": {
         "title": "புதிய கேள்வி",
+        "editTitle": "கேள்வியைத் திருத்து",
         "textLabel": "கேள்வி உரை",
         "textPlaceholder": "கேள்வியை தட்டச்சு செய்யவும்...",
         "topicLabel": "தலைப்பு",
@@ -1277,12 +1290,15 @@
         "batchLabel": "தொகுதி",
         "batchAny": "எந்த தொகுதியும் (எனது அனைத்து வகுப்புகளும்)",
         "difficultyLabel": "கடினத்தன்மை",
+        "languageLabel": "மொழி",
         "typeLabel": "கேள்வி வகை",
         "typeMcq": "பலவுள் தேர்வு",
         "typeEssay": "கட்டுரை",
         "optionsLabel": "விடை விருப்பங்கள்",
         "optionPlaceholder": "விருப்பம் {number}",
         "optionFallback": "விருப்பம் {number}",
+        "addOption": "விருப்பத்தைச் சேர்",
+        "removeOption": "விருப்பத்தை நீக்கு",
         "correctHint": "சரியான விருப்பத்திற்கு அருகில் உள்ள ரேடியோ பொத்தானைத் தேர்ந்தெடுக்கவும்."
       }
     },

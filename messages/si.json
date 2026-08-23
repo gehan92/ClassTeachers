@@ -1243,10 +1243,15 @@
       "addQuestion": "+ ප්‍රශ්නයක් එකතු කරන්න",
       "emptyState": "ඔබේ පෙරහන් වලට ගැලපෙන ප්‍රශ්න නැත.",
       "batchAnyLabel": "මගේ සියලුම පන්ති",
+      "view": "බලන්න",
+      "hide": "සඟවන්න",
+      "edit": "සංස්කරණය",
+      "delete": "මකන්න",
       "filters": {
         "searchPlaceholder": "මාතෘකාව හෝ පෙළ අනුව සොයන්න...",
         "allGrades": "සියලුම ශ්‍රේණි",
-        "allBatches": "සියලුම කණ්ඩායම්"
+        "allBatches": "සියලුම කණ්ඩායම්",
+        "allLanguages": "සියලුම භාෂා"
       },
       "columns": {
         "question": "ප්‍රශ්නය",
@@ -1254,12 +1259,19 @@
         "grade": "ශ්‍රේණිය",
         "batch": "කණ්ඩායම",
         "type": "වර්ගය",
+        "language": "භාෂාව",
         "difficulty": "දුෂ්කරතා මට්ටම",
-        "marks": "ලකුණු"
+        "marks": "ලකුණු",
+        "actions": "ක්‍රියා"
       },
       "typeLabel": {
         "mcq": "බහුවරණ",
         "essay": "රචනා"
+      },
+      "languages": {
+        "en": "ඉංග්‍රීසි",
+        "si": "සිංහල",
+        "ta": "දෙමළ"
       },
       "difficultyLabel": {
         "easy": "පහසු",
@@ -1268,6 +1280,7 @@
       },
       "form": {
         "title": "නව ප්‍රශ්නය",
+        "editTitle": "ප්‍රශ්නය සංස්කරණය කරන්න",
         "textLabel": "ප්‍රශ්න පෙළ",
         "textPlaceholder": "ප්‍රශ්නය ටයිප් කරන්න...",
         "topicLabel": "මාතෘකාව",
@@ -1277,12 +1290,15 @@
         "batchLabel": "කණ්ඩායම",
         "batchAny": "ඕනෑම කණ්ඩායමක් (මගේ සියලුම පන්ති)",
         "difficultyLabel": "දුෂ්කරතා මට්ටම",
+        "languageLabel": "භාෂාව",
         "typeLabel": "ප්‍රශ්න වර්ගය",
         "typeMcq": "බහුවරණ",
         "typeEssay": "රචනා",
         "optionsLabel": "පිළිතුරු විකල්ප",
         "optionPlaceholder": "විකල්පය {number}",
         "optionFallback": "විකල්පය {number}",
+        "addOption": "විකල්පයක් එකතු කරන්න",
+        "removeOption": "විකල්පය ඉවත් කරන්න",
         "correctHint": "නිවැරදි විකල්පය අසල ඇති රේඩියෝ බොත්තම තෝරන්න."
       }
     },

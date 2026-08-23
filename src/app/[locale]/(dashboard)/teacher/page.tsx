@@ -250,7 +250,9 @@ export default async function TeacherDashboardPage({
 
   const { data: questionRows } = await supabase
     .from("question_bank_items")
-    .select("id, question_text, topic, grade_band, batch_id, type, difficulty, marks, options, correct_option_id")
+    .select(
+      "id, question_text, topic, grade_band, batch_id, type, difficulty, marks, language, options, correct_option_id",
+    )
     .eq("owner_type", "teacher")
     .eq("owner_id", userId)
     .order("created_at", { ascending: false });
@@ -264,6 +266,7 @@ export default async function TeacherDashboardPage({
     type: q.type,
     difficulty: q.difficulty,
     marks: q.marks,
+    language: (q.language ?? "en") as QuestionBankItem["language"],
     options: (q.options as QuestionBankItem["options"]) ?? undefined,
     correctOptionId: q.correct_option_id ?? undefined,
   }));
@@ -496,7 +499,7 @@ export default async function TeacherDashboardPage({
           label: t("groupContent"),
           items: [
             { key: "notes", label: t("tabs.notes"), count: notes.length },
-            { key: "questionBank", label: t("tabs.questionBank"), count: 12 },
+            { key: "questionBank", label: t("tabs.questionBank"), count: questions.length },
             { key: "exams", label: t("tabs.exams"), count: examRows?.length ?? 0 },
             { key: "assignments", label: t("tabs.assignments"), count: assignments.length },
           ],

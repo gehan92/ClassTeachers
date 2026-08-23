@@ -1243,10 +1243,15 @@
       "addQuestion": "+ Add question",
       "emptyState": "No questions match your filters.",
       "batchAnyLabel": "All my classes",
+      "view": "View",
+      "hide": "Hide",
+      "edit": "Edit",
+      "delete": "Delete",
       "filters": {
         "searchPlaceholder": "Search by topic or text...",
         "allGrades": "All grades",
-        "allBatches": "All batches"
+        "allBatches": "All batches",
+        "allLanguages": "All languages"
       },
       "columns": {
         "question": "Question",
@@ -1254,12 +1259,19 @@
         "grade": "Grade",
         "batch": "Batch",
         "type": "Type",
+        "language": "Language",
         "difficulty": "Difficulty",
-        "marks": "Marks"
+        "marks": "Marks",
+        "actions": "Actions"
       },
       "typeLabel": {
         "mcq": "MCQ",
         "essay": "Essay"
+      },
+      "languages": {
+        "en": "English",
+        "si": "Sinhala",
+        "ta": "Tamil"
       },
       "difficultyLabel": {
         "easy": "Easy",
@@ -1268,6 +1280,7 @@
       },
       "form": {
         "title": "New question",
+        "editTitle": "Edit question",
         "textLabel": "Question text",
         "textPlaceholder": "Type the question...",
         "topicLabel": "Topic",
@@ -1277,12 +1290,15 @@
         "batchLabel": "Batch",
         "batchAny": "Any batch (all my classes)",
         "difficultyLabel": "Difficulty",
+        "languageLabel": "Language",
         "typeLabel": "Question type",
         "typeMcq": "MCQ",
         "typeEssay": "Essay",
         "optionsLabel": "Answer options",
         "optionPlaceholder": "Option {number}",
         "optionFallback": "Option {number}",
+        "addOption": "Add option",
+        "removeOption": "Remove option",
         "correctHint": "Select the radio button next to the correct option."
       }
     },

@@ -26,7 +26,8 @@ export type QuestionBankItem = {
   type: "mcq" | "essay";
   difficulty: "easy" | "medium" | "hard";
   marks: number;
-  /** MCQ only — exactly 4 options in practice, not enforced by the type. */
+  language: "en" | "si" | "ta";
+  /** MCQ only — any number of options (2+), one correct. */
   options?: McqOption[];
   /** MCQ only — the id of the correct entry in `options`. */
   correctOptionId?: string;

@@ -400,6 +400,7 @@ export type Database = {
           marks: number;
           grade_band: "1-5" | "6-9" | "10-11" | "12-13" | "campus" | null;
           batch_id: string | null;
+          language: "en" | "si" | "ta";
           options: Json | null;
           correct_option_id: string | null;
           created_at: string;
@@ -418,6 +419,7 @@ export type Database = {
           marks?: number;
           grade_band?: "1-5" | "6-9" | "10-11" | "12-13" | "campus" | null;
           batch_id?: string | null;
+          language?: "en" | "si" | "ta";
           options?: Json | null;
           correct_option_id?: string | null;
           created_at?: string;
@@ -436,6 +438,7 @@ export type Database = {
           marks?: number;
           grade_band?: "1-5" | "6-9" | "10-11" | "12-13" | "campus" | null;
           batch_id?: string | null;
+          language?: "en" | "si" | "ta";
           options?: Json | null;
           correct_option_id?: string | null;
           created_at?: string;

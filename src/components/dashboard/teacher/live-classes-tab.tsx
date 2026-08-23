@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/features/status-badge";
 import { VideoCallPanel } from "@/components/dashboard/inline-file-viewer";
-import { createLiveClass } from "@/lib/dashboard/live-classes-actions";
+import { createLiveClass, deleteLiveClass } from "@/lib/dashboard/live-classes-actions";
 
 export type TeacherLiveClassRow = {
   id: string;
@@ -36,6 +36,7 @@ export function LiveClassesTab({ classes }: { classes: TeacherLiveClassRow[] }) 
   const [added, setAdded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   function resetForm() {
     setNewTitle("");
@@ -66,6 +67,15 @@ export function LiveClassesTab({ classes }: { classes: TeacherLiveClassRow[] }) 
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
     router.refresh();
+  }
+
+  async function handleDelete(liveClassId: string) {
+    setDeletingId(liveClassId);
+    const result = await deleteLiveClass(liveClassId);
+    setDeletingId(null);
+    if (!result.error) {
+      router.refresh();
+    }
   }
 
   const activeCall = classes.find((c) => c.id === activeCallId) ?? null;
@@ -150,6 +160,7 @@ export function LiveClassesTab({ classes }: { classes: TeacherLiveClassRow[] }) 
                 <TableHead>{t("columns.mode")}</TableHead>
                 <TableHead>{t("columns.joinLink")}</TableHead>
                 <TableHead>{t("columns.status")}</TableHead>
+                <TableHead>{t("columns.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -171,6 +182,17 @@ export function LiveClassesTab({ classes }: { classes: TeacherLiveClassRow[] }) 
                   </TableCell>
                   <TableCell>
                     <StatusBadge variant="active">{t("scheduled")}</StatusBadge>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={deletingId === c.id}
+                      onClick={() => handleDelete(c.id)}
+                    >
+                      {t("delete")}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

@@ -1373,7 +1373,8 @@
         "dayTime": "Day & time",
         "mode": "Mode",
         "joinLink": "Video call",
-        "status": "Status"
+        "status": "Status",
+        "actions": "Actions"
       },
       "online": "Online",
       "physical": "Physical",
@@ -1382,7 +1383,8 @@
       "classTitlePlaceholder": "Class title",
       "locationPlaceholder": "Location (e.g. Room 4, Colombo 05)",
       "videoRoomAutoNote": "A video call room is created automatically for this class — no Zoom/Meet link needed.",
-      "startClass": "Start video call"
+      "startClass": "Start video call",
+      "delete": "Delete"
     },
     "students": {
       "heading": "Students",

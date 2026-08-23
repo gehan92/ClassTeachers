@@ -1373,7 +1373,8 @@
         "dayTime": "දිනය සහ වේලාව",
         "mode": "ක්‍රමය",
         "joinLink": "වීඩියෝ ඇමතුම",
-        "status": "තත්ත්වය"
+        "status": "තත්ත්වය",
+        "actions": "ක්‍රියා"
       },
       "online": "මාර්ගගත",
       "physical": "භෞතික",
@@ -1382,7 +1383,8 @@
       "classTitlePlaceholder": "පන්ති මාතෘකාව",
       "locationPlaceholder": "ස්ථානය (උදා: කාමර 4, කොළඹ 05)",
       "videoRoomAutoNote": "මෙම පන්තිය සඳහා වීඩියෝ ඇමතුම් කාමරයක් ස්වයංක්‍රීයව සාදනු ලැබේ — Zoom/Meet සබැඳියක් අවශ්‍ය නැත.",
-      "startClass": "වීඩියෝ ඇමතුම ආරම්භ කරන්න"
+      "startClass": "වීඩියෝ ඇමතුම ආරම්භ කරන්න",
+      "delete": "මකන්න"
     },
     "students": {
       "heading": "සිසුන්",

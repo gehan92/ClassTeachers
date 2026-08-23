@@ -93,6 +93,22 @@ export async function createLiveClass(input: {
   return {};
 }
 
+/** live_class_links and attendance_records both cascade-delete on
+ * live_classes (0012, 0033) — the video room and any attendance already
+ * taken go with it, no manual cleanup needed. */
+export async function deleteLiveClass(liveClassId: string): Promise<ActionResult> {
+  if (!liveClassId) {
+    return { error: "Invalid class." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("live_classes").delete().eq("id", liveClassId);
+  if (error) {
+    return { error: "Couldn't delete this class. Please try again." };
+  }
+  return {};
+}
+
 /** Student clicking "Join" — marks themself present. RLS requires they're
  * actually enrolled with this live class's owner (0033). */
 export async function markAttendance(input: { liveClassId: string }): Promise<ActionResult> {

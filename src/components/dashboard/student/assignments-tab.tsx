@@ -16,14 +16,12 @@ import {
 } from "@/components/ui/table";
 import { PdfViewerPanel } from "@/components/dashboard/inline-file-viewer";
 import { submitAssignment } from "@/lib/dashboard/assignments-actions";
-import { groupByClass, GENERAL_BATCH_KEY } from "@/lib/dashboard/group-by-class";
-import { useClassFilter } from "@/lib/dashboard/use-class-filter";
+import { groupByClass } from "@/lib/dashboard/group-by-class";
 
 export type StudentAssignmentRow = {
   id: string;
   title: string;
   teacherName: string;
-  ownerId: string;
   batchId: string | null;
   batchTitle: string | null;
   lessonTitle: string | null;
@@ -43,27 +41,12 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
   const [activeAssignmentId, setActiveAssignmentId] = useState<string | null>(null);
   const [viewingWorksheetId, setViewingWorksheetId] = useState<string | null>(null);
 
-  const { filterKey, clearFilter } = useClassFilter();
-
   const dueAssignments = assignments.filter((a) => a.submission?.status !== "graded");
-  const allPastAssignments = assignments.filter((a) => a.submission?.status === "graded");
+  const pastAssignments = assignments.filter((a) => a.submission?.status === "graded");
   const groupedDue = useMemo(
     () => groupByClass(dueAssignments.map((a) => ({ ...a, ownerName: a.teacherName }))),
     [dueAssignments],
   );
-  const visibleDueGroups = filterKey ? groupedDue.filter((g) => g.key === filterKey) : groupedDue;
-  const pastAssignments = filterKey
-    ? allPastAssignments.filter((a) => `${a.ownerId}::${a.batchId ?? GENERAL_BATCH_KEY}` === filterKey)
-    : allPastAssignments;
-  // A class with everything already graded has nothing in visibleDueGroups
-  // to read a heading from, so fall back to the (also filtered) past row.
-  const filterHeading =
-    visibleDueGroups[0]?.heading ??
-    (pastAssignments[0]
-      ? pastAssignments[0].batchTitle
-        ? `${pastAssignments[0].teacherName} — ${pastAssignments[0].batchTitle}`
-        : pastAssignments[0].teacherName
-      : "");
 
   const viewingWorksheet = viewingWorksheetId
     ? (assignments.find((a) => a.id === viewingWorksheetId) ?? null)
@@ -100,25 +83,16 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
         <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
 
-      {filterKey && (
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-secondary/30 px-4 py-2.5">
-          <span className="text-sm text-foreground">{tc("filteredBanner", { heading: filterHeading })}</span>
-          <button type="button" onClick={clearFilter} className="text-sm font-semibold text-primary hover:underline">
-            {tc("showAllClasses")}
-          </button>
-        </div>
-      )}
-
       <h2 className="mb-1 text-lg font-semibold text-foreground">{t("dueTitle")}</h2>
       <p className="mb-4 text-sm text-muted-foreground">{t("dueSubtitle")}</p>
 
-      {visibleDueGroups.length === 0 ? (
+      {dueAssignments.length === 0 ? (
         <div className="mb-8 rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
           {t("dueEmpty")}
         </div>
       ) : (
         <div className="mb-8 flex flex-col gap-5">
-          {visibleDueGroups.map((group) => (
+          {groupedDue.map((group) => (
             <div key={group.key}>
               <h3 className="mb-2 text-sm font-semibold text-foreground">{group.heading}</h3>
               <div className="flex flex-col gap-3">

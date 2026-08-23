@@ -928,9 +928,7 @@
       "browseEmpty": "No classes are open to join right now.",
       "modeOnline": "Online",
       "modePhysical": "Physical",
-      "requestToJoin": "Request to join",
-      "viewNotes": "View notes",
-      "viewAssignments": "View assignments"
+      "requestToJoin": "Request to join"
     },
     "live": {
       "title": "Live Classes",
@@ -1050,9 +1048,7 @@
       "backToAssignments": "Back to assignments"
     },
     "common": {
-      "close": "Close",
-      "filteredBanner": "Showing: {heading}",
-      "showAllClasses": "Show all classes"
+      "close": "Close"
     }
   },
   "teacherDashboard": {

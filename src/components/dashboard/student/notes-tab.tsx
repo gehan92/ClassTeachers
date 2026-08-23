@@ -5,12 +5,10 @@ import { useLocale, useTranslations } from "next-intl";
 import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { groupByClass } from "@/lib/dashboard/group-by-class";
-import { useClassFilter } from "@/lib/dashboard/use-class-filter";
 
 export type StudentNoteRow = {
   id: string;
   title: string;
-  ownerId: string;
   batchId: string | null;
   batchTitle: string | null;
   ownerName: string;
@@ -19,12 +17,9 @@ export type StudentNoteRow = {
 
 export function NotesTab({ notes, studentName }: { notes: StudentNoteRow[]; studentName: string }) {
   const t = useTranslations("studentDashboard.notes");
-  const tc = useTranslations("studentDashboard.common");
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
   const openNote = notes.find((note) => note.id === openNoteId) ?? null;
   const groupedNotes = useMemo(() => groupByClass(notes), [notes]);
-  const { filterKey, clearFilter } = useClassFilter();
-  const visibleGroups = filterKey ? groupedNotes.filter((g) => g.key === filterKey) : groupedNotes;
 
   return (
     <div>
@@ -35,50 +30,36 @@ export function NotesTab({ notes, studentName }: { notes: StudentNoteRow[]; stud
 
       {openNote ? (
         <NoteViewer note={openNote} studentName={studentName} onClose={() => setOpenNoteId(null)} />
+      ) : notes.length === 0 ? (
+        <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
+          {t("emptyState")}
+        </div>
       ) : (
-        <>
-          {filterKey && (
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-secondary/30 px-4 py-2.5">
-              <span className="text-sm text-foreground">
-                {tc("filteredBanner", { heading: visibleGroups[0]?.heading ?? "" })}
-              </span>
-              <button type="button" onClick={clearFilter} className="text-sm font-semibold text-primary hover:underline">
-                {tc("showAllClasses")}
-              </button>
-            </div>
-          )}
-          {visibleGroups.length === 0 ? (
-            <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
-              {t("emptyState")}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-5">
-              {visibleGroups.map((group) => (
-                <div key={group.key}>
-                  <h3 className="mb-2 text-sm font-semibold text-foreground">{group.heading}</h3>
-                  <div className="rounded-lg border border-border bg-white">
-                    {group.rows.map((note) => (
-                      <div key={note.id} className="flex items-center gap-3 border-b border-border p-4 last:border-b-0">
-                        <FileText className="size-4 shrink-0 text-primary" />
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium text-foreground">{note.title}</div>
-                          {note.pageCount && (
-                            <div className="text-xs text-muted-foreground">
-                              {t("pagesLabel", { pages: note.pageCount })}
-                            </div>
-                          )}
+        <div className="flex flex-col gap-5">
+          {groupedNotes.map((group) => (
+            <div key={group.key}>
+              <h3 className="mb-2 text-sm font-semibold text-foreground">{group.heading}</h3>
+              <div className="rounded-lg border border-border bg-white">
+                {group.rows.map((note) => (
+                  <div key={note.id} className="flex items-center gap-3 border-b border-border p-4 last:border-b-0">
+                    <FileText className="size-4 shrink-0 text-primary" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-foreground">{note.title}</div>
+                      {note.pageCount && (
+                        <div className="text-xs text-muted-foreground">
+                          {t("pagesLabel", { pages: note.pageCount })}
                         </div>
-                        <Button size="sm" variant="outline" onClick={() => setOpenNoteId(note.id)}>
-                          {t("openViewer")}
-                        </Button>
-                      </div>
-                    ))}
+                      )}
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => setOpenNoteId(note.id)}>
+                      {t("openViewer")}
+                    </Button>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          )}
-        </>
+          ))}
+        </div>
       )}
     </div>
   );

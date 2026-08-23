@@ -36,8 +36,10 @@ export function TeacherProfileView({
         <div className="flex flex-col gap-5">
           {/* Pricing now lives on individual ads (see /ad/[id]), not the
              profile itself — a teacher can charge differently per class,
-             so a single rate here would be misleading. */}
-          <PriceBox joinHref="/signup" ownerType="teacher" ownerId={teacher.id} />
+             so a single rate here would be misleading. Join/Message are
+             visitor-only actions, same reasoning as Hero's Join button
+             below — hidden entirely on the teacher's own view. */}
+          {!isOwnerView && <PriceBox joinHref="/signup" ownerType="teacher" ownerId={teacher.id} />}
           {teacher.adText && (
             <AdSlot size="sm" eyebrow={teacher.adHeadline ?? teacher.headline ?? ""} text={teacher.adText} />
           )}

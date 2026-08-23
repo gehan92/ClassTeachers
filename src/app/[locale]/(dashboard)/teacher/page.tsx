@@ -215,6 +215,7 @@ export default async function TeacherDashboardPage({
   const notes: TeacherNoteRow[] = (noteRows ?? []).map((n) => ({
     id: n.id,
     title: n.title,
+    batchId: n.batch_id,
     batchTitle: batches.find((b) => b.id === n.batch_id)?.title ?? null,
     pageCount: n.page_count,
     isPublic: n.is_public,

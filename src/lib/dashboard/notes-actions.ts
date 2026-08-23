@@ -81,6 +81,44 @@ export async function uploadNote(formData: FormData): Promise<ActionResult> {
   return {};
 }
 
+const updateNoteSchema = z.object({
+  title: z.string().trim().min(2),
+  batchId: z.string().uuid().optional(),
+});
+
+export async function updateNote(
+  noteId: string,
+  input: { title: string; batchId?: string },
+): Promise<ActionResult> {
+  if (!noteId) {
+    return { error: "Invalid note." };
+  }
+  const parsed = updateNoteSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: "Please check the title and try again." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error } = await supabase
+    .from("notes")
+    .update({ title: parsed.data.title, batch_id: parsed.data.batchId ?? null })
+    .eq("id", noteId)
+    .eq("owner_type", "teacher")
+    .eq("owner_id", user.id);
+  if (error) {
+    return { error: "Couldn't update this note. Please try again." };
+  }
+
+  return {};
+}
+
 export async function deleteNote(noteId: string): Promise<ActionResult> {
   if (!noteId) {
     return { error: "Invalid note." };

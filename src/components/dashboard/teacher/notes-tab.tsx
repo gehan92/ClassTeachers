@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,12 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LockPill } from "@/components/features/lock-pill";
-import { uploadNote, deleteNote, toggleNotePublic } from "@/lib/dashboard/notes-actions";
+import { uploadNote, updateNote, deleteNote, toggleNotePublic } from "@/lib/dashboard/notes-actions";
 import type { TeacherBatchRow } from "./classes-tab";
 
 export type TeacherNoteRow = {
   id: string;
   title: string;
+  batchId: string | null;
   batchTitle: string | null;
   pageCount: number | null;
   isPublic: boolean;
@@ -28,6 +29,7 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
   const t = useTranslations("teacherDashboard.notes");
   const tc = useTranslations("teacherDashboard.common");
   const router = useRouter();
+  const locale = useLocale();
   const fileInputId = useId();
 
   const [adding, setAdding] = useState(false);
@@ -40,7 +42,14 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [toggleError, setToggleError] = useState<string | null>(null);
+  const [viewingNoteId, setViewingNoteId] = useState<string | null>(null);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editBatchId, setEditBatchId] = useState<string>(GENERAL_BATCH);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
   const publicCount = notes.filter((n) => n.isPublic).length;
+  const viewingNote = notes.find((n) => n.id === viewingNoteId) ?? null;
 
   function resetForm() {
     setTitle("");
@@ -94,6 +103,63 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
       return;
     }
     router.refresh();
+  }
+
+  function startEdit(note: TeacherNoteRow) {
+    setEditingNoteId(note.id);
+    setEditTitle(note.title);
+    setEditBatchId(note.batchId ?? GENERAL_BATCH);
+    setEditError(null);
+  }
+
+  function cancelEdit() {
+    setEditingNoteId(null);
+    setEditError(null);
+  }
+
+  async function handleSaveEdit(noteId: string) {
+    if (!editTitle.trim()) {
+      setEditError(t("form.missingFields"));
+      return;
+    }
+    setEditSaving(true);
+    setEditError(null);
+    const result = await updateNote(noteId, {
+      title: editTitle.trim(),
+      batchId: editBatchId === GENERAL_BATCH ? undefined : editBatchId,
+    });
+    setEditSaving(false);
+    if (result.error) {
+      setEditError(result.error);
+      return;
+    }
+    setEditingNoteId(null);
+    router.refresh();
+  }
+
+  if (viewingNote) {
+    return (
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <div className="text-sm font-semibold text-foreground">{viewingNote.title}</div>
+            <div className="text-xs text-muted-foreground">
+              {viewingNote.batchTitle ?? t("form.batchGeneral")}
+            </div>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setViewingNoteId(null)}>
+            {t("closeViewer")}
+          </Button>
+        </div>
+        <div className="mx-auto h-[85vh] max-w-5xl overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+          <iframe
+            src={`/${locale}/notes/${viewingNote.id}/file#toolbar=0&navpanes=0&view=FitH`}
+            title={viewingNote.title}
+            className="size-full"
+          />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -188,37 +254,82 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
               </TableRow>
             </TableHeader>
             <TableBody>
-              {notes.map((note) => (
-                <TableRow key={note.id}>
-                  <TableCell className="max-w-72 whitespace-normal font-medium text-foreground">
-                    {note.title}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{note.batchTitle ?? t("form.batchGeneral")}</TableCell>
-                  <TableCell className="text-muted-foreground">{note.pageCount ?? "—"}</TableCell>
-                  <TableCell>
-                    <LockPill>{t("watermarked")}</LockPill>
-                  </TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={note.isPublic}
-                      disabled={togglingId === note.id || (!note.isPublic && publicCount >= MAX_PUBLIC_NOTES)}
-                      onCheckedChange={(checked) => handleTogglePublic(note.id, checked)}
-                      aria-label={t("columns.freePreview")}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={deletingId === note.id}
-                      onClick={() => handleDelete(note.id)}
-                    >
-                      {t("delete")}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {notes.map((note) => {
+                const isEditing = editingNoteId === note.id;
+                return (
+                  <TableRow key={note.id}>
+                    <TableCell className="max-w-72 whitespace-normal font-medium text-foreground">
+                      {isEditing ? (
+                        <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="bg-white" />
+                      ) : (
+                        note.title
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {isEditing ? (
+                        <Select value={editBatchId} onValueChange={(value) => setEditBatchId(value ?? GENERAL_BATCH)}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={GENERAL_BATCH}>{t("form.batchGeneral")}</SelectItem>
+                            {batches.map((batch) => (
+                              <SelectItem key={batch.id} value={batch.id}>
+                                {batch.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        (note.batchTitle ?? t("form.batchGeneral"))
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{note.pageCount ?? "—"}</TableCell>
+                    <TableCell>
+                      <LockPill>{t("watermarked")}</LockPill>
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={note.isPublic}
+                        disabled={togglingId === note.id || (!note.isPublic && publicCount >= MAX_PUBLIC_NOTES)}
+                        onCheckedChange={(checked) => handleTogglePublic(note.id, checked)}
+                        aria-label={t("columns.freePreview")}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {isEditing ? (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button type="button" size="sm" disabled={editSaving} onClick={() => handleSaveEdit(note.id)}>
+                            {tc("save")}
+                          </Button>
+                          <Button type="button" variant="outline" size="sm" onClick={cancelEdit}>
+                            {tc("cancel")}
+                          </Button>
+                          {editError && <span className="text-sm font-medium text-destructive">{editError}</span>}
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-1">
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setViewingNoteId(note.id)}>
+                            {t("view")}
+                          </Button>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => startEdit(note)}>
+                            {t("edit")}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={deletingId === note.id}
+                            onClick={() => handleDelete(note.id)}
+                          >
+                            {t("delete")}
+                          </Button>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}

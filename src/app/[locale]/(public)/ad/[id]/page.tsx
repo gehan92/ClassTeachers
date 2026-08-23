@@ -108,11 +108,11 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
             <img
               src={ad.photo_url}
               alt=""
-              className="size-16 shrink-0 rounded-full border-4 border-white object-cover shadow-sm"
+              className="mx-auto size-20 shrink-0 rounded-full border-4 border-white object-cover shadow-sm sm:mx-0"
             />
           ) : (
             <div
-              className={`flex size-16 shrink-0 items-center justify-center rounded-full border-4 border-white font-display text-xl font-bold text-white shadow-sm ${avatarGradientClass(ad.teacher_id)}`}
+              className={`mx-auto flex size-20 shrink-0 items-center justify-center rounded-full border-4 border-white font-display text-2xl font-bold text-white shadow-sm sm:mx-0 ${avatarGradientClass(ad.teacher_id)}`}
             >
               {(ad.display_name ?? "T").charAt(0).toUpperCase()}
             </div>

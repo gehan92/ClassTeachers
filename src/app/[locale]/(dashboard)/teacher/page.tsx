@@ -504,6 +504,7 @@ export default async function TeacherDashboardPage({
     <DashboardShell
       userLabel={fullName}
       userInitial={userInitial}
+      userPhotoUrl={teacherProfile?.photo_url ?? null}
       logoutLabel={t("logout")}
       demoRole="teacher"
       groups={[

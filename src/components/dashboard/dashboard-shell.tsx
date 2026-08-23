@@ -191,6 +191,7 @@ export function DashboardShell({
   brandBadge,
   userLabel,
   userInitial,
+  userPhotoUrl,
   logoutLabel,
   demoRole,
   groups,
@@ -200,6 +201,7 @@ export function DashboardShell({
   brandBadge?: string;
   userLabel: string;
   userInitial: string;
+  userPhotoUrl?: string | null;
   logoutLabel: string;
   demoRole: DemoRole;
   groups: DashboardNavGroup[];
@@ -310,13 +312,18 @@ export function DashboardShell({
             </button>
           )}
           <LocaleSwitcher className="text-white/70 hover:bg-white/10 hover:text-white" />
-          <span
-            title={userLabel}
-            aria-label={userLabel}
-            className={`flex size-7 items-center justify-center rounded-full font-display text-xs font-bold text-white ${avatarGradientClass(userLabel)}`}
-          >
-            {userInitial}
-          </span>
+          {userPhotoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- public Supabase Storage URL, not a local/optimizable asset
+            <img src={userPhotoUrl} alt="" title={userLabel} className="size-7 shrink-0 rounded-full object-cover" />
+          ) : (
+            <span
+              title={userLabel}
+              aria-label={userLabel}
+              className={`flex size-7 items-center justify-center rounded-full font-display text-xs font-bold text-white ${avatarGradientClass(userLabel)}`}
+            >
+              {userInitial}
+            </span>
+          )}
           <form action={logOutAction}>
             <button
               type="submit"

@@ -17,11 +17,20 @@ export function ListingCard({ listing }: { listing: Listing }) {
         <span className="rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white">
           {listing.gradeChip}
         </span>
-        <div
-          className={`absolute -bottom-5.5 right-3.5 flex size-14 items-center justify-center rounded-full border-4 border-white font-display text-lg font-bold text-white shadow-sm ${avatarGradientClass(listing.id)}`}
-        >
-          {listing.avatarInitials}
-        </div>
+        {listing.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- public Supabase Storage URL, not a local/optimizable asset
+          <img
+            src={listing.photoUrl}
+            alt=""
+            className="absolute -bottom-5.5 right-3.5 size-14 rounded-full border-4 border-white object-cover shadow-sm"
+          />
+        ) : (
+          <div
+            className={`absolute -bottom-5.5 right-3.5 flex size-14 items-center justify-center rounded-full border-4 border-white font-display text-lg font-bold text-white shadow-sm ${avatarGradientClass(listing.id)}`}
+          >
+            {listing.avatarInitials}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col px-4 pb-4 pt-7.5">

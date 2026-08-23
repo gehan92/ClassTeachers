@@ -26,6 +26,7 @@ export type Listing = {
   /** Every grade level this listing actually covers — a single-item array for a teacher ad (one grade per ad), but potentially several for an institute spanning multiple grades across its teachers. Filtering should match against this, not the single `gradeBand` above. */
   gradeBands: GradeBand[];
   avatarInitials: string;
+  photoUrl?: string;
   rating: number;
   reviewCount: number;
   subjects: string[];

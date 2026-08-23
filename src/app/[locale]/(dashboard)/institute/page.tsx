@@ -229,6 +229,7 @@ export default async function InstituteDashboardPage({
     <DashboardShell
       userLabel={fullName}
       userInitial={userInitial}
+      userPhotoUrl={classProfile?.photo_url ?? null}
       logoutLabel={t("logout")}
       demoRole="class"
       groups={[

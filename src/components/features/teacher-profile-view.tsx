@@ -89,11 +89,11 @@ function Hero({ teacher, isOwnerView }: { teacher: TeacherProfileDetail; isOwner
             <img
               src={teacher.photoUrl}
               alt=""
-              className="size-20 shrink-0 rounded-full border-4 border-white object-cover shadow-sm"
+              className="mx-auto size-28 shrink-0 rounded-full border-4 border-white object-cover shadow-md sm:mx-0 sm:size-36"
             />
           ) : (
             <div
-              className={`flex size-20 shrink-0 items-center justify-center rounded-full border-4 border-white font-display text-2xl font-bold text-white shadow-sm ${avatarGradientClass(teacher.id)}`}
+              className={`mx-auto flex size-28 shrink-0 items-center justify-center rounded-full border-4 border-white font-display text-4xl font-bold text-white shadow-md sm:mx-0 sm:size-36 ${avatarGradientClass(teacher.id)}`}
             >
               {teacher.avatarInitials}
             </div>

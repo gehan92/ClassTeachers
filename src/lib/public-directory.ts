@@ -62,6 +62,7 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
       gradeBand: (row.grade_band as GradeBand | null) ?? null,
       gradeBands: row.grade_band ? [row.grade_band as GradeBand] : [],
       avatarInitials: row.display_name.split(" ")[0] ?? row.display_name,
+      photoUrl: row.photo_url ?? undefined,
       rating: Number(row.rating),
       reviewCount: Number(row.review_count),
       subjects,

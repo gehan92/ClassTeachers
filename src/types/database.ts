@@ -290,6 +290,7 @@ export type Database = {
           file_path: string;
           page_count: number | null;
           watermark_settings: Json;
+          is_public: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -304,6 +305,7 @@ export type Database = {
           file_path: string;
           page_count?: number | null;
           watermark_settings?: Json;
+          is_public?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -318,6 +320,7 @@ export type Database = {
           file_path?: string;
           page_count?: number | null;
           watermark_settings?: Json;
+          is_public?: boolean;
           created_at?: string;
           updated_at?: string;
         };

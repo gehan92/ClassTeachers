@@ -130,7 +130,7 @@ export default async function TeacherDashboardPage({
         .eq("owner_id", userId),
       supabase
         .from("notes")
-        .select("id, title, batch_id, page_count, created_at")
+        .select("id, title, batch_id, page_count, is_public, created_at")
         .eq("owner_type", "teacher")
         .eq("owner_id", userId)
         .order("created_at", { ascending: false }),
@@ -217,6 +217,7 @@ export default async function TeacherDashboardPage({
     title: n.title,
     batchTitle: batches.find((b) => b.id === n.batch_id)?.title ?? null,
     pageCount: n.page_count,
+    isPublic: n.is_public,
   }));
 
   const students: TeacherStudentRow[] = acceptedEnrollments.map((enrollment) => {

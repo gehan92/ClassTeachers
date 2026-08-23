@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { MapPin, Star } from "lucide-react";
+import { FileText, MapPin, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { JoinRequestBox } from "@/components/features/join-request-box";
 import { ShareButtons } from "@/components/features/share-buttons";
@@ -52,6 +52,18 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
     viewerRole = profile?.role ?? null;
     existingStatus = existing?.status ?? null;
   }
+
+  // Notes flagged is_public (0045) are visible to any signed-in account, not
+  // just students enrolled with this teacher — a guest query here just comes
+  // back empty under RLS, so the section naturally disappears for guests
+  // rather than needing a separate "sign in to see" branch.
+  const { data: freeNoteRows } = await supabase
+    .from("notes")
+    .select("id, title")
+    .eq("owner_type", "teacher")
+    .eq("owner_id", ad.teacher_id)
+    .eq("is_public", true)
+    .order("created_at", { ascending: false });
 
   const t = await getTranslations("adPage");
   const tg = await getTranslations("search");
@@ -175,6 +187,29 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
             isStudent={viewerRole === "student"}
             existingStatus={existingStatus}
           />
+
+          {freeNoteRows && freeNoteRows.length > 0 && (
+            <div className="flex h-fit flex-col gap-2.5 rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+              <h3 className="text-sm font-semibold text-foreground">
+                {t("resourcesHeading", { name: ad.display_name ?? t("teacherFallback") })}
+              </h3>
+              <ul className="flex flex-col gap-2">
+                {freeNoteRows.map((note) => (
+                  <li key={note.id}>
+                    <a
+                      href={`/notes/${note.id}/file`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-primary hover:underline"
+                    >
+                      <FileText className="size-4 shrink-0" />
+                      <span className="truncate">{note.title}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <ShareButtons title={ad.ad_title} />
         </div>

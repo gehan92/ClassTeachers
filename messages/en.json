@@ -1093,6 +1093,7 @@
       "heading": "Notes & tutorials",
       "uploadNote": "+ Upload note",
       "emptyState": "You haven't uploaded any notes yet.",
+      "freePreviewCount": "{count} of {max} notes featured as free previews on your ad — visible to anyone with an account, without needing to join your class.",
       "columns": {
         "title": "Title",
         "subject": "Subject",
@@ -1100,6 +1101,7 @@
         "pages": "Pages",
         "views": "Views",
         "protection": "Protection",
+        "freePreview": "Free preview",
         "actions": "Actions"
       },
       "watermarked": "Watermarked",
@@ -1415,6 +1417,7 @@
     "schedule": "Schedule",
     "limitedNote": "This is a limited preview. Full profile details unlock once the teacher accepts your request to join.",
     "levelHeading": "Level of the lessons",
+    "resourcesHeading": "Free notes from {name}",
     "share": {
       "heading": "Share this ad"
     },

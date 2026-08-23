@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LockPill } from "@/components/features/lock-pill";
-import { uploadNote, deleteNote } from "@/lib/dashboard/notes-actions";
+import { uploadNote, deleteNote, toggleNotePublic } from "@/lib/dashboard/notes-actions";
 import type { TeacherBatchRow } from "./classes-tab";
 
 export type TeacherNoteRow = {
@@ -17,9 +18,11 @@ export type TeacherNoteRow = {
   title: string;
   batchTitle: string | null;
   pageCount: number | null;
+  isPublic: boolean;
 };
 
 const GENERAL_BATCH = "general";
+const MAX_PUBLIC_NOTES = 3;
 
 export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches: TeacherBatchRow[] }) {
   const t = useTranslations("teacherDashboard.notes");
@@ -35,6 +38,9 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [toggleError, setToggleError] = useState<string | null>(null);
+  const publicCount = notes.filter((n) => n.isPublic).length;
 
   function resetForm() {
     setTitle("");
@@ -78,10 +84,27 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
     }
   }
 
+  async function handleTogglePublic(noteId: string, next: boolean) {
+    setTogglingId(noteId);
+    setToggleError(null);
+    const result = await toggleNotePublic(noteId, next);
+    setTogglingId(null);
+    if (result.error) {
+      setToggleError(result.error);
+      return;
+    }
+    router.refresh();
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl">{t("heading")}</h1>
+        <div>
+          <h1 className="text-2xl">{t("heading")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t("freePreviewCount", { count: publicCount, max: MAX_PUBLIC_NOTES })}
+          </p>
+        </div>
         <div className="flex items-center gap-3">
           <Button type="button" onClick={() => setAdding((v) => !v)}>
             {t("uploadNote")}
@@ -89,6 +112,7 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
           {added && <span className="text-sm font-medium text-success">{tc("added")}</span>}
         </div>
       </div>
+      {toggleError && <p className="text-sm font-medium text-destructive">{toggleError}</p>}
 
       {adding && (
         <div className="rounded-lg border border-border bg-white p-5">
@@ -159,6 +183,7 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
                 <TableHead>{t("columns.batch")}</TableHead>
                 <TableHead>{t("columns.pages")}</TableHead>
                 <TableHead>{t("columns.protection")}</TableHead>
+                <TableHead>{t("columns.freePreview")}</TableHead>
                 <TableHead>{t("columns.actions")}</TableHead>
               </TableRow>
             </TableHeader>
@@ -172,6 +197,14 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
                   <TableCell className="text-muted-foreground">{note.pageCount ?? "—"}</TableCell>
                   <TableCell>
                     <LockPill>{t("watermarked")}</LockPill>
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={note.isPublic}
+                      disabled={togglingId === note.id || (!note.isPublic && publicCount >= MAX_PUBLIC_NOTES)}
+                      onCheckedChange={(checked) => handleTogglePublic(note.id, checked)}
+                      aria-label={t("columns.freePreview")}
+                    />
                   </TableCell>
                   <TableCell>
                     <Button

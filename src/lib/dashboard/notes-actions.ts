@@ -5,6 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 
 type ActionResult = { error: string } | { error?: undefined };
 
+// Keeps the free-preview section on a teacher's ad a teaser, not a
+// substitute for actually joining their class.
+const MAX_PUBLIC_NOTES = 3;
+
 const uploadNoteSchema = z.object({
   ownerType: z.enum(["teacher", "class"]),
   title: z.string().trim().min(2),
@@ -94,5 +98,43 @@ export async function deleteNote(noteId: string): Promise<ActionResult> {
   }
 
   await supabase.storage.from("notes").remove([note.file_path]);
+  return {};
+}
+
+export async function toggleNotePublic(noteId: string, isPublic: boolean): Promise<ActionResult> {
+  if (!noteId) {
+    return { error: "Invalid note." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  if (isPublic) {
+    const { count } = await supabase
+      .from("notes")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_type", "teacher")
+      .eq("owner_id", user.id)
+      .eq("is_public", true);
+    if ((count ?? 0) >= MAX_PUBLIC_NOTES) {
+      return { error: `You can only feature up to ${MAX_PUBLIC_NOTES} notes as free previews.` };
+    }
+  }
+
+  const { error } = await supabase
+    .from("notes")
+    .update({ is_public: isPublic })
+    .eq("id", noteId)
+    .eq("owner_type", "teacher")
+    .eq("owner_id", user.id);
+  if (error) {
+    return { error: "Couldn't update this note. Please try again." };
+  }
+
   return {};
 }

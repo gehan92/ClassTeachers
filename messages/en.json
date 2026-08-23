@@ -1392,6 +1392,8 @@
     "subtitleClass": "Filter by subject, location and grade to compare verified institutes.",
     "titleCampus": "Find a campus lecturer",
     "subtitleCampus": "Filter by subject, location and grade to compare verified campus & professional lecturers.",
+    "titleOnline": "Find online lessons",
+    "subtitleOnline": "Filter by subject, location and grade to compare verified teachers running live online classes.",
     "resultsCount": "{count} results",
     "noResults": "No teachers or classes match your filters yet. Try clearing a filter or searching a different subject.",
     "clearFilters": "Clear filters",

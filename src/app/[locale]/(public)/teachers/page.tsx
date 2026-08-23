@@ -9,7 +9,14 @@ const headingKeyByCategory = {
   campus: { title: "titleCampus", subtitle: "subtitleCampus" },
 } as const;
 
-function headingKeys(category: string | string[] | undefined) {
+function headingKeys(category: string | string[] | undefined, online: string | string[] | undefined) {
+  // Checked first regardless of category — "Search Online Lessons" always
+  // sends category=teacher, so without this an online-lessons visitor would
+  // see the exact same generic "Find your teacher" heading as a plain
+  // teacher search, with nothing marking the view as different.
+  if (online === "true") {
+    return { title: "titleOnline", subtitle: "subtitleOnline" } as const;
+  }
   if (typeof category === "string" && category in headingKeyByCategory) {
     return headingKeyByCategory[category as keyof typeof headingKeyByCategory];
   }
@@ -26,7 +33,7 @@ export default async function TeachersPage({ params, searchParams }: PageProps<"
     searchParams,
   ]);
   const listings = await getPublicListings(tPage, tSearch);
-  const { title, subtitle } = headingKeys(resolvedSearchParams.category);
+  const { title, subtitle } = headingKeys(resolvedSearchParams.category, resolvedSearchParams.online);
 
   return (
     <section className="py-12">

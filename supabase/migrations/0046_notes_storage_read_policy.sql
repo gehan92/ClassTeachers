@@ -9,6 +9,8 @@
 -- mirroring the same visibility rule the notes table already enforces,
 -- joined on file_path -> storage object name.
 
+drop policy if exists "notes storage object readable by anyone who can see its row" on storage.objects;
+
 create policy "notes storage object readable by anyone who can see its row"
   on storage.objects for select
   using (

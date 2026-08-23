@@ -32,6 +32,7 @@ export type StudentAssignmentRow = {
     grade: number | null;
     feedback: string | null;
     submittedLabel: string | null;
+    photoUrls: string[];
   } | null;
 };
 
@@ -40,6 +41,7 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
   const tc = useTranslations("studentDashboard.common");
   const [activeAssignmentId, setActiveAssignmentId] = useState<string | null>(null);
   const [viewingWorksheetId, setViewingWorksheetId] = useState<string | null>(null);
+  const [viewingResultId, setViewingResultId] = useState<string | null>(null);
 
   const dueAssignments = assignments.filter((a) => a.submission?.status !== "graded");
   const pastAssignments = assignments.filter((a) => a.submission?.status === "graded");
@@ -61,6 +63,11 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
         onClose={() => setViewingWorksheetId(null)}
       />
     );
+  }
+
+  const viewingResult = viewingResultId ? (assignments.find((a) => a.id === viewingResultId) ?? null) : null;
+  if (viewingResult) {
+    return <AssignmentResultPanel assignment={viewingResult} onClose={() => setViewingResultId(null)} />;
   }
 
   const activeAssignment = activeAssignmentId
@@ -102,6 +109,7 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
                     assignment={assignment}
                     onOpen={() => setActiveAssignmentId(assignment.id)}
                     onViewWorksheet={() => setViewingWorksheetId(assignment.id)}
+                    onViewResult={() => setViewingResultId(assignment.id)}
                   />
                 ))}
               </div>
@@ -123,6 +131,7 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
                 <TableHead>{t("tableGrade")}</TableHead>
                 <TableHead>{t("tableFeedback")}</TableHead>
                 <TableHead>{t("tableDate")}</TableHead>
+                <TableHead>{t("tableResult")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -136,6 +145,17 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
                   </TableCell>
                   <TableCell className="whitespace-normal text-muted-foreground">
                     {assignment.submission?.submittedLabel ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 font-semibold text-primary hover:underline"
+                      onClick={() => setViewingResultId(assignment.id)}
+                    >
+                      {t("viewResult")}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -151,10 +171,12 @@ function AssignmentCard({
   assignment,
   onOpen,
   onViewWorksheet,
+  onViewResult,
 }: {
   assignment: StudentAssignmentRow;
   onOpen: () => void;
   onViewWorksheet: () => void;
+  onViewResult: () => void;
 }) {
   const t = useTranslations("studentDashboard.assignments");
 
@@ -184,9 +206,20 @@ function AssignmentCard({
           </Button>
         )}
         {assignment.submission?.status === "pending" && (
-          <Button size="sm" variant="outline" onClick={onOpen}>
-            {t("resubmit")}
-          </Button>
+          <>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-auto p-0 font-semibold text-primary hover:underline"
+              onClick={onViewResult}
+            >
+              {t("viewSubmission")}
+            </Button>
+            <Button size="sm" variant="outline" onClick={onOpen}>
+              {t("resubmit")}
+            </Button>
+          </>
         )}
       </div>
     </div>
@@ -336,6 +369,71 @@ function SubmitWorkspace({
           {t("backToAssignments")}
         </Button>
         {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+      </div>
+    </div>
+  );
+}
+
+function AssignmentResultPanel({ assignment, onClose }: { assignment: StudentAssignmentRow; onClose: () => void }) {
+  const t = useTranslations("studentDashboard.assignments");
+  const tc = useTranslations("studentDashboard.common");
+  const photoUrls = assignment.submission?.photoUrls ?? [];
+
+  return (
+    <div>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <div className="text-sm font-semibold text-foreground">{assignment.title}</div>
+          <div className="text-xs text-muted-foreground">
+            {assignment.teacherName}
+            {assignment.batchTitle ? ` · ${assignment.batchTitle}` : ""}
+          </div>
+        </div>
+        <Button size="sm" variant="outline" onClick={onClose}>
+          {tc("close")}
+        </Button>
+      </div>
+
+      {assignment.submission?.status === "graded" && (
+        <div className="mb-5 flex flex-wrap items-center gap-5 rounded-lg border border-border bg-white p-4">
+          <div>
+            <div className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+              {t("resultGradeHeading")}
+            </div>
+            <div className="text-lg font-semibold text-foreground">{assignment.submission.grade ?? "—"}</div>
+          </div>
+          <p className="min-w-0 flex-1 text-sm text-muted-foreground">
+            {assignment.submission.feedback || t("resultNoFeedback")}
+          </p>
+        </div>
+      )}
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div>
+          <h3 className="mb-2 text-sm font-semibold text-foreground">{t("resultWorksheetHeading")}</h3>
+          <div className="h-[70vh] overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+            <iframe
+              src={`${assignment.fileUrl}#toolbar=0&navpanes=0&view=FitH`}
+              title={assignment.title}
+              className="size-full"
+            />
+          </div>
+        </div>
+        <div>
+          <h3 className="mb-2 text-sm font-semibold text-foreground">{t("resultAnswerHeading")}</h3>
+          {photoUrls.length === 0 ? (
+            <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
+              {t("resultNoAnswer")}
+            </div>
+          ) : (
+            <div className="flex h-[70vh] flex-col gap-3 overflow-y-auto rounded-lg border border-border bg-white p-3">
+              {photoUrls.map((url) => (
+                // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, not a local/optimizable asset
+                <img key={url} src={url} alt="" className="w-full rounded-md border border-border" />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

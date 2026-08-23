@@ -236,13 +236,24 @@ export default async function StudentDashboardPage({
       .order("created_at", { ascending: false }),
     supabase
       .from("assignment_submissions")
-      .select("assignment_id, status, grade, feedback, submitted_at")
+      .select("assignment_id, status, grade, feedback, submitted_at, photo_urls")
       .eq("student_id", userId),
   ]);
 
   const assignmentSubmissionByAssignmentId = new Map(
     (assignmentSubmissionRows ?? []).map((s) => [s.assignment_id, s]),
   );
+
+  const submissionPhotoPaths = (assignmentSubmissionRows ?? []).flatMap((s) => s.photo_urls ?? []);
+  const submissionPhotoUrlByPath = new Map<string, string>();
+  if (submissionPhotoPaths.length > 0) {
+    const { data: signedSubmissionUrls } = await supabase.storage
+      .from("submissions")
+      .createSignedUrls(submissionPhotoPaths, 3600);
+    for (const entry of signedSubmissionUrls ?? []) {
+      if (entry.path && entry.signedUrl) submissionPhotoUrlByPath.set(entry.path, entry.signedUrl);
+    }
+  }
 
   const assignmentFilePaths = (assignmentRows ?? []).map((a) => a.file_path);
   const assignmentFileUrlByPath = new Map<string, string>();
@@ -279,6 +290,9 @@ export default async function StudentDashboardPage({
             grade: submission.grade,
             feedback: submission.feedback,
             submittedLabel: submission.submitted_at ? dateFormatter.format(new Date(submission.submitted_at)) : null,
+            photoUrls: (submission.photo_urls ?? [])
+              .map((path) => submissionPhotoUrlByPath.get(path))
+              .filter((url): url is string => Boolean(url)),
           }
         : null,
     };

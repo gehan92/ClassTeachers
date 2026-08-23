@@ -371,11 +371,18 @@ export function DashboardShell({
         <NavList groups={groups} activeTab={activeTab} onSelect={select} orientation="horizontal" />
       </div>
 
-      <div className="mx-auto flex w-full max-w-[1400px] flex-1">
+      {/* Not max-w/mx-auto'd like the header/footer's inner content — the
+         sidebar needs to stay pinned flush against the left edge at every
+         viewport width (including past 1400px, whether from a wide monitor
+         or the browser zoomed out below 100%). Only the page content inside
+         <main> gets capped/centered; the sidebar never should be. */}
+      <div className="flex w-full flex-1">
         <aside className="hidden w-60 shrink-0 border-r border-border bg-white md:block">
           <NavList groups={groups} activeTab={activeTab} onSelect={select} orientation="vertical" />
         </aside>
-        <main className="min-w-0 flex-1 p-5 sm:p-7">{panels[activeTab]}</main>
+        <main className="min-w-0 flex-1 p-5 sm:p-7">
+          <div className="mx-auto max-w-[1400px]">{panels[activeTab]}</div>
+        </main>
       </div>
 
       <footer className="border-t border-border bg-white px-5 py-4">

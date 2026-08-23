@@ -1365,14 +1365,14 @@
     },
     "live": {
       "heading": "සජීවී පන්ති",
-      "subtitle": "ඔබේ නියමිත පන්ති සහ join links කළමනාකරණය කරන්න.",
+      "subtitle": "ඔබේ නියමිත පන්ති සහ වීඩියෝ ඇමතුම් කළමනාකරණය කරන්න.",
       "empty": "ඔබ තවම සජීවී පන්තියක් නියම කර නැත.",
       "scheduleClass": "+ පන්තියක් නියම කරන්න",
       "columns": {
         "class": "පන්තිය",
         "dayTime": "දිනය සහ වේලාව",
         "mode": "ක්‍රමය",
-        "joinLink": "Join Link",
+        "joinLink": "වීඩියෝ ඇමතුම",
         "status": "තත්ත්වය"
       },
       "online": "මාර්ගගත",
@@ -1381,7 +1381,8 @@
       "scheduled": "නියමිතයි",
       "classTitlePlaceholder": "පන්ති මාතෘකාව",
       "locationPlaceholder": "ස්ථානය (උදා: කාමර 4, කොළඹ 05)",
-      "joinLinkPlaceholder": "Join link (උදා: Zoom/Google Meet URL)"
+      "videoRoomAutoNote": "මෙම පන්තිය සඳහා වීඩියෝ ඇමතුම් කාමරයක් ස්වයංක්‍රීයව සාදනු ලැබේ — Zoom/Meet සබැඳියක් අවශ්‍ය නැත.",
+      "startClass": "වීඩියෝ ඇමතුම ආරම්භ කරන්න"
     },
     "students": {
       "heading": "සිසුන්",

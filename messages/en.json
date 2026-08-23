@@ -1365,14 +1365,14 @@
     },
     "live": {
       "heading": "Live classes",
-      "subtitle": "Manage your scheduled classes and join links.",
+      "subtitle": "Manage your scheduled classes and video calls.",
       "empty": "You haven't scheduled a live class yet.",
       "scheduleClass": "+ Schedule class",
       "columns": {
         "class": "Class",
         "dayTime": "Day & time",
         "mode": "Mode",
-        "joinLink": "Join link",
+        "joinLink": "Video call",
         "status": "Status"
       },
       "online": "Online",
@@ -1381,7 +1381,8 @@
       "scheduled": "Scheduled",
       "classTitlePlaceholder": "Class title",
       "locationPlaceholder": "Location (e.g. Room 4, Colombo 05)",
-      "joinLinkPlaceholder": "Join link (e.g. Zoom/Google Meet URL)"
+      "videoRoomAutoNote": "A video call room is created automatically for this class — no Zoom/Meet link needed.",
+      "startClass": "Start video call"
     },
     "students": {
       "heading": "Students",

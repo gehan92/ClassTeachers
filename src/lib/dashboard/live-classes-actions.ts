@@ -12,7 +12,6 @@ const createLiveClassSchema = z.object({
   location: z.string().trim().optional(),
   scheduledAt: z.string().min(1),
   durationMinutes: z.coerce.number().int().min(1).default(60),
-  joinLink: z.string().trim().optional(),
 });
 
 export async function createLiveClass(input: {
@@ -22,7 +21,6 @@ export async function createLiveClass(input: {
   location: string;
   scheduledAt: string;
   durationMinutes: string;
-  joinLink: string;
 }): Promise<ActionResult> {
   const parsed = createLiveClassSchema.safeParse({
     ownerType: input.ownerType,
@@ -31,7 +29,6 @@ export async function createLiveClass(input: {
     location: input.location || undefined,
     scheduledAt: input.scheduledAt,
     durationMinutes: input.durationMinutes || undefined,
-    joinLink: input.joinLink || undefined,
   });
   if (!parsed.success) {
     return { error: "Please check the class title, mode, and schedule." };
@@ -77,42 +74,22 @@ export async function createLiveClass(input: {
     return { error: "Couldn't schedule this class. Please try again." };
   }
 
-  if (parsed.data.mode === "online" && parsed.data.joinLink) {
+  if (parsed.data.mode === "online") {
+    // Room name is a fresh random id, never derived from live_class.id —
+    // that id is public (live_classes' own SELECT policy is `using (true)`,
+    // so anyone can list scheduled classes), while this room URL stays
+    // gated behind live_class_links' owner/enrolled/admin policy (0012).
+    // Deriving it from the public id would let anyone who can see the
+    // schedule guess their way into the call.
+    const roomUrl = `https://meet.jit.si/ClassPortals-${crypto.randomUUID()}`;
     const { error: linkError } = await supabase
       .from("live_class_links")
-      .insert({ live_class_id: liveClass.id, join_link: parsed.data.joinLink });
+      .insert({ live_class_id: liveClass.id, join_link: roomUrl });
     if (linkError) {
-      return { error: "Class was scheduled, but the join link couldn't be saved. Add it from the class list." };
+      return { error: "Class was scheduled, but the video room couldn't be created. Please try again." };
     }
   }
 
-  return {};
-}
-
-export async function updateLiveClassLink(input: { liveClassId: string; joinLink: string }): Promise<ActionResult> {
-  const joinLink = input.joinLink.trim();
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: "You need to be signed in." };
-  }
-
-  if (!joinLink) {
-    const { error } = await supabase.from("live_class_links").delete().eq("live_class_id", input.liveClassId);
-    if (error) {
-      return { error: "Couldn't clear the join link. Please try again." };
-    }
-    return {};
-  }
-
-  const { error } = await supabase
-    .from("live_class_links")
-    .upsert({ live_class_id: input.liveClassId, join_link: joinLink }, { onConflict: "live_class_id" });
-  if (error) {
-    return { error: "Couldn't save the join link. Please try again." };
-  }
   return {};
 }
 

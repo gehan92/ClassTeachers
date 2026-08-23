@@ -60,6 +60,34 @@ export function PdfViewerPanel({
   );
 }
 
+export function VideoCallPanel({
+  title,
+  subtitle,
+  roomUrl,
+  closeLabel,
+  onClose,
+}: {
+  title: string;
+  subtitle?: string;
+  roomUrl: string;
+  closeLabel: string;
+  onClose: () => void;
+}) {
+  return (
+    <div>
+      <ViewerHeader title={title} subtitle={subtitle} closeLabel={closeLabel} onClose={onClose} />
+      <div className="mx-auto h-[80vh] max-w-5xl overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+        <iframe
+          src={roomUrl}
+          title={title}
+          allow="camera; microphone; fullscreen; display-capture; autoplay"
+          className="size-full"
+        />
+      </div>
+    </div>
+  );
+}
+
 export function PhotoViewerPanel({
   title,
   subtitle,

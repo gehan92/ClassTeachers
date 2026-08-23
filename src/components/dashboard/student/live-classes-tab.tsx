@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { VideoCallPanel } from "@/components/dashboard/inline-file-viewer";
 import { markAttendance } from "@/lib/dashboard/live-classes-actions";
 
 export type StudentLiveClassRow = {
@@ -38,8 +39,10 @@ function classState(row: StudentLiveClassRow, nowMs: number): LiveState {
 
 export function LiveClassesTab({ classes }: { classes: StudentLiveClassRow[] }) {
   const t = useTranslations("studentDashboard.live");
+  const tc = useTranslations("studentDashboard.common");
   const [now, setNow] = useState(() => Date.now());
   const [markedId, setMarkedId] = useState<string | null>(null);
+  const [activeCallId, setActiveCallId] = useState<string | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30000);
@@ -48,8 +51,22 @@ export function LiveClassesTab({ classes }: { classes: StudentLiveClassRow[] }) 
 
   async function handleJoin(row: StudentLiveClassRow) {
     setMarkedId(row.id);
+    setActiveCallId(row.id);
     await markAttendance({ liveClassId: row.id });
     setTimeout(() => setMarkedId((current) => (current === row.id ? null : current)), 2500);
+  }
+
+  const activeCall = classes.find((c) => c.id === activeCallId) ?? null;
+  if (activeCall && activeCall.joinLink) {
+    return (
+      <VideoCallPanel
+        title={activeCall.title}
+        subtitle={activeCall.teacherName}
+        roomUrl={activeCall.joinLink}
+        closeLabel={tc("close")}
+        onClose={() => setActiveCallId(null)}
+      />
+    );
   }
 
   return (
@@ -121,9 +138,7 @@ function LiveClassRow({
             {justMarked && <span className="text-xs font-medium text-success">{t("markedPresent")}</span>}
             <Button
               size="sm"
-              nativeButton={false}
               className="bg-success text-success-foreground hover:bg-success/90"
-              render={<a href={row.joinLink} target="_blank" rel="noopener noreferrer" />}
               onClick={() => onJoin(row)}
             >
               {t("joinButton")}

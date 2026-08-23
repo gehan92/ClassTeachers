@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/features/status-badge";
-import { createLiveClass, updateLiveClassLink } from "@/lib/dashboard/live-classes-actions";
+import { VideoCallPanel } from "@/components/dashboard/inline-file-viewer";
+import { createLiveClass } from "@/lib/dashboard/live-classes-actions";
 
 export type TeacherLiveClassRow = {
   id: string;
@@ -25,18 +26,13 @@ export function LiveClassesTab({ classes }: { classes: TeacherLiveClassRow[] }) 
   const tc = useTranslations("teacherDashboard.common");
   const router = useRouter();
 
-  const [joinLinks, setJoinLinks] = useState<Record<string, string>>(() =>
-    Object.fromEntries(classes.map((c) => [c.id, c.joinLink ?? ""])),
-  );
-  const [savingLinkId, setSavingLinkId] = useState<string | null>(null);
-  const [linkSavedId, setLinkSavedId] = useState<string | null>(null);
+  const [activeCallId, setActiveCallId] = useState<string | null>(null);
 
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newScheduledAt, setNewScheduledAt] = useState("");
   const [newMode, setNewMode] = useState<"online" | "physical">("online");
   const [newLocation, setNewLocation] = useState("");
-  const [newJoinLink, setNewJoinLink] = useState("");
   const [added, setAdded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -46,7 +42,6 @@ export function LiveClassesTab({ classes }: { classes: TeacherLiveClassRow[] }) 
     setNewScheduledAt("");
     setNewMode("online");
     setNewLocation("");
-    setNewJoinLink("");
     setAdding(false);
   }
 
@@ -61,7 +56,6 @@ export function LiveClassesTab({ classes }: { classes: TeacherLiveClassRow[] }) 
       location: newLocation,
       scheduledAt: newScheduledAt,
       durationMinutes: "60",
-      joinLink: newJoinLink,
     });
     setSaving(false);
     if (result.error) {
@@ -74,14 +68,17 @@ export function LiveClassesTab({ classes }: { classes: TeacherLiveClassRow[] }) 
     router.refresh();
   }
 
-  async function handleSaveLink(classId: string) {
-    setSavingLinkId(classId);
-    const result = await updateLiveClassLink({ liveClassId: classId, joinLink: joinLinks[classId] ?? "" });
-    setSavingLinkId(null);
-    if (!result.error) {
-      setLinkSavedId(classId);
-      setTimeout(() => setLinkSavedId((current) => (current === classId ? null : current)), 2000);
-    }
+  const activeCall = classes.find((c) => c.id === activeCallId) ?? null;
+  if (activeCall && activeCall.joinLink) {
+    return (
+      <VideoCallPanel
+        title={activeCall.title}
+        subtitle={activeCall.scheduledLabel}
+        roomUrl={activeCall.joinLink}
+        closeLabel={tc("close")}
+        onClose={() => setActiveCallId(null)}
+      />
+    );
   }
 
   return (
@@ -126,12 +123,7 @@ export function LiveClassesTab({ classes }: { classes: TeacherLiveClassRow[] }) 
                 className="sm:col-span-2"
               />
             ) : (
-              <Input
-                placeholder={t("joinLinkPlaceholder")}
-                value={newJoinLink}
-                onChange={(e) => setNewJoinLink(e.target.value)}
-                className="sm:col-span-2"
-              />
+              <p className="self-center text-xs text-muted-foreground sm:col-span-2">{t("videoRoomAutoNote")}</p>
             )}
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2.5">
@@ -168,17 +160,11 @@ export function LiveClassesTab({ classes }: { classes: TeacherLiveClassRow[] }) 
                   <TableCell className="text-muted-foreground">
                     {c.mode === "online" ? t("online") : t("physicalAt", { location: c.location ?? "" })}
                   </TableCell>
-                  <TableCell className="min-w-56">
-                    {c.mode === "online" ? (
-                      <div className="flex items-center gap-1.5">
-                        <Input
-                          value={joinLinks[c.id] ?? ""}
-                          onChange={(e) => setJoinLinks((links) => ({ ...links, [c.id]: e.target.value }))}
-                          onBlur={() => handleSaveLink(c.id)}
-                          disabled={savingLinkId === c.id}
-                        />
-                        {linkSavedId === c.id && <span className="text-xs font-medium text-success">{tc("saved")}</span>}
-                      </div>
+                  <TableCell className="min-w-32">
+                    {c.mode === "online" && c.joinLink ? (
+                      <Button type="button" size="sm" variant="outline" onClick={() => setActiveCallId(c.id)}>
+                        {t("startClass")}
+                      </Button>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}

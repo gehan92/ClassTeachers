@@ -44,7 +44,7 @@ export function GradeLadder({
                 ? grade === "campus"
                   ? "bg-primary text-white hover:bg-primary-light"
                   : "bg-secondary text-secondary-foreground"
-                : grade === "campus" && "bg-primary text-white hover:bg-primary-light",
+                : "bg-white",
             )}
           >
             {t(`grades.${grade}`)}

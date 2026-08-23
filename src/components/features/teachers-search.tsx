@@ -16,6 +16,11 @@ type Category = "all" | "teacher" | "class" | "campus";
 type PriceInterval = "any" | "hr" | "mo";
 
 const categories: Category[] = ["all", "teacher", "class", "campus"];
+// "Class" stays a valid category (so a "Find Classes" link landing here with
+// ?category=class still filters correctly) but isn't offered as a tab on
+// this page — this page is for browsing individual tutors, and mixing
+// institute results into the same filter UI would blur that distinction.
+const visibleCategories: Category[] = ["all", "teacher", "campus"];
 const grades: Grade[] = ["1-5", "6-9", "10-11", "12-13", "campus"];
 const priceIntervals: PriceInterval[] = ["any", "hr", "mo"];
 
@@ -60,7 +65,7 @@ function CategoryTabs({ value, onChange }: { value: Category; onChange: (categor
       aria-label={t("label")}
       className="mb-4 flex flex-wrap gap-1.5"
     >
-      {categories.map((category) => (
+      {visibleCategories.map((category) => (
         <button
           key={category}
           type="button"

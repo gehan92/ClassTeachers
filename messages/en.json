@@ -1294,12 +1294,15 @@
         "typeLabel": "Question type",
         "typeMcq": "MCQ",
         "typeEssay": "Essay",
+        "questionImageLabel": "Question image (optional — a diagram or graph)",
+        "addImage": "Add image",
+        "removeImage": "Remove image",
         "optionsLabel": "Answer options",
         "optionPlaceholder": "Option {number}",
         "optionFallback": "Option {number}",
         "addOption": "Add option",
         "removeOption": "Remove option",
-        "correctHint": "Select the radio button next to the correct option."
+        "correctHint": "Select the radio button next to the correct option. An option can carry its own image too — useful for \"which of these graphs...\" style questions."
       }
     },
     "exams": {

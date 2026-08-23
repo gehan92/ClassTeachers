@@ -193,11 +193,40 @@ export default async function StudentDashboardPage({
 
   const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
 
+  type RawQuestionOption = { id: string; text: string; imagePath?: string };
   const allQuestionIds = [...new Set((examRows ?? []).flatMap((e) => e.question_ids))];
   const { data: examQuestionRows } = allQuestionIds.length
-    ? await supabase.from("question_bank_items").select("id, question_text, type, marks").in("id", allQuestionIds)
-    : { data: [] as { id: string; question_text: string; type: "mcq" | "essay"; marks: number }[] };
-  const questionById = new Map((examQuestionRows ?? []).map((q) => [q.id, q]));
+    ? await supabase
+        .from("question_bank_items")
+        .select("id, question_text, type, marks, options, question_image_path")
+        .in("id", allQuestionIds)
+    : { data: [] as { id: string; question_text: string; type: "mcq" | "essay"; marks: number; options: unknown; question_image_path: string | null }[] };
+  const questionById = new Map(
+    (examQuestionRows ?? []).map((q) => [
+      q.id,
+      { ...q, options: (q.options as RawQuestionOption[] | null) ?? null },
+    ]),
+  );
+
+  // Never select/forward correct_option_id here — this is the student's
+  // own view of the exam, and leaking the correct answer would defeat the
+  // point of it not being graded automatically yet.
+  const questionImagePaths = new Set<string>();
+  for (const q of questionById.values()) {
+    if (q.question_image_path) questionImagePaths.add(q.question_image_path);
+    for (const option of q.options ?? []) {
+      if (option.imagePath) questionImagePaths.add(option.imagePath);
+    }
+  }
+  const questionImageUrlByPath = new Map<string, string>();
+  if (questionImagePaths.size > 0) {
+    const { data: signedQuestionImages } = await supabase.storage
+      .from("question-images")
+      .createSignedUrls([...questionImagePaths], 3600);
+    for (const entry of signedQuestionImages ?? []) {
+      if (entry.path && entry.signedUrl) questionImageUrlByPath.set(entry.path, entry.signedUrl);
+    }
+  }
 
   const exams: StudentExamRow[] = (examRows ?? []).map((e) => {
     const submission = submissionByExamId.get(e.id);
@@ -209,9 +238,21 @@ export default async function StudentDashboardPage({
       scheduledLabel: e.scheduled_at ? dateFormatter.format(new Date(e.scheduled_at)) : "—",
       isOpen: !e.scheduled_at || !isFuture(e.scheduled_at),
       questions: e.question_ids
-        .map((qid) => {
+        .map((qid): StudentExamQuestion | null => {
           const q = questionById.get(qid);
-          return q ? { id: q.id, text: q.question_text, type: q.type, marks: q.marks } : null;
+          if (!q) return null;
+          return {
+            id: q.id,
+            text: q.question_text,
+            type: q.type,
+            marks: q.marks,
+            imageUrl: q.question_image_path ? questionImageUrlByPath.get(q.question_image_path) : undefined,
+            options: q.options?.map((o) => ({
+              id: o.id,
+              text: o.text,
+              imageUrl: o.imagePath ? questionImageUrlByPath.get(o.imagePath) : undefined,
+            })),
+          };
         })
         .filter((q): q is StudentExamQuestion => q !== null),
       submission: submission

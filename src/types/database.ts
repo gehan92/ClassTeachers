@@ -403,6 +403,7 @@ export type Database = {
           language: "en" | "si" | "ta";
           options: Json | null;
           correct_option_id: string | null;
+          question_image_path: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -422,6 +423,7 @@ export type Database = {
           language?: "en" | "si" | "ta";
           options?: Json | null;
           correct_option_id?: string | null;
+          question_image_path?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -440,6 +442,7 @@ export type Database = {
           batch_id?: string | null;
           language?: "en" | "si" | "ta";
           options?: Json | null;
+          question_image_path?: string | null;
           correct_option_id?: string | null;
           created_at?: string;
           updated_at?: string;

@@ -1,9 +1,9 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Check, Plus, X } from "lucide-react";
+import { Check, ImagePlus, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,15 @@ const NO_BATCH = "none";
 const MIN_OPTIONS = 2;
 const MAX_OPTIONS = 8;
 
+type OptionRow = {
+  id: string; // "" means this row didn't exist before this edit
+  text: string;
+  existingImageUrl: string | null;
+  imageFile: File | null;
+  imagePreviewUrl: string | null;
+  removeImage: boolean;
+};
+
 type FormState = {
   text: string;
   topic: string;
@@ -34,22 +43,89 @@ type FormState = {
   marks: string;
   type: QuestionBankItem["type"];
   language: QuestionBankItem["language"];
-  optionTexts: string[];
+  optionRows: OptionRow[];
   correctIndex: string;
+  questionImageExistingUrl: string | null;
+  questionImageFile: File | null;
+  questionImagePreviewUrl: string | null;
+  removeQuestionImage: boolean;
 };
 
-const BLANK_FORM: FormState = {
-  text: "",
-  topic: "",
-  gradeBand: "12-13",
-  batchId: NO_BATCH,
-  difficulty: "medium",
-  marks: "1",
-  type: "mcq",
-  language: "en",
-  optionTexts: ["", "", "", ""],
-  correctIndex: "0",
-};
+function blankOptionRow(): OptionRow {
+  return { id: "", text: "", existingImageUrl: null, imageFile: null, imagePreviewUrl: null, removeImage: false };
+}
+
+function blankForm(): FormState {
+  return {
+    text: "",
+    topic: "",
+    gradeBand: "12-13",
+    batchId: NO_BATCH,
+    difficulty: "medium",
+    marks: "1",
+    type: "mcq",
+    language: "en",
+    optionRows: [blankOptionRow(), blankOptionRow(), blankOptionRow(), blankOptionRow()],
+    correctIndex: "0",
+    questionImageExistingUrl: null,
+    questionImageFile: null,
+    questionImagePreviewUrl: null,
+    removeQuestionImage: false,
+  };
+}
+
+function ImagePicker({
+  existingUrl,
+  previewUrl,
+  removed,
+  onPick,
+  onClear,
+  addLabel,
+  removeLabel,
+  small,
+}: {
+  existingUrl: string | null;
+  previewUrl: string | null;
+  removed: boolean;
+  onPick: (file: File) => void;
+  onClear: () => void;
+  addLabel: string;
+  removeLabel: string;
+  small?: boolean;
+}) {
+  const shownUrl = previewUrl ?? (removed ? null : existingUrl);
+  if (shownUrl) {
+    return (
+      <div className="flex items-center gap-2">
+        {/* eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL or a local blob: object preview */}
+        <img
+          src={shownUrl}
+          alt=""
+          className={cn("rounded-sm border border-border object-cover", small ? "size-12" : "h-24 w-32")}
+        />
+        <Button type="button" variant="ghost" size="sm" onClick={onClear}>
+          {removeLabel}
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 text-xs font-medium text-primary hover:underline">
+      <ImagePlus className="size-3.5" />
+      {addLabel}
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onPick(file);
+          e.target.value = "";
+        }}
+      />
+    </label>
+  );
+}
 
 export function QuestionBankTab({
   initialQuestions,
@@ -72,12 +148,22 @@ export function QuestionBankTab({
 
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<FormState>(BLANK_FORM);
+  const [form, setForm] = useState<FormState>(blankForm());
   const [added, setAdded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
+
+  // Blob: object URLs from freshly picked files are only ever read while
+  // the form is open — revoke them on unmount/reset so they don't leak.
+  useEffect(() => {
+    return () => {
+      if (form.questionImagePreviewUrl) URL.revokeObjectURL(form.questionImagePreviewUrl);
+      for (const row of form.optionRows) if (row.imagePreviewUrl) URL.revokeObjectURL(row.imagePreviewUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- cleanup runs only on unmount, not on every keystroke
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -91,14 +177,22 @@ export function QuestionBankTab({
   }, [questions, search, gradeFilter, batchFilter, languageFilter]);
 
   function openCreate() {
-    setForm(BLANK_FORM);
+    setForm(blankForm());
     setEditingId(null);
     setError(null);
     setFormMode("create");
   }
 
   function openEdit(question: QuestionBankItem) {
-    const optionTexts = question.options?.map((o) => o.text) ?? ["", "", "", ""];
+    const optionRows: OptionRow[] = (question.options ?? []).map((o) => ({
+      id: o.id,
+      text: o.text,
+      existingImageUrl: o.imageUrl ?? null,
+      imageFile: null,
+      imagePreviewUrl: null,
+      removeImage: false,
+    }));
+    while (optionRows.length < 4) optionRows.push(blankOptionRow());
     const correctIndex = question.options?.findIndex((o) => o.id === question.correctOptionId) ?? 0;
     setForm({
       text: question.text,
@@ -109,8 +203,12 @@ export function QuestionBankTab({
       marks: String(question.marks),
       type: question.type,
       language: question.language,
-      optionTexts: optionTexts.length >= MIN_OPTIONS ? optionTexts : ["", "", "", ""],
+      optionRows,
       correctIndex: String(Math.max(correctIndex, 0)),
+      questionImageExistingUrl: question.imageUrl ?? null,
+      questionImageFile: null,
+      questionImagePreviewUrl: null,
+      removeQuestionImage: false,
     });
     setEditingId(question.id);
     setError(null);
@@ -118,69 +216,108 @@ export function QuestionBankTab({
   }
 
   function closeForm() {
+    if (form.questionImagePreviewUrl) URL.revokeObjectURL(form.questionImagePreviewUrl);
+    for (const row of form.optionRows) if (row.imagePreviewUrl) URL.revokeObjectURL(row.imagePreviewUrl);
     setFormMode(null);
     setEditingId(null);
-    setForm(BLANK_FORM);
+    setForm(blankForm());
     setError(null);
   }
 
   function addOption() {
-    setForm((f) => (f.optionTexts.length >= MAX_OPTIONS ? f : { ...f, optionTexts: [...f.optionTexts, ""] }));
+    setForm((f) => (f.optionRows.length >= MAX_OPTIONS ? f : { ...f, optionRows: [...f.optionRows, blankOptionRow()] }));
   }
 
   function removeOption(index: number) {
     setForm((f) => {
-      if (f.optionTexts.length <= MIN_OPTIONS) return f;
-      const optionTexts = f.optionTexts.filter((_, i) => i !== index);
+      if (f.optionRows.length <= MIN_OPTIONS) return f;
+      const removedRow = f.optionRows[index];
+      if (removedRow.imagePreviewUrl) URL.revokeObjectURL(removedRow.imagePreviewUrl);
+      const optionRows = f.optionRows.filter((_, i) => i !== index);
       const removedIndex = Number(f.correctIndex);
       let correctIndex = removedIndex;
       if (removedIndex === index) correctIndex = 0;
       else if (removedIndex > index) correctIndex = removedIndex - 1;
-      return { ...f, optionTexts, correctIndex: String(correctIndex) };
+      return { ...f, optionRows, correctIndex: String(correctIndex) };
+    });
+  }
+
+  function updateOptionRow(index: number, patch: Partial<OptionRow>) {
+    setForm((f) => ({ ...f, optionRows: f.optionRows.map((row, i) => (i === index ? { ...row, ...patch } : row)) }));
+  }
+
+  function pickOptionImage(index: number, file: File) {
+    setForm((f) => {
+      const row = f.optionRows[index];
+      if (row.imagePreviewUrl) URL.revokeObjectURL(row.imagePreviewUrl);
+      const optionRows = f.optionRows.map((r, i) =>
+        i === index ? { ...r, imageFile: file, imagePreviewUrl: URL.createObjectURL(file), removeImage: false } : r,
+      );
+      return { ...f, optionRows };
+    });
+  }
+
+  function clearOptionImage(index: number) {
+    setForm((f) => {
+      const row = f.optionRows[index];
+      if (row.imagePreviewUrl) URL.revokeObjectURL(row.imagePreviewUrl);
+      const optionRows = f.optionRows.map((r, i) =>
+        i === index ? { ...r, imageFile: null, imagePreviewUrl: null, removeImage: true } : r,
+      );
+      return { ...f, optionRows };
+    });
+  }
+
+  function pickQuestionImage(file: File) {
+    setForm((f) => {
+      if (f.questionImagePreviewUrl) URL.revokeObjectURL(f.questionImagePreviewUrl);
+      return { ...f, questionImageFile: file, questionImagePreviewUrl: URL.createObjectURL(file), removeQuestionImage: false };
+    });
+  }
+
+  function clearQuestionImage() {
+    setForm((f) => {
+      if (f.questionImagePreviewUrl) URL.revokeObjectURL(f.questionImagePreviewUrl);
+      return { ...f, questionImageFile: null, questionImagePreviewUrl: null, removeQuestionImage: true };
     });
   }
 
   async function handleSubmit() {
     if (!form.text.trim() || !form.topic.trim()) return;
-    const localId = editingId ?? `q-${Date.now()}`;
-    const options =
-      form.type === "mcq"
-        ? form.optionTexts.map((optText, i) => ({
-            id: `${localId}-o${i + 1}`,
-            text: optText.trim() || t("form.optionFallback", { number: i + 1 }),
-          }))
-        : undefined;
-    const correctOptionId = form.type === "mcq" ? options?.[Number(form.correctIndex)]?.id : undefined;
+
+    const fd = new FormData();
+    if (formMode !== "edit") fd.set("ownerType", "teacher");
+    fd.set("text", form.text.trim());
+    fd.set("topic", form.topic.trim());
+    fd.set("gradeBand", form.gradeBand);
+    if (form.batchId !== NO_BATCH) fd.set("batchId", form.batchId);
+    fd.set("type", form.type);
+    fd.set("difficulty", form.difficulty);
+    fd.set("marks", form.marks);
+    fd.set("language", form.language);
+    fd.set("correctIndex", form.correctIndex);
+    if (form.questionImageFile) fd.set("questionImage", form.questionImageFile);
+    if (form.removeQuestionImage) fd.set("removeQuestionImage", "1");
+
+    if (form.type === "mcq") {
+      const rows = form.optionRows.filter((row) => row.text.trim());
+      fd.set("optionCount", String(form.optionRows.length));
+      form.optionRows.forEach((row, i) => {
+        fd.set(`optionText-${i}`, row.text.trim() || t("form.optionFallback", { number: i + 1 }));
+        if (row.id) fd.set(`optionId-${i}`, row.id);
+        if (row.imageFile) fd.set(`optionImage-${i}`, row.imageFile);
+        if (row.removeImage) fd.set(`optionRemoveImage-${i}`, "1");
+      });
+      if (rows.length < MIN_OPTIONS) {
+        setError(t("form.correctHint"));
+        return;
+      }
+    }
 
     setSaving(true);
     setError(null);
     const result =
-      formMode === "edit" && editingId
-        ? await updateQuestion(editingId, {
-            text: form.text.trim(),
-            topic: form.topic.trim(),
-            gradeBand: form.gradeBand,
-            batchId: form.batchId === NO_BATCH ? undefined : form.batchId,
-            type: form.type,
-            difficulty: form.difficulty,
-            marks: form.marks,
-            language: form.language,
-            options,
-            correctOptionId,
-          })
-        : await createQuestion({
-            ownerType: "teacher",
-            text: form.text.trim(),
-            topic: form.topic.trim(),
-            gradeBand: form.gradeBand,
-            batchId: form.batchId === NO_BATCH ? undefined : form.batchId,
-            type: form.type,
-            difficulty: form.difficulty,
-            marks: form.marks,
-            language: form.language,
-            options,
-            correctOptionId,
-          });
+      formMode === "edit" && editingId ? await updateQuestion(editingId, fd) : await createQuestion(fd);
     setSaving(false);
     if (result.error) {
       setError(result.error);
@@ -227,6 +364,18 @@ export function QuestionBankTab({
                 placeholder={t("form.textPlaceholder")}
                 value={form.text}
                 onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-1.5 sm:col-span-2">
+              <Label>{t("form.questionImageLabel")}</Label>
+              <ImagePicker
+                existingUrl={form.questionImageExistingUrl}
+                previewUrl={form.questionImagePreviewUrl}
+                removed={form.removeQuestionImage}
+                onPick={pickQuestionImage}
+                onClear={clearQuestionImage}
+                addLabel={t("form.addImage")}
+                removeLabel={t("form.removeImage")}
               />
             </div>
             <div className="grid gap-1.5">
@@ -350,30 +499,39 @@ export function QuestionBankTab({
                   value={form.correctIndex}
                   onValueChange={(value) => setForm((f) => ({ ...f, correctIndex: value }))}
                 >
-                  {form.optionTexts.map((val, i) => (
-                    <div key={i} className="flex items-center gap-2.5">
-                      <RadioGroupItem value={String(i)} />
-                      <Input
-                        placeholder={t("form.optionPlaceholder", { number: i + 1 })}
-                        value={val}
-                        onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            optionTexts: f.optionTexts.map((o, idx) => (idx === i ? e.target.value : o)),
-                          }))
-                        }
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="shrink-0 px-2 text-muted-foreground hover:text-destructive"
-                        disabled={form.optionTexts.length <= MIN_OPTIONS}
-                        onClick={() => removeOption(i)}
-                        aria-label={t("form.removeOption")}
-                      >
-                        <X className="size-3.5" />
-                      </Button>
+                  {form.optionRows.map((row, i) => (
+                    <div key={i} className="flex flex-col gap-2 rounded-md border border-border p-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <RadioGroupItem value={String(i)} />
+                        <Input
+                          placeholder={t("form.optionPlaceholder", { number: i + 1 })}
+                          value={row.text}
+                          onChange={(e) => updateOptionRow(i, { text: e.target.value })}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="shrink-0 px-2 text-muted-foreground hover:text-destructive"
+                          disabled={form.optionRows.length <= MIN_OPTIONS}
+                          onClick={() => removeOption(i)}
+                          aria-label={t("form.removeOption")}
+                        >
+                          <X className="size-3.5" />
+                        </Button>
+                      </div>
+                      <div className="ml-6">
+                        <ImagePicker
+                          existingUrl={row.existingImageUrl}
+                          previewUrl={row.imagePreviewUrl}
+                          removed={row.removeImage}
+                          onPick={(file) => pickOptionImage(i, file)}
+                          onClear={() => clearOptionImage(i)}
+                          addLabel={t("form.addImage")}
+                          removeLabel={t("form.removeImage")}
+                          small
+                        />
+                      </div>
                     </div>
                   ))}
                 </RadioGroup>
@@ -382,7 +540,7 @@ export function QuestionBankTab({
                   variant="outline"
                   size="sm"
                   className="w-fit gap-1.5"
-                  disabled={form.optionTexts.length >= MAX_OPTIONS}
+                  disabled={form.optionRows.length >= MAX_OPTIONS}
                   onClick={addOption}
                 >
                   <Plus className="size-3.5" />
@@ -520,7 +678,11 @@ export function QuestionBankTab({
                   {viewingId === q.id && (
                     <TableRow>
                       <TableCell colSpan={9} className="bg-secondary/20">
-                        <p className="mb-3 text-sm whitespace-pre-wrap text-foreground">{q.text}</p>
+                        <p className="mb-2 text-sm whitespace-pre-wrap text-foreground">{q.text}</p>
+                        {q.imageUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL
+                          <img src={q.imageUrl} alt="" className="mb-3 max-w-sm rounded-md border border-border" />
+                        )}
                         {q.type === "mcq" && q.options && (
                           <ul className="flex flex-col gap-1.5">
                             {q.options.map((option) => {
@@ -529,7 +691,7 @@ export function QuestionBankTab({
                                 <li
                                   key={option.id}
                                   className={cn(
-                                    "flex items-center gap-2 rounded-sm border px-2.5 py-1.5 text-sm",
+                                    "flex flex-wrap items-center gap-2 rounded-sm border px-2.5 py-1.5 text-sm",
                                     isCorrect
                                       ? "border-success bg-success/10 font-medium text-success"
                                       : "border-border text-foreground/80",
@@ -537,6 +699,10 @@ export function QuestionBankTab({
                                 >
                                   {isCorrect ? <Check className="size-3.5 shrink-0" /> : <span className="size-3.5 shrink-0" />}
                                   {option.text}
+                                  {option.imageUrl && (
+                                    // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL
+                                    <img src={option.imageUrl} alt="" className="h-12 w-12 rounded-sm border border-border object-cover" />
+                                  )}
                                 </li>
                               );
                             })}

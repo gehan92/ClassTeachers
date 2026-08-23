@@ -12,6 +12,8 @@ import type { GradeBand } from "./grade-band";
 export type McqOption = {
   id: string;
   text: string;
+  /** Signed URL — set when this option carries a graph/diagram image. */
+  imageUrl?: string;
 };
 
 /** One reusable question in a teacher's question bank. */
@@ -31,6 +33,8 @@ export type QuestionBankItem = {
   options?: McqOption[];
   /** MCQ only — the id of the correct entry in `options`. */
   correctOptionId?: string;
+  /** Signed URL — set when the question stem itself is a graph/diagram. */
+  imageUrl?: string;
 };
 
 /** A teacher-built exam: a batch, a duration/timer, and a set of picked questions. */

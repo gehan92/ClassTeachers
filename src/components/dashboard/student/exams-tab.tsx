@@ -17,7 +17,16 @@ import {
 } from "@/components/ui/table";
 import { submitExam } from "@/lib/dashboard/exams-actions";
 
-export type StudentExamQuestion = { id: string; text: string; type: "mcq" | "essay"; marks: number };
+export type StudentExamQuestion = {
+  id: string;
+  text: string;
+  type: "mcq" | "essay";
+  marks: number;
+  imageUrl?: string;
+  /** MCQ only — shown so the student knows what to write/circle on their
+   * answer sheet. No correct-answer marker is ever sent to the student. */
+  options?: { id: string; text: string; imageUrl?: string }[];
+};
 export type StudentExamRow = {
   id: string;
   title: string;
@@ -196,6 +205,37 @@ function PhotoDropzone({
   );
 }
 
+function QuestionBlock({ question, number }: { question: StudentExamQuestion; number: number }) {
+  const t = useTranslations("studentDashboard.exams");
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm text-foreground">
+        {t("questionLabel", { number })}. {question.text}
+      </p>
+      {question.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, not a local/optimizable asset
+        <img src={question.imageUrl} alt="" className="max-w-sm rounded-md border border-border" />
+      )}
+      {question.options && question.options.length > 0 && (
+        <ul className="flex flex-col gap-2 pl-4">
+          {question.options.map((option, optionIndex) => (
+            <li key={option.id} className="flex flex-wrap items-center gap-2 text-sm text-foreground/80">
+              <span className="font-mono text-xs text-muted-foreground">
+                {String.fromCharCode(65 + optionIndex)}.
+              </span>
+              <span>{option.text}</span>
+              {option.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, not a local/optimizable asset
+                <img src={option.imageUrl} alt="" className="max-h-24 rounded-sm border border-border" />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => void }) {
   const t = useTranslations("studentDashboard.exams");
   const router = useRouter();
@@ -203,6 +243,8 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const mcqQuestions = exam.questions.filter((q) => q.type === "mcq");
+  const essayQuestions = exam.questions.filter((q) => q.type !== "mcq");
 
   function handleAdd(fileList: FileList | null) {
     if (!fileList) return;
@@ -253,17 +295,31 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
       </div>
 
       <div className="mb-6">
-        <h3 className="mb-3 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-          {t("essaySectionTitle")}
-        </h3>
-        <div className="mb-3 flex flex-col gap-2 rounded-lg border border-border bg-white p-4">
-          {exam.questions.map((q, index) => (
-            <p key={q.id} className="text-sm text-foreground">
-              {t("questionLabel", { number: index + 1 })}. {q.text}
-            </p>
-          ))}
-        </div>
-        <p className="mb-2 text-xs text-muted-foreground">{t("essayInstructions")}</p>
+        {mcqQuestions.length > 0 && (
+          <div className="mb-5">
+            <h3 className="mb-3 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+              {t("mcqSectionTitle")}
+            </h3>
+            <div className="flex flex-col gap-4 rounded-lg border border-border bg-white p-4">
+              {mcqQuestions.map((q, index) => (
+                <QuestionBlock key={q.id} question={q} number={index + 1} />
+              ))}
+            </div>
+          </div>
+        )}
+        {essayQuestions.length > 0 && (
+          <div>
+            <h3 className="mb-3 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+              {t("essaySectionTitle")}
+            </h3>
+            <div className="flex flex-col gap-4 rounded-lg border border-border bg-white p-4">
+              {essayQuestions.map((q, index) => (
+                <QuestionBlock key={q.id} question={q} number={index + 1} />
+              ))}
+            </div>
+          </div>
+        )}
+        <p className="mt-3 mb-2 text-xs text-muted-foreground">{t("essayInstructions")}</p>
         <PhotoDropzone files={photos} onAdd={handleAdd} onRemove={handleRemove} />
       </div>
 

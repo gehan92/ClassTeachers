@@ -251,11 +251,29 @@ export default async function TeacherDashboardPage({
   const { data: questionRows } = await supabase
     .from("question_bank_items")
     .select(
-      "id, question_text, topic, grade_band, batch_id, type, difficulty, marks, language, options, correct_option_id",
+      "id, question_text, topic, grade_band, batch_id, type, difficulty, marks, language, options, correct_option_id, question_image_path",
     )
     .eq("owner_type", "teacher")
     .eq("owner_id", userId)
     .order("created_at", { ascending: false });
+
+  type RawQuestionOption = { id: string; text: string; imagePath?: string };
+  const questionImagePaths = new Set<string>();
+  for (const q of questionRows ?? []) {
+    if (q.question_image_path) questionImagePaths.add(q.question_image_path);
+    for (const option of (q.options as RawQuestionOption[] | null) ?? []) {
+      if (option.imagePath) questionImagePaths.add(option.imagePath);
+    }
+  }
+  const questionImageUrlByPath = new Map<string, string>();
+  if (questionImagePaths.size > 0) {
+    const { data: signedQuestionImages } = await supabase.storage
+      .from("question-images")
+      .createSignedUrls([...questionImagePaths], 3600);
+    for (const entry of signedQuestionImages ?? []) {
+      if (entry.path && entry.signedUrl) questionImageUrlByPath.set(entry.path, entry.signedUrl);
+    }
+  }
 
   const questions: QuestionBankItem[] = (questionRows ?? []).map((q) => ({
     id: q.id,
@@ -267,7 +285,12 @@ export default async function TeacherDashboardPage({
     difficulty: q.difficulty,
     marks: q.marks,
     language: (q.language ?? "en") as QuestionBankItem["language"],
-    options: (q.options as QuestionBankItem["options"]) ?? undefined,
+    imageUrl: q.question_image_path ? questionImageUrlByPath.get(q.question_image_path) : undefined,
+    options: ((q.options as RawQuestionOption[] | null) ?? undefined)?.map((o) => ({
+      id: o.id,
+      text: o.text,
+      imageUrl: o.imagePath ? questionImageUrlByPath.get(o.imagePath) : undefined,
+    })),
     correctOptionId: q.correct_option_id ?? undefined,
   }));
 

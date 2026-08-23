@@ -86,9 +86,15 @@ function NoteViewer({
         </Button>
       </div>
 
-      <div className="relative mx-auto h-[70vh] max-w-160 overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+      <div className="relative mx-auto h-[85vh] max-w-5xl overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
         <iframe
-          src={`/${locale}/student/notes/${note.id}/file`}
+          // toolbar=0/navpanes=0 hide the browser's native PDF chrome (its
+          // own download/print buttons contradict viewerDisabledNote below —
+          // the real protection is the 60s signed URL, not those buttons);
+          // view=FitH fills the frame's width instead of the tiny default
+          // "fit whole page" zoom. Standard PDF Open Parameters, honored by
+          // Chrome/Edge's PDFium viewer and Firefox's pdf.js.
+          src={`/${locale}/student/notes/${note.id}/file#toolbar=0&navpanes=0&view=FitH`}
           title={note.title}
           className="size-full"
         />

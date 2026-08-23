@@ -16,11 +16,6 @@ type Category = "all" | "teacher" | "class" | "campus";
 type PriceInterval = "any" | "hr" | "mo";
 
 const categories: Category[] = ["all", "teacher", "class", "campus"];
-// "Class" stays a valid category (so a "Find Classes" link landing here with
-// ?category=class still filters correctly) but isn't offered as a tab on
-// this page — this page is for browsing individual tutors, and mixing
-// institute results into the same filter UI would blur that distinction.
-const visibleCategories: Category[] = ["all", "teacher", "campus"];
 const grades: Grade[] = ["1-5", "6-9", "10-11", "12-13", "campus"];
 const priceIntervals: PriceInterval[] = ["any", "hr", "mo"];
 
@@ -54,36 +49,6 @@ function matchesCategory(listing: Listing, category: Category) {
     case "campus":
       return listing.kind === "teacher" && listing.gradeBand === "campus";
   }
-}
-
-function CategoryTabs({ value, onChange }: { value: Category; onChange: (category: Category) => void }) {
-  const t = useTranslations("teachersPage.categories");
-
-  return (
-    <div
-      role="radiogroup"
-      aria-label={t("label")}
-      className="mb-4 flex flex-wrap gap-1.5"
-    >
-      {visibleCategories.map((category) => (
-        <button
-          key={category}
-          type="button"
-          role="radio"
-          aria-checked={value === category}
-          onClick={() => onChange(category)}
-          className={cn(
-            "rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors",
-            value === category
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-input bg-white text-foreground/80 hover:bg-secondary",
-          )}
-        >
-          {t(category)}
-        </button>
-      ))}
-    </div>
-  );
 }
 
 function PriceFilter({
@@ -250,7 +215,6 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
   return (
     <>
       <div className="mb-7 rounded-2xl border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
-        <CategoryTabs value={category} onChange={setCategory} />
         <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input
             value={subject}

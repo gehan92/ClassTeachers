@@ -362,6 +362,7 @@ export default async function TeacherDashboardPage({
     workExperience: teacherProfile?.work_experience ?? [],
     photoUrl: teacherProfile?.photo_url ?? null,
     subjects: subjectNames,
+    languages: teacherProfile?.languages ?? [],
     gradeBand: topGradeBand,
     rating: averageRating ? Number(averageRating) : 0,
     reviewCount: reviewRows?.length ?? 0,
@@ -456,6 +457,7 @@ export default async function TeacherDashboardPage({
             initialWorkExperience={teacherProfile?.work_experience ?? []}
             initialExperienceYears={teacherProfile?.experience_years?.toString() ?? ""}
             initialSubjects={subjectNames}
+            initialLanguages={teacherProfile?.languages ?? []}
             initialLocation={teacherProfile?.location ?? ""}
             initialClassType={teacherProfile?.class_type ?? "physical"}
             initialHourlyRate={priceRow?.hourly_rate?.toString() ?? ""}

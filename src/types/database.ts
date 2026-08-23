@@ -108,6 +108,7 @@ export type Database = {
           status: ProfileStatus;
           owner_published: boolean;
           contact_mode: "phone" | "messaging_only";
+          languages: string[] | null;
           created_at: string;
           updated_at: string;
         };
@@ -126,6 +127,7 @@ export type Database = {
           status?: ProfileStatus;
           owner_published?: boolean;
           contact_mode?: "phone" | "messaging_only";
+          languages?: string[] | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -144,6 +146,7 @@ export type Database = {
           status?: ProfileStatus;
           owner_published?: boolean;
           contact_mode?: "phone" | "messaging_only";
+          languages?: string[] | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1037,6 +1040,7 @@ export type Database = {
           subjects: string[];
           grade_band: string | null;
           contact_mode: string;
+          languages: string[] | null;
         }[];
       };
       list_public_reviews: {

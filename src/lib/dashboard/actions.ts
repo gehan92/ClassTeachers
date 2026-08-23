@@ -83,6 +83,7 @@ const teacherProfileSchema = z.object({
   classType: z.enum(["physical", "online", "both"]),
   hourlyRate: z.coerce.number().min(0).optional(),
   monthlyRate: z.coerce.number().min(0).optional(),
+  languages: z.array(z.string().trim().min(1)).optional(),
 });
 
 export async function updateTeacherProfile(input: {
@@ -95,6 +96,7 @@ export async function updateTeacherProfile(input: {
   classType: string;
   hourlyRate: string;
   monthlyRate: string;
+  languages: string[];
 }): Promise<ActionResult> {
   const parsed = teacherProfileSchema.safeParse({
     headline: input.headline,
@@ -106,6 +108,7 @@ export async function updateTeacherProfile(input: {
     classType: input.classType,
     hourlyRate: input.hourlyRate || undefined,
     monthlyRate: input.monthlyRate || undefined,
+    languages: input.languages.map((l) => l.trim()).filter(Boolean),
   });
   if (!parsed.success) {
     return { error: "Please check the highlighted fields and try again." };
@@ -132,6 +135,7 @@ export async function updateTeacherProfile(input: {
       experience_years: parsed.data.experienceYears ?? null,
       location: parsed.data.location || null,
       class_type: parsed.data.classType,
+      languages: parsed.data.languages && parsed.data.languages.length > 0 ? parsed.data.languages : null,
     },
     { onConflict: "id" },
   );

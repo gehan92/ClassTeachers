@@ -25,6 +25,7 @@ export function ProfileTab({
   initialWorkExperience,
   initialExperienceYears,
   initialSubjects,
+  initialLanguages,
   initialLocation,
   initialClassType,
   initialHourlyRate,
@@ -41,6 +42,7 @@ export function ProfileTab({
   initialWorkExperience: string[];
   initialExperienceYears: string;
   initialSubjects: string[];
+  initialLanguages: string[];
   initialLocation: string;
   initialClassType: ClassType;
   initialHourlyRate: string;
@@ -95,6 +97,7 @@ export function ProfileTab({
     bio: initialBio,
     experience: initialExperienceYears,
     subjects: initialSubjects.join(", "),
+    languages: initialLanguages.join(", "),
     location: initialLocation,
     classType: initialClassType,
     hourlyRate: initialHourlyRate,
@@ -138,7 +141,9 @@ export function ProfileTab({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  function update(field: "headline" | "experience" | "subjects" | "location" | "hourlyRate" | "monthlyRate") {
+  function update(
+    field: "headline" | "experience" | "subjects" | "languages" | "location" | "hourlyRate" | "monthlyRate",
+  ) {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [field]: e.target.value }));
   }
 
@@ -181,6 +186,7 @@ export function ProfileTab({
         classType: form.classType,
         hourlyRate: form.hourlyRate,
         monthlyRate: form.monthlyRate,
+        languages: form.languages.split(","),
       }),
       updateTeacherSubjects(form.subjects.split(",")),
     ]);
@@ -364,6 +370,16 @@ export function ProfileTab({
               placeholder={t("subjectsPlaceholder")}
             />
             <p className="text-xs text-muted-foreground">{t("subjectsHint")}</p>
+          </div>
+          <div className="flex flex-col gap-1.5 sm:col-span-2">
+            <Label htmlFor="languages">{t("fields.languages")}</Label>
+            <Input
+              id="languages"
+              value={form.languages}
+              onChange={update("languages")}
+              placeholder={t("languagesPlaceholder")}
+            />
+            <p className="text-xs text-muted-foreground">{t("languagesHint")}</p>
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="location">{t("fields.location")}</Label>

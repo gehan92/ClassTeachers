@@ -159,6 +159,22 @@ function AboutPanel({ teacher, showGate }: { teacher: TeacherProfileDetail; show
   );
 }
 
+function TagList({ items }: { items: string[] }) {
+  if (items.length === 0) return <>—</>;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((item) => (
+        <span
+          key={item}
+          className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground"
+        >
+          {item}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function QualificationsPanel({ teacher }: { teacher: TeacherProfileDetail }) {
   const t = useTranslations("profilePage");
 
@@ -167,7 +183,8 @@ function QualificationsPanel({ teacher }: { teacher: TeacherProfileDetail }) {
       label: t("experienceLabel"),
       value: teacher.experienceYears != null ? t("yearsExperience", { years: teacher.experienceYears }) : "—",
     },
-    { label: t("subjectsLabel"), value: teacher.subjects.length > 0 ? teacher.subjects.join(", ") : "—" },
+    { label: t("subjectsLabel"), value: <TagList items={teacher.subjects} /> },
+    { label: t("languagesLabel"), value: <TagList items={teacher.languages} /> },
     { label: t("gradeLevelsLabel"), value: teacher.gradeBand ?? "—" },
     { label: t("classTypeLabel"), value: classTypeLabel(t, teacher.classType) },
   ];

@@ -65,6 +65,7 @@ async function loadTeacherProfile(
     workExperience: teacher.work_experience ?? [],
     photoUrl: teacher.photo_url,
     subjects: teacher.subjects ?? [],
+    languages: teacher.languages ?? [],
     gradeBand: teacher.grade_band,
     rating: teacher.rating,
     reviewCount: teacher.review_count,

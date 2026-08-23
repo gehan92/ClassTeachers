@@ -21,6 +21,7 @@ export type TeacherProfileDetail = {
   workExperience: string[];
   photoUrl: string | null;
   subjects: string[];
+  languages: string[];
   gradeBand: string | null;
   rating: number;
   reviewCount: number;

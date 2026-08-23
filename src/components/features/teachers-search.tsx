@@ -206,7 +206,10 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
         listing.location.toLowerCase().includes(locationQuery) ||
         (locationQuery === "online" && listing.online);
       const matchesOnline = !onlineOnly || listing.online;
-      const matchesGrade = !grade || listing.gradeBand === grade;
+      // gradeBands, not the single gradeBand — an institute typically spans
+      // several grade levels across its teachers, so it should match if it
+      // covers the selected grade at all, not just its single most-common one.
+      const matchesGrade = !grade || listing.gradeBands.includes(grade);
       const matchesPriceInterval = priceInterval === "any" || listing.price.interval === priceInterval;
       const matchesPriceMin = minPrice === undefined || Number.isNaN(minPrice) || listing.price.amount >= minPrice;
       const matchesPriceMax = maxPrice === undefined || Number.isNaN(maxPrice) || listing.price.amount <= maxPrice;

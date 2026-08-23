@@ -23,6 +23,8 @@ export type Listing = {
   online: boolean;
   /** Null when the listing has no subjects linked yet to infer a level from (and isn't a campus lecturer). */
   gradeBand: GradeBand | null;
+  /** Every grade level this listing actually covers — a single-item array for a teacher ad (one grade per ad), but potentially several for an institute spanning multiple grades across its teachers. Filtering should match against this, not the single `gradeBand` above. */
+  gradeBands: GradeBand[];
   avatarInitials: string;
   rating: number;
   reviewCount: number;

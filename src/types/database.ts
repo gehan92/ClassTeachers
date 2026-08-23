@@ -1011,6 +1011,7 @@ export type Database = {
           review_count: number;
           subjects: string[];
           grade_band: string | null;
+          grade_bands: string[];
           online: boolean;
           teacher_count: number;
         }[];

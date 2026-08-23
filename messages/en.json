@@ -68,25 +68,41 @@
       "tag": "Individual",
       "title": "Teacher",
       "description": "School teachers and private tutors, Grade 1–13.",
-      "points": ["Own profile & pricing", "Notes, question bank, exams", "Online or in-person classes"]
+      "points": [
+        "Own profile & pricing",
+        "Notes, question bank, exams",
+        "Online or in-person classes"
+      ]
     },
     "class": {
       "tag": "Institute",
       "title": "Class / Institute",
       "description": "Tuition institutes with one or more teachers.",
-      "points": ["Multi-teacher profile", "Institute-wide advertisement", "Class-level pricing"]
+      "points": [
+        "Multi-teacher profile",
+        "Institute-wide advertisement",
+        "Class-level pricing"
+      ]
     },
     "campus": {
       "tag": "Higher education",
       "title": "Campus Lecturer / Professor",
       "description": "University lecturers offering courses or guest sessions.",
-      "points": ["Degree & research credentials", "Course-style question banks", "Same tools, campus level"]
+      "points": [
+        "Degree & research credentials",
+        "Course-style question banks",
+        "Same tools, campus level"
+      ]
     },
     "student": {
       "tag": "Learner",
       "title": "Student",
       "description": "From Grade 1 pupils' parents to university students.",
-      "points": ["Search & compare freely", "Join classes, sit exams", "Full access after enrolling"]
+      "points": [
+        "Search & compare freely",
+        "Join classes, sit exams",
+        "Full access after enrolling"
+      ]
     }
   },
   "featured": {
@@ -310,9 +326,18 @@
     "footerLink": "Sign up free",
     "sideQuote": "\"Notes, exams, and my classes — all in one login. I don't juggle four different apps anymore.\"",
     "stats": [
-      { "value": "2,400+", "label": "Teachers & classes" },
-      { "value": "Grade 1–13", "label": "Plus campus" },
-      { "value": "18 districts", "label": "Across Sri Lanka" }
+      {
+        "value": "2,400+",
+        "label": "Teachers & classes"
+      },
+      {
+        "value": "Grade 1–13",
+        "label": "Plus campus"
+      },
+      {
+        "value": "18 districts",
+        "label": "Across Sri Lanka"
+      }
     ]
   },
   "signup": {
@@ -340,9 +365,18 @@
     "footerLink": "Log in",
     "sideQuote": "\"Registered as an institute in an afternoon — all six of our teachers were listed by evening.\"",
     "stats": [
-      { "value": "Free", "label": "To get started" },
-      { "value": "4 roles", "label": "One account system" },
-      { "value": "5 min", "label": "To set up a profile" }
+      {
+        "value": "Free",
+        "label": "To get started"
+      },
+      {
+        "value": "4 roles",
+        "label": "One account system"
+      },
+      {
+        "value": "5 min",
+        "label": "To set up a profile"
+      }
     ],
     "instituteFields": {
       "heading": "General information",
@@ -392,10 +426,22 @@
     },
     "roleSelect": {
       "label": "Choose your role",
-      "student": { "tag": "Learner", "label": "Student / Parent" },
-      "teacher": { "tag": "Individual", "label": "Teacher" },
-      "class": { "tag": "Institute", "label": "Class / Institute" },
-      "lecturer": { "tag": "Higher ed", "label": "Campus Lecturer" }
+      "student": {
+        "tag": "Learner",
+        "label": "Student / Parent"
+      },
+      "teacher": {
+        "tag": "Individual",
+        "label": "Teacher"
+      },
+      "class": {
+        "tag": "Institute",
+        "label": "Class / Institute"
+      },
+      "lecturer": {
+        "tag": "Higher ed",
+        "label": "Campus Lecturer"
+      }
     },
     "pendingConfirmation": {
       "eyebrow": "Check your inbox",
@@ -407,8 +453,14 @@
   "forgotPassword": {
     "sideQuote": "\"Locked out before an exam once — reset link landed in under a minute.\"",
     "stats": [
-      { "value": "~2 min", "label": "Typical reset time" },
-      { "value": "Secure", "label": "Link expires in 30 min" }
+      {
+        "value": "~2 min",
+        "label": "Typical reset time"
+      },
+      {
+        "value": "Secure",
+        "label": "Link expires in 30 min"
+      }
     ],
     "request": {
       "eyebrow": "Password reset",
@@ -840,6 +892,7 @@
       "live": "Live Classes",
       "notes": "Tutes & Notes",
       "exams": "Exams",
+      "assignments": "Assignments",
       "reviews": "My Reviews",
       "profile": "Profile & Account"
     },
@@ -969,6 +1022,30 @@
       "notifNewNotes": "New notes",
       "notifLiveReminders": "Live class reminders",
       "notifExamGraded": "Exam graded"
+    },
+    "assignments": {
+      "title": "Assignments",
+      "subtitle": "Download the worksheet, do it, and upload a photo of your answer.",
+      "dueTitle": "Due now",
+      "dueSubtitle": "Assignments you still need to submit.",
+      "dueEmpty": "No assignments due right now.",
+      "pastTitle": "Past results",
+      "pastEmpty": "No graded results yet.",
+      "tableAssignment": "Assignment",
+      "tableTeacher": "Teacher",
+      "tableGrade": "Grade",
+      "tableFeedback": "Feedback",
+      "tableDate": "Date graded",
+      "pendingGrading": "Pending grading",
+      "dueLabel": "Due {date}",
+      "viewWorksheet": "View worksheet",
+      "submitAnswer": "Submit answer",
+      "resubmit": "Resubmit",
+      "addPhotos": "Add photos",
+      "submitInstructions": "Upload clear photos of your completed answer.",
+      "submittedTitle": "Submitted — your teacher will grade this soon",
+      "submittedPendingNote": "We've received your answer photos. You'll see your grade and feedback here once it's ready.",
+      "backToAssignments": "Back to assignments"
     }
   },
   "teacherDashboard": {
@@ -992,6 +1069,7 @@
       "classes": "Classes",
       "questionBank": "Question bank",
       "exams": "Exams",
+      "assignments": "Assignments",
       "live": "Live classes",
       "students": "Students",
       "attendance": "Attendance",
@@ -1381,6 +1459,48 @@
         "enrolments": "New enrolments",
         "reviews": "New reviews",
         "submissions": "Exam submissions"
+      }
+    },
+    "assignments": {
+      "heading": "Assignments",
+      "subtitle": "Upload a worksheet, students submit a photo of their answer, you mark it.",
+      "uploadTute": "+ Upload tute",
+      "emptyState": "You haven't uploaded any assignments yet.",
+      "titlePlaceholder": "e.g. Fractions Practice Sheet",
+      "grade": "Grade",
+      "gradeWithCount": "Grade ({count})",
+      "delete": "Delete",
+      "viewWorksheet": "View worksheet",
+      "columns": {
+        "title": "Title",
+        "lesson": "Lesson",
+        "due": "Due",
+        "worksheet": "Worksheet",
+        "actions": "Actions"
+      },
+      "form": {
+        "titleLabel": "Title",
+        "lessonLabel": "Lesson",
+        "noLesson": "No specific lesson",
+        "dueLabel": "Due date (optional)",
+        "fileLabel": "Worksheet PDF",
+        "missingFields": "Please add a title and choose a PDF file."
+      },
+      "grading": {
+        "heading": "Grading — {title}",
+        "close": "Close",
+        "noSubmissions": "No submissions yet.",
+        "graded": "Graded",
+        "awaitingGrading": "Awaiting grading",
+        "filesHeading": "Uploaded answer photos",
+        "noFiles": "No files uploaded.",
+        "viewPhoto": "Photo {number}",
+        "scoreLabel": "Score",
+        "feedbackLabel": "Feedback",
+        "feedbackPlaceholder": "Write feedback for the student...",
+        "saveGrade": "Save grade",
+        "editGrade": "Edit grade",
+        "totalScore": "Total: {score}"
       }
     }
   },

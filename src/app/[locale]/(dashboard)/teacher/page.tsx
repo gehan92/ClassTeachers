@@ -6,6 +6,7 @@ import { NotesTab } from "@/components/dashboard/teacher/notes-tab";
 import { ClassesTab } from "@/components/dashboard/teacher/classes-tab";
 import { QuestionBankTab } from "@/components/dashboard/teacher/question-bank-tab";
 import { ExamsTab } from "@/components/dashboard/teacher/exams-tab";
+import { AssignmentsTab } from "@/components/dashboard/teacher/assignments-tab";
 import { LiveClassesTab } from "@/components/dashboard/teacher/live-classes-tab";
 import { StudentsTab } from "@/components/dashboard/teacher/students-tab";
 import { AttendanceTab } from "@/components/dashboard/teacher/attendance-tab";
@@ -24,6 +25,11 @@ import type { TeacherLiveClassRow } from "@/components/dashboard/teacher/live-cl
 import type { AttendanceSession } from "@/components/dashboard/teacher/attendance-tab";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
 import type { TeacherExamRow, ExamSubmissionRow } from "@/components/dashboard/teacher/exams-tab";
+import type {
+  TeacherAssignmentRow,
+  AssignmentSubmissionRow,
+  TeacherLessonOption,
+} from "@/components/dashboard/teacher/assignments-tab";
 import type { InquiryRow } from "@/components/dashboard/inquiries-tab";
 
 export default async function TeacherDashboardPage({
@@ -335,6 +341,76 @@ export default async function TeacherDashboardPage({
     joinLink: joinLinkByClassId.get(c.id) ?? null,
   }));
 
+  const lessonOptions: TeacherLessonOption[] = (liveClassRows ?? []).map((c) => ({ id: c.id, title: c.title }));
+  const lessonTitleById = new Map(lessonOptions.map((l) => [l.id, l.title]));
+
+  const { data: assignmentRows } = await supabase
+    .from("assignments")
+    .select("id, title, lesson_id, file_path, due_at")
+    .eq("owner_type", "teacher")
+    .eq("owner_id", userId)
+    .order("created_at", { ascending: false });
+
+  const assignmentFilePaths = (assignmentRows ?? []).map((a) => a.file_path);
+  const assignmentFileUrlByPath = new Map<string, string>();
+  if (assignmentFilePaths.length > 0) {
+    const { data: signedAssignmentUrls } = await supabase.storage
+      .from("assignments")
+      .createSignedUrls(assignmentFilePaths, 3600);
+    for (const entry of signedAssignmentUrls ?? []) {
+      if (entry.path && entry.signedUrl) assignmentFileUrlByPath.set(entry.path, entry.signedUrl);
+    }
+  }
+
+  const assignments: TeacherAssignmentRow[] = (assignmentRows ?? []).map((a) => ({
+    id: a.id,
+    title: a.title,
+    lessonTitle: a.lesson_id ? (lessonTitleById.get(a.lesson_id) ?? null) : null,
+    dueLabel: a.due_at ? dateFormatter.format(new Date(a.due_at)) : null,
+    fileUrl: assignmentFileUrlByPath.get(a.file_path) ?? "",
+  }));
+
+  const assignmentIds = (assignmentRows ?? []).map((a) => a.id);
+  const { data: assignmentSubmissionRows } = assignmentIds.length
+    ? await supabase
+        .from("assignment_submissions")
+        .select("id, assignment_id, student_id, photo_urls, status, grade, feedback, submitted_at")
+        .in("assignment_id", assignmentIds)
+    : {
+        data: [] as {
+          id: string;
+          assignment_id: string;
+          student_id: string;
+          photo_urls: string[];
+          status: "pending" | "graded";
+          grade: number | null;
+          feedback: string | null;
+          submitted_at: string;
+        }[],
+      };
+
+  const allAssignmentPhotoPaths = (assignmentSubmissionRows ?? []).flatMap((s) => s.photo_urls);
+  const assignmentPhotoUrlByPath = new Map<string, string>();
+  if (allAssignmentPhotoPaths.length > 0) {
+    const { data: signedPhotoUrls } = await supabase.storage
+      .from("submissions")
+      .createSignedUrls(allAssignmentPhotoPaths, 3600);
+    for (const entry of signedPhotoUrls ?? []) {
+      if (entry.path && entry.signedUrl) assignmentPhotoUrlByPath.set(entry.path, entry.signedUrl);
+    }
+  }
+
+  const assignmentSubmissions: AssignmentSubmissionRow[] = (assignmentSubmissionRows ?? []).map((s) => ({
+    id: s.id,
+    assignmentId: s.assignment_id,
+    studentName: studentById.get(s.student_id)?.full_name ?? "—",
+    submittedLabel: s.submitted_at ? dateFormatter.format(new Date(s.submitted_at)) : null,
+    status: s.status,
+    grade: s.grade,
+    feedback: s.feedback,
+    photoUrls: s.photo_urls.map((p) => assignmentPhotoUrlByPath.get(p)).filter((u): u is string => Boolean(u)),
+  }));
+
   const rosterStudents = [...new Map((enrollmentRows ?? []).map((e) => [e.student_id, e])).values()];
   const attendanceSessions: AttendanceSession[] = (liveClassRows ?? []).map((c) => ({
     id: c.id,
@@ -418,6 +494,7 @@ export default async function TeacherDashboardPage({
             { key: "notes", label: t("tabs.notes"), count: notes.length },
             { key: "questionBank", label: t("tabs.questionBank"), count: 12 },
             { key: "exams", label: t("tabs.exams"), count: examRows?.length ?? 0 },
+            { key: "assignments", label: t("tabs.assignments"), count: assignments.length },
           ],
         },
         {
@@ -475,6 +552,9 @@ export default async function TeacherDashboardPage({
         classes: <ClassesTab batches={batches} rosterByBatch={rosterByBatch} />,
         questionBank: <QuestionBankTab initialQuestions={questions} batches={batches} />,
         exams: <ExamsTab exams={exams} submissions={examSubmissions} questions={questions} />,
+        assignments: (
+          <AssignmentsTab assignments={assignments} submissions={assignmentSubmissions} lessons={lessonOptions} />
+        ),
         live: <LiveClassesTab classes={liveClasses} />,
         students: <StudentsTab students={students} requests={requests} />,
         attendance: <AttendanceTab sessions={attendanceSessions} />,

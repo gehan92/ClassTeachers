@@ -5,6 +5,7 @@ import { ClassesTab } from "@/components/dashboard/student/classes-tab";
 import { LiveClassesTab } from "@/components/dashboard/student/live-classes-tab";
 import { NotesTab } from "@/components/dashboard/student/notes-tab";
 import { ExamsTab } from "@/components/dashboard/student/exams-tab";
+import { AssignmentsTab } from "@/components/dashboard/student/assignments-tab";
 import { ReviewsTab } from "@/components/dashboard/student/reviews-tab";
 import { ProfileTab } from "@/components/dashboard/student/profile-tab";
 import { createClient } from "@/lib/supabase/server";
@@ -13,6 +14,7 @@ import type { StudentNoteRow } from "@/components/dashboard/student/notes-tab";
 import type { ReviewTarget, StudentPostedReview } from "@/components/dashboard/student/reviews-tab";
 import type { StudentLiveClassRow } from "@/components/dashboard/student/live-classes-tab";
 import type { StudentExamRow, StudentExamQuestion } from "@/components/dashboard/student/exams-tab";
+import type { StudentAssignmentRow } from "@/components/dashboard/student/assignments-tab";
 
 function isFuture(iso: string): boolean {
   return new Date(iso).getTime() >= Date.now();
@@ -222,6 +224,59 @@ export default async function StudentDashboardPage({
     };
   });
 
+  const lessonTitleById = new Map(liveClassRows.map((r) => [r.id, r.title]));
+
+  // No explicit owner filter here, same as the exams query above — RLS
+  // (is_enrolled, 0047) already scopes which assignment rows come back.
+  const [{ data: assignmentRows }, { data: assignmentSubmissionRows }] = await Promise.all([
+    supabase
+      .from("assignments")
+      .select("id, owner_type, owner_id, lesson_id, title, file_path, due_at")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("assignment_submissions")
+      .select("assignment_id, status, grade, feedback, submitted_at")
+      .eq("student_id", userId),
+  ]);
+
+  const assignmentSubmissionByAssignmentId = new Map(
+    (assignmentSubmissionRows ?? []).map((s) => [s.assignment_id, s]),
+  );
+
+  const assignmentFilePaths = (assignmentRows ?? []).map((a) => a.file_path);
+  const assignmentFileUrlByPath = new Map<string, string>();
+  if (assignmentFilePaths.length > 0) {
+    const { data: signedAssignmentUrls } = await supabase.storage
+      .from("assignments")
+      .createSignedUrls(assignmentFilePaths, 3600);
+    for (const entry of signedAssignmentUrls ?? []) {
+      if (entry.path && entry.signedUrl) assignmentFileUrlByPath.set(entry.path, entry.signedUrl);
+    }
+  }
+
+  const assignments: StudentAssignmentRow[] = (assignmentRows ?? []).map((a) => {
+    const submission = assignmentSubmissionByAssignmentId.get(a.id);
+    return {
+      id: a.id,
+      title: a.title,
+      teacherName: ownerName(a.owner_type, a.owner_id),
+      lessonTitle: a.lesson_id ? (lessonTitleById.get(a.lesson_id) ?? null) : null,
+      dueLabel: a.due_at ? dateFormatter.format(new Date(a.due_at)) : null,
+      fileUrl: assignmentFileUrlByPath.get(a.file_path) ?? "",
+      submission: submission
+        ? {
+            status: submission.status,
+            grade: submission.grade,
+            feedback: submission.feedback,
+            submittedLabel: submission.submitted_at ? dateFormatter.format(new Date(submission.submitted_at)) : null,
+          }
+        : null,
+    };
+  });
+  const assignmentsDueCount = (assignmentRows ?? []).filter(
+    (a) => assignmentSubmissionByAssignmentId.get(a.id)?.status !== "graded",
+  ).length;
+
   const reviewTargets: ReviewTarget[] = [...joinedOwnerKeys].map((key) => {
     const [ownerType, ownerId] = key.split(":") as ["teacher" | "class", string];
     return { ownerType, ownerId, name: ownerName(ownerType, ownerId) };
@@ -258,6 +313,7 @@ export default async function StudentDashboardPage({
             { key: "live", label: t("tabs.live") },
             { key: "notes", label: t("tabs.notes") },
             { key: "exams", label: t("tabs.exams"), count: examsDueCount },
+            { key: "assignments", label: t("tabs.assignments"), count: assignmentsDueCount },
           ],
         },
         {
@@ -282,6 +338,7 @@ export default async function StudentDashboardPage({
         live: <LiveClassesTab classes={liveClasses} />,
         notes: <NotesTab notes={studentNotes} studentName={fullName} />,
         exams: <ExamsTab exams={exams} />,
+        assignments: <AssignmentsTab assignments={assignments} />,
         reviews: <ReviewsTab targets={reviewTargets} initialReviews={myReviews} />,
         profile: (
           <ProfileTab

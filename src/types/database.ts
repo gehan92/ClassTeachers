@@ -530,6 +530,80 @@ export type Database = {
         Relationships: [];
       };
 
+      assignments: {
+        Row: {
+          id: string;
+          owner_type: OwnerType;
+          owner_id: string;
+          lesson_id: string | null;
+          title: string;
+          file_path: string;
+          due_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_type: OwnerType;
+          owner_id: string;
+          lesson_id?: string | null;
+          title: string;
+          file_path: string;
+          due_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_type?: OwnerType;
+          owner_id?: string;
+          lesson_id?: string | null;
+          title?: string;
+          file_path?: string;
+          due_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+
+      assignment_submissions: {
+        Row: {
+          id: string;
+          assignment_id: string;
+          student_id: string;
+          photo_urls: string[];
+          status: "pending" | "graded";
+          grade: number | null;
+          feedback: string | null;
+          submitted_at: string;
+          graded_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          assignment_id: string;
+          student_id: string;
+          photo_urls?: string[];
+          status?: "pending" | "graded";
+          grade?: number | null;
+          feedback?: string | null;
+          submitted_at?: string;
+          graded_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          assignment_id?: string;
+          student_id?: string;
+          photo_urls?: string[];
+          status?: "pending" | "graded";
+          grade?: number | null;
+          feedback?: string | null;
+          submitted_at?: string;
+          graded_at?: string | null;
+        };
+        Relationships: [];
+      };
+
       live_classes: {
         Row: {
           id: string;

@@ -893,7 +893,8 @@
       "notes": "ටියුට් සහ සටහන්",
       "exams": "විභාග",
       "reviews": "මගේ සමාලෝචන",
-      "profile": "පැතිකඩ සහ ගිණුම"
+      "profile": "පැතිකඩ සහ ගිණුම",
+      "assignments": "පැවරුම්"
     },
     "overview": {
       "greeting": "සුබ සන්ධ්‍යාවක්, {name}",
@@ -1021,6 +1022,30 @@
       "notifNewNotes": "නව සටහන්",
       "notifLiveReminders": "සජීවී පන්ති මතක් කිරීම්",
       "notifExamGraded": "විභාගය ලකුණු කරන ලදී"
+    },
+    "assignments": {
+      "title": "පැවරුම්",
+      "subtitle": "වැඩ පත්‍රිකාව බාගත කර, එය කර, ඔබේ පිළිතුරේ ඡායාරූපයක් උඩුගත කරන්න.",
+      "dueTitle": "දැන් නියමිත",
+      "dueSubtitle": "ඔබ තවම ඉදිරිපත් කළ යුතු පැවරුම්.",
+      "dueEmpty": "දැනට නියමිත පැවරුම් නැත.",
+      "pastTitle": "පසුගිය ප්‍රතිඵල",
+      "pastEmpty": "තවම ලකුණු දුන් ප්‍රතිඵල නැත.",
+      "tableAssignment": "පැවරුම",
+      "tableTeacher": "ගුරුවරයා",
+      "tableGrade": "ලකුණු",
+      "tableFeedback": "ප්‍රතිපෝෂණය",
+      "tableDate": "ලකුණු දුන් දිනය",
+      "pendingGrading": "ලකුණු දීමට ඉඩ බලා සිටී",
+      "dueLabel": "නියමිත දිනය {date}",
+      "viewWorksheet": "වැඩ පත්‍රිකාව බලන්න",
+      "submitAnswer": "පිළිතුර ඉදිරිපත් කරන්න",
+      "resubmit": "නැවත ඉදිරිපත් කරන්න",
+      "addPhotos": "ඡායාරූප එක් කරන්න",
+      "submitInstructions": "ඔබේ සම්පූර්ණ කළ පිළිතුරේ පැහැදිලි ඡායාරූප උඩුගත කරන්න.",
+      "submittedTitle": "ඉදිරිපත් කරන ලදී — ඔබේ ගුරුවරයා ඉක්මනින් මෙය ලකුණු කරනු ඇත",
+      "submittedPendingNote": "අපි ඔබේ පිළිතුරු ඡායාරූප ලැබී ඇත. එය සූදානම් වූ පසු ඔබේ ලකුණු සහ ප්‍රතිපෝෂණය මෙහි දිස්වනු ඇත.",
+      "backToAssignments": "පැවරුම් වෙත ආපසු"
     }
   },
   "teacherDashboard": {
@@ -1050,7 +1075,8 @@
       "inquiries": "විමසීම්",
       "reviews": "සමාලෝචන",
       "ads": "දැන්වීම",
-      "settings": "සැකසුම්"
+      "settings": "සැකසුම්",
+      "assignments": "පැවරුම්"
     },
     "overview": {
       "greeting": "සුබ සන්ධ්‍යාවක්, {name}",
@@ -1433,6 +1459,48 @@
         "enrolments": "නව ලියාපදිංචි වීම්",
         "reviews": "නව සමාලෝචන",
         "submissions": "විභාග ඉදිරිපත් කිරීම්"
+      }
+    },
+    "assignments": {
+      "heading": "පැවරුම්",
+      "subtitle": "වැඩ පත්‍රිකාවක් උඩුගත කරන්න, සිසුන් ඔවුන්ගේ පිළිතුරේ ඡායාරූපයක් ඉදිරිපත් කරයි, ඔබ එය සලකුණු කරන්න.",
+      "uploadTute": "+ ටියුෂන් පත්‍රිකාවක් උඩුගත කරන්න",
+      "emptyState": "ඔබ තවම කිසිදු පැවරුමක් උඩුගත කර නැත.",
+      "titlePlaceholder": "උදා: භාග අභ්‍යාස පත්‍රිකාව",
+      "grade": "ලකුණු දෙන්න",
+      "gradeWithCount": "ලකුණු දෙන්න ({count})",
+      "delete": "මකන්න",
+      "viewWorksheet": "වැඩ පත්‍රිකාව බලන්න",
+      "columns": {
+        "title": "මාතෘකාව",
+        "lesson": "පාඩම",
+        "due": "නියමිත දිනය",
+        "worksheet": "වැඩ පත්‍රිකාව",
+        "actions": "ක්‍රියා"
+      },
+      "form": {
+        "titleLabel": "මාතෘකාව",
+        "lessonLabel": "පාඩම",
+        "noLesson": "විශේෂිත පාඩමක් නැත",
+        "dueLabel": "නියමිත දිනය (විකල්ප)",
+        "fileLabel": "වැඩ පත්‍රිකා PDF",
+        "missingFields": "කරුණාකර මාතෘකාවක් එක් කර PDF ගොනුවක් තෝරන්න."
+      },
+      "grading": {
+        "heading": "ලකුණු දීම — {title}",
+        "close": "වසන්න",
+        "noSubmissions": "තවම ඉදිරිපත් කිරීම් නැත.",
+        "graded": "ලකුණු දී ඇත",
+        "awaitingGrading": "ලකුණු දීමට ඉඩ බලා සිටී",
+        "filesHeading": "උඩුගත කළ පිළිතුරු ඡායාරූප",
+        "noFiles": "ගොනු උඩුගත කර නැත.",
+        "viewPhoto": "ඡායාරූපය {number}",
+        "scoreLabel": "ලකුණු",
+        "feedbackLabel": "ප්‍රතිපෝෂණය",
+        "feedbackPlaceholder": "සිසුවා සඳහා ප්‍රතිපෝෂණය ලියන්න...",
+        "saveGrade": "ලකුණු සුරකින්න",
+        "editGrade": "ලකුණු සංස්කරණය කරන්න",
+        "totalScore": "මුළු ලකුණු: {score}"
       }
     }
   },

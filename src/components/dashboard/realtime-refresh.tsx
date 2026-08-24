@@ -50,7 +50,21 @@ export function RealtimeRefresh({ watch }: { watch: RealtimeWatch[] }) {
         () => router.refresh(),
       );
     }
-    channel.subscribe();
+    // A dropped/failed channel degrades to exactly the pre-realtime
+    // behavior (the dashboard still works, it just won't self-refresh
+    // until the viewer does something) — never fatal, just logged for
+    // visibility. Not hand-rolling a manual resubscribe here: the
+    // underlying socket already auto-reconnects and rejoins channels on
+    // its own (standard Phoenix-channel behavior, which is what this SDK
+    // is built on) — calling channel.subscribe() again from application
+    // code only re-attempts a join while the channel is in a `closed`
+    // state, so retrying after CHANNEL_ERROR/TIMED_OUT here would just be
+    // dead code, not a real recovery path.
+    channel.subscribe((status, err) => {
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        console.error(`RealtimeRefresh: ${status} for ${watch.map((w) => w.table).join(", ")}`, err);
+      }
+    });
     return () => {
       supabase.removeChannel(channel);
     };

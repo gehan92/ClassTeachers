@@ -10,7 +10,14 @@ const createLiveClassSchema = z.object({
   title: z.string().trim().min(2),
   mode: z.enum(["online", "physical"]),
   location: z.string().trim().optional(),
-  scheduledAt: z.string().min(1),
+  // Must already be a UTC ISO string (Date#toISOString()) computed in the
+  // browser — a bare "YYYY-MM-DDTHH:mm" datetime-local value has no
+  // timezone of its own, so converting it with `new Date(...)` has to
+  // happen where "local" actually means something. Doing that conversion
+  // here instead (a "use server" action runs on Vercel, in UTC) would
+  // silently reinterpret the teacher's local wall-clock digits as UTC,
+  // shifting the real scheduled moment by their timezone offset.
+  scheduledAt: z.iso.datetime(),
   durationMinutes: z.coerce.number().int().min(1).default(60),
 });
 
@@ -55,8 +62,6 @@ export async function createLiveClass(input: {
     ownerId = classProfile.id;
   }
 
-  const scheduledAtIso = new Date(parsed.data.scheduledAt).toISOString();
-
   const { data: liveClass, error: insertError } = await supabase
     .from("live_classes")
     .insert({
@@ -65,7 +70,7 @@ export async function createLiveClass(input: {
       title: parsed.data.title,
       mode: parsed.data.mode,
       location: parsed.data.mode === "physical" ? parsed.data.location || null : null,
-      scheduled_at: scheduledAtIso,
+      scheduled_at: parsed.data.scheduledAt,
       duration_minutes: parsed.data.durationMinutes,
     })
     .select("id")

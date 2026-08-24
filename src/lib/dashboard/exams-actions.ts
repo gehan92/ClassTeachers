@@ -10,7 +10,9 @@ const createExamSchema = z.object({
   title: z.string().trim().min(2),
   questionIds: z.array(z.string().uuid()).min(1),
   durationMinutes: z.coerce.number().int().min(1),
-  scheduledAt: z.string().min(1),
+  // Must already be a UTC ISO string computed in the browser — see the
+  // same note in live-classes-actions.ts's createLiveClassSchema.
+  scheduledAt: z.iso.datetime(),
 });
 
 export async function createExam(input: {
@@ -58,7 +60,7 @@ export async function createExam(input: {
     title: parsed.data.title,
     question_ids: parsed.data.questionIds,
     duration_minutes: parsed.data.durationMinutes,
-    scheduled_at: new Date(parsed.data.scheduledAt).toISOString(),
+    scheduled_at: parsed.data.scheduledAt,
   });
   if (error) {
     return { error: "Couldn't create this exam. Please try again." };

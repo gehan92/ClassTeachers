@@ -55,7 +55,10 @@ export function LiveClassesTab({ classes }: { classes: TeacherLiveClassRow[] }) 
       title: newTitle,
       mode: newMode,
       location: newLocation,
-      scheduledAt: newScheduledAt,
+      // Converted here, in the browser, so "local" means the teacher's
+      // actual timezone — the server has no idea what timezone a bare
+      // datetime-local string was picked in.
+      scheduledAt: new Date(newScheduledAt).toISOString(),
       durationMinutes: "60",
     });
     setSaving(false);

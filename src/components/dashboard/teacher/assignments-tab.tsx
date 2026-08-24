@@ -90,7 +90,9 @@ export function AssignmentsTab({
     formData.set("title", title.trim());
     if (batchId !== NO_BATCH) formData.set("batchId", batchId);
     if (lessonId !== NO_LESSON) formData.set("lessonId", lessonId);
-    if (dueAt) formData.set("dueAt", dueAt);
+    // Converted here in the browser — see the note in
+    // live-classes-actions.ts's createLiveClassSchema for why.
+    if (dueAt) formData.set("dueAt", new Date(dueAt).toISOString());
     formData.set("file", file);
 
     const result = await createAssignment(formData);

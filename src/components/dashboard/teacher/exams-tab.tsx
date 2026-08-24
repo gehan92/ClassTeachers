@@ -78,7 +78,9 @@ export function ExamsTab({
       title,
       questionIds: selectedQuestionIds,
       durationMinutes: duration,
-      scheduledAt,
+      // Converted here in the browser — see the note in
+      // live-classes-actions.ts's createLiveClassSchema for why.
+      scheduledAt: new Date(scheduledAt).toISOString(),
     });
     setSaving(false);
     if (result.error) {

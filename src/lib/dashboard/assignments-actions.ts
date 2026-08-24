@@ -10,7 +10,9 @@ const createAssignmentSchema = z.object({
   title: z.string().trim().min(2),
   batchId: z.string().uuid().optional(),
   lessonId: z.string().uuid().optional(),
-  dueAt: z.string().optional(),
+  // Must already be a UTC ISO string computed in the browser when present
+  // — see the same note in live-classes-actions.ts's createLiveClassSchema.
+  dueAt: z.iso.datetime().optional(),
 });
 
 export async function createAssignment(formData: FormData): Promise<ActionResult> {
@@ -73,7 +75,7 @@ export async function createAssignment(formData: FormData): Promise<ActionResult
     lesson_id: parsed.data.lessonId ?? null,
     title: parsed.data.title,
     file_path: filePath,
-    due_at: parsed.data.dueAt ? new Date(parsed.data.dueAt).toISOString() : null,
+    due_at: parsed.data.dueAt ?? null,
   });
   if (insertError) {
     await supabase.storage.from("assignments").remove([filePath]);

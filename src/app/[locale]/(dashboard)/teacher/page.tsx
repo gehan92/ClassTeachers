@@ -509,6 +509,17 @@ export default async function TeacherDashboardPage({
       userPhotoUrl={teacherProfile?.photo_url ?? null}
       logoutLabel={t("logout")}
       demoRole="teacher"
+      realtimeWatch={[
+        { table: "inquiries", filter: `owner_id=eq.${userId}` },
+        { table: "enrollments", filter: `owner_id=eq.${userId}` },
+        // No owner_id column on these three — the ownership link is one
+        // hop away (exam_id/assignment_id/live_class_id), so they watch
+        // unfiltered. See RealtimeRefresh's own comment for why that's a
+        // performance trade-off, not a data-exposure one.
+        { table: "exam_submissions" },
+        { table: "assignment_submissions" },
+        { table: "attendance_records" },
+      ]}
       groups={[
         {
           items: [{ key: "overview", label: t("tabs.overview") }],

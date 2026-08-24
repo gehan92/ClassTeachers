@@ -36,6 +36,7 @@ import {
 import { LocaleSwitcher } from "@/components/layout/locale-switcher";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { logOutAction } from "@/lib/auth/actions";
+import { RealtimeRefresh, type RealtimeWatch } from "@/components/dashboard/realtime-refresh";
 import type { DashboardNavGroup, DemoRole } from "@/types/dashboard";
 
 /** Same picker as the public SiteHeader's "Search" dropdown — kept as its own small copy here since the dashboard header's dark theme needs different trigger/item styling, not because the destinations differ. */
@@ -197,6 +198,7 @@ export function DashboardShell({
   groups,
   panels,
   defaultTab,
+  realtimeWatch,
 }: {
   brandBadge?: string;
   userLabel: string;
@@ -207,6 +209,8 @@ export function DashboardShell({
   groups: DashboardNavGroup[];
   panels: Record<string, React.ReactNode>;
   defaultTab: string;
+  /** Tables to silently live-refresh on — see RealtimeRefresh. Mounted once here, outside panels[activeTab], so it keeps listening no matter which tab is open. */
+  realtimeWatch?: RealtimeWatch[];
 }) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const t = useTranslations("nav");
@@ -239,6 +243,7 @@ export function DashboardShell({
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <RealtimeRefresh watch={realtimeWatch ?? []} />
       <header className="sticky top-0 z-50 flex h-15 shrink-0 items-center justify-between gap-4 border-b border-primary-dark bg-primary-dark px-5 text-white">
         <Link href="/" className="flex items-center gap-2.5 font-display text-lg font-bold text-white">
           <span className="flex size-7 items-center justify-center rounded-[6px] bg-secondary font-mono text-xs font-bold text-primary-dark">

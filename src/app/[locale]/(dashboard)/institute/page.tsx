@@ -233,6 +233,17 @@ export default async function InstituteDashboardPage({
       userPhotoUrl={classProfile?.photo_url ?? null}
       logoutLabel={t("logout")}
       demoRole="class"
+      // owner_id on inquiries/enrollments is class_profiles.id for an
+      // institute, not the auth user's own id — same distinction every
+      // owner-scoped query on this page already makes.
+      realtimeWatch={
+        instituteId
+          ? [
+              { table: "inquiries", filter: `owner_id=eq.${instituteId}` },
+              { table: "enrollments", filter: `owner_id=eq.${instituteId}` },
+            ]
+          : []
+      }
       groups={[
         {
           label: t("groupInstitute"),

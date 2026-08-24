@@ -37,7 +37,7 @@ function classState(row: StudentLiveClassRow, nowMs: number): LiveState {
   return "not_open";
 }
 
-export function LiveClassesTab({ classes }: { classes: StudentLiveClassRow[] }) {
+export function LiveClassesTab({ classes, studentName }: { classes: StudentLiveClassRow[]; studentName: string }) {
   const t = useTranslations("studentDashboard.live");
   const tc = useTranslations("studentDashboard.common");
   const [now, setNow] = useState(() => Date.now());
@@ -65,6 +65,7 @@ export function LiveClassesTab({ classes }: { classes: StudentLiveClassRow[] }) 
         roomUrl={activeCall.joinLink}
         closeLabel={tc("close")}
         onClose={() => setActiveCallId(null)}
+        displayName={studentName}
       />
     );
   }

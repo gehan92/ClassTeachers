@@ -63,6 +63,7 @@ export function PdfViewerPanel({
 
 type JitsiMeetAPI = {
   addEventListener: (event: string, handler: () => void) => void;
+  executeCommand: (command: string, ...args: unknown[]) => void;
   dispose: () => void;
 };
 
@@ -103,6 +104,17 @@ function loadJitsiScript(domain: string): Promise<JitsiMeetExternalAPIConstructo
  * screen off at the source, and the readyToClose listener is the reliable
  * part: the instant the viewer hangs up, this panel closes itself, so
  * that screen has no chance to appear even if the config flag is ignored.
+ *
+ * Room access itself is already gated server-side — the join_link only
+ * ever reaches the owner, an accepted-enrollment student, or an admin (RLS
+ * on live_class_links, see 0012_live_classes.sql). But meet.jit.si is a
+ * public server: anyone who gets hold of the raw URL some other way (a
+ * student forwards it, a screenshot leaks) can open it directly with no
+ * further check. `isHost` turns on Jitsi's own lobby/knock feature the
+ * moment the teacher's client joins — on meet.jit.si's anonymous domain,
+ * the first participant automatically becomes moderator, which is required
+ * to toggle it — so after that, anyone else needs the teacher to admit
+ * them by name rather than just having the link.
  */
 export function VideoCallPanel({
   title,
@@ -110,12 +122,18 @@ export function VideoCallPanel({
   roomUrl,
   closeLabel,
   onClose,
+  displayName,
+  isHost = false,
 }: {
   title: string;
   subtitle?: string;
   roomUrl: string;
   closeLabel: string;
   onClose: () => void;
+  /** Shown in the participant list and, for a knocking guest, in the moderator's admit/deny prompt. */
+  displayName?: string;
+  /** Enables the lobby (waiting room) once this client joins, so later joiners need to be admitted by name instead of just having the link. */
+  isHost?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
@@ -139,9 +157,18 @@ export function VideoCallPanel({
           parentNode: containerRef.current,
           width: "100%",
           height: "100%",
+          userInfo: displayName ? { displayName } : undefined,
           configOverwrite: { enableClosePage: false, prejoinPageEnabled: false },
         });
         api.addEventListener("readyToClose", () => onCloseRef.current());
+        if (isHost) {
+          // First joiner is auto-moderator on meet.jit.si's anonymous
+          // domain, which is required for this command to take effect —
+          // waiting to fire it until this client has actually joined.
+          api.addEventListener("videoConferenceJoined", () => {
+            api?.executeCommand("toggleLobby", true);
+          });
+        }
       })
       .catch(() => {
         // Best-effort embed — if the script can't load (offline, ad
@@ -153,7 +180,7 @@ export function VideoCallPanel({
       cancelled = true;
       api?.dispose();
     };
-  }, [roomUrl]);
+  }, [roomUrl, displayName, isHost]);
 
   return (
     <div>

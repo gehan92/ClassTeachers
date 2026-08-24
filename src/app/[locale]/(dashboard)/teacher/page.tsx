@@ -604,7 +604,7 @@ export default async function TeacherDashboardPage({
             lessons={lessonOptions}
           />
         ),
-        live: <LiveClassesTab classes={liveClasses} />,
+        live: <LiveClassesTab classes={liveClasses} hostName={fullName} />,
         students: <StudentsTab students={students} requests={requests} />,
         attendance: <AttendanceTab sessions={attendanceSessions} />,
         inquiries: <InquiriesTab inquiries={inquiries} />,

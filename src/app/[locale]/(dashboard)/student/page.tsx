@@ -393,7 +393,7 @@ export default async function StudentDashboardPage({
           />
         ),
         classes: <ClassesTab myClasses={myClasses} availableBatches={availableBatches} />,
-        live: <LiveClassesTab classes={liveClasses} />,
+        live: <LiveClassesTab classes={liveClasses} studentName={fullName} />,
         notes: <NotesTab notes={studentNotes} studentName={fullName} />,
         exams: <ExamsTab exams={exams} />,
         assignments: <AssignmentsTab assignments={assignments} />,

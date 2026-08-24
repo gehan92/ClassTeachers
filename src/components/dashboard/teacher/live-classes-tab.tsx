@@ -21,7 +21,7 @@ export type TeacherLiveClassRow = {
   joinLink: string | null;
 };
 
-export function LiveClassesTab({ classes }: { classes: TeacherLiveClassRow[] }) {
+export function LiveClassesTab({ classes, hostName }: { classes: TeacherLiveClassRow[]; hostName: string }) {
   const t = useTranslations("teacherDashboard.live");
   const tc = useTranslations("teacherDashboard.common");
   const router = useRouter();
@@ -90,6 +90,8 @@ export function LiveClassesTab({ classes }: { classes: TeacherLiveClassRow[] }) 
         roomUrl={activeCall.joinLink}
         closeLabel={tc("close")}
         onClose={() => setActiveCallId(null)}
+        displayName={hostName}
+        isHost
       />
     );
   }

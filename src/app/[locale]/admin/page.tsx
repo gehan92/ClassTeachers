@@ -10,6 +10,7 @@ import { FlaggedReviewsTab } from "@/components/dashboard/admin/flagged-reviews-
 import { ConnectionsTab } from "@/components/dashboard/admin/connections-tab";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createDateFormatter } from "@/lib/format-date";
 import { roleDashboardPath } from "@/lib/auth/routes";
 import type {
   ApprovalEntityType,
@@ -81,7 +82,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     : { data: [] as { id: string; full_name: string; role: string }[] };
   const teacherProfileById = new Map((pendingTeacherProfiles ?? []).map((p) => [p.id, p]));
 
-  const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const dateFormatter = createDateFormatter(locale);
 
   const approvals: PendingApproval[] = [
     ...(pendingTeacherRows ?? []).map((row) => {

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { createClient } from "@/lib/supabase/server";
+import { createDateFormatter } from "@/lib/format-date";
 import type { TeacherProfileDetail } from "@/types/teacher-profile";
 
 async function loadTeacherProfile(
@@ -51,7 +52,7 @@ async function loadTeacherProfile(
     .eq("status", "active");
   const adIdByBatchId = new Map((batchAdRows ?? []).filter((a) => a.batch_id).map((a) => [a.batch_id as string, a.id]));
 
-  const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const dateFormatter = createDateFormatter(locale);
 
   return {
     id: teacher.id,

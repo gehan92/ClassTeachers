@@ -8,6 +8,7 @@ import { ReviewsTab } from "@/components/dashboard/institute/reviews-tab";
 import { SettingsTab } from "@/components/dashboard/institute/settings-tab";
 import { InquiriesTab, type InquiryRow } from "@/components/dashboard/inquiries-tab";
 import { createClient } from "@/lib/supabase/server";
+import { createDateFormatter } from "@/lib/format-date";
 import type { TeachersAtGlance } from "@/types/dashboard-institute";
 import type { InstituteBatchRow } from "@/components/dashboard/institute/batches-tab";
 
@@ -177,7 +178,7 @@ export default async function InstituteDashboardPage({
   const { data: myReviewRows } = instituteId
     ? await supabase.rpc("list_public_reviews", { p_target_type: "class", p_target_id: instituteId })
     : { data: [] as { id: string; author: string | null; rating: number; body: string | null; reply: string | null; created_at: string }[] };
-  const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const dateFormatter = createDateFormatter(locale);
   const inquiries: InquiryRow[] = (inquiryRows ?? []).map((row) => ({
     id: row.id,
     senderName: row.sender_name,

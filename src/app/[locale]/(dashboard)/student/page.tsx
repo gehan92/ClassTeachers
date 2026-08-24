@@ -9,6 +9,7 @@ import { AssignmentsTab } from "@/components/dashboard/student/assignments-tab";
 import { ReviewsTab } from "@/components/dashboard/student/reviews-tab";
 import { ProfileTab } from "@/components/dashboard/student/profile-tab";
 import { createClient } from "@/lib/supabase/server";
+import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import type { MyClassRow, AvailableBatchRow } from "@/components/dashboard/student/classes-tab";
 import type { StudentNoteRow } from "@/components/dashboard/student/notes-tab";
 import type { ReviewTarget, StudentPostedReview } from "@/components/dashboard/student/reviews-tab";
@@ -29,6 +30,8 @@ export default async function StudentDashboardPage({
   setRequestLocale(locale);
 
   const t = await getTranslations("studentDashboard");
+  const dateFormatter = createDateFormatter(locale);
+  const scheduleFormatter = createScheduleFormatter(locale);
 
   const supabase = await createClient();
   const {
@@ -95,11 +98,7 @@ export default async function StudentDashboardPage({
   ].sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
 
   const nextLive = liveClassRows.find((row) => isFuture(row.scheduled_at));
-  const nextLiveLabel = nextLive
-    ? new Intl.DateTimeFormat(locale, { weekday: "short", hour: "numeric", minute: "2-digit" }).format(
-        new Date(nextLive.scheduled_at),
-      )
-    : null;
+  const nextLiveLabel = nextLive ? scheduleFormatter.format(new Date(nextLive.scheduled_at)) : null;
 
   const liveClassIds = liveClassRows.map((r) => r.id);
   const { data: liveClassLinkRows } = liveClassIds.length
@@ -140,11 +139,7 @@ export default async function StudentDashboardPage({
     title: row.title,
     teacherName: ownerName(row.ownerType, row.owner_id),
     scheduledAtIso: row.scheduled_at,
-    scheduledLabel: new Intl.DateTimeFormat(locale, {
-      weekday: "short",
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date(row.scheduled_at)),
+    scheduledLabel: scheduleFormatter.format(new Date(row.scheduled_at)),
     durationMinutes: row.duration_minutes,
     mode: row.mode,
     joinLink: joinLinkByClassId.get(row.id) ?? null,
@@ -191,8 +186,6 @@ export default async function StudentDashboardPage({
       pageCount: n.page_count,
     }));
 
-  const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
-
   type RawQuestionOption = { id: string; text: string; imagePath?: string };
   const allQuestionIds = [...new Set((examRows ?? []).flatMap((e) => e.question_ids))];
   const { data: examQuestionRows } = allQuestionIds.length
@@ -235,7 +228,7 @@ export default async function StudentDashboardPage({
       title: e.title,
       teacherName: ownerName(e.owner_type, e.owner_id),
       durationMinutes: e.duration_minutes,
-      scheduledLabel: e.scheduled_at ? dateFormatter.format(new Date(e.scheduled_at)) : "—",
+      scheduledLabel: e.scheduled_at ? scheduleFormatter.format(new Date(e.scheduled_at)) : "—",
       isOpen: !e.scheduled_at || !isFuture(e.scheduled_at),
       questions: e.question_ids
         .map((qid): StudentExamQuestion | null => {

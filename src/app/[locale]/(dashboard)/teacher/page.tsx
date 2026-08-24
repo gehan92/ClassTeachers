@@ -17,6 +17,7 @@ import type { TeacherAdBatchRow } from "@/components/dashboard/teacher/advertise
 import { SettingsTab } from "@/components/dashboard/teacher/settings-tab";
 import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { createClient } from "@/lib/supabase/server";
+import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import type { TeacherProfileDetail } from "@/types/teacher-profile";
 import type { TeacherBatchRow, BatchRosterEntry } from "@/components/dashboard/teacher/classes-tab";
 import type { TeacherNoteRow } from "@/components/dashboard/teacher/notes-tab";
@@ -48,7 +49,8 @@ export default async function TeacherDashboardPage({
   } = await supabase.auth.getUser();
   // proxy.ts already gates this route behind an authenticated session.
   const userId = user!.id;
-  const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const dateFormatter = createDateFormatter(locale);
+  const scheduleFormatter = createScheduleFormatter(locale);
 
   const [{ data: profile }, { data: teacherProfile }, { data: priceRow }, { data: adRow }] = await Promise.all([
     supabase.from("profiles").select("full_name, phone, notification_prefs").eq("id", userId).single(),
@@ -322,7 +324,7 @@ export default async function TeacherDashboardPage({
     id: e.id,
     title: e.title,
     durationMinutes: e.duration_minutes,
-    scheduledLabel: e.scheduled_at ? dateFormatter.format(new Date(e.scheduled_at)) : "—",
+    scheduledLabel: e.scheduled_at ? scheduleFormatter.format(new Date(e.scheduled_at)) : "—",
     questionCount: e.question_ids.length,
   }));
 
@@ -361,7 +363,7 @@ export default async function TeacherDashboardPage({
     id: c.id,
     title: c.title,
     scheduledAtIso: c.scheduled_at,
-    scheduledLabel: dateFormatter.format(new Date(c.scheduled_at)),
+    scheduledLabel: scheduleFormatter.format(new Date(c.scheduled_at)),
     mode: c.mode,
     location: c.location,
     joinLink: joinLinkByClassId.get(c.id) ?? null,

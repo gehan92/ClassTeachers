@@ -10,6 +10,7 @@ import { LockPill } from "@/components/features/lock-pill";
 import { ReviewItem } from "@/components/features/review-item";
 import { ClassBatchCard } from "@/components/features/class-batch-card";
 import { createClient } from "@/lib/supabase/server";
+import { createDateFormatter } from "@/lib/format-date";
 import type { ClassProfileDetail } from "@/types/class-profile";
 
 async function loadClassProfile(id: string, locale: string): Promise<ClassProfileDetail | null> {
@@ -53,7 +54,7 @@ async function loadClassProfile(id: string, locale: string): Promise<ClassProfil
     supabase.rpc("get_class_contact", { p_class_id: id }),
   ]);
 
-  const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const dateFormatter = createDateFormatter(locale);
   const reviews = reviewRows ?? [];
   const reviewCount = reviews.length;
   const rating = reviewCount > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount : 0;

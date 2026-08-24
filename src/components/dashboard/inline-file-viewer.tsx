@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -60,6 +61,49 @@ export function PdfViewerPanel({
   );
 }
 
+type JitsiMeetAPI = {
+  addEventListener: (event: string, handler: () => void) => void;
+  dispose: () => void;
+};
+
+type JitsiMeetExternalAPIConstructor = new (domain: string, options: Record<string, unknown>) => JitsiMeetAPI;
+
+declare global {
+  interface Window {
+    JitsiMeetExternalAPI?: JitsiMeetExternalAPIConstructor;
+  }
+}
+
+function loadJitsiScript(domain: string): Promise<JitsiMeetExternalAPIConstructor> {
+  if (window.JitsiMeetExternalAPI) {
+    return Promise.resolve(window.JitsiMeetExternalAPI);
+  }
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>(`script[data-jitsi-domain="${domain}"]`);
+    const script = existing ?? document.createElement("script");
+    if (!existing) {
+      script.src = `https://${domain}/external_api.js`;
+      script.async = true;
+      script.dataset.jitsiDomain = domain;
+      document.head.appendChild(script);
+    }
+    script.addEventListener("load", () => {
+      if (window.JitsiMeetExternalAPI) resolve(window.JitsiMeetExternalAPI);
+      else reject(new Error("Jitsi script loaded but JitsiMeetExternalAPI is missing"));
+    });
+    script.addEventListener("error", () => reject(new Error("Failed to load the Jitsi call script")));
+  });
+}
+
+/**
+ * Uses Jitsi's embedding API rather than a plain `<iframe src={roomUrl}>`
+ * so a hangup can be handled in our own UI. The raw-iframe version showed
+ * Jitsi's own branded post-call screen (an ad for their paid 8x8 product)
+ * the moment anyone left the call — enableClosePage attempts to turn that
+ * screen off at the source, and the readyToClose listener is the reliable
+ * part: the instant the viewer hangs up, this panel closes itself, so
+ * that screen has no chance to appear even if the config flag is ignored.
+ */
 export function VideoCallPanel({
   title,
   subtitle,
@@ -73,17 +117,51 @@ export function VideoCallPanel({
   closeLabel: string;
   onClose: () => void;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
+  useEffect(() => {
+    let api: JitsiMeetAPI | null = null;
+    let cancelled = false;
+
+    const url = new URL(roomUrl);
+    const domain = url.hostname;
+    const roomName = url.pathname.slice(1);
+
+    loadJitsiScript(domain)
+      .then((JitsiMeetExternalAPI) => {
+        if (cancelled || !containerRef.current) return;
+        api = new JitsiMeetExternalAPI(domain, {
+          roomName,
+          parentNode: containerRef.current,
+          width: "100%",
+          height: "100%",
+          configOverwrite: { enableClosePage: false, prejoinPageEnabled: false },
+        });
+        api.addEventListener("readyToClose", () => onCloseRef.current());
+      })
+      .catch(() => {
+        // Best-effort embed — if the script can't load (offline, ad
+        // blocker), the panel just stays empty instead of crashing the
+        // dashboard; the Close button above still works.
+      });
+
+    return () => {
+      cancelled = true;
+      api?.dispose();
+    };
+  }, [roomUrl]);
+
   return (
     <div>
       <ViewerHeader title={title} subtitle={subtitle} closeLabel={closeLabel} onClose={onClose} />
-      <div className="mx-auto h-[80vh] max-w-5xl overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
-        <iframe
-          src={roomUrl}
-          title={title}
-          allow="camera; microphone; fullscreen; display-capture; autoplay"
-          className="size-full"
-        />
-      </div>
+      <div
+        ref={containerRef}
+        className="mx-auto h-[80vh] max-w-5xl overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]"
+      />
     </div>
   );
 }

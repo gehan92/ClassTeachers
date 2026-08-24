@@ -139,7 +139,15 @@ export function QuestionBankTab({
   const tg = useTranslations("search");
   const router = useRouter();
 
-  const [questions] = useState<QuestionBankItem[]>(initialQuestions);
+  // Read straight from the prop, not a useState snapshot — a useState
+  // initializer only runs once, on mount, so after create/edit/delete call
+  // router.refresh() and the server sends a fresh initialQuestions prop, a
+  // useState copy would keep showing the stale list until a full page
+  // reload remounts the component. Every sibling tab (Notes, Assignments,
+  // Live Classes, Exams) already reads its list prop directly for this
+  // exact reason — this one didn't, and that's what made delete/edit look
+  // like they "didn't work" until the browser was manually refreshed.
+  const questions = initialQuestions;
 
   const [search, setSearch] = useState("");
   const [gradeFilter, setGradeFilter] = useState<string>(ALL_GRADES);

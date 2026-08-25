@@ -454,8 +454,8 @@ function DashboardShellInner({
           return (
             <div
               className={cn(
-                "sticky top-15 z-40 flex flex-wrap items-center justify-between gap-2.5 border-b px-5 py-2",
-                isExposed ? "border-cta/30 bg-cta/10" : "border-success/30 bg-success/10",
+                "sticky top-15 z-40 flex flex-wrap items-center justify-between gap-2.5 border-b-2 bg-white px-5 py-2 shadow-[0_1px_2px_rgba(14,33,29,0.07)]",
+                isExposed ? "border-b-cta" : "border-b-success",
               )}
             >
               <span className={cn("flex items-center gap-2 text-sm font-medium", isExposed ? "text-accent-deep" : "text-foreground")}>

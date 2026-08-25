@@ -31,6 +31,10 @@ export type ExamSubmissionRow = {
   grade: number | null;
   feedback: string | null;
   photoUrls: string[];
+  /** Auto-computed at submit time (see submitExam) — set whenever the exam
+   * has any MCQ questions, regardless of whether it also has essay ones. */
+  mcqScore: number | null;
+  mcqMaxScore: number | null;
 };
 
 export function ExamsTab({
@@ -301,7 +305,12 @@ function SubmissionCard({
   const t = useTranslations("teacherDashboard.exams");
 
   const [editing, setEditing] = useState(submission.status === "pending");
-  const [gradeDraft, setGradeDraft] = useState(String(submission.grade ?? ""));
+  // Pending + has an auto-graded MCQ portion (a mixed exam) — start the
+  // teacher off from that score instead of blank, so they're only adding
+  // marks for the essay part rather than re-tallying the MCQs by hand.
+  const [gradeDraft, setGradeDraft] = useState(
+    String(submission.grade ?? (submission.status === "pending" ? (submission.mcqScore ?? "") : "")),
+  );
   const [feedbackDraft, setFeedbackDraft] = useState(submission.feedback ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -332,6 +341,12 @@ function SubmissionCard({
         )}
         {submission.status === "pending" && <StatusBadge variant="pending">{t("grading.awaitingGrading")}</StatusBadge>}
       </div>
+
+      {submission.mcqScore !== null && submission.mcqMaxScore !== null && (
+        <p className="mb-3 text-xs text-muted-foreground">
+          {t("grading.autoScore", { score: submission.mcqScore, max: submission.mcqMaxScore })}
+        </p>
+      )}
 
       <div className="mb-3">
         <div className="mb-1.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">

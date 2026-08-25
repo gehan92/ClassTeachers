@@ -501,6 +501,9 @@ export type Database = {
           student_id: string;
           photo_urls: string[];
           compiled_pdf_path: string | null;
+          mcq_answers: Record<string, string>;
+          mcq_score: number | null;
+          mcq_max_score: number | null;
           status: "pending" | "graded";
           grade: number | null;
           feedback: string | null;
@@ -513,6 +516,9 @@ export type Database = {
           student_id: string;
           photo_urls?: string[];
           compiled_pdf_path?: string | null;
+          mcq_answers?: Record<string, string>;
+          mcq_score?: number | null;
+          mcq_max_score?: number | null;
           status?: "pending" | "graded";
           grade?: number | null;
           feedback?: string | null;
@@ -525,6 +531,9 @@ export type Database = {
           student_id?: string;
           photo_urls?: string[];
           compiled_pdf_path?: string | null;
+          mcq_answers?: Record<string, string>;
+          mcq_score?: number | null;
+          mcq_max_score?: number | null;
           status?: "pending" | "graded";
           grade?: number | null;
           feedback?: string | null;

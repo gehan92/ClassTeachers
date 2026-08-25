@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 
 type ActionResult = { error: string } | { error?: undefined };
+type SubmitExamResult = ActionResult & { autoGrade?: { score: number; maxScore: number } };
 
 const createExamSchema = z.object({
   ownerType: z.enum(["teacher", "class"]),
@@ -75,21 +76,35 @@ const allowedPhotoTypes: Record<string, string> = {
 };
 
 /**
- * Student uploads photo(s) of their handwritten answers for the whole exam
- * — exam_submissions has no per-question answer storage (photo_urls only,
- * see 0011), so this is the entire submission, not one question at a time.
- * A resubmit replaces the photos and resets status to 'pending' — a new
- * answer set should go back to the grading queue, not keep a stale grade.
+ * Student submits an exam — MCQ answers (auto-graded here, server-side, so
+ * correct_option_id never has to reach the browser) plus, only if the exam
+ * has essay questions, photo(s) of handwritten answers. A pure-MCQ exam
+ * needs no photo at all: it's graded immediately and exam_submissions goes
+ * straight to 'graded', skipping the teacher's grading queue entirely.
+ *
+ * A resubmit recomputes the MCQ score fresh and, for a mixed exam, resets
+ * status back to 'pending' and clears any prior manual grade — a new
+ * answer set should go back to the grading queue, not keep a stale grade
+ * (same behavior this had before MCQ answers existed).
  */
-export async function submitExam(formData: FormData): Promise<ActionResult> {
+export async function submitExam(formData: FormData): Promise<SubmitExamResult> {
   const examId = formData.get("examId");
+  const mcqAnswersRaw = formData.get("mcqAnswers");
   const files = formData.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
   if (typeof examId !== "string" || !examId) {
     return { error: "Invalid exam." };
   }
-  if (files.length === 0) {
-    return { error: "Please add at least one photo of your answers." };
+
+  let mcqAnswers: Record<string, string> = {};
+  if (typeof mcqAnswersRaw === "string" && mcqAnswersRaw) {
+    try {
+      const parsed: unknown = JSON.parse(mcqAnswersRaw);
+      if (parsed && typeof parsed === "object") mcqAnswers = parsed as Record<string, string>;
+    } catch {
+      return { error: "Invalid answers." };
+    }
   }
+
   for (const file of files) {
     if (!allowedPhotoTypes[file.type]) {
       return { error: "Please upload JPG, PNG, or WEBP photos only." };
@@ -102,6 +117,37 @@ export async function submitExam(formData: FormData): Promise<ActionResult> {
   } = await supabase.auth.getUser();
   if (!user) {
     return { error: "You need to be signed in." };
+  }
+
+  const { data: exam } = await supabase.from("exams").select("question_ids").eq("id", examId).maybeSingle();
+  if (!exam) {
+    return { error: "Exam not found." };
+  }
+
+  const { data: questionRows } = exam.question_ids.length
+    ? await supabase
+        .from("question_bank_items")
+        .select("id, type, marks, correct_option_id")
+        .in("id", exam.question_ids)
+    : { data: [] as { id: string; type: "mcq" | "essay"; marks: number; correct_option_id: string | null }[] };
+
+  const mcqQuestions = (questionRows ?? []).filter((q) => q.type === "mcq");
+  const hasEssayQuestions = (questionRows ?? []).some((q) => q.type === "essay");
+
+  if (mcqQuestions.length > 0 && Object.keys(mcqAnswers).length === 0) {
+    return { error: "Please answer the MCQ questions before submitting." };
+  }
+  if (hasEssayQuestions && files.length === 0) {
+    return { error: "Please add at least one photo of your written answers." };
+  }
+
+  let mcqScore = 0;
+  let mcqMaxScore = 0;
+  for (const q of mcqQuestions) {
+    mcqMaxScore += q.marks;
+    if (q.correct_option_id && mcqAnswers[q.id] === q.correct_option_id) {
+      mcqScore += q.marks;
+    }
   }
 
   const photoUrls: string[] = [];
@@ -117,15 +163,22 @@ export async function submitExam(formData: FormData): Promise<ActionResult> {
     photoUrls.push(path);
   }
 
+  // Fully auto-graded only when the exam is pure MCQ — any essay question
+  // still needs a human to look at the photographed answer.
+  const isFullyAutoGraded = mcqQuestions.length > 0 && !hasEssayQuestions;
+
   const { error } = await supabase.from("exam_submissions").upsert(
     {
       exam_id: examId,
       student_id: user.id,
       photo_urls: photoUrls,
-      status: "pending",
-      grade: null,
+      mcq_answers: mcqAnswers,
+      mcq_score: mcqQuestions.length > 0 ? mcqScore : null,
+      mcq_max_score: mcqQuestions.length > 0 ? mcqMaxScore : null,
+      status: isFullyAutoGraded ? "graded" : "pending",
+      grade: isFullyAutoGraded ? mcqScore : null,
       feedback: null,
-      graded_at: null,
+      graded_at: isFullyAutoGraded ? new Date().toISOString() : null,
       submitted_at: new Date().toISOString(),
     },
     { onConflict: "exam_id,student_id" },
@@ -133,7 +186,7 @@ export async function submitExam(formData: FormData): Promise<ActionResult> {
   if (error) {
     return { error: "Couldn't save your submission. Please try again." };
   }
-  return {};
+  return isFullyAutoGraded ? { autoGrade: { score: mcqScore, maxScore: mcqMaxScore } } : {};
 }
 
 /**

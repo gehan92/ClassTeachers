@@ -308,9 +308,22 @@ export default async function TeacherDashboardPage({
   const { data: submissionDetailRows } = examDetailIds.length
     ? await supabase
         .from("exam_submissions")
-        .select("id, exam_id, student_id, photo_urls, status, grade, feedback, submitted_at")
+        .select("id, exam_id, student_id, photo_urls, status, grade, feedback, submitted_at, mcq_score, mcq_max_score")
         .in("exam_id", examDetailIds)
-    : { data: [] as { id: string; exam_id: string; student_id: string; photo_urls: string[]; status: "pending" | "graded"; grade: number | null; feedback: string | null; submitted_at: string }[] };
+    : {
+        data: [] as {
+          id: string;
+          exam_id: string;
+          student_id: string;
+          photo_urls: string[];
+          status: "pending" | "graded";
+          grade: number | null;
+          feedback: string | null;
+          submitted_at: string;
+          mcq_score: number | null;
+          mcq_max_score: number | null;
+        }[],
+      };
 
   const allPhotoPaths = (submissionDetailRows ?? []).flatMap((s) => s.photo_urls);
   const signedUrlByPath = new Map<string, string>();
@@ -338,6 +351,8 @@ export default async function TeacherDashboardPage({
     grade: s.grade,
     feedback: s.feedback,
     photoUrls: s.photo_urls.map((p) => signedUrlByPath.get(p)).filter((u): u is string => Boolean(u)),
+    mcqScore: s.mcq_score,
+    mcqMaxScore: s.mcq_max_score,
   }));
 
   const { data: liveClassRows } = await supabase

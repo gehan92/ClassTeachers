@@ -1006,6 +1006,8 @@
       "gradedResultBody": "This exam was auto-graded — nice work!",
       "scoreLabel": "{score} / {max}",
       "essayPendingNote": "Your multiple-choice answers are auto-graded above. Your written answers are pending your teacher's review.",
+      "essayOnlyPendingNote": "We've received your answer photos. You'll see your grade and feedback here once your teacher has graded it.",
+      "autoGradedNote": "You scored {score} / {max} — every question here was multiple choice, so it's graded instantly.",
       "questionLabel": "Question {number}",
       "examClosedNotAttempted": "This exam is closed and you did not attempt it."
     },

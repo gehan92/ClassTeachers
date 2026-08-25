@@ -23,8 +23,8 @@ export type StudentExamQuestion = {
   type: "mcq" | "essay";
   marks: number;
   imageUrl?: string;
-  /** MCQ only — shown so the student knows what to write/circle on their
-   * answer sheet. No correct-answer marker is ever sent to the student. */
+  /** MCQ only — the student picks one directly in the app (auto-graded on
+   * submit). No correct-answer marker is ever sent to the student. */
   options?: { id: string; text: string; imageUrl?: string }[];
 };
 export type StudentExamRow = {
@@ -216,10 +216,48 @@ function QuestionBlock({ question, number }: { question: StudentExamQuestion; nu
         // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, not a local/optimizable asset
         <img src={question.imageUrl} alt="" className="max-w-sm rounded-md border border-border" />
       )}
+    </div>
+  );
+}
+
+/** MCQ questions are answered directly in the app, not written on paper —
+ * see the note on `submitExam` for why this is the piece that lets a
+ * pure-MCQ exam skip the photo-upload flow entirely. */
+function McqQuestionBlock({
+  question,
+  number,
+  selectedOptionId,
+  onSelect,
+}: {
+  question: StudentExamQuestion;
+  number: number;
+  selectedOptionId: string | undefined;
+  onSelect: (optionId: string) => void;
+}) {
+  const t = useTranslations("studentDashboard.exams");
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm text-foreground">
+        {t("questionLabel", { number })}. {question.text}
+      </p>
+      {question.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, not a local/optimizable asset
+        <img src={question.imageUrl} alt="" className="max-w-sm rounded-md border border-border" />
+      )}
       {question.options && question.options.length > 0 && (
-        <ul className="flex flex-col gap-2 pl-4">
+        <div className="flex flex-col gap-1.5 pl-4">
           {question.options.map((option, optionIndex) => (
-            <li key={option.id} className="flex flex-wrap items-center gap-2 text-sm text-foreground/80">
+            <label
+              key={option.id}
+              className="flex flex-wrap items-center gap-2 rounded-md p-1.5 text-sm text-foreground/80 hover:bg-secondary/40"
+            >
+              <input
+                type="radio"
+                name={`mcq-${question.id}`}
+                checked={selectedOptionId === option.id}
+                onChange={() => onSelect(option.id)}
+                className="accent-primary"
+              />
               <span className="font-mono text-xs text-muted-foreground">
                 {String.fromCharCode(65 + optionIndex)}.
               </span>
@@ -228,9 +266,9 @@ function QuestionBlock({ question, number }: { question: StudentExamQuestion; nu
                 // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, not a local/optimizable asset
                 <img src={option.imageUrl} alt="" className="max-h-24 rounded-sm border border-border" />
               )}
-            </li>
+            </label>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
@@ -240,11 +278,15 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
   const t = useTranslations("studentDashboard.exams");
   const router = useRouter();
   const [photos, setPhotos] = useState<File[]>([]);
+  const [mcqAnswers, setMcqAnswers] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [autoGrade, setAutoGrade] = useState<{ score: number; maxScore: number } | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const mcqQuestions = exam.questions.filter((q) => q.type === "mcq");
   const essayQuestions = exam.questions.filter((q) => q.type !== "mcq");
+  const allMcqAnswered = mcqQuestions.every((q) => Boolean(mcqAnswers[q.id]));
+  const canSubmit = allMcqAnswered && (essayQuestions.length === 0 || photos.length > 0);
 
   function handleAdd(fileList: FileList | null) {
     if (!fileList) return;
@@ -256,11 +298,12 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
   }
 
   async function handleSubmit() {
-    if (photos.length === 0) return;
+    if (!canSubmit) return;
     setSaving(true);
     setError(null);
     const formData = new FormData();
     formData.set("examId", exam.id);
+    formData.set("mcqAnswers", JSON.stringify(mcqAnswers));
     for (const photo of photos) formData.append("photos", photo);
     const result = await submitExam(formData);
     setSaving(false);
@@ -268,6 +311,7 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
       setError(result.error);
       return;
     }
+    setAutoGrade(result.autoGrade ?? null);
     setSubmitted(true);
     router.refresh();
   }
@@ -278,7 +322,13 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
         <h1 className="mb-4 text-2xl">{exam.title}</h1>
         <div className="rounded-lg border border-border bg-white p-5">
           <h3 className="mb-2 text-lg">{t("submittedTitle")}</h3>
-          <p className="text-sm text-muted-foreground">{t("essayPendingNote")}</p>
+          <p className="text-sm text-muted-foreground">
+            {autoGrade
+              ? t("autoGradedNote", { score: autoGrade.score, max: autoGrade.maxScore })
+              : mcqQuestions.length > 0
+                ? t("essayPendingNote")
+                : t("essayOnlyPendingNote")}
+          </p>
           <Button className="mt-4" size="sm" variant="outline" onClick={onExit}>
             {t("backToExams")}
           </Button>
@@ -302,7 +352,13 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
             </h3>
             <div className="flex flex-col gap-4 rounded-lg border border-border bg-white p-4">
               {mcqQuestions.map((q, index) => (
-                <QuestionBlock key={q.id} question={q} number={index + 1} />
+                <McqQuestionBlock
+                  key={q.id}
+                  question={q}
+                  number={index + 1}
+                  selectedOptionId={mcqAnswers[q.id]}
+                  onSelect={(optionId) => setMcqAnswers((prev) => ({ ...prev, [q.id]: optionId }))}
+                />
               ))}
             </div>
           </div>
@@ -317,14 +373,14 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
                 <QuestionBlock key={q.id} question={q} number={index + 1} />
               ))}
             </div>
+            <p className="mt-3 mb-2 text-xs text-muted-foreground">{t("essayInstructions")}</p>
+            <PhotoDropzone files={photos} onAdd={handleAdd} onRemove={handleRemove} />
           </div>
         )}
-        <p className="mt-3 mb-2 text-xs text-muted-foreground">{t("essayInstructions")}</p>
-        <PhotoDropzone files={photos} onAdd={handleAdd} onRemove={handleRemove} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button onClick={handleSubmit} disabled={photos.length === 0 || saving}>
+        <Button onClick={handleSubmit} disabled={!canSubmit || saving}>
           {t("submitExam")}
         </Button>
         <Button variant="outline" onClick={onExit} disabled={saving}>

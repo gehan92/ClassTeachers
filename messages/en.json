@@ -1384,7 +1384,10 @@
       "locationPlaceholder": "Location (e.g. Room 4, Colombo 05)",
       "videoRoomAutoNote": "A video call room is created automatically for this class — no Zoom/Meet link needed. Students who join will wait in a lobby until you admit them.",
       "startClass": "Start video call",
-      "delete": "Delete"
+      "delete": "Delete",
+      "allStudentsOption": "All my students",
+      "studentsAction": "Students ({count})",
+      "rosterEmpty": "No students enrolled yet."
     },
     "students": {
       "heading": "Students",

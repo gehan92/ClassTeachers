@@ -170,6 +170,7 @@ export default async function TeacherDashboardPage({
     scheduleNote: b.schedule_note,
     gradeBand: b.grade_band,
   }));
+  const batchTitleById = new Map(batches.map((b) => [b.id, b.title]));
 
   // Batch-scoped "search results" ads (0039) — one per batch, distinct from
   // the single own_profile promo box fetched above.
@@ -341,7 +342,7 @@ export default async function TeacherDashboardPage({
 
   const { data: liveClassRows } = await supabase
     .from("live_classes")
-    .select("id, title, mode, location, scheduled_at, duration_minutes")
+    .select("id, title, mode, location, scheduled_at, duration_minutes, batch_id")
     .eq("owner_type", "teacher")
     .eq("owner_id", userId)
     .neq("status", "cancelled")
@@ -359,6 +360,18 @@ export default async function TeacherDashboardPage({
   const joinLinkByClassId = new Map((liveClassLinkRows ?? []).map((l) => [l.live_class_id, l.join_link]));
   const attendanceByKey = new Map((attendanceRows ?? []).map((a) => [`${a.live_class_id}:${a.student_id}`, a.status]));
 
+  // A live class scoped to a batch only rosters that batch's students; an
+  // unscoped one (batch_id null) rosters everyone accepted with this
+  // teacher — same "null = all my students" shape as assignments (0049).
+  function rosterFor(liveClassId: string, batchId: string | null) {
+    const enrollments = batchId ? acceptedEnrollments.filter((e) => e.batch_id === batchId) : acceptedEnrollments;
+    return enrollments.map((e) => ({
+      studentId: e.student_id,
+      studentName: studentById.get(e.student_id)?.full_name ?? "—",
+      status: attendanceByKey.get(`${liveClassId}:${e.student_id}`) ?? null,
+    }));
+  }
+
   const liveClasses: TeacherLiveClassRow[] = (liveClassRows ?? []).map((c) => ({
     id: c.id,
     title: c.title,
@@ -367,6 +380,9 @@ export default async function TeacherDashboardPage({
     mode: c.mode,
     location: c.location,
     joinLink: joinLinkByClassId.get(c.id) ?? null,
+    batchId: c.batch_id,
+    batchTitle: c.batch_id ? (batchTitleById.get(c.batch_id) ?? null) : null,
+    roster: rosterFor(c.id, c.batch_id),
   }));
 
   const lessonOptions: TeacherLessonOption[] = (liveClassRows ?? []).map((c) => ({ id: c.id, title: c.title }));
@@ -389,8 +405,6 @@ export default async function TeacherDashboardPage({
       if (entry.path && entry.signedUrl) assignmentFileUrlByPath.set(entry.path, entry.signedUrl);
     }
   }
-
-  const batchTitleById = new Map(batches.map((b) => [b.id, b.title]));
 
   const assignments: TeacherAssignmentRow[] = (assignmentRows ?? []).map((a) => ({
     id: a.id,
@@ -443,16 +457,11 @@ export default async function TeacherDashboardPage({
     photoUrls: s.photo_urls.map((p) => assignmentPhotoUrlByPath.get(p)).filter((u): u is string => Boolean(u)),
   }));
 
-  const rosterStudents = [...new Map((enrollmentRows ?? []).map((e) => [e.student_id, e])).values()];
   const attendanceSessions: AttendanceSession[] = (liveClassRows ?? []).map((c) => ({
     id: c.id,
     title: c.title,
     dateLabel: dateFormatter.format(new Date(c.scheduled_at)),
-    rows: rosterStudents.map((enrollment) => ({
-      studentId: enrollment.student_id,
-      studentName: studentById.get(enrollment.student_id)?.full_name ?? "—",
-      status: attendanceByKey.get(`${c.id}:${enrollment.student_id}`) ?? null,
-    })),
+    rows: rosterFor(c.id, c.batch_id),
   }));
 
   // Same RPC the public /teacher/[id] page uses to gate the phone number —
@@ -604,7 +613,7 @@ export default async function TeacherDashboardPage({
             lessons={lessonOptions}
           />
         ),
-        live: <LiveClassesTab classes={liveClasses} hostName={fullName} />,
+        live: <LiveClassesTab classes={liveClasses} hostName={fullName} batches={batches} />,
         students: <StudentsTab students={students} requests={requests} />,
         attendance: <AttendanceTab sessions={attendanceSessions} />,
         inquiries: <InquiriesTab inquiries={inquiries} />,

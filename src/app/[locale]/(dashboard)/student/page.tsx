@@ -75,27 +75,38 @@ export default async function StudentDashboardPage({
     teacherIds.length
       ? supabase
           .from("live_classes")
-          .select("id, owner_id, title, mode, scheduled_at, duration_minutes")
+          .select("id, owner_id, title, mode, scheduled_at, duration_minutes, batch_id")
           .eq("owner_type", "teacher")
           .in("owner_id", teacherIds)
           .neq("status", "cancelled")
           .order("scheduled_at", { ascending: true })
-      : Promise.resolve({ data: [] as { id: string; owner_id: string; title: string; mode: "online" | "physical"; scheduled_at: string; duration_minutes: number }[] }),
+      : Promise.resolve({ data: [] as { id: string; owner_id: string; title: string; mode: "online" | "physical"; scheduled_at: string; duration_minutes: number; batch_id: string | null }[] }),
     classIds.length
       ? supabase
           .from("live_classes")
-          .select("id, owner_id, title, mode, scheduled_at, duration_minutes")
+          .select("id, owner_id, title, mode, scheduled_at, duration_minutes, batch_id")
           .eq("owner_type", "class")
           .in("owner_id", classIds)
           .neq("status", "cancelled")
           .order("scheduled_at", { ascending: true })
-      : Promise.resolve({ data: [] as { id: string; owner_id: string; title: string; mode: "online" | "physical"; scheduled_at: string; duration_minutes: number }[] }),
+      : Promise.resolve({ data: [] as { id: string; owner_id: string; title: string; mode: "online" | "physical"; scheduled_at: string; duration_minutes: number; batch_id: string | null }[] }),
   ]);
+
+  // A live class scoped to a batch (batch_id set) only belongs to students
+  // enrolled in that specific batch — otherwise every accepted student of
+  // the owner would see/join classes meant for a different batch. Matches
+  // the batch-aware RLS on live_class_links (0054); unscoped classes keep
+  // today's "every accepted student of this owner" behavior.
+  const acceptedBatchKeys = new Set(
+    acceptedEnrollments.map((e) => `${e.owner_type}:${e.owner_id}:${e.batch_id ?? ""}`),
+  );
 
   const liveClassRows = [
     ...(teacherLive.data ?? []).map((r) => ({ ...r, ownerType: "teacher" as const })),
     ...(classLive.data ?? []).map((r) => ({ ...r, ownerType: "class" as const })),
-  ].sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
+  ]
+    .filter((r) => !r.batch_id || acceptedBatchKeys.has(`${r.ownerType}:${r.owner_id}:${r.batch_id}`))
+    .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
 
   const nextLive = liveClassRows.find((row) => isFuture(row.scheduled_at));
   const nextLiveLabel = nextLive ? scheduleFormatter.format(new Date(nextLive.scheduled_at)) : null;

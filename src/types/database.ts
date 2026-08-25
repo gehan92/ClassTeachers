@@ -619,6 +619,7 @@ export type Database = {
           owner_type: OwnerType;
           owner_id: string;
           subject_id: string | null;
+          batch_id: string | null;
           title: string;
           mode: "online" | "physical";
           location: string | null;
@@ -632,6 +633,7 @@ export type Database = {
           owner_type: OwnerType;
           owner_id: string;
           subject_id?: string | null;
+          batch_id?: string | null;
           title: string;
           mode: "online" | "physical";
           location?: string | null;
@@ -645,6 +647,7 @@ export type Database = {
           owner_type?: OwnerType;
           owner_id?: string;
           subject_id?: string | null;
+          batch_id?: string | null;
           title?: string;
           mode?: "online" | "physical";
           location?: string | null;

@@ -10,6 +10,7 @@ const createLiveClassSchema = z.object({
   title: z.string().trim().min(2),
   mode: z.enum(["online", "physical"]),
   location: z.string().trim().optional(),
+  batchId: z.string().uuid().optional(),
   // Must already be a UTC ISO string (Date#toISOString()) computed in the
   // browser — a bare "YYYY-MM-DDTHH:mm" datetime-local value has no
   // timezone of its own, so converting it with `new Date(...)` has to
@@ -28,6 +29,7 @@ export async function createLiveClass(input: {
   location: string;
   scheduledAt: string;
   durationMinutes: string;
+  batchId?: string;
 }): Promise<ActionResult> {
   const parsed = createLiveClassSchema.safeParse({
     ownerType: input.ownerType,
@@ -36,6 +38,7 @@ export async function createLiveClass(input: {
     location: input.location || undefined,
     scheduledAt: input.scheduledAt,
     durationMinutes: input.durationMinutes || undefined,
+    batchId: input.batchId || undefined,
   });
   if (!parsed.success) {
     return { error: "Please check the class title, mode, and schedule." };
@@ -67,6 +70,7 @@ export async function createLiveClass(input: {
     .insert({
       owner_type: parsed.data.ownerType,
       owner_id: ownerId,
+      batch_id: parsed.data.batchId ?? null,
       title: parsed.data.title,
       mode: parsed.data.mode,
       location: parsed.data.mode === "physical" ? parsed.data.location || null : null,

@@ -261,6 +261,18 @@ function DashboardShellInner({
     }
   }, [activeCall]);
 
+  // Minimizing (whether the viewer clicks Minimize, or just navigates to
+  // another tab) mutes on their behalf by default — nobody should end up
+  // broadcasting audio/video from a call they can no longer see just
+  // because they went to check Notes. The mic/camera buttons on the
+  // minimized bar are how they turn either back on if they actually want
+  // to stay live while multitasking.
+  function minimizeAndMute() {
+    minimizeCall();
+    if (!micMuted) jitsiControlsRef.current?.toggleAudio();
+    if (!camMuted) jitsiControlsRef.current?.toggleVideo();
+  }
+
   useEffect(() => {
     // Only read the URL once, on mount — after that, tab state is owned
     // locally. Deliberately not a lazy useState initializer: that would
@@ -278,7 +290,7 @@ function DashboardShellInner({
     // Switching tabs while the call is in the foreground would otherwise
     // hide it with no way back — minimize it instead of losing it.
     if (activeCall && !activeCall.minimized && tab !== activeTab) {
-      minimizeCall();
+      minimizeAndMute();
     }
     setActiveTab(tab);
     updateTabParam(tab);
@@ -443,11 +455,11 @@ function DashboardShellInner({
             <div
               className={cn(
                 "sticky top-15 z-40 flex flex-wrap items-center justify-between gap-2.5 border-b px-5 py-2",
-                isExposed ? "border-lock/30 bg-lock/10" : "border-success/30 bg-success/10",
+                isExposed ? "border-cta/30 bg-cta/10" : "border-success/30 bg-success/10",
               )}
             >
-              <span className={cn("flex items-center gap-2 text-sm font-medium", isExposed ? "text-lock" : "text-foreground")}>
-                <Video className={cn("size-4 shrink-0", isExposed ? "text-lock" : "text-success")} />
+              <span className={cn("flex items-center gap-2 text-sm font-medium", isExposed ? "text-accent-deep" : "text-foreground")}>
+                <Video className={cn("size-4 shrink-0", isExposed ? "text-accent-deep" : "text-success")} />
                 {isExposed ? t("stillExposedBanner", { title: activeCall.title }) : t("inCallBanner", { title: activeCall.title })}
               </span>
               <div className="flex items-center gap-2">
@@ -457,7 +469,9 @@ function DashboardShellInner({
                   title={micMuted ? t("unmuteMic") : t("muteMic")}
                   className={cn(
                     "flex size-8 items-center justify-center rounded-md border transition-colors",
-                    micMuted ? "border-border bg-white text-muted-foreground" : "border-lock/30 bg-white text-lock hover:bg-lock/10",
+                    micMuted
+                      ? "border-border bg-white text-muted-foreground"
+                      : "border-cta/30 bg-white text-accent-deep hover:bg-cta/10",
                   )}
                 >
                   {micMuted ? <MicOff className="size-4" /> : <Mic className="size-4" />}
@@ -468,7 +482,9 @@ function DashboardShellInner({
                   title={camMuted ? t("turnOnCamera") : t("turnOffCamera")}
                   className={cn(
                     "flex size-8 items-center justify-center rounded-md border transition-colors",
-                    camMuted ? "border-border bg-white text-muted-foreground" : "border-lock/30 bg-white text-lock hover:bg-lock/10",
+                    camMuted
+                      ? "border-border bg-white text-muted-foreground"
+                      : "border-cta/30 bg-white text-accent-deep hover:bg-cta/10",
                   )}
                 >
                   {camMuted ? <VideoOff className="size-4" /> : <Video className="size-4" />}
@@ -516,7 +532,7 @@ function DashboardShellInner({
                   closeLabel={t("leaveCall")}
                   minimizeLabel={t("minimizeCall")}
                   onClose={leaveCall}
-                  onMinimize={minimizeCall}
+                  onMinimize={minimizeAndMute}
                   onApiReady={(controls) => {
                     jitsiControlsRef.current = controls;
                   }}

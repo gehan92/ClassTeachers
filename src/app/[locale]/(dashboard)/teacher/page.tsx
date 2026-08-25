@@ -613,7 +613,14 @@ export default async function TeacherDashboardPage({
             lessons={lessonOptions}
           />
         ),
-        live: <LiveClassesTab classes={liveClasses} hostName={fullName} batches={batches} />,
+        live: (
+          <LiveClassesTab
+            classes={liveClasses}
+            hostName={fullName}
+            batches={batches.map((b) => ({ id: b.id, title: b.title, studentCount: rosterByBatch[b.id]?.length ?? 0 }))}
+            totalStudentsCount={acceptedEnrollments.length}
+          />
+        ),
         students: <StudentsTab students={students} requests={requests} />,
         attendance: <AttendanceTab sessions={attendanceSessions} />,
         inquiries: <InquiriesTab inquiries={inquiries} />,

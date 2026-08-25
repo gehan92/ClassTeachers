@@ -12,7 +12,7 @@ import { VideoCallPanel } from "@/components/dashboard/inline-file-viewer";
 import { createLiveClass, deleteLiveClass, setAttendanceStatus } from "@/lib/dashboard/live-classes-actions";
 import { cn } from "@/lib/utils";
 
-export type TeacherLiveClassBatchOption = { id: string; title: string };
+export type TeacherLiveClassBatchOption = { id: string; title: string; studentCount: number };
 
 export type LiveClassRosterEntry = {
   studentId: string;
@@ -46,10 +46,12 @@ export function LiveClassesTab({
   classes,
   hostName,
   batches,
+  totalStudentsCount,
 }: {
   classes: TeacherLiveClassRow[];
   hostName: string;
   batches: TeacherLiveClassBatchOption[];
+  totalStudentsCount: number;
 }) {
   const t = useTranslations("teacherDashboard.live");
   const ta = useTranslations("teacherDashboard.attendance");
@@ -241,10 +243,12 @@ export function LiveClassesTab({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NO_BATCH}>{t("allStudentsOption")}</SelectItem>
+                <SelectItem value={NO_BATCH}>
+                  {t("allStudentsOption")} ({totalStudentsCount})
+                </SelectItem>
                 {batches.map((batch) => (
                   <SelectItem key={batch.id} value={batch.id}>
-                    {batch.title}
+                    {batch.title} ({batch.studentCount})
                   </SelectItem>
                 ))}
               </SelectContent>

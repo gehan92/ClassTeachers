@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   Bell,
@@ -11,6 +11,9 @@ import {
   UserCircle,
   BookOpen,
   Video,
+  VideoOff,
+  Mic,
+  MicOff,
   FileText,
   ListChecks,
   ClipboardList,
@@ -241,6 +244,23 @@ function DashboardShellInner({
   const t = useTranslations("nav");
   const { activeCall, minimizeCall, restoreCall, leaveCall } = useLiveCall();
 
+  // Jitsi defaults to camera+mic on, so a minimized call keeps recording
+  // until the viewer explicitly mutes or leaves — easy to forget once it's
+  // out of sight. These track live mute state so the minimized bar can warn
+  // when something is still capturing, with one-click controls to kill it
+  // without restoring the full call view.
+  const [micMuted, setMicMuted] = useState(false);
+  const [camMuted, setCamMuted] = useState(false);
+  const jitsiControlsRef = useRef<{ toggleAudio: () => void; toggleVideo: () => void } | null>(null);
+
+  useEffect(() => {
+    if (!activeCall) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting stale state from the call that just ended, not derived render state
+      setMicMuted(false);
+      setCamMuted(false);
+    }
+  }, [activeCall]);
+
   useEffect(() => {
     // Only read the URL once, on mount — after that, tab state is owned
     // locally. Deliberately not a lazy useState initializer: that would
@@ -412,22 +432,57 @@ function DashboardShellInner({
         </div>
       </header>
 
-      {activeCall?.minimized && (
-        <div className="sticky top-15 z-40 flex flex-wrap items-center justify-between gap-2.5 border-b border-success/30 bg-success/10 px-5 py-2">
-          <span className="flex items-center gap-2 text-sm text-foreground">
-            <Video className="size-4 shrink-0 text-success" />
-            {t("inCallBanner", { title: activeCall.title })}
-          </span>
-          <div className="flex items-center gap-2">
-            <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90" onClick={restoreCall}>
-              {t("returnToCall")}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={leaveCall}>
-              {t("leaveCall")}
-            </Button>
-          </div>
-        </div>
-      )}
+      {activeCall?.minimized &&
+        (() => {
+          // Jitsi defaults to camera+mic on — anything not explicitly
+          // muted is still capturing, minimized or not. Only downgrade to
+          // the calmer "in call" styling once both are actually off, so
+          // the warning doesn't cry wolf after the viewer's already muted.
+          const isExposed = !camMuted || !micMuted;
+          return (
+            <div
+              className={cn(
+                "sticky top-15 z-40 flex flex-wrap items-center justify-between gap-2.5 border-b px-5 py-2",
+                isExposed ? "border-lock/30 bg-lock/10" : "border-success/30 bg-success/10",
+              )}
+            >
+              <span className={cn("flex items-center gap-2 text-sm font-medium", isExposed ? "text-lock" : "text-foreground")}>
+                <Video className={cn("size-4 shrink-0", isExposed ? "text-lock" : "text-success")} />
+                {isExposed ? t("stillExposedBanner", { title: activeCall.title }) : t("inCallBanner", { title: activeCall.title })}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => jitsiControlsRef.current?.toggleAudio()}
+                  title={micMuted ? t("unmuteMic") : t("muteMic")}
+                  className={cn(
+                    "flex size-8 items-center justify-center rounded-md border transition-colors",
+                    micMuted ? "border-border bg-white text-muted-foreground" : "border-lock/30 bg-white text-lock hover:bg-lock/10",
+                  )}
+                >
+                  {micMuted ? <MicOff className="size-4" /> : <Mic className="size-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => jitsiControlsRef.current?.toggleVideo()}
+                  title={camMuted ? t("turnOnCamera") : t("turnOffCamera")}
+                  className={cn(
+                    "flex size-8 items-center justify-center rounded-md border transition-colors",
+                    camMuted ? "border-border bg-white text-muted-foreground" : "border-lock/30 bg-white text-lock hover:bg-lock/10",
+                  )}
+                >
+                  {camMuted ? <VideoOff className="size-4" /> : <Video className="size-4" />}
+                </button>
+                <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90" onClick={restoreCall}>
+                  {t("returnToCall")}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={leaveCall}>
+                  {t("leaveCall")}
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
 
       <div className="border-b border-border bg-white md:hidden">
         <NavList groups={groups} activeTab={activeTab} onSelect={select} orientation="horizontal" />
@@ -462,6 +517,11 @@ function DashboardShellInner({
                   minimizeLabel={t("minimizeCall")}
                   onClose={leaveCall}
                   onMinimize={minimizeCall}
+                  onApiReady={(controls) => {
+                    jitsiControlsRef.current = controls;
+                  }}
+                  onAudioMuteChange={setMicMuted}
+                  onVideoMuteChange={setCamMuted}
                 />
               </div>
             )}

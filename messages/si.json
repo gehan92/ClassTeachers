@@ -25,9 +25,14 @@
     "searchOnlineLessons": "මාර්ගගත පාඩම්",
     "postYourAd": "ඔබේ දැන්වීම පළ කරන්න",
     "inCallBanner": "ඇමතුමේ පවතී — {title}",
+    "stillExposedBanner": "කැමරාව/මයික්‍රෆෝනය තවම ක්‍රියාත්මකයි — {title}",
     "returnToCall": "ඇමතුමට ආපසු යන්න",
     "leaveCall": "ඇමතුමෙන් ඉවත් වන්න",
-    "minimizeCall": "කුඩා කරන්න"
+    "minimizeCall": "කුඩා කරන්න",
+    "muteMic": "මයික්‍රෆෝනය නිහඬ කරන්න",
+    "unmuteMic": "මයික්‍රෆෝනය සක්‍රිය කරන්න",
+    "turnOffCamera": "කැමරාව නවත්වන්න",
+    "turnOnCamera": "කැමරාව ක්‍රියාත්මක කරන්න"
   },
   "language": {
     "label": "භාෂාව"

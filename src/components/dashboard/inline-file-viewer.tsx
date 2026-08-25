@@ -62,7 +62,8 @@ export function PdfViewerPanel({
 }
 
 type JitsiMeetAPI = {
-  addEventListener: (event: string, handler: () => void) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Jitsi's own payload shape varies per event (e.g. {muted: boolean}); typing each one individually isn't worth it for a handful of call sites.
+  addEventListener: (event: string, handler: (payload: any) => void) => void;
   executeCommand: (command: string, ...args: unknown[]) => void;
   dispose: () => void;
 };
@@ -126,6 +127,9 @@ export function VideoCallPanel({
   onMinimize,
   displayName,
   isHost = false,
+  onApiReady,
+  onAudioMuteChange,
+  onVideoMuteChange,
 }: {
   title: string;
   subtitle?: string;
@@ -140,11 +144,21 @@ export function VideoCallPanel({
   displayName?: string;
   /** Enables the lobby (waiting room) once this client joins, so later joiners need to be admitted by name instead of just having the link. */
   isHost?: boolean;
+  /** Hands the parent a way to mute/unmute mic and camera from outside this component — used for the persistent "camera/mic still on" warning bar shown while minimized, so a viewer who's forgotten about the call can kill the feed without restoring the full view. Fires once per connection (roomUrl change), and with `null` on teardown. */
+  onApiReady?: (controls: { toggleAudio: () => void; toggleVideo: () => void } | null) => void;
+  onAudioMuteChange?: (muted: boolean) => void;
+  onVideoMuteChange?: (muted: boolean) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
+  const onApiReadyRef = useRef(onApiReady);
+  const onAudioMuteChangeRef = useRef(onAudioMuteChange);
+  const onVideoMuteChangeRef = useRef(onVideoMuteChange);
   useEffect(() => {
     onCloseRef.current = onClose;
+    onApiReadyRef.current = onApiReady;
+    onAudioMuteChangeRef.current = onAudioMuteChange;
+    onVideoMuteChangeRef.current = onVideoMuteChange;
   });
 
   useEffect(() => {
@@ -167,6 +181,12 @@ export function VideoCallPanel({
           configOverwrite: { enableClosePage: false, prejoinPageEnabled: false },
         });
         api.addEventListener("readyToClose", () => onCloseRef.current());
+        api.addEventListener("audioMuteStatusChanged", (payload: { muted: boolean }) => onAudioMuteChangeRef.current?.(payload.muted));
+        api.addEventListener("videoMuteStatusChanged", (payload: { muted: boolean }) => onVideoMuteChangeRef.current?.(payload.muted));
+        onApiReadyRef.current?.({
+          toggleAudio: () => api?.executeCommand("toggleAudio"),
+          toggleVideo: () => api?.executeCommand("toggleVideo"),
+        });
         if (isHost) {
           // First joiner is auto-moderator on meet.jit.si's anonymous
           // domain, which is required for this command to take effect —
@@ -185,6 +205,7 @@ export function VideoCallPanel({
     return () => {
       cancelled = true;
       api?.dispose();
+      onApiReadyRef.current?.(null);
     };
   }, [roomUrl, displayName, isHost]);
 

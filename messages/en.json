@@ -25,9 +25,14 @@
     "searchOnlineLessons": "Online lessons",
     "postYourAd": "Post your ad",
     "inCallBanner": "In call — {title}",
+    "stillExposedBanner": "Camera/mic still on — {title}",
     "returnToCall": "Return to call",
     "leaveCall": "Leave call",
-    "minimizeCall": "Minimize"
+    "minimizeCall": "Minimize",
+    "muteMic": "Mute microphone",
+    "unmuteMic": "Unmute microphone",
+    "turnOffCamera": "Turn off camera",
+    "turnOnCamera": "Turn on camera"
   },
   "language": {
     "label": "Language"

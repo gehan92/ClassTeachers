@@ -25,9 +25,14 @@
     "searchOnlineLessons": "ஆன்லைன் பாடங்கள்",
     "postYourAd": "உங்கள் விளம்பரத்தை இடுங்கள்",
     "inCallBanner": "அழைப்பில் உள்ளீர்கள் — {title}",
+    "stillExposedBanner": "கேமரா/மைக் இன்னும் இயங்குகிறது — {title}",
     "returnToCall": "அழைப்புக்குத் திரும்பு",
     "leaveCall": "அழைப்பை விடு",
-    "minimizeCall": "சிறிதாக்கு"
+    "minimizeCall": "சிறிதாக்கு",
+    "muteMic": "மைக்கை முடக்கு",
+    "unmuteMic": "மைக்கை இயக்கு",
+    "turnOffCamera": "கேமராவை நிறுத்து",
+    "turnOnCamera": "கேமராவை இயக்கு"
   },
   "language": {
     "label": "மொழி"

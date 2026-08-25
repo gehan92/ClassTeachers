@@ -11,6 +11,10 @@ const createLiveClassSchema = z.object({
   mode: z.enum(["online", "physical"]),
   location: z.string().trim().optional(),
   batchId: z.string().uuid().optional(),
+  // Present only when the teacher deliberately excluded someone from the
+  // full batch/all-students pool — see the comment on live_class_participants
+  // (0055) for why an "include everyone" selection is sent as nothing at all.
+  participantStudentIds: z.array(z.string().uuid()).optional(),
   // Must already be a UTC ISO string (Date#toISOString()) computed in the
   // browser — a bare "YYYY-MM-DDTHH:mm" datetime-local value has no
   // timezone of its own, so converting it with `new Date(...)` has to
@@ -30,6 +34,7 @@ export async function createLiveClass(input: {
   scheduledAt: string;
   durationMinutes: string;
   batchId?: string;
+  participantStudentIds?: string[];
 }): Promise<ActionResult> {
   const parsed = createLiveClassSchema.safeParse({
     ownerType: input.ownerType,
@@ -39,6 +44,7 @@ export async function createLiveClass(input: {
     scheduledAt: input.scheduledAt,
     durationMinutes: input.durationMinutes || undefined,
     batchId: input.batchId || undefined,
+    participantStudentIds: input.participantStudentIds?.length ? input.participantStudentIds : undefined,
   });
   if (!parsed.success) {
     return { error: "Please check the class title, mode, and schedule." };
@@ -81,6 +87,15 @@ export async function createLiveClass(input: {
     .single();
   if (insertError || !liveClass) {
     return { error: "Couldn't schedule this class. Please try again." };
+  }
+
+  if (parsed.data.participantStudentIds) {
+    const { error: participantsError } = await supabase.from("live_class_participants").insert(
+      parsed.data.participantStudentIds.map((studentId) => ({ live_class_id: liveClass.id, student_id: studentId })),
+    );
+    if (participantsError) {
+      return { error: "Class was scheduled, but the student list couldn't be saved. Please try again." };
+    }
   }
 
   if (parsed.data.mode === "online") {
@@ -161,6 +176,54 @@ export async function setAttendanceStatus(input: {
     );
   if (error) {
     return { error: "Couldn't update attendance. Please try again." };
+  }
+  return {};
+}
+
+/** Owner nudging a specific student who hasn't joined — purely an in-app
+ * banner (see 0056's comment: no email/SMS/push pipeline exists here), so
+ * this just upserts a row the student's own dashboard reads. Upsert so
+ * clicking "Remind" again on the same student refreshes created_at instead
+ * of erroring on the existing primary key. */
+export async function sendLiveClassReminder(input: { liveClassId: string; studentId: string }): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error } = await supabase
+    .from("live_class_reminders")
+    .upsert(
+      { live_class_id: input.liveClassId, student_id: input.studentId, created_at: new Date().toISOString() },
+      { onConflict: "live_class_id,student_id" },
+    );
+  if (error) {
+    return { error: "Couldn't send the reminder. Please try again." };
+  }
+  return {};
+}
+
+/** Student dismissing their own reminder banner (or it clears itself once
+ * they join — see the student Live Classes tab). */
+export async function dismissLiveClassReminder(input: { liveClassId: string }): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error } = await supabase
+    .from("live_class_reminders")
+    .delete()
+    .eq("live_class_id", input.liveClassId)
+    .eq("student_id", user.id);
+  if (error) {
+    return { error: "Couldn't dismiss the reminder." };
   }
   return {};
 }

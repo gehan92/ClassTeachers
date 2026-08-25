@@ -9,10 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/features/status-badge";
 import { VideoCallPanel } from "@/components/dashboard/inline-file-viewer";
-import { createLiveClass, deleteLiveClass, setAttendanceStatus } from "@/lib/dashboard/live-classes-actions";
+import { createLiveClass, deleteLiveClass, setAttendanceStatus, sendLiveClassReminder } from "@/lib/dashboard/live-classes-actions";
 import { cn } from "@/lib/utils";
 
 export type TeacherLiveClassBatchOption = { id: string; title: string; studentCount: number };
+export type TeacherLiveClassStudentOption = { id: string; name: string; batchId: string | null };
 
 export type LiveClassRosterEntry = {
   studentId: string;
@@ -47,11 +48,13 @@ export function LiveClassesTab({
   hostName,
   batches,
   totalStudentsCount,
+  studentPool,
 }: {
   classes: TeacherLiveClassRow[];
   hostName: string;
   batches: TeacherLiveClassBatchOption[];
   totalStudentsCount: number;
+  studentPool: TeacherLiveClassStudentOption[];
 }) {
   const t = useTranslations("teacherDashboard.live");
   const ta = useTranslations("teacherDashboard.attendance");
@@ -67,12 +70,17 @@ export function LiveClassesTab({
   const [newMode, setNewMode] = useState<"online" | "physical">("online");
   const [newLocation, setNewLocation] = useState("");
   const [newBatchId, setNewBatchId] = useState<string>(NO_BATCH);
+  const [excludedStudentIds, setExcludedStudentIds] = useState<Set<string>>(new Set());
   const [added, setAdded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [rosterOverrides, setRosterOverrides] = useState<Record<string, NonNullable<LiveClassRosterEntry["status"]>>>({});
   const [savingRosterKey, setSavingRosterKey] = useState<string | null>(null);
+  const [remindedKeys, setRemindedKeys] = useState<Set<string>>(new Set());
+  const [remindingKey, setRemindingKey] = useState<string | null>(null);
+
+  const poolForNewBatch = studentPool.filter((s) => newBatchId === NO_BATCH || s.batchId === newBatchId);
 
   function resetForm() {
     setNewTitle("");
@@ -80,13 +88,38 @@ export function LiveClassesTab({
     setNewMode("online");
     setNewLocation("");
     setNewBatchId(NO_BATCH);
+    setExcludedStudentIds(new Set());
     setAdding(false);
+  }
+
+  function handleBatchChange(value: string | null) {
+    setNewBatchId(value ?? NO_BATCH);
+    // Different pool of students — a leftover exclusion set from the
+    // previous batch wouldn't map to the right people here.
+    setExcludedStudentIds(new Set());
+  }
+
+  function toggleStudent(studentId: string) {
+    setExcludedStudentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(studentId)) next.delete(studentId);
+      else next.add(studentId);
+      return next;
+    });
   }
 
   async function handleAdd() {
     if (!newTitle.trim() || !newScheduledAt) return;
     setSaving(true);
     setError(null);
+    // Nothing excluded = every current member of the pool gets in, same as
+    // before this feature existed — only send an explicit list when the
+    // teacher actually narrowed it down (see the comment on
+    // live_class_participants, 0055, for why "everyone" stays unsent).
+    const participantStudentIds =
+      excludedStudentIds.size > 0
+        ? poolForNewBatch.filter((s) => !excludedStudentIds.has(s.id)).map((s) => s.id)
+        : undefined;
     const result = await createLiveClass({
       ownerType: "teacher",
       title: newTitle,
@@ -98,6 +131,7 @@ export function LiveClassesTab({
       scheduledAt: new Date(newScheduledAt).toISOString(),
       durationMinutes: "60",
       batchId: newBatchId !== NO_BATCH ? newBatchId : undefined,
+      participantStudentIds,
     });
     setSaving(false);
     if (result.error) {
@@ -126,6 +160,16 @@ export function LiveClassesTab({
     setSavingRosterKey(null);
     if (!result.error) {
       setRosterOverrides((prev) => ({ ...prev, [key]: status }));
+    }
+  }
+
+  async function handleRemind(liveClassId: string, studentId: string) {
+    const key = `${liveClassId}:${studentId}`;
+    setRemindingKey(key);
+    const result = await sendLiveClassReminder({ liveClassId, studentId });
+    setRemindingKey(null);
+    if (!result.error) {
+      setRemindedKeys((prev) => new Set(prev).add(key));
     }
   }
 
@@ -174,6 +218,20 @@ export function LiveClassesTab({
                   >
                     <span className="font-medium text-foreground">{row.studentName}</span>
                     <div className="flex items-center gap-2">
+                      {status !== "present" &&
+                        (remindedKeys.has(key) ? (
+                          <span className="text-xs font-medium text-success">{t("reminded")}</span>
+                        ) : (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={remindingKey === key}
+                            onClick={() => handleRemind(viewingRoster.id, row.studentId)}
+                          >
+                            {t("remind")}
+                          </Button>
+                        ))}
                       {status && <StatusBadge variant={statusVariant(status)}>{ta(`status.${status}`)}</StatusBadge>}
                       <div className="flex gap-1">
                         {ATTENDANCE_STATUSES.map((s) => (
@@ -238,7 +296,7 @@ export function LiveClassesTab({
                 <SelectItem value="physical">{t("physical")}</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={newBatchId} onValueChange={(value) => setNewBatchId(value ?? NO_BATCH)}>
+            <Select value={newBatchId} onValueChange={handleBatchChange}>
               <SelectTrigger className="w-full sm:col-span-2">
                 <SelectValue />
               </SelectTrigger>
@@ -253,6 +311,32 @@ export function LiveClassesTab({
                 ))}
               </SelectContent>
             </Select>
+            {poolForNewBatch.length > 0 && (
+              <div className="rounded-md border border-border p-3 sm:col-span-2">
+                <label className="mb-2 flex items-center gap-2 text-xs font-medium text-foreground">
+                  <input
+                    type="checkbox"
+                    className="size-3.5 accent-primary"
+                    checked={excludedStudentIds.size === 0}
+                    onChange={(e) => setExcludedStudentIds(e.target.checked ? new Set() : new Set(poolForNewBatch.map((s) => s.id)))}
+                  />
+                  {t("selectAll")}
+                </label>
+                <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
+                  {poolForNewBatch.map((s) => (
+                    <label key={s.id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        className="size-3.5 accent-primary"
+                        checked={!excludedStudentIds.has(s.id)}
+                        onChange={() => toggleStudent(s.id)}
+                      />
+                      {s.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
             {newMode === "physical" ? (
               <Input
                 placeholder={t("locationPlaceholder")}

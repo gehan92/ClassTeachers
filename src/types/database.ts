@@ -679,6 +679,45 @@ export type Database = {
         Relationships: [];
       };
 
+      live_class_participants: {
+        Row: {
+          live_class_id: string;
+          student_id: string;
+        };
+        Insert: {
+          live_class_id: string;
+          student_id: string;
+        };
+        Update: {
+          live_class_id?: string;
+          student_id?: string;
+        };
+        // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
+        // every table declares no relationships rather than a guessed one.
+        Relationships: [];
+      };
+
+      live_class_reminders: {
+        Row: {
+          live_class_id: string;
+          student_id: string;
+          created_at: string;
+        };
+        Insert: {
+          live_class_id: string;
+          student_id: string;
+          created_at?: string;
+        };
+        Update: {
+          live_class_id?: string;
+          student_id?: string;
+          created_at?: string;
+        };
+        // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
+        // every table declares no relationships rather than a guessed one.
+        Relationships: [];
+      };
+
       attendance_records: {
         Row: {
           id: string;
@@ -1024,6 +1063,14 @@ export type Database = {
       is_enrolled: {
         Args: { p_owner_type: string; p_owner_id: string };
         Returns: boolean;
+      };
+      is_enrolled_in_live_class: {
+        Args: { p_live_class_id: string };
+        Returns: boolean;
+      };
+      visible_live_class_ids: {
+        Args: { p_ids: string[] };
+        Returns: string[];
       };
       resolve_owner_type: {
         Args: { p_owner_type: string };

@@ -945,7 +945,8 @@
       "stateStartingSoon": "Starting soon",
       "stateEnded": "Ended",
       "joinButton": "Join Live Class",
-      "markedPresent": "You're marked present"
+      "markedPresent": "You're marked present",
+      "reminderBanner": "{teacher} started {title} — join now."
     },
     "notes": {
       "title": "Tutes & Notes",
@@ -1387,7 +1388,10 @@
       "delete": "Delete",
       "allStudentsOption": "All my students",
       "studentsAction": "Students ({count})",
-      "rosterEmpty": "No students enrolled yet."
+      "rosterEmpty": "No students enrolled yet.",
+      "selectAll": "Select all",
+      "remind": "Remind",
+      "reminded": "Reminded"
     },
     "students": {
       "heading": "Students",

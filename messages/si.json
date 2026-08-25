@@ -945,7 +945,8 @@
       "stateStartingSoon": "ඉක්මනින් ආරම්භ වේ",
       "stateEnded": "අවසන් විය",
       "joinButton": "සජීවී පන්තියට එකතු වන්න",
-      "markedPresent": "ඔබ පැමිණි බව සලකුණු කර ඇත"
+      "markedPresent": "ඔබ පැමිණි බව සලකුණු කර ඇත",
+      "reminderBanner": "{teacher} {title} ආරම්භ කළා — දැන් එකතු වන්න."
     },
     "notes": {
       "title": "ටියුට් සහ සටහන්",
@@ -1387,7 +1388,10 @@
       "delete": "මකන්න",
       "allStudentsOption": "මගේ සියලුම සිසුන්",
       "studentsAction": "සිසුන් ({count})",
-      "rosterEmpty": "තවම සිසුන් ලියාපදිංචි වී නැත."
+      "rosterEmpty": "තවම සිසුන් ලියාපදිංචි වී නැත.",
+      "selectAll": "සියල්ල තෝරන්න",
+      "remind": "මතක් කරන්න",
+      "reminded": "මතක් කර ඇත"
     },
     "students": {
       "heading": "සිසුන්",

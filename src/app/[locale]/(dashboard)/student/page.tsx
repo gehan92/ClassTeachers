@@ -92,30 +92,37 @@ export default async function StudentDashboardPage({
       : Promise.resolve({ data: [] as { id: string; owner_id: string; title: string; mode: "online" | "physical"; scheduled_at: string; duration_minutes: number; batch_id: string | null }[] }),
   ]);
 
-  // A live class scoped to a batch (batch_id set) only belongs to students
-  // enrolled in that specific batch — otherwise every accepted student of
-  // the owner would see/join classes meant for a different batch. Matches
-  // the batch-aware RLS on live_class_links (0054); unscoped classes keep
-  // today's "every accepted student of this owner" behavior.
-  const acceptedBatchKeys = new Set(
-    acceptedEnrollments.map((e) => `${e.owner_type}:${e.owner_id}:${e.batch_id ?? ""}`),
-  );
-
-  const liveClassRows = [
+  const allLiveClassRows = [
     ...(teacherLive.data ?? []).map((r) => ({ ...r, ownerType: "teacher" as const })),
     ...(classLive.data ?? []).map((r) => ({ ...r, ownerType: "class" as const })),
-  ]
-    .filter((r) => !r.batch_id || acceptedBatchKeys.has(`${r.ownerType}:${r.owner_id}:${r.batch_id}`))
-    .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
+  ].sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
+
+  // A live class can be narrowed by batch (0054) and/or an explicit
+  // hand-picked student list (0055) — is_enrolled_in_live_class() is the
+  // one place both checks actually live, so this asks the database the
+  // same question its own RLS asks, instead of re-deriving the batch/
+  // participant logic here and risking it drifting out of sync.
+  const allLiveClassIds = allLiveClassRows.map((r) => r.id);
+  const { data: visibleLiveClassIds } = allLiveClassIds.length
+    ? await supabase.rpc("visible_live_class_ids", { p_ids: allLiveClassIds })
+    : { data: [] as string[] };
+  const visibleIdSet = new Set(visibleLiveClassIds ?? []);
+  const liveClassRows = allLiveClassRows.filter((r) => visibleIdSet.has(r.id));
 
   const nextLive = liveClassRows.find((row) => isFuture(row.scheduled_at));
   const nextLiveLabel = nextLive ? scheduleFormatter.format(new Date(nextLive.scheduled_at)) : null;
 
   const liveClassIds = liveClassRows.map((r) => r.id);
-  const { data: liveClassLinkRows } = liveClassIds.length
-    ? await supabase.from("live_class_links").select("live_class_id, join_link").in("live_class_id", liveClassIds)
-    : { data: [] as { live_class_id: string; join_link: string }[] };
+  const [{ data: liveClassLinkRows }, { data: reminderRows }] = await Promise.all([
+    liveClassIds.length
+      ? supabase.from("live_class_links").select("live_class_id, join_link").in("live_class_id", liveClassIds)
+      : Promise.resolve({ data: [] as { live_class_id: string; join_link: string }[] }),
+    liveClassIds.length
+      ? supabase.from("live_class_reminders").select("live_class_id").in("live_class_id", liveClassIds)
+      : Promise.resolve({ data: [] as { live_class_id: string }[] }),
+  ]);
   const joinLinkByClassId = new Map((liveClassLinkRows ?? []).map((l) => [l.live_class_id, l.join_link]));
+  const reminderClassIds = (reminderRows ?? []).map((r) => r.live_class_id);
 
   const { data: allBatches } = await supabase
     .from("batches")
@@ -373,6 +380,7 @@ export default async function StudentDashboardPage({
       userInitial={userInitial}
       logoutLabel={t("logout")}
       demoRole="student"
+      realtimeWatch={[{ table: "live_class_reminders", filter: `student_id=eq.${userId}` }]}
       groups={[
         {
           label: t("groupLearn"),
@@ -404,7 +412,7 @@ export default async function StudentDashboardPage({
           />
         ),
         classes: <ClassesTab myClasses={myClasses} availableBatches={availableBatches} />,
-        live: <LiveClassesTab classes={liveClasses} studentName={fullName} />,
+        live: <LiveClassesTab classes={liveClasses} studentName={fullName} reminderClassIds={reminderClassIds} />,
         notes: <NotesTab notes={studentNotes} studentName={fullName} />,
         exams: <ExamsTab exams={exams} />,
         assignments: <AssignmentsTab assignments={assignments} />,

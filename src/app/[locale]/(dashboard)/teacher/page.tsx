@@ -349,23 +349,36 @@ export default async function TeacherDashboardPage({
     .order("scheduled_at", { ascending: false });
 
   const liveClassIds = (liveClassRows ?? []).map((c) => c.id);
-  const [{ data: liveClassLinkRows }, { data: attendanceRows }] = await Promise.all([
+  const [{ data: liveClassLinkRows }, { data: attendanceRows }, { data: participantRows }] = await Promise.all([
     liveClassIds.length
       ? supabase.from("live_class_links").select("live_class_id, join_link").in("live_class_id", liveClassIds)
       : Promise.resolve({ data: [] as { live_class_id: string; join_link: string }[] }),
     liveClassIds.length
       ? supabase.from("attendance_records").select("live_class_id, student_id, status").in("live_class_id", liveClassIds)
       : Promise.resolve({ data: [] as { live_class_id: string; student_id: string; status: "present" | "absent" | "late" }[] }),
+    liveClassIds.length
+      ? supabase.from("live_class_participants").select("live_class_id, student_id").in("live_class_id", liveClassIds)
+      : Promise.resolve({ data: [] as { live_class_id: string; student_id: string }[] }),
   ]);
   const joinLinkByClassId = new Map((liveClassLinkRows ?? []).map((l) => [l.live_class_id, l.join_link]));
   const attendanceByKey = new Map((attendanceRows ?? []).map((a) => [`${a.live_class_id}:${a.student_id}`, a.status]));
+  const participantIdsByClassId = new Map<string, Set<string>>();
+  for (const p of participantRows ?? []) {
+    const set = participantIdsByClassId.get(p.live_class_id) ?? new Set<string>();
+    set.add(p.student_id);
+    participantIdsByClassId.set(p.live_class_id, set);
+  }
 
   // A live class scoped to a batch only rosters that batch's students; an
   // unscoped one (batch_id null) rosters everyone accepted with this
-  // teacher — same "null = all my students" shape as assignments (0049).
+  // teacher — same "null = all my students" shape as assignments (0049). An
+  // explicit participant list (0055) narrows that pool further, to exactly
+  // the students the teacher hand-picked.
   function rosterFor(liveClassId: string, batchId: string | null) {
-    const enrollments = batchId ? acceptedEnrollments.filter((e) => e.batch_id === batchId) : acceptedEnrollments;
-    return enrollments.map((e) => ({
+    const pool = batchId ? acceptedEnrollments.filter((e) => e.batch_id === batchId) : acceptedEnrollments;
+    const participantIds = participantIdsByClassId.get(liveClassId);
+    const scoped = participantIds ? pool.filter((e) => participantIds.has(e.student_id)) : pool;
+    return scoped.map((e) => ({
       studentId: e.student_id,
       studentName: studentById.get(e.student_id)?.full_name ?? "—",
       status: attendanceByKey.get(`${liveClassId}:${e.student_id}`) ?? null,
@@ -619,6 +632,11 @@ export default async function TeacherDashboardPage({
             hostName={fullName}
             batches={batches.map((b) => ({ id: b.id, title: b.title, studentCount: rosterByBatch[b.id]?.length ?? 0 }))}
             totalStudentsCount={acceptedEnrollments.length}
+            studentPool={acceptedEnrollments.map((e) => ({
+              id: e.student_id,
+              name: studentById.get(e.student_id)?.full_name ?? "—",
+              batchId: e.batch_id,
+            }))}
           />
         ),
         students: <StudentsTab students={students} requests={requests} />,

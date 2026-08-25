@@ -455,11 +455,11 @@ function DashboardShellInner({
             <div
               className={cn(
                 "sticky top-15 z-40 flex flex-wrap items-center justify-between gap-2.5 border-b-2 bg-white px-5 py-2 shadow-[0_1px_2px_rgba(14,33,29,0.07)]",
-                isExposed ? "border-b-cta" : "border-b-success",
+                isExposed ? "border-b-destructive" : "border-b-success",
               )}
             >
-              <span className={cn("flex items-center gap-2 text-sm font-medium", isExposed ? "text-accent-deep" : "text-foreground")}>
-                <Video className={cn("size-4 shrink-0", isExposed ? "text-accent-deep" : "text-success")} />
+              <span className={cn("flex items-center gap-2 text-sm font-medium", isExposed ? "text-destructive" : "text-foreground")}>
+                <Video className={cn("size-4 shrink-0", isExposed ? "text-destructive" : "text-success")} />
                 {isExposed ? t("stillExposedBanner", { title: activeCall.title }) : t("inCallBanner", { title: activeCall.title })}
               </span>
               <div className="flex items-center gap-2">
@@ -471,7 +471,7 @@ function DashboardShellInner({
                     "flex size-8 items-center justify-center rounded-md border transition-colors",
                     micMuted
                       ? "border-border bg-white text-muted-foreground"
-                      : "border-cta/30 bg-white text-accent-deep hover:bg-cta/10",
+                      : "border-destructive/30 bg-white text-destructive hover:bg-destructive/10",
                   )}
                 >
                   {micMuted ? <MicOff className="size-4" /> : <Mic className="size-4" />}
@@ -484,7 +484,7 @@ function DashboardShellInner({
                     "flex size-8 items-center justify-center rounded-md border transition-colors",
                     camMuted
                       ? "border-border bg-white text-muted-foreground"
-                      : "border-cta/30 bg-white text-accent-deep hover:bg-cta/10",
+                      : "border-destructive/30 bg-white text-destructive hover:bg-destructive/10",
                   )}
                 >
                   {camMuted ? <VideoOff className="size-4" /> : <Video className="size-4" />}

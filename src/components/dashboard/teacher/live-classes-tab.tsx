@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/features/status-badge";
-import { VideoCallPanel } from "@/components/dashboard/inline-file-viewer";
+import { useLiveCall } from "@/components/dashboard/live-call-context";
 import { createLiveClass, deleteLiveClass, setAttendanceStatus, sendLiveClassReminder } from "@/lib/dashboard/live-classes-actions";
 import { cn } from "@/lib/utils";
 
@@ -60,8 +60,8 @@ export function LiveClassesTab({
   const ta = useTranslations("teacherDashboard.attendance");
   const tc = useTranslations("teacherDashboard.common");
   const router = useRouter();
+  const { activeCall, startCall, restoreCall } = useLiveCall();
 
-  const [activeCallId, setActiveCallId] = useState<string | null>(null);
   const [viewingRosterId, setViewingRosterId] = useState<string | null>(null);
 
   const [adding, setAdding] = useState(false);
@@ -173,19 +173,16 @@ export function LiveClassesTab({
     }
   }
 
-  const activeCall = classes.find((c) => c.id === activeCallId) ?? null;
-  if (activeCall && activeCall.joinLink) {
-    return (
-      <VideoCallPanel
-        title={activeCall.title}
-        subtitle={activeCall.scheduledLabel}
-        roomUrl={activeCall.joinLink}
-        closeLabel={tc("close")}
-        onClose={() => setActiveCallId(null)}
-        displayName={hostName}
-        isHost
-      />
-    );
+  function handleStartCall(c: TeacherLiveClassRow) {
+    if (!c.joinLink) return;
+    startCall({
+      liveClassId: c.id,
+      title: c.title,
+      subtitle: c.scheduledLabel,
+      roomUrl: c.joinLink,
+      displayName: hostName,
+      isHost: true,
+    });
   }
 
   const viewingRoster = classes.find((c) => c.id === viewingRosterId) ?? null;
@@ -388,9 +385,27 @@ export function LiveClassesTab({
                   </TableCell>
                   <TableCell className="min-w-32">
                     {c.mode === "online" && c.joinLink ? (
-                      <Button type="button" size="sm" variant="outline" onClick={() => setActiveCallId(c.id)}>
-                        {t("startClass")}
-                      </Button>
+                      activeCall?.liveClassId === c.id ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="bg-success text-success-foreground hover:bg-success/90"
+                          onClick={restoreCall}
+                        >
+                          {t("returnToCallAction")}
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={!!activeCall}
+                          title={activeCall ? t("inOtherCallHint") : undefined}
+                          onClick={() => handleStartCall(c)}
+                        >
+                          {t("startClass")}
+                        </Button>
+                      )
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}

@@ -23,7 +23,11 @@
     "searchInstitutes": "Institutes / classes",
     "searchCampusLecturers": "Campus lecturers",
     "searchOnlineLessons": "Online lessons",
-    "postYourAd": "Post your ad"
+    "postYourAd": "Post your ad",
+    "inCallBanner": "In call — {title}",
+    "returnToCall": "Return to call",
+    "leaveCall": "Leave call",
+    "minimizeCall": "Minimize"
   },
   "language": {
     "label": "Language"
@@ -946,7 +950,10 @@
       "stateEnded": "Ended",
       "joinButton": "Join Live Class",
       "markedPresent": "You're marked present",
-      "reminderBanner": "{teacher} started {title} — join now."
+      "reminderBanner": "{teacher} started {title} — join now.",
+      "dismiss": "Dismiss",
+      "returnToCallAction": "Return to call",
+      "inOtherCallHint": "Leave your current call first"
     },
     "notes": {
       "title": "Tutes & Notes",
@@ -1391,7 +1398,9 @@
       "rosterEmpty": "No students enrolled yet.",
       "selectAll": "Select all",
       "remind": "Remind",
-      "reminded": "Reminded"
+      "reminded": "Reminded",
+      "returnToCallAction": "Return to call",
+      "inOtherCallHint": "Leave your current call first"
     },
     "students": {
       "heading": "Students",

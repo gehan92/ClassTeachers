@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { VideoCallPanel } from "@/components/dashboard/inline-file-viewer";
+import { useLiveCall } from "@/components/dashboard/live-call-context";
 import { markAttendance, dismissLiveClassReminder } from "@/lib/dashboard/live-classes-actions";
 
 export type StudentLiveClassRow = {
@@ -47,11 +47,10 @@ export function LiveClassesTab({
   reminderClassIds: string[];
 }) {
   const t = useTranslations("studentDashboard.live");
-  const tc = useTranslations("studentDashboard.common");
   const [now, setNow] = useState(() => Date.now());
   const [markedId, setMarkedId] = useState<string | null>(null);
-  const [activeCallId, setActiveCallId] = useState<string | null>(null);
   const [dismissedReminderIds, setDismissedReminderIds] = useState<Set<string>>(new Set());
+  const { activeCall, startCall, restoreCall } = useLiveCall();
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30000);
@@ -59,8 +58,15 @@ export function LiveClassesTab({
   }, []);
 
   async function handleJoin(row: StudentLiveClassRow) {
+    if (!row.joinLink) return;
     setMarkedId(row.id);
-    setActiveCallId(row.id);
+    startCall({
+      liveClassId: row.id,
+      title: row.title,
+      subtitle: row.teacherName,
+      roomUrl: row.joinLink,
+      displayName: studentName,
+    });
     await markAttendance({ liveClassId: row.id });
     // Joining is the whole point of the reminder — clear it so it doesn't
     // keep showing once they've actually gotten in.
@@ -71,20 +77,6 @@ export function LiveClassesTab({
   function dismissReminder(liveClassId: string) {
     setDismissedReminderIds((prev) => new Set(prev).add(liveClassId));
     void dismissLiveClassReminder({ liveClassId });
-  }
-
-  const activeCall = classes.find((c) => c.id === activeCallId) ?? null;
-  if (activeCall && activeCall.joinLink) {
-    return (
-      <VideoCallPanel
-        title={activeCall.title}
-        subtitle={activeCall.teacherName}
-        roomUrl={activeCall.joinLink}
-        closeLabel={tc("close")}
-        onClose={() => setActiveCallId(null)}
-        displayName={studentName}
-      />
-    );
   }
 
   const activeReminders = classes.filter(
@@ -102,6 +94,8 @@ export function LiveClassesTab({
         <div className="mb-5 flex flex-col gap-2">
           {activeReminders.map((row) => {
             const state = classState(row, now);
+            const isThisCallActive = activeCall?.liveClassId === row.id;
+            const isBlockedByOtherCall = !!activeCall && activeCall.liveClassId !== row.id;
             return (
               <div
                 key={row.id}
@@ -109,17 +103,25 @@ export function LiveClassesTab({
               >
                 <p className="text-sm text-foreground">{t("reminderBanner", { title: row.title, teacher: row.teacherName })}</p>
                 <div className="flex items-center gap-2">
-                  {state === "live" && row.joinLink && (
-                    <Button
-                      size="sm"
-                      className="bg-success text-success-foreground hover:bg-success/90"
-                      onClick={() => handleJoin(row)}
-                    >
-                      {t("joinButton")}
-                    </Button>
-                  )}
+                  {state === "live" &&
+                    row.joinLink &&
+                    (isThisCallActive ? (
+                      <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90" onClick={restoreCall}>
+                        {t("returnToCallAction")}
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="bg-success text-success-foreground hover:bg-success/90"
+                        disabled={isBlockedByOtherCall}
+                        title={isBlockedByOtherCall ? t("inOtherCallHint") : undefined}
+                        onClick={() => handleJoin(row)}
+                      >
+                        {t("joinButton")}
+                      </Button>
+                    ))}
                   <Button size="sm" variant="ghost" onClick={() => dismissReminder(row.id)}>
-                    {tc("close")}
+                    {t("dismiss")}
                   </Button>
                 </div>
               </div>
@@ -149,7 +151,10 @@ export function LiveClassesTab({
                   row={row}
                   state={classState(row, now)}
                   onJoin={handleJoin}
+                  onReturn={restoreCall}
                   justMarked={markedId === row.id}
+                  isThisCallActive={activeCall?.liveClassId === row.id}
+                  isBlockedByOtherCall={!!activeCall && activeCall.liveClassId !== row.id}
                 />
               ))}
             </TableBody>
@@ -164,12 +169,18 @@ function LiveClassRow({
   row,
   state,
   onJoin,
+  onReturn,
   justMarked,
+  isThisCallActive,
+  isBlockedByOtherCall,
 }: {
   row: StudentLiveClassRow;
   state: LiveState;
   onJoin: (row: StudentLiveClassRow) => void;
+  onReturn: () => void;
   justMarked: boolean;
+  isThisCallActive: boolean;
+  isBlockedByOtherCall: boolean;
 }) {
   const t = useTranslations("studentDashboard.live");
 
@@ -188,13 +199,21 @@ function LiveClassRow({
         {state === "live" && row.joinLink && (
           <div className="flex items-center justify-end gap-2">
             {justMarked && <span className="text-xs font-medium text-success">{t("markedPresent")}</span>}
-            <Button
-              size="sm"
-              className="bg-success text-success-foreground hover:bg-success/90"
-              onClick={() => onJoin(row)}
-            >
-              {t("joinButton")}
-            </Button>
+            {isThisCallActive ? (
+              <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90" onClick={onReturn}>
+                {t("returnToCallAction")}
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                className="bg-success text-success-foreground hover:bg-success/90"
+                disabled={isBlockedByOtherCall}
+                title={isBlockedByOtherCall ? t("inOtherCallHint") : undefined}
+                onClick={() => onJoin(row)}
+              >
+                {t("joinButton")}
+              </Button>
+            )}
           </div>
         )}
       </TableCell>

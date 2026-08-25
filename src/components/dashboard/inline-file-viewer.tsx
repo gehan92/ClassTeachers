@@ -122,14 +122,20 @@ export function VideoCallPanel({
   roomUrl,
   closeLabel,
   onClose,
+  minimizeLabel,
+  onMinimize,
   displayName,
   isHost = false,
 }: {
   title: string;
   subtitle?: string;
   roomUrl: string;
+  /** Ends the call for real (disposes the Jitsi connection) — never fired by minimizing. */
   closeLabel: string;
   onClose: () => void;
+  /** Hides this panel without disconnecting — the parent is expected to keep it mounted (just visually hidden) so the connection survives. Omit to fall back to a single Close button, e.g. for a context with nowhere to minimize to. */
+  minimizeLabel?: string;
+  onMinimize?: () => void;
   /** Shown in the participant list and, for a knocking guest, in the moderator's admit/deny prompt. */
   displayName?: string;
   /** Enables the lobby (waiting room) once this client joins, so later joiners need to be admitted by name instead of just having the link. */
@@ -184,7 +190,22 @@ export function VideoCallPanel({
 
   return (
     <div>
-      <ViewerHeader title={title} subtitle={subtitle} closeLabel={closeLabel} onClose={onClose} />
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <div className="text-sm font-semibold text-foreground">{title}</div>
+          {subtitle && <div className="text-xs text-muted-foreground">{subtitle}</div>}
+        </div>
+        <div className="flex items-center gap-2">
+          {onMinimize && minimizeLabel && (
+            <Button size="sm" variant="outline" onClick={onMinimize}>
+              {minimizeLabel}
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={onClose}>
+            {closeLabel}
+          </Button>
+        </div>
+      </div>
       <div
         ref={containerRef}
         className="mx-auto h-[80vh] max-w-5xl overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]"

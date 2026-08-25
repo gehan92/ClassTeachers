@@ -37,6 +37,8 @@ import { LocaleSwitcher } from "@/components/layout/locale-switcher";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { logOutAction } from "@/lib/auth/actions";
 import { RealtimeRefresh, type RealtimeWatch } from "@/components/dashboard/realtime-refresh";
+import { LiveCallProvider, useLiveCall } from "@/components/dashboard/live-call-context";
+import { VideoCallPanel } from "@/components/dashboard/inline-file-viewer";
 import type { DashboardNavGroup, DemoRole } from "@/types/dashboard";
 
 /** Same picker as the public SiteHeader's "Search" dropdown — kept as its own small copy here since the dashboard header's dark theme needs different trigger/item styling, not because the destinations differ. */
@@ -188,7 +190,31 @@ function NavList({
   );
 }
 
-export function DashboardShell({
+export function DashboardShell(props: {
+  brandBadge?: string;
+  userLabel: string;
+  userInitial: string;
+  userPhotoUrl?: string | null;
+  logoutLabel: string;
+  demoRole: DemoRole;
+  groups: DashboardNavGroup[];
+  panels: Record<string, React.ReactNode>;
+  defaultTab: string;
+  /** Tables to silently live-refresh on — see RealtimeRefresh. Mounted once here, outside panels[activeTab], so it keeps listening no matter which tab is open. */
+  realtimeWatch?: RealtimeWatch[];
+}) {
+  // The call's connection lifetime needs to survive tab switches, so its
+  // state has to live above wherever panels[activeTab] gets swapped — see
+  // live-call-context.tsx. DashboardShellInner is the one that actually
+  // consumes it, since a component can't read a context it provides itself.
+  return (
+    <LiveCallProvider>
+      <DashboardShellInner {...props} />
+    </LiveCallProvider>
+  );
+}
+
+function DashboardShellInner({
   brandBadge,
   userLabel,
   userInitial,
@@ -209,11 +235,11 @@ export function DashboardShell({
   groups: DashboardNavGroup[];
   panels: Record<string, React.ReactNode>;
   defaultTab: string;
-  /** Tables to silently live-refresh on — see RealtimeRefresh. Mounted once here, outside panels[activeTab], so it keeps listening no matter which tab is open. */
   realtimeWatch?: RealtimeWatch[];
 }) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const t = useTranslations("nav");
+  const { activeCall, minimizeCall, restoreCall, leaveCall } = useLiveCall();
 
   useEffect(() => {
     // Only read the URL once, on mount — after that, tab state is owned
@@ -229,6 +255,11 @@ export function DashboardShell({
   }, []);
 
   function select(tab: string) {
+    // Switching tabs while the call is in the foreground would otherwise
+    // hide it with no way back — minimize it instead of losing it.
+    if (activeCall && !activeCall.minimized && tab !== activeTab) {
+      minimizeCall();
+    }
     setActiveTab(tab);
     updateTabParam(tab);
   }
@@ -381,6 +412,23 @@ export function DashboardShell({
         </div>
       </header>
 
+      {activeCall?.minimized && (
+        <div className="sticky top-15 z-40 flex flex-wrap items-center justify-between gap-2.5 border-b border-success/30 bg-success/10 px-5 py-2">
+          <span className="flex items-center gap-2 text-sm text-foreground">
+            <Video className="size-4 shrink-0 text-success" />
+            {t("inCallBanner", { title: activeCall.title })}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90" onClick={restoreCall}>
+              {t("returnToCall")}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={leaveCall}>
+              {t("leaveCall")}
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="border-b border-border bg-white md:hidden">
         <NavList groups={groups} activeTab={activeTab} onSelect={select} orientation="horizontal" />
       </div>
@@ -395,7 +443,30 @@ export function DashboardShell({
           <NavList groups={groups} activeTab={activeTab} onSelect={select} orientation="vertical" />
         </aside>
         <main className="min-w-0 flex-1 p-5 sm:p-7">
-          <div className="mx-auto max-w-[1400px]">{panels[activeTab]}</div>
+          <div className="mx-auto max-w-[1400px]">
+            {/* The call, once started, stays mounted here regardless of
+               which tab is active or whether it's minimized — only
+               `leaveCall` (never a tab switch) ever unmounts it, which is
+               what actually disconnects from Jitsi. Visibility is a plain
+               CSS toggle, not conditional rendering, so minimizing never
+               forces a reconnect. */}
+            {activeCall && (
+              <div style={{ display: activeCall.minimized ? "none" : "block" }}>
+                <VideoCallPanel
+                  title={activeCall.title}
+                  subtitle={activeCall.subtitle}
+                  roomUrl={activeCall.roomUrl}
+                  displayName={activeCall.displayName}
+                  isHost={activeCall.isHost}
+                  closeLabel={t("leaveCall")}
+                  minimizeLabel={t("minimizeCall")}
+                  onClose={leaveCall}
+                  onMinimize={minimizeCall}
+                />
+              </div>
+            )}
+            <div style={{ display: activeCall && !activeCall.minimized ? "none" : "block" }}>{panels[activeTab]}</div>
+          </div>
         </main>
       </div>
 

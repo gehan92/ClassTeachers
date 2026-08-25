@@ -23,7 +23,11 @@
     "searchInstitutes": "நிறுவனங்கள் / வகுப்புகள்",
     "searchCampusLecturers": "வளாக விரிவுரையாளர்கள்",
     "searchOnlineLessons": "ஆன்லைன் பாடங்கள்",
-    "postYourAd": "உங்கள் விளம்பரத்தை இடுங்கள்"
+    "postYourAd": "உங்கள் விளம்பரத்தை இடுங்கள்",
+    "inCallBanner": "அழைப்பில் உள்ளீர்கள் — {title}",
+    "returnToCall": "அழைப்புக்குத் திரும்பு",
+    "leaveCall": "அழைப்பை விடு",
+    "minimizeCall": "சிறிதாக்கு"
   },
   "language": {
     "label": "மொழி"
@@ -946,7 +950,10 @@
       "stateEnded": "முடிந்தது",
       "joinButton": "நேரடி வகுப்பில் இணையுங்கள்",
       "markedPresent": "நீங்கள் வருகை தந்ததாக குறிக்கப்பட்டீர்கள்",
-      "reminderBanner": "{teacher} {title} தொடங்கிவிட்டார் — இப்போது இணையவும்."
+      "reminderBanner": "{teacher} {title} தொடங்கிவிட்டார் — இப்போது இணையவும்.",
+      "dismiss": "நிராகரி",
+      "returnToCallAction": "அழைப்புக்குத் திரும்பு",
+      "inOtherCallHint": "முதலில் உங்கள் தற்போதைய அழைப்பிலிருந்து வெளியேறவும்"
     },
     "notes": {
       "title": "டியூட்ஸ் மற்றும் குறிப்புகள்",
@@ -1391,7 +1398,9 @@
       "rosterEmpty": "இன்னும் மாணவர்கள் பதிவு செய்யவில்லை.",
       "selectAll": "அனைத்தையும் தேர்ந்தெடு",
       "remind": "நினைவூட்டு",
-      "reminded": "நினைவூட்டப்பட்டது"
+      "reminded": "நினைவூட்டப்பட்டது",
+      "returnToCallAction": "அழைப்புக்குத் திரும்பு",
+      "inOtherCallHint": "முதலில் உங்கள் தற்போதைய அழைப்பிலிருந்து வெளியேறவும்"
     },
     "students": {
       "heading": "மாணவர்கள்",

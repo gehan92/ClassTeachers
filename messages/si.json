@@ -23,7 +23,11 @@
     "searchInstitutes": "ආයතන / පන්ති",
     "searchCampusLecturers": "කැම්පස් කථිකාචාර්යවරු",
     "searchOnlineLessons": "මාර්ගගත පාඩම්",
-    "postYourAd": "ඔබේ දැන්වීම පළ කරන්න"
+    "postYourAd": "ඔබේ දැන්වීම පළ කරන්න",
+    "inCallBanner": "ඇමතුමේ පවතී — {title}",
+    "returnToCall": "ඇමතුමට ආපසු යන්න",
+    "leaveCall": "ඇමතුමෙන් ඉවත් වන්න",
+    "minimizeCall": "කුඩා කරන්න"
   },
   "language": {
     "label": "භාෂාව"
@@ -946,7 +950,10 @@
       "stateEnded": "අවසන් විය",
       "joinButton": "සජීවී පන්තියට එකතු වන්න",
       "markedPresent": "ඔබ පැමිණි බව සලකුණු කර ඇත",
-      "reminderBanner": "{teacher} {title} ආරම්භ කළා — දැන් එකතු වන්න."
+      "reminderBanner": "{teacher} {title} ආරම්භ කළා — දැන් එකතු වන්න.",
+      "dismiss": "ඉවත් කරන්න",
+      "returnToCallAction": "ඇමතුමට ආපසු යන්න",
+      "inOtherCallHint": "පළමුව ඔබේ වත්මන් ඇමතුමෙන් ඉවත් වන්න"
     },
     "notes": {
       "title": "ටියුට් සහ සටහන්",
@@ -1391,7 +1398,9 @@
       "rosterEmpty": "තවම සිසුන් ලියාපදිංචි වී නැත.",
       "selectAll": "සියල්ල තෝරන්න",
       "remind": "මතක් කරන්න",
-      "reminded": "මතක් කර ඇත"
+      "reminded": "මතක් කර ඇත",
+      "returnToCallAction": "ඇමතුමට ආපසු යන්න",
+      "inOtherCallHint": "පළමුව ඔබේ වත්මන් ඇමතුමෙන් ඉවත් වන්න"
     },
     "students": {
       "heading": "සිසුන්",

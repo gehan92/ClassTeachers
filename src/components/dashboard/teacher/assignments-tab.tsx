@@ -323,7 +323,7 @@ export function AssignmentsTab({
                 }}
               />
             </div>
-            <div className="grid w-44 gap-1.5">
+            <div className="grid w-56 gap-1.5">
               <Label>{t("form.batchLabel")}</Label>
               <Select
                 value={filterBatch}
@@ -346,7 +346,7 @@ export function AssignmentsTab({
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid w-44 gap-1.5">
+            <div className="grid w-48 gap-1.5">
               <Label>{t("form.lessonLabel")}</Label>
               <Select
                 value={filterLesson}

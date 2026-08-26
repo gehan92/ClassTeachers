@@ -300,7 +300,7 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
                 }}
               />
             </div>
-            <div className="grid w-44 gap-1.5">
+            <div className="grid w-56 gap-1.5">
               <Label>{t("filters.batchLabel")}</Label>
               <Select
                 value={filterBatch}

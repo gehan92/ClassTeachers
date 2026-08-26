@@ -107,6 +107,31 @@ export async function updateNotificationPrefs(prefs: Record<string, boolean>): P
   return {};
 }
 
+/**
+ * Gates what get_roster_student_info (0069) returns to a student's
+ * teachers/institutes — a student's own view of their own phone (this
+ * form, the profile card) is never affected by this, only what a
+ * teacher's roster shows.
+ */
+export async function updatePhoneSharingPref(shared: boolean): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ share_phone_with_teachers: shared })
+    .eq("id", user.id);
+  if (error) {
+    return { error: "Couldn't save this setting. Please try again." };
+  }
+  return {};
+}
+
 const teacherProfileSchema = z.object({
   headline: z.string().trim().optional(),
   bio: z.string().trim().optional(),

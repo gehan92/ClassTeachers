@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
-import { updateStudentProfile, updateNotificationPrefs } from "@/lib/dashboard/actions";
+import { updateStudentProfile, updateNotificationPrefs, updatePhoneSharingPref } from "@/lib/dashboard/actions";
 import { uploadAvatar } from "@/lib/dashboard/avatar-actions";
 
 const panelClass = "rounded-lg border border-border bg-white p-5";
@@ -33,6 +33,7 @@ export function ProfileTab({
   initialWorkExperience,
   initialSubjects,
   initialLanguages,
+  initialSharePhoneWithTeachers,
   classesCount,
   email,
 }: {
@@ -48,6 +49,7 @@ export function ProfileTab({
   initialWorkExperience: string[];
   initialSubjects: string[];
   initialLanguages: string[];
+  initialSharePhoneWithTeachers: boolean;
   classesCount: number;
   email: string;
 }) {
@@ -78,21 +80,31 @@ export function ProfileTab({
       </div>
 
       {mode === "view" ? (
-        <ProfileCard
-          name={initialName}
-          grade={initialGrade}
-          phone={initialPhone}
-          email={email}
-          photoUrl={initialPhotoUrl}
-          classesCount={classesCount}
-          bio={initialBio}
-          educationLevel={initialEducationLevel}
-          institutionName={initialInstitutionName}
-          qualifications={initialQualifications}
-          workExperience={initialWorkExperience}
-          subjects={initialSubjects}
-          languages={initialLanguages}
-        />
+        // Same outer wrapper as the teacher tab's live view (a single
+        // shared rounded/bordered/muted-bg container around everything)
+        // rather than each panel just floating on the page background —
+        // that wrapper is what gives the teacher card its inset,
+        // centered-with-a-border look.
+        <div className="overflow-hidden rounded-xl border border-border bg-muted/30 p-5 sm:p-7">
+          <div className="flex flex-col gap-5">
+            <ProfileCard
+              name={initialName}
+              grade={initialGrade}
+              phone={initialPhone}
+              email={email}
+              photoUrl={initialPhotoUrl}
+              classesCount={classesCount}
+              bio={initialBio}
+              educationLevel={initialEducationLevel}
+              institutionName={initialInstitutionName}
+              qualifications={initialQualifications}
+              workExperience={initialWorkExperience}
+              subjects={initialSubjects}
+              languages={initialLanguages}
+              sharePhoneWithTeachers={initialSharePhoneWithTeachers}
+            />
+          </div>
+        </div>
       ) : (
         <>
           <PhotoPanel initialPhotoUrl={initialPhotoUrl} studentName={initialName} />
@@ -105,6 +117,7 @@ export function ProfileTab({
             initialInstitutionName={initialInstitutionName}
             initialQualifications={initialQualifications}
             initialWorkExperience={initialWorkExperience}
+            initialSharePhoneWithTeachers={initialSharePhoneWithTeachers}
             initialSubjects={initialSubjects}
             initialLanguages={initialLanguages}
             email={email}
@@ -136,6 +149,7 @@ function ProfileCard({
   workExperience,
   subjects,
   languages,
+  sharePhoneWithTeachers,
 }: {
   name: string;
   grade: string;
@@ -150,6 +164,7 @@ function ProfileCard({
   workExperience: string[];
   subjects: string[];
   languages: string[];
+  sharePhoneWithTeachers: boolean;
 }) {
   const t = useTranslations("studentDashboard.profile");
   const statusLabel = educationLabel(t, educationLevel);
@@ -204,6 +219,11 @@ function ProfileCard({
           <div>
             <div className="text-xs text-muted-foreground">{t("phoneLabel")}</div>
             <div className="text-sm font-medium text-foreground">{phone || "—"}</div>
+            {phone && (
+              <div className="mt-0.5 text-xs text-muted-foreground">
+                {sharePhoneWithTeachers ? t("phoneVisibleToTeachers") : t("phoneHiddenFromTeachers")}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -428,6 +448,7 @@ function EditForm({
   initialInstitutionName,
   initialQualifications,
   initialWorkExperience,
+  initialSharePhoneWithTeachers,
   initialSubjects,
   initialLanguages,
   email,
@@ -440,6 +461,7 @@ function EditForm({
   initialInstitutionName: string;
   initialQualifications: string[];
   initialWorkExperience: string[];
+  initialSharePhoneWithTeachers: boolean;
   initialSubjects: string[];
   initialLanguages: string[];
   email: string;
@@ -451,7 +473,28 @@ function EditForm({
   const phoneId = useId();
   const bioId = useId();
   const institutionId = useId();
+  const sharePhoneId = useId();
   const { refresh } = useDashboardRefresh();
+
+  const [sharePhone, setSharePhone] = useState(initialSharePhoneWithTeachers);
+  const [phoneShareSaving, setPhoneShareSaving] = useState(false);
+  const [phoneShareError, setPhoneShareError] = useState<string | null>(null);
+
+  // Instant, independent save — matches NotificationsPanel's pattern
+  // (this is a privacy preference, not profile content, so it shouldn't
+  // wait for the big "Save changes" click below). Optimistic with revert
+  // on failure.
+  async function handleTogglePhoneShare(checked: boolean) {
+    setSharePhone(checked);
+    setPhoneShareSaving(true);
+    setPhoneShareError(null);
+    const result = await updatePhoneSharingPref(checked);
+    setPhoneShareSaving(false);
+    if (result.error) {
+      setSharePhone(!checked);
+      setPhoneShareError(result.error);
+    }
+  }
 
   const [form, setForm] = useState({
     name: initialName,
@@ -531,6 +574,20 @@ function EditForm({
             <Input id={phoneId} type="tel" value={form.phone} onChange={update("phone")} />
           </div>
         </div>
+
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
+          <div>
+            <Label htmlFor={sharePhoneId}>{t("sharePhoneLabel")}</Label>
+            <p className="mt-0.5 text-xs text-muted-foreground">{t("sharePhoneHint")}</p>
+          </div>
+          <Switch
+            id={sharePhoneId}
+            checked={sharePhone}
+            disabled={phoneShareSaving}
+            onCheckedChange={handleTogglePhoneShare}
+          />
+        </div>
+        {phoneShareError && <p className="mt-2 text-sm font-medium text-destructive">{phoneShareError}</p>}
       </div>
 
       <div className={panelClass}>

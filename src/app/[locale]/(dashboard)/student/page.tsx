@@ -72,7 +72,7 @@ export default async function StudentDashboardPage({
     supabase
       .from("profiles")
       .select(
-        "full_name, phone, grade_level, notification_prefs, avatar_url, bio, education_level, institution_name, qualifications, work_experience, subjects, languages",
+        "full_name, phone, grade_level, notification_prefs, avatar_url, bio, education_level, institution_name, qualifications, work_experience, subjects, languages, share_phone_with_teachers",
       )
       .eq("id", userId)
       .single(),
@@ -503,6 +503,7 @@ export default async function StudentDashboardPage({
             initialInstitutionName={profile?.institution_name ?? ""}
             initialQualifications={profile?.qualifications ?? []}
             initialWorkExperience={profile?.work_experience ?? []}
+            initialSharePhoneWithTeachers={profile?.share_phone_with_teachers ?? true}
             initialSubjects={profile?.subjects ?? []}
             initialLanguages={profile?.languages ?? []}
             classesCount={classesCount}

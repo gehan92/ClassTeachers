@@ -65,6 +65,7 @@ export type Database = {
           work_experience: string[] | null;
           subjects: string[] | null;
           languages: string[] | null;
+          share_phone_with_teachers: boolean;
           notification_prefs: Json;
           preferred_locale: string;
           created_at: string;
@@ -84,6 +85,7 @@ export type Database = {
           work_experience?: string[] | null;
           subjects?: string[] | null;
           languages?: string[] | null;
+          share_phone_with_teachers?: boolean;
           notification_prefs?: Json;
           preferred_locale?: string;
           created_at?: string;
@@ -103,6 +105,7 @@ export type Database = {
           work_experience?: string[] | null;
           subjects?: string[] | null;
           languages?: string[] | null;
+          share_phone_with_teachers?: boolean;
           notification_prefs?: Json;
           preferred_locale?: string;
           created_at?: string;

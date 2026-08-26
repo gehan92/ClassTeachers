@@ -38,6 +38,12 @@ export default async function InstituteDashboardPage({
   const userInitial = fullName.charAt(0).toUpperCase();
   const instituteId = classProfile?.id;
 
+  // Every query below only needs instituteId (or nothing at all), not each
+  // other's results — including the two that used to be their own separate
+  // awaits further down (list_public_reviews, batches/batchEnrollmentRows)
+  // — so they all run as one batch instead of a chain of sequential round
+  // trips. Only the teacher-related queries below this genuinely have to
+  // wait, since they need teacherIds out of classTeacherRows first.
   const [
     { data: classTeacherRows },
     { count: studentsCount },
@@ -45,6 +51,9 @@ export default async function InstituteDashboardPage({
     { data: priceRow },
     { data: adRow },
     { data: inquiryRows },
+    { data: myReviewRows },
+    { data: batchRows },
+    { data: batchEnrollmentRows },
   ] = await Promise.all([
     instituteId
       ? supabase.from("class_teachers").select("teacher_id, is_visible").eq("class_id", instituteId)
@@ -94,6 +103,24 @@ export default async function InstituteDashboardPage({
             created_at: string;
           }[],
         }),
+    // Same RPC the public /class/[id] page uses — masked reviewer names,
+    // consistent with what this institute's own public profile shows.
+    instituteId
+      ? supabase.rpc("list_public_reviews", { p_target_type: "class", p_target_id: instituteId })
+      : Promise.resolve({
+          data: [] as { id: string; author: string | null; rating: number; body: string | null; reply: string | null; created_at: string }[],
+        }),
+    instituteId
+      ? supabase
+          .from("batches")
+          .select("id, title, mode, location, schedule_note, teacher_label")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] as { id: string; title: string; mode: "online" | "physical"; location: string | null; schedule_note: string | null; teacher_label: string | null }[] }),
+    instituteId
+      ? supabase.from("enrollments").select("batch_id").eq("owner_type", "class").eq("owner_id", instituteId)
+      : Promise.resolve({ data: [] as { batch_id: string | null }[] }),
   ]);
 
   const teacherIds = (classTeacherRows ?? []).map((row) => row.teacher_id);
@@ -173,11 +200,6 @@ export default async function InstituteDashboardPage({
     ? (reviewRows.reduce((sum, r) => sum + r.rating, 0) / reviewRows.length).toFixed(1)
     : null;
 
-  // Same RPC the public /class/[id] page uses — masked reviewer names,
-  // consistent with what this institute's own public profile shows.
-  const { data: myReviewRows } = instituteId
-    ? await supabase.rpc("list_public_reviews", { p_target_type: "class", p_target_id: instituteId })
-    : { data: [] as { id: string; author: string | null; rating: number; body: string | null; reply: string | null; created_at: string }[] };
   const dateFormatter = createDateFormatter(locale);
   const inquiries: InquiryRow[] = (inquiryRows ?? []).map((row) => ({
     id: row.id,
@@ -196,20 +218,6 @@ export default async function InstituteDashboardPage({
     body: r.body ?? "",
     reply: r.reply ?? undefined,
   }));
-
-  const [{ data: batchRows }, { data: batchEnrollmentRows }] = await Promise.all([
-    instituteId
-      ? supabase
-          .from("batches")
-          .select("id, title, mode, location, schedule_note, teacher_label")
-          .eq("owner_type", "class")
-          .eq("owner_id", instituteId)
-          .order("created_at", { ascending: false })
-      : Promise.resolve({ data: [] as { id: string; title: string; mode: "online" | "physical"; location: string | null; schedule_note: string | null; teacher_label: string | null }[] }),
-    instituteId
-      ? supabase.from("enrollments").select("batch_id").eq("owner_type", "class").eq("owner_id", instituteId)
-      : Promise.resolve({ data: [] as { batch_id: string | null }[] }),
-  ]);
 
   const batchStudentCounts = new Map<string, number>();
   for (const row of batchEnrollmentRows ?? []) {

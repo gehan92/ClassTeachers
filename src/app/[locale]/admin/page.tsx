@@ -50,7 +50,10 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
   // student/teacher/institute (where a wrong-role visitor just sees their
   // own empty data), admin tabs are meant to expose every user's data, so
   // this route needs its own explicit role check rather than relying on
-  // table-level scoping to make cross-role access harmless.
+  // table-level scoping to make cross-role access harmless. This has to
+  // stay a standalone, first query — every other query below (especially
+  // the service-role listUsers call, which bypasses RLS entirely) must not
+  // run until this redirect decision is made.
   const { data: profile } = await supabase
     .from("profiles")
     .select("role, full_name")
@@ -62,27 +65,103 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
   }
 
   const userInitial = profile.full_name.charAt(0).toUpperCase();
+  const dateFormatter = createDateFormatter(locale);
 
-  const [{ data: pendingTeacherRows }, { data: pendingClassRows }] = await Promise.all([
+  // Stage 1 — every query below is independent of the others (none needs
+  // another's result), so they all run as one batch instead of a chain of
+  // sequential round trips. This function re-runs in full on every page
+  // load AND every router.refresh() after a mutation (see
+  // useDashboardRefresh), so collapsing that chain here is what actually
+  // makes the dashboard feel fast rather than just showing a loading
+  // indicator sooner.
+  const supabaseAdmin = createAdminClient();
+  const [
+    { data: pendingTeacherRows },
+    { data: pendingClassRows },
+    { data: allProfiles },
+    { data: authUsersPage },
+    { data: siteAdRows },
+    { data: flaggedReviewRows },
+    { data: recentInquiryRows },
+    { data: recentEnrollmentRows },
+    { data: subscriptionRows },
+    { data: settingsRows },
+    { data: teacherProfileRows },
+    { data: classProfileRows },
+  ] = await Promise.all([
+    supabase.from("teacher_profiles").select("id, created_at").eq("status", "pending").order("created_at", { ascending: false }),
+    supabase.from("class_profiles").select("id, name, created_at").eq("status", "pending").order("created_at", { ascending: false }),
+    supabase.from("profiles").select("id, full_name, role, created_at").order("created_at", { ascending: false }),
+    // banned_until lives on auth.users, not profiles — requires the
+    // service-role client (src/lib/supabase/admin.ts) to read.
+    supabaseAdmin.auth.admin.listUsers({ perPage: 1000 }),
     supabase
-      .from("teacher_profiles")
-      .select("id, created_at")
-      .eq("status", "pending")
-      .order("created_at", { ascending: false }),
+      .from("advertisements")
+      .select("id, title, plan, placement, status, expires_at")
+      .eq("owner_type", "site")
+      .eq("status", "active")
+      .order("expires_at", { ascending: true, nullsFirst: false }),
     supabase
-      .from("class_profiles")
-      .select("id, name, created_at")
-      .eq("status", "pending")
+      .from("reviews")
+      .select("id, target_type, target_id, rating, comment, created_at")
+      .eq("is_flagged", true)
       .order("created_at", { ascending: false }),
+    // Read-only oversight of first contact between students and
+    // teachers/institutes — inquiries and join requests already have
+    // is_admin() in their SELECT policies (0037, 0013), so this is a plain
+    // query, no new RLS/RPC needed. Capped at the 50 most recent of each.
+    supabase
+      .from("inquiries")
+      .select("id, owner_type, owner_id, sender_name, sender_contact, message, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("enrollments")
+      .select("id, student_id, owner_type, owner_id, status, joined_at")
+      .order("joined_at", { ascending: false })
+      .limit(50),
+    supabase.from("platform_subscriptions").select("plan, status, updated_at"),
+    supabase.from("platform_settings").select("key, value").in("key", ["standard_price", "premium_price"]),
+    supabase.from("teacher_profiles").select("id, created_at"),
+    supabase.from("class_profiles").select("id, created_at"),
   ]);
 
   const pendingTeacherIds = (pendingTeacherRows ?? []).map((row) => row.id);
-  const { data: pendingTeacherProfiles } = pendingTeacherIds.length
-    ? await supabase.from("profiles").select("id, full_name, role").in("id", pendingTeacherIds)
-    : { data: [] as { id: string; full_name: string; role: string }[] };
-  const teacherProfileById = new Map((pendingTeacherProfiles ?? []).map((p) => [p.id, p]));
+  const flaggedTeacherIds = (flaggedReviewRows ?? []).filter((r) => r.target_type !== "class").map((r) => r.target_id);
+  const flaggedClassIds = (flaggedReviewRows ?? []).filter((r) => r.target_type === "class").map((r) => r.target_id);
+  const connectionClassIds = [
+    ...new Set([
+      ...(recentInquiryRows ?? []).filter((r) => r.owner_type === "class").map((r) => r.owner_id),
+      ...(recentEnrollmentRows ?? []).filter((r) => r.owner_type === "class").map((r) => r.owner_id),
+    ]),
+  ];
 
-  const dateFormatter = createDateFormatter(locale);
+  // Stage 2 — everything here needs a stage-1 result, but nothing here
+  // depends on anything else in this stage.
+  const [
+    { data: pendingTeacherProfiles },
+    { data: flaggedTeacherProfiles },
+    { data: flaggedClassProfiles },
+    { data: connectionClassRows },
+  ] = await Promise.all([
+    pendingTeacherIds.length
+      ? supabase.from("profiles").select("id, full_name, role").in("id", pendingTeacherIds)
+      : Promise.resolve({ data: [] as { id: string; full_name: string; role: string }[] }),
+    flaggedTeacherIds.length
+      ? supabase.from("profiles").select("id, full_name").in("id", flaggedTeacherIds)
+      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+    flaggedClassIds.length
+      ? supabase.from("class_profiles").select("id, name").in("id", flaggedClassIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    connectionClassIds.length
+      ? supabase.from("class_profiles").select("id, name").in("id", connectionClassIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+  ]);
+
+  // Everything below is pure computation over already-fetched data — no
+  // more round trips from here on.
+
+  const teacherProfileById = new Map((pendingTeacherProfiles ?? []).map((p) => [p.id, p]));
 
   const approvals: PendingApproval[] = [
     ...(pendingTeacherRows ?? []).map((row) => {
@@ -112,15 +191,6 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     campus_lecturer: "campus_lecturer",
   };
 
-  const { data: allProfiles } = await supabase
-    .from("profiles")
-    .select("id, full_name, role, created_at")
-    .order("created_at", { ascending: false });
-
-  // banned_until lives on auth.users, not profiles — requires the
-  // service-role client (src/lib/supabase/admin.ts) to read.
-  const supabaseAdmin = createAdminClient();
-  const { data: authUsersPage } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
   const bannedUntilById = new Map(authUsersPage?.users.map((u) => [u.id, u.banned_until]) ?? []);
 
   const platformUsers: PlatformUser[] = (allProfiles ?? [])
@@ -138,13 +208,6 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     })
     .filter((u): u is PlatformUser => u !== null);
 
-  const { data: siteAdRows } = await supabase
-    .from("advertisements")
-    .select("id, title, plan, placement, status, expires_at")
-    .eq("owner_type", "site")
-    .eq("status", "active")
-    .order("expires_at", { ascending: true, nullsFirst: false });
-
   const siteAds: SiteAd[] = (siteAdRows ?? []).map((row) => ({
     id: row.id,
     sponsor: row.title,
@@ -154,25 +217,6 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     status: isWithinDays(row.expires_at, 7) ? "expiring" : "live",
   }));
 
-  const { data: flaggedReviewRows } = await supabase
-    .from("reviews")
-    .select("id, target_type, target_id, rating, comment, created_at")
-    .eq("is_flagged", true)
-    .order("created_at", { ascending: false });
-
-  const flaggedTeacherIds = (flaggedReviewRows ?? [])
-    .filter((r) => r.target_type !== "class")
-    .map((r) => r.target_id);
-  const flaggedClassIds = (flaggedReviewRows ?? []).filter((r) => r.target_type === "class").map((r) => r.target_id);
-
-  const [{ data: flaggedTeacherProfiles }, { data: flaggedClassProfiles }] = await Promise.all([
-    flaggedTeacherIds.length
-      ? supabase.from("profiles").select("id, full_name").in("id", flaggedTeacherIds)
-      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
-    flaggedClassIds.length
-      ? supabase.from("class_profiles").select("id, name").in("id", flaggedClassIds)
-      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-  ]);
   const teacherNameById = new Map((flaggedTeacherProfiles ?? []).map((p) => [p.id, p.full_name]));
   const classNameById = new Map((flaggedClassProfiles ?? []).map((p) => [p.id, p.name]));
 
@@ -188,34 +232,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     };
   });
 
-  // Read-only oversight of first contact between students and
-  // teachers/institutes — inquiries and join requests already have
-  // is_admin() in their SELECT policies (0037, 0013), so this is a plain
-  // query, no new RLS/RPC needed. Capped at the 50 most recent of each.
-  const [{ data: recentInquiryRows }, { data: recentEnrollmentRows }] = await Promise.all([
-    supabase
-      .from("inquiries")
-      .select("id, owner_type, owner_id, sender_name, sender_contact, message, status, created_at")
-      .order("created_at", { ascending: false })
-      .limit(50),
-    supabase
-      .from("enrollments")
-      .select("id, student_id, owner_type, owner_id, status, joined_at")
-      .order("joined_at", { ascending: false })
-      .limit(50),
-  ]);
-
   const profileNameById = new Map((allProfiles ?? []).map((p) => [p.id, p.full_name]));
-
-  const connectionClassIds = [
-    ...new Set([
-      ...(recentInquiryRows ?? []).filter((r) => r.owner_type === "class").map((r) => r.owner_id),
-      ...(recentEnrollmentRows ?? []).filter((r) => r.owner_type === "class").map((r) => r.owner_id),
-    ]),
-  ];
-  const { data: connectionClassRows } = connectionClassIds.length
-    ? await supabase.from("class_profiles").select("id, name").in("id", connectionClassIds)
-    : { data: [] as { id: string; name: string }[] };
   const connectionClassNameById = new Map((connectionClassRows ?? []).map((c) => [c.id, c.name]));
 
   function connectionOwnerLabel(ownerType: string, ownerId: string): string {
@@ -239,14 +256,6 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     status: row.status,
     createdAt: dateFormatter.format(new Date(row.joined_at)),
   }));
-
-  const [{ data: subscriptionRows }, { data: settingsRows }, { data: teacherProfileRows }, { data: classProfileRows }] =
-    await Promise.all([
-      supabase.from("platform_subscriptions").select("plan, status, updated_at"),
-      supabase.from("platform_settings").select("key, value").in("key", ["standard_price", "premium_price"]),
-      supabase.from("teacher_profiles").select("id, created_at"),
-      supabase.from("class_profiles").select("id, created_at"),
-    ]);
 
   const settingValue = (key: string, fallback: string) =>
     settingsRows?.find((s) => s.key === key)?.value ?? fallback;

@@ -17,6 +17,17 @@ import type { StudentLiveClassRow } from "@/components/dashboard/student/live-cl
 import type { StudentExamRow, StudentExamQuestion } from "@/components/dashboard/student/exams-tab";
 import type { StudentAssignmentRow } from "@/components/dashboard/student/assignments-tab";
 
+type RawQuestionOption = { id: string; text: string; imagePath?: string };
+type RawLiveClassRow = {
+  id: string;
+  owner_id: string;
+  title: string;
+  mode: "online" | "physical";
+  scheduled_at: string;
+  duration_minutes: number;
+  batch_id: string | null;
+};
+
 function isFuture(iso: string): boolean {
   return new Date(iso).getTime() >= Date.now();
 }
@@ -40,52 +51,90 @@ export default async function StudentDashboardPage({
   // proxy.ts already gates this route behind an authenticated session.
   const userId = user!.id;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, phone, grade_level, notification_prefs")
-    .eq("id", userId)
-    .single();
+  // Stage 1 — every query below only needs userId (or nothing at all,
+  // relying purely on RLS), not each other's results, so they all run as
+  // one batch instead of a chain of sequential round trips. This function
+  // re-runs in full on every page load AND every router.refresh() after a
+  // mutation (see useDashboardRefresh), so collapsing that chain here is
+  // what actually makes the dashboard feel fast rather than just showing a
+  // loading indicator sooner.
+  const [
+    { data: profile },
+    { data: enrollments },
+    { data: noteRows },
+    { data: examRows },
+    { data: submissionRows },
+    { data: allBatches },
+    { data: assignmentRows },
+    { data: assignmentSubmissionRows },
+    { data: myReviewRows },
+  ] = await Promise.all([
+    supabase.from("profiles").select("full_name, phone, grade_level, notification_prefs").eq("id", userId).single(),
+    supabase.from("enrollments").select("id, owner_type, owner_id, batch_id, joined_at, status"),
+    supabase.from("notes").select("id, owner_type, owner_id, batch_id, title, page_count"),
+    supabase
+      .from("exams")
+      .select("id, owner_type, owner_id, title, question_ids, duration_minutes, scheduled_at")
+      .order("scheduled_at", { ascending: true }),
+    supabase.from("exam_submissions").select("exam_id, status, grade, feedback, submitted_at").eq("student_id", userId),
+    supabase
+      .from("batches")
+      .select("id, owner_type, owner_id, title, mode, location, schedule_note")
+      .order("created_at", { ascending: false }),
+    // No explicit owner filter here — RLS (is_enrolled, 0047) already
+    // scopes which assignment rows come back.
+    supabase
+      .from("assignments")
+      .select("id, owner_type, owner_id, batch_id, lesson_id, title, file_path, due_at")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("assignment_submissions")
+      .select("assignment_id, status, grade, feedback, submitted_at, photo_urls")
+      .eq("student_id", userId),
+    supabase
+      .from("reviews")
+      .select("id, target_type, target_id, rating, comment, created_at")
+      .eq("reviewer_id", userId)
+      .in("target_type", ["teacher", "class"]),
+  ]);
 
   const fullName = profile?.full_name ?? user!.email ?? "Student";
   const userInitial = fullName.charAt(0).toUpperCase();
 
-  const [{ data: enrollments }, { data: noteRows }, { data: examRows }, { data: submissionRows }] =
-    await Promise.all([
-      supabase.from("enrollments").select("id, owner_type, owner_id, batch_id, joined_at, status"),
-      supabase.from("notes").select("id, owner_type, owner_id, batch_id, title, page_count"),
-      supabase
-        .from("exams")
-        .select("id, owner_type, owner_id, title, question_ids, duration_minutes, scheduled_at")
-        .order("scheduled_at", { ascending: true }),
-      supabase
-        .from("exam_submissions")
-        .select("exam_id, status, grade, feedback, submitted_at")
-        .eq("student_id", userId),
-    ]);
-
   const acceptedEnrollments = (enrollments ?? []).filter((e) => e.status === "accepted");
   const classesCount = acceptedEnrollments.length;
   const submissionByExamId = new Map((submissionRows ?? []).map((s) => [s.exam_id, s]));
-
-  // An exam can be narrowed by batch and/or an explicit hand-picked student
-  // list (0060/0061) — is_enrolled_in_exam() is the one place both checks
-  // actually live, so this asks the database the same question its own
-  // question-bank/submission RLS asks, instead of re-deriving the batch/
-  // participant logic here and risking it drifting out of sync. Same
-  // pattern as visible_live_class_ids above.
   const allExamIds = (examRows ?? []).map((e) => e.id);
-  const { data: visibleExamIds } = allExamIds.length
-    ? await supabase.rpc("visible_exam_ids", { p_ids: allExamIds })
-    : { data: [] as string[] };
-  const visibleExamIdSet = new Set(visibleExamIds ?? []);
-  const visibleExamRows = (examRows ?? []).filter((e) => visibleExamIdSet.has(e.id));
-
-  const examsDueCount = visibleExamRows.filter((e) => submissionByExamId.get(e.id)?.status !== "graded").length;
-
   const teacherIds = acceptedEnrollments.filter((e) => e.owner_type === "teacher").map((e) => e.owner_id);
   const classIds = acceptedEnrollments.filter((e) => e.owner_type === "class").map((e) => e.owner_id);
+  const teacherOwnerIds = new Set<string>();
+  const classOwnerIds = new Set<string>();
+  for (const e of enrollments ?? []) (e.owner_type === "teacher" ? teacherOwnerIds : classOwnerIds).add(e.owner_id);
+  for (const b of allBatches ?? []) (b.owner_type === "teacher" ? teacherOwnerIds : classOwnerIds).add(b.owner_id);
+  for (const n of noteRows ?? []) (n.owner_type === "teacher" ? teacherOwnerIds : classOwnerIds).add(n.owner_id);
+  const submissionPhotoPaths = (assignmentSubmissionRows ?? []).flatMap((s) => s.photo_urls ?? []);
+  const assignmentFilePaths = (assignmentRows ?? []).map((a) => a.file_path);
 
-  const [teacherLive, classLive] = await Promise.all([
+  // Stage 2 — everything here needs a stage-1 result, but nothing here
+  // depends on anything else in this stage.
+  const [
+    { data: visibleExamIds },
+    teacherLive,
+    classLive,
+    { data: teacherOwners },
+    { data: classOwners },
+    { data: signedSubmissionUrls },
+    { data: signedAssignmentUrls },
+  ] = await Promise.all([
+    // An exam can be narrowed by batch and/or an explicit hand-picked
+    // student list (0060/0061) — is_enrolled_in_exam() is the one place
+    // both checks actually live, so this asks the database the same
+    // question its own question-bank/submission RLS asks, instead of
+    // re-deriving the batch/participant logic here and risking it
+    // drifting out of sync. Same pattern as visible_live_class_ids below.
+    allExamIds.length
+      ? supabase.rpc("visible_exam_ids", { p_ids: allExamIds })
+      : Promise.resolve({ data: [] as string[] }),
     teacherIds.length
       ? supabase
           .from("live_classes")
@@ -94,7 +143,7 @@ export default async function StudentDashboardPage({
           .in("owner_id", teacherIds)
           .neq("status", "cancelled")
           .order("scheduled_at", { ascending: true })
-      : Promise.resolve({ data: [] as { id: string; owner_id: string; title: string; mode: "online" | "physical"; scheduled_at: string; duration_minutes: number; batch_id: string | null }[] }),
+      : Promise.resolve({ data: [] as RawLiveClassRow[] }),
     classIds.length
       ? supabase
           .from("live_classes")
@@ -103,53 +152,7 @@ export default async function StudentDashboardPage({
           .in("owner_id", classIds)
           .neq("status", "cancelled")
           .order("scheduled_at", { ascending: true })
-      : Promise.resolve({ data: [] as { id: string; owner_id: string; title: string; mode: "online" | "physical"; scheduled_at: string; duration_minutes: number; batch_id: string | null }[] }),
-  ]);
-
-  const allLiveClassRows = [
-    ...(teacherLive.data ?? []).map((r) => ({ ...r, ownerType: "teacher" as const })),
-    ...(classLive.data ?? []).map((r) => ({ ...r, ownerType: "class" as const })),
-  ].sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
-
-  // A live class can be narrowed by batch (0054) and/or an explicit
-  // hand-picked student list (0055) — is_enrolled_in_live_class() is the
-  // one place both checks actually live, so this asks the database the
-  // same question its own RLS asks, instead of re-deriving the batch/
-  // participant logic here and risking it drifting out of sync.
-  const allLiveClassIds = allLiveClassRows.map((r) => r.id);
-  const { data: visibleLiveClassIds } = allLiveClassIds.length
-    ? await supabase.rpc("visible_live_class_ids", { p_ids: allLiveClassIds })
-    : { data: [] as string[] };
-  const visibleIdSet = new Set(visibleLiveClassIds ?? []);
-  const liveClassRows = allLiveClassRows.filter((r) => visibleIdSet.has(r.id));
-
-  const nextLive = liveClassRows.find((row) => isFuture(row.scheduled_at));
-  const nextLiveLabel = nextLive ? scheduleFormatter.format(new Date(nextLive.scheduled_at)) : null;
-
-  const liveClassIds = liveClassRows.map((r) => r.id);
-  const [{ data: liveClassLinkRows }, { data: reminderRows }] = await Promise.all([
-    liveClassIds.length
-      ? supabase.from("live_class_links").select("live_class_id, join_link").in("live_class_id", liveClassIds)
-      : Promise.resolve({ data: [] as { live_class_id: string; join_link: string }[] }),
-    liveClassIds.length
-      ? supabase.from("live_class_reminders").select("live_class_id").in("live_class_id", liveClassIds)
-      : Promise.resolve({ data: [] as { live_class_id: string }[] }),
-  ]);
-  const joinLinkByClassId = new Map((liveClassLinkRows ?? []).map((l) => [l.live_class_id, l.join_link]));
-  const reminderClassIds = (reminderRows ?? []).map((r) => r.live_class_id);
-
-  const { data: allBatches } = await supabase
-    .from("batches")
-    .select("id, owner_type, owner_id, title, mode, location, schedule_note")
-    .order("created_at", { ascending: false });
-
-  const teacherOwnerIds = new Set<string>();
-  const classOwnerIds = new Set<string>();
-  for (const e of enrollments ?? []) (e.owner_type === "teacher" ? teacherOwnerIds : classOwnerIds).add(e.owner_id);
-  for (const b of allBatches ?? []) (b.owner_type === "teacher" ? teacherOwnerIds : classOwnerIds).add(b.owner_id);
-  for (const n of noteRows ?? []) (n.owner_type === "teacher" ? teacherOwnerIds : classOwnerIds).add(n.owner_id);
-
-  const [{ data: teacherOwners }, { data: classOwners }] = await Promise.all([
+      : Promise.resolve({ data: [] as RawLiveClassRow[] }),
     // Plain `profiles` select would return zero rows here — its only RLS
     // policy is "your own row or admin" (0003). This RPC (0032) opens it up
     // specifically for teachers the caller is actually enrolled with.
@@ -159,7 +162,93 @@ export default async function StudentDashboardPage({
     classOwnerIds.size
       ? supabase.from("class_profiles").select("id, name").in("id", [...classOwnerIds])
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    submissionPhotoPaths.length > 0
+      ? supabase.storage.from("submissions").createSignedUrls(submissionPhotoPaths, 3600)
+      : Promise.resolve({ data: [] as { path: string | null; signedUrl: string }[] }),
+    assignmentFilePaths.length > 0
+      ? supabase.storage.from("assignments").createSignedUrls(assignmentFilePaths, 3600)
+      : Promise.resolve({ data: [] as { path: string | null; signedUrl: string }[] }),
   ]);
+
+  const visibleExamIdSet = new Set(visibleExamIds ?? []);
+  const visibleExamRows = (examRows ?? []).filter((e) => visibleExamIdSet.has(e.id));
+  const examsDueCount = visibleExamRows.filter((e) => submissionByExamId.get(e.id)?.status !== "graded").length;
+
+  const allLiveClassRows = [
+    ...(teacherLive.data ?? []).map((r) => ({ ...r, ownerType: "teacher" as const })),
+    ...(classLive.data ?? []).map((r) => ({ ...r, ownerType: "class" as const })),
+  ].sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
+  const allLiveClassIds = allLiveClassRows.map((r) => r.id);
+  const allQuestionIds = [...new Set(visibleExamRows.flatMap((e) => e.question_ids))];
+
+  // Stage 3 — needs a stage-2 result; the two queries here are independent
+  // of each other.
+  const [{ data: visibleLiveClassIds }, { data: examQuestionRows }] = await Promise.all([
+    // A live class can be narrowed by batch (0054) and/or an explicit
+    // hand-picked student list (0055) — is_enrolled_in_live_class() is the
+    // one place both checks actually live, so this asks the database the
+    // same question its own RLS asks, instead of re-deriving the batch/
+    // participant logic here and risking it drifting out of sync.
+    allLiveClassIds.length
+      ? supabase.rpc("visible_live_class_ids", { p_ids: allLiveClassIds })
+      : Promise.resolve({ data: [] as string[] }),
+    allQuestionIds.length
+      ? supabase
+          .from("question_bank_items")
+          .select("id, question_text, type, marks, options, question_image_path")
+          .in("id", allQuestionIds)
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            question_text: string;
+            type: "mcq" | "essay";
+            marks: number;
+            options: unknown;
+            question_image_path: string | null;
+          }[],
+        }),
+  ]);
+
+  const visibleIdSet = new Set(visibleLiveClassIds ?? []);
+  const liveClassRows = allLiveClassRows.filter((r) => visibleIdSet.has(r.id));
+  const nextLive = liveClassRows.find((row) => isFuture(row.scheduled_at));
+  const nextLiveLabel = nextLive ? scheduleFormatter.format(new Date(nextLive.scheduled_at)) : null;
+  const liveClassIds = liveClassRows.map((r) => r.id);
+
+  // Never select/forward correct_option_id here — this is the student's
+  // own view of the exam, and leaking the correct answer would defeat the
+  // point of it not being graded automatically yet.
+  const questionById = new Map(
+    (examQuestionRows ?? []).map((q) => [q.id, { ...q, options: (q.options as RawQuestionOption[] | null) ?? null }]),
+  );
+  const questionImagePaths = new Set<string>();
+  for (const q of questionById.values()) {
+    if (q.question_image_path) questionImagePaths.add(q.question_image_path);
+    for (const option of q.options ?? []) {
+      if (option.imagePath) questionImagePaths.add(option.imagePath);
+    }
+  }
+
+  // Stage 4 — needs a stage-3 result; all three queries here are
+  // independent of each other.
+  const [{ data: liveClassLinkRows }, { data: reminderRows }, { data: signedQuestionImages }] = await Promise.all([
+    liveClassIds.length
+      ? supabase.from("live_class_links").select("live_class_id, join_link").in("live_class_id", liveClassIds)
+      : Promise.resolve({ data: [] as { live_class_id: string; join_link: string }[] }),
+    liveClassIds.length
+      ? supabase.from("live_class_reminders").select("live_class_id").in("live_class_id", liveClassIds)
+      : Promise.resolve({ data: [] as { live_class_id: string }[] }),
+    questionImagePaths.size > 0
+      ? supabase.storage.from("question-images").createSignedUrls([...questionImagePaths], 3600)
+      : Promise.resolve({ data: [] as { path: string | null; signedUrl: string }[] }),
+  ]);
+
+  // Everything below is pure computation over already-fetched data — no
+  // more round trips from here on.
+
+  const joinLinkByClassId = new Map((liveClassLinkRows ?? []).map((l) => [l.live_class_id, l.join_link]));
+  const reminderClassIds = (reminderRows ?? []).map((r) => r.live_class_id);
+
   const teacherNameById = new Map((teacherOwners ?? []).map((p) => [p.id, p.full_name]));
   const classNameById = new Map((classOwners ?? []).map((c) => [c.id, c.name]));
   function ownerName(ownerType: "teacher" | "class", ownerId: string) {
@@ -218,39 +307,9 @@ export default async function StudentDashboardPage({
       pageCount: n.page_count,
     }));
 
-  type RawQuestionOption = { id: string; text: string; imagePath?: string };
-  const allQuestionIds = [...new Set(visibleExamRows.flatMap((e) => e.question_ids))];
-  const { data: examQuestionRows } = allQuestionIds.length
-    ? await supabase
-        .from("question_bank_items")
-        .select("id, question_text, type, marks, options, question_image_path")
-        .in("id", allQuestionIds)
-    : { data: [] as { id: string; question_text: string; type: "mcq" | "essay"; marks: number; options: unknown; question_image_path: string | null }[] };
-  const questionById = new Map(
-    (examQuestionRows ?? []).map((q) => [
-      q.id,
-      { ...q, options: (q.options as RawQuestionOption[] | null) ?? null },
-    ]),
-  );
-
-  // Never select/forward correct_option_id here — this is the student's
-  // own view of the exam, and leaking the correct answer would defeat the
-  // point of it not being graded automatically yet.
-  const questionImagePaths = new Set<string>();
-  for (const q of questionById.values()) {
-    if (q.question_image_path) questionImagePaths.add(q.question_image_path);
-    for (const option of q.options ?? []) {
-      if (option.imagePath) questionImagePaths.add(option.imagePath);
-    }
-  }
   const questionImageUrlByPath = new Map<string, string>();
-  if (questionImagePaths.size > 0) {
-    const { data: signedQuestionImages } = await supabase.storage
-      .from("question-images")
-      .createSignedUrls([...questionImagePaths], 3600);
-    for (const entry of signedQuestionImages ?? []) {
-      if (entry.path && entry.signedUrl) questionImageUrlByPath.set(entry.path, entry.signedUrl);
-    }
+  for (const entry of signedQuestionImages ?? []) {
+    if (entry.path && entry.signedUrl) questionImageUrlByPath.set(entry.path, entry.signedUrl);
   }
 
   const exams: StudentExamRow[] = visibleExamRows.map((e) => {
@@ -293,43 +352,18 @@ export default async function StudentDashboardPage({
 
   const lessonTitleById = new Map(liveClassRows.map((r) => [r.id, r.title]));
 
-  // No explicit owner filter here, same as the exams query above — RLS
-  // (is_enrolled, 0047) already scopes which assignment rows come back.
-  const [{ data: assignmentRows }, { data: assignmentSubmissionRows }] = await Promise.all([
-    supabase
-      .from("assignments")
-      .select("id, owner_type, owner_id, batch_id, lesson_id, title, file_path, due_at")
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("assignment_submissions")
-      .select("assignment_id, status, grade, feedback, submitted_at, photo_urls")
-      .eq("student_id", userId),
-  ]);
-
   const assignmentSubmissionByAssignmentId = new Map(
     (assignmentSubmissionRows ?? []).map((s) => [s.assignment_id, s]),
   );
 
-  const submissionPhotoPaths = (assignmentSubmissionRows ?? []).flatMap((s) => s.photo_urls ?? []);
   const submissionPhotoUrlByPath = new Map<string, string>();
-  if (submissionPhotoPaths.length > 0) {
-    const { data: signedSubmissionUrls } = await supabase.storage
-      .from("submissions")
-      .createSignedUrls(submissionPhotoPaths, 3600);
-    for (const entry of signedSubmissionUrls ?? []) {
-      if (entry.path && entry.signedUrl) submissionPhotoUrlByPath.set(entry.path, entry.signedUrl);
-    }
+  for (const entry of signedSubmissionUrls ?? []) {
+    if (entry.path && entry.signedUrl) submissionPhotoUrlByPath.set(entry.path, entry.signedUrl);
   }
 
-  const assignmentFilePaths = (assignmentRows ?? []).map((a) => a.file_path);
   const assignmentFileUrlByPath = new Map<string, string>();
-  if (assignmentFilePaths.length > 0) {
-    const { data: signedAssignmentUrls } = await supabase.storage
-      .from("assignments")
-      .createSignedUrls(assignmentFilePaths, 3600);
-    for (const entry of signedAssignmentUrls ?? []) {
-      if (entry.path && entry.signedUrl) assignmentFileUrlByPath.set(entry.path, entry.signedUrl);
-    }
+  for (const entry of signedAssignmentUrls ?? []) {
+    if (entry.path && entry.signedUrl) assignmentFileUrlByPath.set(entry.path, entry.signedUrl);
   }
 
   // Same batch-scoping notes already apply (0008): a batch-scoped assignment
@@ -371,12 +405,6 @@ export default async function StudentDashboardPage({
     const [ownerType, ownerId] = key.split(":") as ["teacher" | "class", string];
     return { ownerType, ownerId, name: ownerName(ownerType, ownerId) };
   });
-
-  const { data: myReviewRows } = await supabase
-    .from("reviews")
-    .select("id, target_type, target_id, rating, comment, created_at")
-    .eq("reviewer_id", userId)
-    .in("target_type", ["teacher", "class"]);
 
   const myReviews: StudentPostedReview[] = (myReviewRows ?? []).map((r) => ({
     id: r.id,

@@ -33,6 +33,8 @@ import type {
 } from "@/components/dashboard/teacher/assignments-tab";
 import type { InquiryRow } from "@/components/dashboard/inquiries-tab";
 
+type RawQuestionOption = { id: string; text: string; imagePath?: string };
+
 export default async function TeacherDashboardPage({
   params,
 }: {
@@ -52,7 +54,34 @@ export default async function TeacherDashboardPage({
   const dateFormatter = createDateFormatter(locale);
   const scheduleFormatter = createScheduleFormatter(locale);
 
-  const [{ data: profile }, { data: teacherProfile }, { data: priceRow }, { data: adRow }] = await Promise.all([
+  // Stage 1 — every query below only needs userId, not each other's
+  // results, so they all run as one batch instead of a chain of sequential
+  // round trips. This function re-runs in full on every page load AND
+  // every router.refresh() after a mutation (see useDashboardRefresh), so
+  // collapsing that chain here is what actually makes the dashboard feel
+  // fast rather than just showing a loading indicator sooner.
+  const [
+    { data: profile },
+    { data: teacherProfile },
+    { data: priceRow },
+    { data: adRow },
+    { count: studentsCount },
+    { data: reviewRows },
+    { data: examRows },
+    { data: pendingSubmissionRows },
+    { data: inquiryRows },
+    { data: myReviewRows },
+    { data: batchRows },
+    { data: enrollmentRows },
+    { data: noteRows },
+    { data: subjectLinkRows },
+    { data: batchAdRows },
+    { data: questionRows },
+    { data: examDetailRows },
+    { data: liveClassRows },
+    { data: assignmentRows },
+    { data: liveProfilePhone },
+  ] = await Promise.all([
     supabase.from("profiles").select("full_name, phone, notification_prefs").eq("id", userId).single(),
     supabase.from("teacher_profiles").select("*").eq("id", userId).maybeSingle(),
     supabase.from("prices").select("hourly_rate, monthly_rate").eq("owner_type", "teacher").eq("owner_id", userId).maybeSingle(),
@@ -63,18 +92,6 @@ export default async function TeacherDashboardPage({
       .eq("owner_id", userId)
       .eq("placement", "own_profile")
       .maybeSingle(),
-  ]);
-
-  const fullName = profile?.full_name ?? user!.email ?? "Teacher";
-  const userInitial = fullName.charAt(0).toUpperCase();
-
-  const [
-    { count: studentsCount },
-    { data: reviewRows },
-    { data: examRows },
-    { data: pendingSubmissionRows },
-    { data: inquiryRows },
-  ] = await Promise.all([
     supabase
       .from("enrollments")
       .select("id", { count: "exact", head: true })
@@ -90,7 +107,181 @@ export default async function TeacherDashboardPage({
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
       .order("created_at", { ascending: false }),
+    // Same RPC the public /teacher/[id] page uses — masked reviewer names,
+    // consistent with what this teacher's own public profile shows.
+    supabase.rpc("list_public_reviews", { p_target_type: "teacher", p_target_id: userId }),
+    supabase
+      .from("batches")
+      .select("id, title, mode, location, schedule_note, grade_band, status, subject_id, hourly_rate, monthly_rate")
+      .eq("owner_type", "teacher")
+      .eq("owner_id", userId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("enrollments")
+      .select("id, student_id, batch_id, joined_at, status")
+      .eq("owner_type", "teacher")
+      .eq("owner_id", userId),
+    supabase
+      .from("notes")
+      .select("id, title, batch_id, page_count, is_public, created_at")
+      .eq("owner_type", "teacher")
+      .eq("owner_id", userId)
+      .order("created_at", { ascending: false }),
+    supabase.from("subject_links").select("subject_id").eq("owner_type", "teacher").eq("owner_id", userId),
+    // Batch-scoped "search results" ads (0039) — one per batch, distinct
+    // from the single own_profile promo box fetched above.
+    supabase
+      .from("advertisements")
+      .select("id, batch_id, title, content, status")
+      .eq("owner_type", "teacher")
+      .eq("owner_id", userId)
+      .eq("placement", "search_results"),
+    supabase
+      .from("question_bank_items")
+      .select(
+        "id, question_text, topic, grade_band, batch_id, type, difficulty, marks, language, options, correct_option_id, question_image_path",
+      )
+      .eq("owner_type", "teacher")
+      .eq("owner_id", userId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("exams")
+      .select("id, title, question_ids, duration_minutes, scheduled_at, batch_id")
+      .eq("owner_type", "teacher")
+      .eq("owner_id", userId)
+      .order("scheduled_at", { ascending: false }),
+    supabase
+      .from("live_classes")
+      .select("id, title, mode, location, scheduled_at, duration_minutes, batch_id")
+      .eq("owner_type", "teacher")
+      .eq("owner_id", userId)
+      .neq("status", "cancelled")
+      .order("scheduled_at", { ascending: false }),
+    supabase
+      .from("assignments")
+      .select("id, title, batch_id, lesson_id, file_path, due_at")
+      .eq("owner_type", "teacher")
+      .eq("owner_id", userId)
+      .order("created_at", { ascending: false }),
+    // Same RPC the public /teacher/[id] page uses to gate the phone number
+    // — called here too so the dashboard's inline "view live page" shows
+    // the number exactly as this teacher (viewing their own profile) would.
+    supabase.rpc("get_teacher_contact", { p_teacher_id: userId }),
   ]);
+
+  // Stage 2 — everything here needs an id list derived from a stage-1
+  // result, but nothing here depends on anything else in this stage, so
+  // it's still one batch rather than seven more sequential round trips.
+  const subjectIds = (subjectLinkRows ?? []).map((s) => s.subject_id);
+  const studentIds = [...new Set((enrollmentRows ?? []).map((e) => e.student_id))];
+  const questionImagePaths = new Set<string>();
+  for (const q of questionRows ?? []) {
+    if (q.question_image_path) questionImagePaths.add(q.question_image_path);
+    for (const option of (q.options as RawQuestionOption[] | null) ?? []) {
+      if (option.imagePath) questionImagePaths.add(option.imagePath);
+    }
+  }
+  const examDetailIds = (examDetailRows ?? []).map((e) => e.id);
+  const liveClassIds = (liveClassRows ?? []).map((c) => c.id);
+  const assignmentFilePaths = (assignmentRows ?? []).map((a) => a.file_path);
+  const assignmentIds = (assignmentRows ?? []).map((a) => a.id);
+
+  const [
+    { data: subjectRows },
+    { data: studentProfiles },
+    { data: signedQuestionImages },
+    { data: submissionDetailRows },
+    { data: liveClassLinkRows },
+    { data: attendanceRows },
+    { data: participantRows },
+    { data: signedAssignmentUrls },
+    { data: assignmentSubmissionRows },
+  ] = await Promise.all([
+    subjectIds.length
+      ? supabase.from("subjects").select("id, translations, grade_band").in("id", subjectIds)
+      : Promise.resolve({ data: [] as { id: string; translations: unknown; grade_band: string | null }[] }),
+    // Plain `profiles` select would return zero rows here — its only RLS
+    // policy is "your own row or admin" (0003). This RPC (0032) opens it up
+    // for any student who has a relationship (accepted or a pending
+    // request) with this teacher — the owner needs to see who a request is
+    // *from* to decide whether to accept it, not just who's already an
+    // accepted student.
+    studentIds.length
+      ? supabase.rpc("get_roster_student_info", { p_student_ids: studentIds })
+      : Promise.resolve({ data: [] as { id: string; full_name: string; phone: string | null }[] }),
+    questionImagePaths.size > 0
+      ? supabase.storage.from("question-images").createSignedUrls([...questionImagePaths], 3600)
+      : Promise.resolve({ data: [] as { path: string | null; signedUrl: string }[] }),
+    examDetailIds.length
+      ? supabase
+          .from("exam_submissions")
+          .select("id, exam_id, student_id, photo_urls, status, grade, feedback, submitted_at, mcq_score, mcq_max_score")
+          .in("exam_id", examDetailIds)
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            exam_id: string;
+            student_id: string;
+            photo_urls: string[];
+            status: "pending" | "graded";
+            grade: number | null;
+            feedback: string | null;
+            submitted_at: string;
+            mcq_score: number | null;
+            mcq_max_score: number | null;
+          }[],
+        }),
+    liveClassIds.length
+      ? supabase.from("live_class_links").select("live_class_id, join_link").in("live_class_id", liveClassIds)
+      : Promise.resolve({ data: [] as { live_class_id: string; join_link: string }[] }),
+    liveClassIds.length
+      ? supabase.from("attendance_records").select("live_class_id, student_id, status").in("live_class_id", liveClassIds)
+      : Promise.resolve({ data: [] as { live_class_id: string; student_id: string; status: "present" | "absent" | "late" }[] }),
+    liveClassIds.length
+      ? supabase.from("live_class_participants").select("live_class_id, student_id").in("live_class_id", liveClassIds)
+      : Promise.resolve({ data: [] as { live_class_id: string; student_id: string }[] }),
+    assignmentFilePaths.length > 0
+      ? supabase.storage.from("assignments").createSignedUrls(assignmentFilePaths, 3600)
+      : Promise.resolve({ data: [] as { path: string | null; signedUrl: string }[] }),
+    assignmentIds.length
+      ? supabase
+          .from("assignment_submissions")
+          .select("id, assignment_id, student_id, photo_urls, status, grade, feedback, submitted_at")
+          .in("assignment_id", assignmentIds)
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            assignment_id: string;
+            student_id: string;
+            photo_urls: string[];
+            status: "pending" | "graded";
+            grade: number | null;
+            feedback: string | null;
+            submitted_at: string;
+          }[],
+        }),
+  ]);
+
+  // Stage 3 — signed URLs for submission photos, only knowable once stage 2
+  // returned the rows that name those photo paths. Last stage: both queries
+  // are independent of each other, so still one round trip, not two.
+  const allPhotoPaths = (submissionDetailRows ?? []).flatMap((s) => s.photo_urls);
+  const allAssignmentPhotoPaths = (assignmentSubmissionRows ?? []).flatMap((s) => s.photo_urls);
+
+  const [{ data: signedUrls }, { data: signedPhotoUrls }] = await Promise.all([
+    allPhotoPaths.length > 0
+      ? supabase.storage.from("submissions").createSignedUrls(allPhotoPaths, 3600)
+      : Promise.resolve({ data: [] as { path: string | null; signedUrl: string }[] }),
+    allAssignmentPhotoPaths.length > 0
+      ? supabase.storage.from("submissions").createSignedUrls(allAssignmentPhotoPaths, 3600)
+      : Promise.resolve({ data: [] as { path: string | null; signedUrl: string }[] }),
+  ]);
+
+  // Everything below is pure computation over already-fetched data — no
+  // more round trips from here on.
+
+  const fullName = profile?.full_name ?? user!.email ?? "Teacher";
+  const userInitial = fullName.charAt(0).toUpperCase();
 
   const inquiries: InquiryRow[] = (inquiryRows ?? []).map((row) => ({
     id: row.id,
@@ -108,12 +299,6 @@ export default async function TeacherDashboardPage({
     ? (reviewRows.reduce((sum, r) => sum + r.rating, 0) / reviewRows.length).toFixed(1)
     : null;
 
-  // Same RPC the public /teacher/[id] page uses — masked reviewer names,
-  // consistent with what this teacher's own public profile shows.
-  const { data: myReviewRows } = await supabase.rpc("list_public_reviews", {
-    p_target_type: "teacher",
-    p_target_id: userId,
-  });
   const reviews = (myReviewRows ?? []).map((r) => ({
     id: r.id,
     author: r.author ?? "Anonymous",
@@ -123,32 +308,6 @@ export default async function TeacherDashboardPage({
     reply: r.reply ?? undefined,
   }));
 
-  const [{ data: batchRows }, { data: enrollmentRows }, { data: noteRows }, { data: subjectLinkRows }] =
-    await Promise.all([
-      supabase
-        .from("batches")
-        .select("id, title, mode, location, schedule_note, grade_band, status, subject_id, hourly_rate, monthly_rate")
-        .eq("owner_type", "teacher")
-        .eq("owner_id", userId)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("enrollments")
-        .select("id, student_id, batch_id, joined_at, status")
-        .eq("owner_type", "teacher")
-        .eq("owner_id", userId),
-      supabase
-        .from("notes")
-        .select("id, title, batch_id, page_count, is_public, created_at")
-        .eq("owner_type", "teacher")
-        .eq("owner_id", userId)
-        .order("created_at", { ascending: false }),
-      supabase.from("subject_links").select("subject_id").eq("owner_type", "teacher").eq("owner_id", userId),
-    ]);
-
-  const subjectIds = (subjectLinkRows ?? []).map((s) => s.subject_id);
-  const { data: subjectRows } = subjectIds.length
-    ? await supabase.from("subjects").select("id, translations, grade_band").in("id", subjectIds)
-    : { data: [] as { id: string; translations: unknown; grade_band: string | null }[] };
   const subjectOptions = (subjectRows ?? [])
     .map((s) => ({ id: s.id, name: (s.translations as Record<string, string> | null)?.en ?? "" }))
     .filter((s) => s.name);
@@ -159,8 +318,7 @@ export default async function TeacherDashboardPage({
     if (!s.grade_band) continue;
     subjectGradeBandCounts.set(s.grade_band, (subjectGradeBandCounts.get(s.grade_band) ?? 0) + 1);
   }
-  const topGradeBand =
-    [...subjectGradeBandCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const topGradeBand = [...subjectGradeBandCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 
   const batches: TeacherBatchRow[] = (batchRows ?? []).map((b) => ({
     id: b.id,
@@ -172,14 +330,6 @@ export default async function TeacherDashboardPage({
   }));
   const batchTitleById = new Map(batches.map((b) => [b.id, b.title]));
 
-  // Batch-scoped "search results" ads (0039) — one per batch, distinct from
-  // the single own_profile promo box fetched above.
-  const { data: batchAdRows } = await supabase
-    .from("advertisements")
-    .select("id, batch_id, title, content, status")
-    .eq("owner_type", "teacher")
-    .eq("owner_id", userId)
-    .eq("placement", "search_results");
   const batchAdByBatchId = new Map((batchAdRows ?? []).filter((a) => a.batch_id).map((a) => [a.batch_id as string, a]));
 
   const adBatches: TeacherAdBatchRow[] = (batchRows ?? []).map((b) => {
@@ -195,15 +345,6 @@ export default async function TeacherDashboardPage({
     };
   });
 
-  const studentIds = [...new Set((enrollmentRows ?? []).map((e) => e.student_id))];
-  // Plain `profiles` select would return zero rows here — its only RLS
-  // policy is "your own row or admin" (0003). This RPC (0032) opens it up
-  // for any student who has a relationship (accepted or a pending request)
-  // with this teacher — the owner needs to see who a request is *from* to
-  // decide whether to accept it, not just who's already an accepted student.
-  const { data: studentProfiles } = studentIds.length
-    ? await supabase.rpc("get_roster_student_info", { p_student_ids: studentIds })
-    : { data: [] as { id: string; full_name: string; phone: string | null }[] };
   const studentById = new Map((studentProfiles ?? []).map((p) => [p.id, p]));
 
   const acceptedEnrollments = (enrollmentRows ?? []).filter((e) => e.status === "accepted");
@@ -251,31 +392,9 @@ export default async function TeacherDashboardPage({
     };
   });
 
-  const { data: questionRows } = await supabase
-    .from("question_bank_items")
-    .select(
-      "id, question_text, topic, grade_band, batch_id, type, difficulty, marks, language, options, correct_option_id, question_image_path",
-    )
-    .eq("owner_type", "teacher")
-    .eq("owner_id", userId)
-    .order("created_at", { ascending: false });
-
-  type RawQuestionOption = { id: string; text: string; imagePath?: string };
-  const questionImagePaths = new Set<string>();
-  for (const q of questionRows ?? []) {
-    if (q.question_image_path) questionImagePaths.add(q.question_image_path);
-    for (const option of (q.options as RawQuestionOption[] | null) ?? []) {
-      if (option.imagePath) questionImagePaths.add(option.imagePath);
-    }
-  }
   const questionImageUrlByPath = new Map<string, string>();
-  if (questionImagePaths.size > 0) {
-    const { data: signedQuestionImages } = await supabase.storage
-      .from("question-images")
-      .createSignedUrls([...questionImagePaths], 3600);
-    for (const entry of signedQuestionImages ?? []) {
-      if (entry.path && entry.signedUrl) questionImageUrlByPath.set(entry.path, entry.signedUrl);
-    }
+  for (const entry of signedQuestionImages ?? []) {
+    if (entry.path && entry.signedUrl) questionImageUrlByPath.set(entry.path, entry.signedUrl);
   }
 
   const questions: QuestionBankItem[] = (questionRows ?? []).map((q) => ({
@@ -297,41 +416,9 @@ export default async function TeacherDashboardPage({
     correctOptionId: q.correct_option_id ?? undefined,
   }));
 
-  const { data: examDetailRows } = await supabase
-    .from("exams")
-    .select("id, title, question_ids, duration_minutes, scheduled_at, batch_id")
-    .eq("owner_type", "teacher")
-    .eq("owner_id", userId)
-    .order("scheduled_at", { ascending: false });
-
-  const examDetailIds = (examDetailRows ?? []).map((e) => e.id);
-  const { data: submissionDetailRows } = examDetailIds.length
-    ? await supabase
-        .from("exam_submissions")
-        .select("id, exam_id, student_id, photo_urls, status, grade, feedback, submitted_at, mcq_score, mcq_max_score")
-        .in("exam_id", examDetailIds)
-    : {
-        data: [] as {
-          id: string;
-          exam_id: string;
-          student_id: string;
-          photo_urls: string[];
-          status: "pending" | "graded";
-          grade: number | null;
-          feedback: string | null;
-          submitted_at: string;
-          mcq_score: number | null;
-          mcq_max_score: number | null;
-        }[],
-      };
-
-  const allPhotoPaths = (submissionDetailRows ?? []).flatMap((s) => s.photo_urls);
   const signedUrlByPath = new Map<string, string>();
-  if (allPhotoPaths.length > 0) {
-    const { data: signedUrls } = await supabase.storage.from("submissions").createSignedUrls(allPhotoPaths, 3600);
-    for (const entry of signedUrls ?? []) {
-      if (entry.path && entry.signedUrl) signedUrlByPath.set(entry.path, entry.signedUrl);
-    }
+  for (const entry of signedUrls ?? []) {
+    if (entry.path && entry.signedUrl) signedUrlByPath.set(entry.path, entry.signedUrl);
   }
 
   const exams: TeacherExamRow[] = (examDetailRows ?? []).map((e) => ({
@@ -356,26 +443,6 @@ export default async function TeacherDashboardPage({
     mcqMaxScore: s.mcq_max_score,
   }));
 
-  const { data: liveClassRows } = await supabase
-    .from("live_classes")
-    .select("id, title, mode, location, scheduled_at, duration_minutes, batch_id")
-    .eq("owner_type", "teacher")
-    .eq("owner_id", userId)
-    .neq("status", "cancelled")
-    .order("scheduled_at", { ascending: false });
-
-  const liveClassIds = (liveClassRows ?? []).map((c) => c.id);
-  const [{ data: liveClassLinkRows }, { data: attendanceRows }, { data: participantRows }] = await Promise.all([
-    liveClassIds.length
-      ? supabase.from("live_class_links").select("live_class_id, join_link").in("live_class_id", liveClassIds)
-      : Promise.resolve({ data: [] as { live_class_id: string; join_link: string }[] }),
-    liveClassIds.length
-      ? supabase.from("attendance_records").select("live_class_id, student_id, status").in("live_class_id", liveClassIds)
-      : Promise.resolve({ data: [] as { live_class_id: string; student_id: string; status: "present" | "absent" | "late" }[] }),
-    liveClassIds.length
-      ? supabase.from("live_class_participants").select("live_class_id, student_id").in("live_class_id", liveClassIds)
-      : Promise.resolve({ data: [] as { live_class_id: string; student_id: string }[] }),
-  ]);
   const joinLinkByClassId = new Map((liveClassLinkRows ?? []).map((l) => [l.live_class_id, l.join_link]));
   const attendanceByKey = new Map((attendanceRows ?? []).map((a) => [`${a.live_class_id}:${a.student_id}`, a.status]));
   const participantIdsByClassId = new Map<string, Set<string>>();
@@ -417,22 +484,9 @@ export default async function TeacherDashboardPage({
   const lessonOptions: TeacherLessonOption[] = (liveClassRows ?? []).map((c) => ({ id: c.id, title: c.title }));
   const lessonTitleById = new Map(lessonOptions.map((l) => [l.id, l.title]));
 
-  const { data: assignmentRows } = await supabase
-    .from("assignments")
-    .select("id, title, batch_id, lesson_id, file_path, due_at")
-    .eq("owner_type", "teacher")
-    .eq("owner_id", userId)
-    .order("created_at", { ascending: false });
-
-  const assignmentFilePaths = (assignmentRows ?? []).map((a) => a.file_path);
   const assignmentFileUrlByPath = new Map<string, string>();
-  if (assignmentFilePaths.length > 0) {
-    const { data: signedAssignmentUrls } = await supabase.storage
-      .from("assignments")
-      .createSignedUrls(assignmentFilePaths, 3600);
-    for (const entry of signedAssignmentUrls ?? []) {
-      if (entry.path && entry.signedUrl) assignmentFileUrlByPath.set(entry.path, entry.signedUrl);
-    }
+  for (const entry of signedAssignmentUrls ?? []) {
+    if (entry.path && entry.signedUrl) assignmentFileUrlByPath.set(entry.path, entry.signedUrl);
   }
 
   const assignments: TeacherAssignmentRow[] = (assignmentRows ?? []).map((a) => ({
@@ -445,34 +499,9 @@ export default async function TeacherDashboardPage({
     fileUrl: assignmentFileUrlByPath.get(a.file_path) ?? "",
   }));
 
-  const assignmentIds = (assignmentRows ?? []).map((a) => a.id);
-  const { data: assignmentSubmissionRows } = assignmentIds.length
-    ? await supabase
-        .from("assignment_submissions")
-        .select("id, assignment_id, student_id, photo_urls, status, grade, feedback, submitted_at")
-        .in("assignment_id", assignmentIds)
-    : {
-        data: [] as {
-          id: string;
-          assignment_id: string;
-          student_id: string;
-          photo_urls: string[];
-          status: "pending" | "graded";
-          grade: number | null;
-          feedback: string | null;
-          submitted_at: string;
-        }[],
-      };
-
-  const allAssignmentPhotoPaths = (assignmentSubmissionRows ?? []).flatMap((s) => s.photo_urls);
   const assignmentPhotoUrlByPath = new Map<string, string>();
-  if (allAssignmentPhotoPaths.length > 0) {
-    const { data: signedPhotoUrls } = await supabase.storage
-      .from("submissions")
-      .createSignedUrls(allAssignmentPhotoPaths, 3600);
-    for (const entry of signedPhotoUrls ?? []) {
-      if (entry.path && entry.signedUrl) assignmentPhotoUrlByPath.set(entry.path, entry.signedUrl);
-    }
+  for (const entry of signedPhotoUrls ?? []) {
+    if (entry.path && entry.signedUrl) assignmentPhotoUrlByPath.set(entry.path, entry.signedUrl);
   }
 
   const assignmentSubmissions: AssignmentSubmissionRow[] = (assignmentSubmissionRows ?? []).map((s) => ({
@@ -492,11 +521,6 @@ export default async function TeacherDashboardPage({
     dateLabel: dateFormatter.format(new Date(c.scheduled_at)),
     rows: rosterFor(c.id, c.batch_id),
   }));
-
-  // Same RPC the public /teacher/[id] page uses to gate the phone number —
-  // called here too so the dashboard's inline "view live page" shows the
-  // number exactly as this teacher (viewing their own profile) would see it.
-  const { data: liveProfilePhone } = await supabase.rpc("get_teacher_contact", { p_teacher_id: userId });
 
   const liveProfile: TeacherProfileDetail = {
     id: userId,

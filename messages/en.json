@@ -923,6 +923,11 @@
         "helper": "Your institute has been approved. Publish it to appear in Find classes search results, or hide it while you're editing.",
         "live": "Live — visible in search",
         "hidden": "Hidden from search"
+      },
+      "notificationsHeading": "Notifications",
+      "notifications": {
+        "enrolments": "New enrolments",
+        "reviews": "New reviews"
       }
     }
   },

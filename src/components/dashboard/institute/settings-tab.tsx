@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { updateInstituteProfile, setListingPublished, resubmitListing } from "@/lib/dashboard/actions";
+import { updateInstituteProfile, setListingPublished, resubmitListing, updateNotificationPrefs } from "@/lib/dashboard/actions";
 import { uploadAvatar } from "@/lib/dashboard/avatar-actions";
 import type { ProfileStatus } from "@/types/database";
 
@@ -21,6 +21,7 @@ export function SettingsTab({
   initialStatus,
   initialOwnerPublished,
   initialPhotoUrl,
+  initialNotificationPrefs,
 }: {
   initialName: string;
   initialLocation: string;
@@ -31,6 +32,7 @@ export function SettingsTab({
   initialStatus: ProfileStatus;
   initialOwnerPublished: boolean;
   initialPhotoUrl: string | null;
+  initialNotificationPrefs: Record<string, boolean>;
 }) {
   const t = useTranslations("instituteDashboard.settings");
 
@@ -103,6 +105,18 @@ export function SettingsTab({
   const [detailsSaved, setDetailsSaved] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const [savingDetails, setSavingDetails] = useState(false);
+
+  const [notifications, setNotifications] = useState({
+    enrolments: initialNotificationPrefs.enrolments ?? true,
+    reviews: initialNotificationPrefs.reviews ?? true,
+  });
+
+  function handleToggleNotification(key: "enrolments" | "reviews") {
+    return (checked: boolean) => {
+      setNotifications((n) => ({ ...n, [key]: checked }));
+      updateNotificationPrefs({ [key]: checked });
+    };
+  }
 
   const [rate, setRate] = useState({ hourly: initialHourlyRate, monthly: initialMonthlyRate });
   const [rateSaved, setRateSaved] = useState(false);
@@ -291,6 +305,28 @@ export function SettingsTab({
         )}
 
         {publishError && <p className="mt-2 text-sm font-medium text-destructive">{publishError}</p>}
+      </div>
+
+      <div className="rounded-lg border border-border bg-white p-5">
+        <h3 className="mb-4 text-lg">{t("notificationsHeading")}</h3>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="notif-enrolments">{t("notifications.enrolments")}</Label>
+            <Switch
+              id="notif-enrolments"
+              checked={notifications.enrolments}
+              onCheckedChange={handleToggleNotification("enrolments")}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="notif-reviews">{t("notifications.reviews")}</Label>
+            <Switch
+              id="notif-reviews"
+              checked={notifications.reviews}
+              onCheckedChange={handleToggleNotification("reviews")}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

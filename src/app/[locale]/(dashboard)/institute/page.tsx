@@ -31,7 +31,7 @@ export default async function InstituteDashboardPage({
   const userId = user!.id;
 
   const [{ data: profile }, { data: classProfile }] = await Promise.all([
-    supabase.from("profiles").select("full_name, phone").eq("id", userId).single(),
+    supabase.from("profiles").select("full_name, phone, notification_prefs").eq("id", userId).single(),
     supabase.from("class_profiles").select("*").eq("owner_id", userId).maybeSingle(),
   ]);
 
@@ -324,6 +324,7 @@ export default async function InstituteDashboardPage({
             initialMonthlyRate={priceRow?.monthly_rate?.toString() ?? ""}
             initialStatus={classProfile?.status ?? "pending"}
             initialOwnerPublished={classProfile?.owner_published ?? true}
+            initialNotificationPrefs={(profile?.notification_prefs as Record<string, boolean>) ?? {}}
           />
         ),
       }}

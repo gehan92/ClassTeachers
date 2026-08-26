@@ -143,12 +143,7 @@ function ExamCard({ exam, onOpen }: { exam: StudentExamRow; onOpen: () => void }
       )}
 
       {exam.isOpen && exam.submission?.status === "pending" && (
-        <div>
-          <p className="mb-3 text-sm text-foreground/80">{t("submittedBody")}</p>
-          <Button size="sm" variant="outline" onClick={onOpen}>
-            {t("resubmit")}
-          </Button>
-        </div>
+        <p className="text-sm text-foreground/80">{t("submittedBody")}</p>
       )}
     </div>
   );

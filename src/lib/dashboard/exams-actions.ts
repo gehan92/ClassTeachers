@@ -82,10 +82,11 @@ const allowedPhotoTypes: Record<string, string> = {
  * needs no photo at all: it's graded immediately and exam_submissions goes
  * straight to 'graded', skipping the teacher's grading queue entirely.
  *
- * A resubmit recomputes the MCQ score fresh and, for a mixed exam, resets
- * status back to 'pending' and clears any prior manual grade — a new
- * answer set should go back to the grading queue, not keep a stale grade
- * (same behavior this had before MCQ answers existed).
+ * One attempt only — once a row exists for (examId, studentId), this
+ * rejects rather than overwriting it, whether that submission is still
+ * pending grading or already graded. Enforced here, not just by hiding the
+ * resubmit button client-side, since a client-only guard doesn't stop a
+ * direct call to this action.
  */
 export async function submitExam(formData: FormData): Promise<SubmitExamResult> {
   const examId = formData.get("examId");
@@ -127,6 +128,16 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
   const { data: exam } = await supabase.from("exams").select("question_ids").eq("id", examId).maybeSingle();
   if (!exam) {
     return { error: "Exam not found." };
+  }
+
+  const { data: existingSubmission } = await supabase
+    .from("exam_submissions")
+    .select("id")
+    .eq("exam_id", examId)
+    .eq("student_id", user.id)
+    .maybeSingle();
+  if (existingSubmission) {
+    return { error: "You've already submitted this exam." };
   }
 
   const { data: questionRows } = exam.question_ids.length
@@ -172,22 +183,19 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
   // still needs a human to look at the photographed answer.
   const isFullyAutoGraded = mcqQuestions.length > 0 && !hasEssayQuestions;
 
-  const { error } = await supabase.from("exam_submissions").upsert(
-    {
-      exam_id: examId,
-      student_id: user.id,
-      photo_urls: photoUrls,
-      mcq_answers: mcqAnswers,
-      mcq_score: mcqQuestions.length > 0 ? mcqScore : null,
-      mcq_max_score: mcqQuestions.length > 0 ? mcqMaxScore : null,
-      status: isFullyAutoGraded ? "graded" : "pending",
-      grade: isFullyAutoGraded ? mcqScore : null,
-      feedback: null,
-      graded_at: isFullyAutoGraded ? new Date().toISOString() : null,
-      submitted_at: new Date().toISOString(),
-    },
-    { onConflict: "exam_id,student_id" },
-  );
+  const { error } = await supabase.from("exam_submissions").insert({
+    exam_id: examId,
+    student_id: user.id,
+    photo_urls: photoUrls,
+    mcq_answers: mcqAnswers,
+    mcq_score: mcqQuestions.length > 0 ? mcqScore : null,
+    mcq_max_score: mcqQuestions.length > 0 ? mcqMaxScore : null,
+    status: isFullyAutoGraded ? "graded" : "pending",
+    grade: isFullyAutoGraded ? mcqScore : null,
+    feedback: null,
+    graded_at: isFullyAutoGraded ? new Date().toISOString() : null,
+    submitted_at: new Date().toISOString(),
+  });
   if (error) {
     return { error: "Couldn't save your submission. Please try again." };
   }

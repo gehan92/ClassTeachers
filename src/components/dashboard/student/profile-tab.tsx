@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Pencil, Check } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ export function ProfileTab({
   initialGrade,
   initialNotificationPrefs,
   initialPhotoUrl,
+  classesCount,
   email,
 }: {
   initialName: string;
@@ -27,13 +29,115 @@ export function ProfileTab({
   initialGrade: string;
   initialNotificationPrefs: Record<string, boolean>;
   initialPhotoUrl: string | null;
+  classesCount: number;
   email: string;
 }) {
+  const t = useTranslations("studentDashboard.profile");
+  // Defaults to a read-only summary card (view mode) instead of dropping
+  // straight into the edit form — matches the teacher profile tab's
+  // live/edit toggle, using only fields that actually apply to a student
+  // (no headline/bio/qualifications/pricing — a student has no public
+  // listing). View mode reads straight from the server-rendered props, the
+  // same as the teacher tab's `liveView`; each edit panel calls refresh()
+  // on save, so switching back to view always reflects the latest save.
+  const [mode, setMode] = useState<"view" | "edit">("view");
+
   return (
     <div className="flex flex-col gap-5">
-      <PhotoPanel initialPhotoUrl={initialPhotoUrl} studentName={initialName} />
-      <ProfilePanel initialName={initialName} initialPhone={initialPhone} initialGrade={initialGrade} email={email} />
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl">{t("profileTitle")}</h1>
+        {mode === "view" ? (
+          <Button type="button" onClick={() => setMode("edit")}>
+            <Pencil className="size-4" />
+            {t("editProfile")}
+          </Button>
+        ) : (
+          <Button type="button" variant="outline" onClick={() => setMode("view")}>
+            <Check className="size-4" />
+            {t("doneEditing")}
+          </Button>
+        )}
+      </div>
+
+      {mode === "view" ? (
+        <ProfileCard
+          name={initialName}
+          grade={initialGrade}
+          phone={initialPhone}
+          email={email}
+          photoUrl={initialPhotoUrl}
+          classesCount={classesCount}
+        />
+      ) : (
+        <>
+          <PhotoPanel initialPhotoUrl={initialPhotoUrl} studentName={initialName} />
+          <ProfilePanel
+            initialName={initialName}
+            initialPhone={initialPhone}
+            initialGrade={initialGrade}
+            email={email}
+          />
+        </>
+      )}
+
       <NotificationsPanel initialPrefs={initialNotificationPrefs} />
+    </div>
+  );
+}
+
+function ProfileCard({
+  name,
+  grade,
+  phone,
+  email,
+  photoUrl,
+  classesCount,
+}: {
+  name: string;
+  grade: string;
+  phone: string;
+  email: string;
+  photoUrl: string | null;
+  classesCount: number;
+}) {
+  const t = useTranslations("studentDashboard.profile");
+
+  return (
+    <div className={panelClass}>
+      <div className="flex flex-wrap items-center gap-4">
+        {photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage public URL
+          <img src={photoUrl} alt="" className="size-20 shrink-0 rounded-full object-cover shadow-sm" />
+        ) : (
+          <div
+            className={`flex size-20 shrink-0 items-center justify-center rounded-full font-display text-2xl font-bold text-white shadow-sm ${avatarGradientClass(name)}`}
+          >
+            {name.charAt(0).toUpperCase()}
+          </div>
+        )}
+        <div className="min-w-0">
+          <h2 className="font-display text-xl text-foreground">{name}</h2>
+          {grade && (
+            <span className="mt-1 inline-block rounded-full bg-background px-2.5 py-1 font-mono text-[11px] text-muted-foreground">
+              {grade}
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="mt-5 grid grid-cols-1 gap-4 border-t border-border pt-4 sm:grid-cols-3">
+        <div>
+          <div className="text-xs text-muted-foreground">{t("classesJoinedLabel")}</div>
+          <div className="text-sm font-medium text-foreground">{classesCount}</div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground">{t("emailLabel")}</div>
+          <div className="truncate text-sm font-medium text-foreground">{email}</div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground">{t("phoneLabel")}</div>
+          <div className="text-sm font-medium text-foreground">{phone || "—"}</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -151,7 +255,7 @@ function ProfilePanel({
 
   return (
     <div className={panelClass}>
-      <h3 className="mb-4 text-lg">{t("profileTitle")}</h3>
+      <h3 className="mb-4 text-lg">{t("personalDetailsHeading")}</h3>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor={nameId} className="mb-1.5">

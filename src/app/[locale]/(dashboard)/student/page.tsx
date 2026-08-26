@@ -496,6 +496,7 @@ export default async function StudentDashboardPage({
             initialGrade={profile?.grade_level ?? ""}
             initialNotificationPrefs={(profile?.notification_prefs as Record<string, boolean>) ?? {}}
             initialPhotoUrl={profile?.avatar_url ?? null}
+            classesCount={classesCount}
             email={user!.email ?? ""}
           />
         ),

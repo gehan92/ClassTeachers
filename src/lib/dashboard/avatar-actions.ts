@@ -20,7 +20,7 @@ export async function uploadAvatar(formData: FormData): Promise<ActionResult> {
   if (!extension) {
     return { error: "Please upload a JPG, PNG, or WEBP image." };
   }
-  if (ownerType !== "teacher" && ownerType !== "class") {
+  if (ownerType !== "teacher" && ownerType !== "class" && ownerType !== "student") {
     return { error: "Invalid request." };
   }
 
@@ -57,6 +57,14 @@ export async function uploadAvatar(formData: FormData): Promise<ActionResult> {
       return { error: "Save your profile details first." };
     }
     const { error } = await supabase.from("teacher_profiles").update({ photo_url: url }).eq("id", user.id);
+    if (error) {
+      return { error: "Couldn't save your photo. Please try again." };
+    }
+    return { url };
+  }
+
+  if (ownerType === "student") {
+    const { error } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", user.id);
     if (error) {
       return { error: "Couldn't save your photo. Please try again." };
     }

@@ -69,7 +69,11 @@ export default async function StudentDashboardPage({
     { data: assignmentSubmissionRows },
     { data: myReviewRows },
   ] = await Promise.all([
-    supabase.from("profiles").select("full_name, phone, grade_level, notification_prefs").eq("id", userId).single(),
+    supabase
+      .from("profiles")
+      .select("full_name, phone, grade_level, notification_prefs, avatar_url")
+      .eq("id", userId)
+      .single(),
     supabase.from("enrollments").select("id, owner_type, owner_id, batch_id, joined_at, status"),
     supabase.from("notes").select("id, owner_type, owner_id, batch_id, title, page_count"),
     supabase
@@ -438,6 +442,7 @@ export default async function StudentDashboardPage({
     <DashboardShell
       userLabel={fullName}
       userInitial={userInitial}
+      userPhotoUrl={profile?.avatar_url ?? null}
       logoutLabel={t("logout")}
       demoRole="student"
       realtimeWatch={[{ table: "live_class_reminders", filter: `student_id=eq.${userId}` }]}
@@ -490,6 +495,7 @@ export default async function StudentDashboardPage({
             initialPhone={profile?.phone ?? ""}
             initialGrade={profile?.grade_level ?? ""}
             initialNotificationPrefs={(profile?.notification_prefs as Record<string, boolean>) ?? {}}
+            initialPhotoUrl={profile?.avatar_url ?? null}
             email={user!.email ?? ""}
           />
         ),

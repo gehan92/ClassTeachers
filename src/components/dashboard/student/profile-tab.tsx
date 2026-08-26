@@ -1,32 +1,108 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { avatarGradientClass } from "@/lib/avatar-color";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { updateStudentProfile, updateNotificationPrefs } from "@/lib/dashboard/actions";
+import { uploadAvatar } from "@/lib/dashboard/avatar-actions";
+
+const panelClass = "rounded-lg border border-border bg-white p-5";
 
 export function ProfileTab({
   initialName,
   initialPhone,
   initialGrade,
   initialNotificationPrefs,
+  initialPhotoUrl,
   email,
 }: {
   initialName: string;
   initialPhone: string;
   initialGrade: string;
   initialNotificationPrefs: Record<string, boolean>;
+  initialPhotoUrl: string | null;
   email: string;
 }) {
   return (
     <div className="flex flex-col gap-5">
+      <PhotoPanel initialPhotoUrl={initialPhotoUrl} studentName={initialName} />
       <ProfilePanel initialName={initialName} initialPhone={initialPhone} initialGrade={initialGrade} email={email} />
       <NotificationsPanel initialPrefs={initialNotificationPrefs} />
+    </div>
+  );
+}
+
+function PhotoPanel({ initialPhotoUrl, studentName }: { initialPhotoUrl: string | null; studentName: string }) {
+  const t = useTranslations("studentDashboard.profile");
+  const { refresh } = useDashboardRefresh();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [photoUrl, setPhotoUrl] = useState(initialPhotoUrl);
+  const [uploading, setUploading] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function handleUploadClick() {
+    fileInputRef.current?.click();
+  }
+
+  async function handlePhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
+    const formData = new FormData();
+    formData.set("file", file);
+    formData.set("ownerType", "student");
+    const result = await uploadAvatar(formData);
+    setUploading(false);
+    if (result.error || !result.url) {
+      setError(result.error ?? "Couldn't upload the image. Please try again.");
+      return;
+    }
+    setPhotoUrl(result.url);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+    // The dashboard shell's header avatar is a server-rendered prop — needs
+    // a refetch to pick up the new photo.
+    refresh();
+  }
+
+  return (
+    <div className={panelClass}>
+      <h3 className="mb-4 text-lg">{t("photoHeading")}</h3>
+      <div className="flex items-center gap-4">
+        {photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage public URL
+          <img src={photoUrl} alt="" className="size-[76px] shrink-0 rounded-full object-cover shadow-sm" />
+        ) : (
+          <div
+            className={`flex size-[76px] shrink-0 items-center justify-center rounded-full font-display text-2xl font-bold text-white shadow-sm ${avatarGradientClass(studentName)}`}
+          >
+            {studentName.charAt(0).toUpperCase()}
+          </div>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handlePhotoSelected}
+        />
+        <Button type="button" variant="outline" onClick={handleUploadClick} disabled={uploading}>
+          {t("uploadPhoto")}
+        </Button>
+        {saved && <span className="text-sm font-medium text-success">{t("saved")}</span>}
+        {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+      </div>
     </div>
   );
 }
@@ -74,7 +150,7 @@ function ProfilePanel({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-white p-5">
+    <div className={panelClass}>
       <h3 className="mb-4 text-lg">{t("profileTitle")}</h3>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
@@ -144,7 +220,7 @@ function NotificationsPanel({ initialPrefs }: { initialPrefs: Record<string, boo
   }
 
   return (
-    <div className="rounded-lg border border-border bg-white p-5">
+    <div className={panelClass}>
       <h3 className="mb-4 text-lg">{t("notificationsTitle")}</h3>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">

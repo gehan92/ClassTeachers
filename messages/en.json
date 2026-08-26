@@ -1037,6 +1037,8 @@
       "noTargets": "Join a teacher or institute to leave your first review."
     },
     "profile": {
+      "photoHeading": "Profile photo",
+      "uploadPhoto": "Upload new photo",
       "profileTitle": "Profile",
       "nameLabel": "Name",
       "gradeLabel": "Grade / level",

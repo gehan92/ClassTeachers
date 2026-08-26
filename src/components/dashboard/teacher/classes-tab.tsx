@@ -7,6 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+} from "@/components/ui/alert-dialog";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createBatch, updateBatch, deleteBatch } from "@/lib/dashboard/batches-actions";
@@ -69,6 +77,7 @@ export function ClassesTab({
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<{ batchId: string; message: string } | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   function resetForm() {
     setTitle("");
@@ -141,8 +150,9 @@ export function ClassesTab({
     refresh();
   }
 
-  async function handleDelete(batchId: string) {
-    if (!window.confirm(t("confirmDelete"))) return;
+  async function handleConfirmDelete() {
+    const batchId = confirmDeleteId;
+    if (!batchId) return;
     setDeletingId(batchId);
     setDeleteError(null);
     const result = await deleteBatch(batchId);
@@ -151,8 +161,11 @@ export function ClassesTab({
       setDeleteError({ batchId, message: result.error });
       return;
     }
+    setConfirmDeleteId(null);
     refresh();
   }
+
+  const batchPendingDelete = batches.find((b) => b.id === confirmDeleteId) ?? null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -370,9 +383,6 @@ export function ClassesTab({
                         {batch.location ? ` · ${batch.location}` : ""}
                         {batch.scheduleNote ? ` · ${batch.scheduleNote}` : ""}
                       </p>
-                      {deleteError?.batchId === batch.id && (
-                        <p className="mt-1.5 text-sm font-medium text-destructive">{deleteError.message}</p>
-                      )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="rounded-full bg-background px-2.5 py-1 font-mono text-[11px] text-muted-foreground">
@@ -385,9 +395,12 @@ export function ClassesTab({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        disabled={deletingId === batch.id || batch.hasActiveAd}
+                        disabled={batch.hasActiveAd}
                         title={batch.hasActiveAd ? t("deleteBlockedByAd") : undefined}
-                        onClick={() => handleDelete(batch.id)}
+                        onClick={() => {
+                          setDeleteError(null);
+                          setConfirmDeleteId(batch.id);
+                        }}
                       >
                         {t("delete")}
                       </Button>
@@ -422,6 +435,36 @@ export function ClassesTab({
           })}
         </div>
       )}
+
+      <AlertDialog
+        open={confirmDeleteId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConfirmDeleteId(null);
+            setDeleteError(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {batchPendingDelete ? t("deleteDialog.title", { title: batchPendingDelete.title }) : t("deleteDialog.titleFallback")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>{t("deleteDialog.description")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteError && deleteError.batchId === confirmDeleteId && (
+            <p className="mt-3 text-sm font-medium text-destructive">{deleteError.message}</p>
+          )}
+          <AlertDialogFooter>
+            <Button type="button" variant="outline" size="sm" onClick={() => setConfirmDeleteId(null)} disabled={deletingId !== null}>
+              {tc("cancel")}
+            </Button>
+            <Button type="button" variant="destructive" size="sm" onClick={handleConfirmDelete} disabled={deletingId !== null}>
+              {t("delete")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

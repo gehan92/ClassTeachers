@@ -1269,8 +1269,12 @@
       "noStudents": "No students enrolled yet.",
       "edit": "Edit",
       "delete": "Delete",
-      "confirmDelete": "Delete this class? Students enrolled in it will move to your general enrollment, and any notes, exams or assignments scoped to it will become unscoped instead of being deleted.",
       "deleteBlockedByAd": "This class has a live ad. Pause or remove it in the Advertisement tab before deleting this class.",
+      "deleteDialog": {
+        "title": "Delete \"{title}\"?",
+        "titleFallback": "Delete this class?",
+        "description": "Students enrolled in it will move to your general enrollment, and any notes, exams or assignments scoped to it will become unscoped instead of being deleted. This can't be undone."
+      },
       "columns": {
         "student": "Student",
         "joined": "Joined",

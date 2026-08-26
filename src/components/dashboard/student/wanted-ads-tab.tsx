@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createWantedAd, updateWantedAd, setWantedAdStatus, deleteWantedAd } from "@/lib/dashboard/wanted-ads-actions";
+import type { PublicWantedAd } from "@/components/features/wanted-ads-board";
 
 const textareaClass =
   "min-h-24 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm";
@@ -46,10 +47,12 @@ export function WantedAdsTab({
   wantedAds,
   subjectOptions,
   responses,
+  sampleAds,
 }: {
   wantedAds: WantedAdRow[];
   subjectOptions: SubjectOption[];
   responses: WantedAdResponseRow[];
+  sampleAds: PublicWantedAd[];
 }) {
   const t = useTranslations("studentDashboard.wantedAds");
 
@@ -59,6 +62,8 @@ export function WantedAdsTab({
         <h1 className="text-2xl">{t("heading")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
+
+      {sampleAds.length > 0 && <SampleAdsSection ads={sampleAds} />}
 
       <WantedAdCreator subjectOptions={subjectOptions} />
 
@@ -77,6 +82,37 @@ export function WantedAdsTab({
             />
           ))
         )}
+      </div>
+    </div>
+  );
+}
+
+// Real requests from other students, not fake placeholder text — a handful
+// (whatever the caller passes, capped at 3 server-side) shown as posting
+// inspiration. No respond action here; this student isn't a teacher/institute.
+function SampleAdsSection({ ads }: { ads: PublicWantedAd[] }) {
+  const t = useTranslations("studentDashboard.wantedAds");
+
+  return (
+    <div className="rounded-lg border border-border bg-white p-5">
+      <h4 className="mb-1 text-base font-medium text-foreground">{t("samplesHeading")}</h4>
+      <p className="mb-4 text-sm text-muted-foreground">{t("samplesSubtitle")}</p>
+      <div className="flex flex-col gap-3">
+        {ads.map((ad) => (
+          <div key={ad.id} className="rounded-md bg-secondary/60 px-3.5 py-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-foreground">{ad.title}</span>
+              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">
+                {t(`lookingForOptions.${ad.lookingFor}`)}
+              </span>
+            </div>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {[ad.subject, ad.mode ? t(`modeOptions.${ad.mode}`) : null, ad.gradeLevel, ad.createdLabel]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );

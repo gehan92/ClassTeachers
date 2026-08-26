@@ -19,6 +19,7 @@ import type { StudentLiveClassRow } from "@/components/dashboard/student/live-cl
 import type { StudentExamRow, StudentExamQuestion } from "@/components/dashboard/student/exams-tab";
 import type { StudentAssignmentRow } from "@/components/dashboard/student/assignments-tab";
 import type { WantedAdRow, WantedAdResponseRow } from "@/components/dashboard/student/wanted-ads-tab";
+import type { PublicWantedAd } from "@/components/features/wanted-ads-board";
 
 type RawQuestionOption = { id: string; text: string; imagePath?: string };
 type RawLiveClassRow = {
@@ -74,6 +75,7 @@ export default async function StudentDashboardPage({
     { data: wantedAdRows },
     { data: subjectRows },
     { data: wantedAdResponseRows },
+    { data: publicWantedAdRows },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -119,6 +121,10 @@ export default async function StudentDashboardPage({
     // subject that exists, including ones they've never had a class for.
     supabase.from("subjects").select("id, translations"),
     supabase.rpc("list_wanted_ad_responses_for_student"),
+    // Same anon-safe RPC the public /requests page uses — reused here to
+    // show a few real, other-students' requests as posting inspiration
+    // (never fake sample text), filtered down to a handful below.
+    supabase.rpc("list_public_wanted_ads"),
   ]);
 
   const fullName = profile?.full_name ?? user!.email ?? "Student";
@@ -479,6 +485,25 @@ export default async function StudentDashboardPage({
     createdLabel: dateFormatter.format(new Date(r.created_at)),
   }));
 
+  // A few, not many — just enough to show real activity and give writing
+  // inspiration, not a full second copy of the /requests board. Excludes
+  // this student's own ads (list_public_wanted_ads carries no student_id to
+  // filter by, so we exclude by id against the ads already fetched above).
+  const ownWantedAdIds = new Set(wantedAds.map((ad) => ad.id));
+  const sampleWantedAds: PublicWantedAd[] = (publicWantedAdRows ?? [])
+    .filter((row) => !ownWantedAdIds.has(row.id))
+    .slice(0, 3)
+    .map((row) => ({
+      id: row.id,
+      lookingFor: row.looking_for as "teacher" | "institute",
+      subject: row.subject,
+      mode: row.mode as "online" | "physical" | "both" | null,
+      gradeLevel: row.grade_level,
+      title: row.title,
+      description: row.description,
+      createdLabel: dateFormatter.format(new Date(row.created_at)),
+    }));
+
   const reviewTargets: ReviewTarget[] = [...joinedOwnerKeys].map((key) => {
     const [ownerType, ownerId] = key.split(":") as ["teacher" | "class", string];
     return { ownerType, ownerId, name: ownerName(ownerType, ownerId) };
@@ -547,7 +572,12 @@ export default async function StudentDashboardPage({
         classes: <ClassesTab myClasses={myClasses} availableBatches={availableBatches} />,
         live: <LiveClassesTab classes={liveClasses} studentName={fullName} reminderClassIds={reminderClassIds} />,
         wantedAds: (
-          <WantedAdsTab wantedAds={wantedAds} subjectOptions={subjectOptions} responses={wantedAdResponses} />
+          <WantedAdsTab
+            wantedAds={wantedAds}
+            subjectOptions={subjectOptions}
+            responses={wantedAdResponses}
+            sampleAds={sampleWantedAds}
+          />
         ),
         notes: <NotesTab notes={studentNotes} studentName={fullName} />,
         exams: <ExamsTab exams={exams} />,

@@ -1196,6 +1196,8 @@
     "wantedAds": {
       "heading": "Post an Ad",
       "subtitle": "Let teachers and institutes know what you're looking for.",
+      "samplesHeading": "Recent requests from other students",
+      "samplesSubtitle": "A few real examples for inspiration.",
       "creatorHeading": "What are you looking for?",
       "creatorSubtitle": "Post a request and teachers or institutes can reach out to you.",
       "postAd": "Post ad",

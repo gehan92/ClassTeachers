@@ -1749,6 +1749,7 @@
       "heading": "සැකසුම්",
       "accountHeading": "ගිණුම",
       "fields": {
+        "fullName": "සම්පූර්ණ නම",
         "email": "විද්‍යුත් තැපෑල",
         "phone": "දුරකථනය"
       },

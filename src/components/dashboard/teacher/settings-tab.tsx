@@ -8,15 +8,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { updateTeacherAccount, updateNotificationPrefs, updateContactMode } from "@/lib/dashboard/actions";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 
 const panelClass = "rounded-lg border border-border bg-white p-5";
 
 export function SettingsTab({
+  initialFullName,
   initialPhone,
   initialNotificationPrefs,
   initialContactMode,
   email,
 }: {
+  initialFullName: string;
   initialPhone: string;
   initialNotificationPrefs: Record<string, boolean>;
   initialContactMode: "phone" | "messaging_only";
@@ -24,6 +28,7 @@ export function SettingsTab({
 }) {
   const t = useTranslations("teacherDashboard.settings");
   const tc = useTranslations("teacherDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
 
   const [messagingOnly, setMessagingOnly] = useState(initialContactMode === "messaging_only");
 
@@ -45,6 +50,7 @@ export function SettingsTab({
     };
   }
 
+  const [fullName, setFullName] = useState(initialFullName);
   const [phone, setPhone] = useState(initialPhone);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +59,7 @@ export function SettingsTab({
   async function handleSaveChanges() {
     setSaving(true);
     setError(null);
-    const result = await updateTeacherAccount({ phone });
+    const result = await updateTeacherAccount({ fullName: fullName.trim(), phone });
     setSaving(false);
     if (result.error) {
       setError(result.error);
@@ -61,6 +67,9 @@ export function SettingsTab({
     }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+    // Name shows up in the sidebar/header greeting elsewhere on the page —
+    // those are server-rendered snapshots, so they need a refetch.
+    refresh();
   }
 
   return (
@@ -70,6 +79,10 @@ export function SettingsTab({
       <div className={panelClass}>
         <h3 className="mb-4 text-lg">{t("accountHeading")}</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="full-name">{t("fields.fullName")}</Label>
+            <Input id="full-name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="email">{t("fields.email")}</Label>
             <Input id="email" type="email" value={email} readOnly disabled />
@@ -83,12 +96,19 @@ export function SettingsTab({
           {t("changePassword")}
         </Link>
         <div className="mt-4 flex items-center gap-3">
-          <Button type="button" onClick={handleSaveChanges} disabled={saving}>
+          <Button type="button" onClick={handleSaveChanges} disabled={saving || fullName.trim().length === 0}>
             {tc("save")}
           </Button>
           {saved && <span className="text-sm font-medium text-success">{tc("saved")}</span>}
           {error && <span className="text-sm font-medium text-destructive">{error}</span>}
         </div>
+        <RefreshStatus
+          pending={isRefreshing}
+          stuck={refreshStuck}
+          pendingLabel={tc("updatingList")}
+          stuckLabel={tc("updateStuck")}
+          reloadLabel={tc("reloadPage")}
+        />
       </div>
 
       <div className={panelClass}>

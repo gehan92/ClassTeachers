@@ -1749,6 +1749,7 @@
       "heading": "Settings",
       "accountHeading": "Account",
       "fields": {
+        "fullName": "Full name",
         "email": "Email",
         "phone": "Phone"
       },

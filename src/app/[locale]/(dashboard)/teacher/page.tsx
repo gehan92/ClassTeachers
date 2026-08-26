@@ -747,6 +747,7 @@ export default async function TeacherDashboardPage({
         ),
         settings: (
           <SettingsTab
+            initialFullName={fullName}
             initialPhone={profile?.phone ?? ""}
             initialNotificationPrefs={(profile?.notification_prefs as Record<string, boolean>) ?? {}}
             initialContactMode={teacherProfile?.contact_mode ?? "phone"}

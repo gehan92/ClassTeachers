@@ -1749,6 +1749,7 @@
       "heading": "அமைப்புகள்",
       "accountHeading": "கணக்கு",
       "fields": {
+        "fullName": "முழுப் பெயர்",
         "email": "மின்னஞ்சல்",
         "phone": "தொலைபேசி"
       },

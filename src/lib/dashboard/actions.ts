@@ -297,6 +297,7 @@ export async function updateTeacherSubjects(subjectNames: string[]): Promise<Act
 }
 
 const teacherAccountSchema = z.object({
+  fullName: z.string().trim().min(1).max(120),
   phone: z.string().trim().optional(),
 });
 
@@ -328,10 +329,10 @@ export async function updateStudentAccount(input: { phone: string }): Promise<Ac
   return {};
 }
 
-export async function updateTeacherAccount(input: { phone: string }): Promise<ActionResult> {
+export async function updateTeacherAccount(input: { fullName: string; phone: string }): Promise<ActionResult> {
   const parsed = teacherAccountSchema.safeParse(input);
   if (!parsed.success) {
-    return { error: "Please check the phone number and try again." };
+    return { error: "Please check your name and phone number and try again." };
   }
 
   const supabase = await createClient();
@@ -344,7 +345,7 @@ export async function updateTeacherAccount(input: { phone: string }): Promise<Ac
 
   const { error } = await supabase
     .from("profiles")
-    .update({ phone: parsed.data.phone || null })
+    .update({ full_name: parsed.data.fullName, phone: parsed.data.phone || null })
     .eq("id", user.id);
   if (error) {
     return { error: "Couldn't save your changes. Please try again." };

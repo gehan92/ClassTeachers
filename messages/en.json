@@ -1221,6 +1221,7 @@
         "title": "Title",
         "subject": "Subject",
         "batch": "Batch",
+        "date": "Date",
         "pages": "Pages",
         "views": "Views",
         "protection": "Protection",
@@ -1240,6 +1241,23 @@
         "batchGeneral": "General (all students)",
         "fileLabel": "PDF file",
         "missingFields": "Please add a title and choose a PDF file."
+      },
+      "filters": {
+        "searchLabel": "Search",
+        "searchPlaceholder": "Search notes or batch...",
+        "batchLabel": "Batch",
+        "allBatches": "All classes",
+        "sortLabel": "Sort by date",
+        "sortNewest": "Newest first",
+        "sortOldest": "Oldest first",
+        "clearFilters": "Clear filters",
+        "noResults": "No notes match your filters."
+      },
+      "pagination": {
+        "showingCount": "Showing {shown} of {total}",
+        "pageInfo": "Page {page} of {totalPages}",
+        "previous": "Previous",
+        "next": "Next"
       }
     },
     "classes": {

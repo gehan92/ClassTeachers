@@ -21,10 +21,14 @@ export type TeacherNoteRow = {
   batchTitle: string | null;
   pageCount: number | null;
   isPublic: boolean;
+  createdAtIso: string;
+  createdLabel: string;
 };
 
 const GENERAL_BATCH = "general";
+const ALL_BATCHES_FILTER = "all";
 const MAX_PUBLIC_NOTES = 3;
+const PAGE_SIZE = 10;
 
 export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches: TeacherBatchRow[] }) {
   const t = useTranslations("teacherDashboard.notes");
@@ -52,25 +56,36 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
   const publicCount = notes.filter((n) => n.isPublic).length;
   const viewingNote = notes.find((n) => n.id === viewingNoteId) ?? null;
 
-  // Grouped by class/batch so a teacher running several classes isn't
-  // hunting through one flat list — same organizing principle as the
-  // Assignments tab. Batches with notes appear in the same order as
-  // `batches` (the teacher's own class list), unassigned ones trail behind.
-  const groupedNotes = useMemo(() => {
-    const byBatch = new Map<string, TeacherNoteRow[]>();
-    for (const n of notes) {
-      const key = n.batchId ?? GENERAL_BATCH;
-      (byBatch.get(key) ?? byBatch.set(key, []).get(key)!).push(n);
-    }
-    const groups: { key: string; title: string; rows: TeacherNoteRow[] }[] = [];
-    for (const batch of batches) {
-      const rows = byBatch.get(batch.id);
-      if (rows) groups.push({ key: batch.id, title: batch.title, rows });
-    }
-    const general = byBatch.get(GENERAL_BATCH);
-    if (general) groups.push({ key: GENERAL_BATCH, title: t("form.batchGeneral"), rows: general });
-    return groups;
-  }, [notes, batches, t]);
+  const [filterQuery, setFilterQuery] = useState("");
+  const [filterBatch, setFilterBatch] = useState(ALL_BATCHES_FILTER);
+  const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
+  const [page, setPage] = useState(1);
+
+  const filtersActive = filterQuery.trim() !== "" || filterBatch !== ALL_BATCHES_FILTER;
+
+  const filteredNotes = useMemo(() => {
+    const q = filterQuery.trim().toLowerCase();
+    const list = notes.filter((n) => {
+      if (q && !n.title.toLowerCase().includes(q) && !(n.batchTitle ?? "").toLowerCase().includes(q)) return false;
+      if (filterBatch === GENERAL_BATCH && n.batchId !== null) return false;
+      if (filterBatch !== ALL_BATCHES_FILTER && filterBatch !== GENERAL_BATCH && n.batchId !== filterBatch) return false;
+      return true;
+    });
+    return [...list].sort((a, b) => {
+      const diff = new Date(a.createdAtIso).getTime() - new Date(b.createdAtIso).getTime();
+      return sortDir === "asc" ? diff : -diff;
+    });
+  }, [notes, filterQuery, filterBatch, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredNotes.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedNotes = filteredNotes.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  function clearFilters() {
+    setFilterQuery("");
+    setFilterBatch(ALL_BATCHES_FILTER);
+    setPage(1);
+  }
 
   function resetForm() {
     setTitle("");
@@ -271,101 +286,192 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
           <p className="py-6 text-center text-sm text-muted-foreground">{t("emptyState")}</p>
         </div>
       ) : (
-        groupedNotes.map((group) => (
-          <div key={group.key} className="rounded-lg border border-border bg-white p-5">
-            <h3 className="mb-3 text-sm font-semibold text-foreground">{group.title}</h3>
-            <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("columns.title")}</TableHead>
-                <TableHead>{t("columns.batch")}</TableHead>
-                <TableHead>{t("columns.pages")}</TableHead>
-                <TableHead>{t("columns.protection")}</TableHead>
-                <TableHead>{t("columns.freePreview")}</TableHead>
-                <TableHead>{t("columns.actions")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {group.rows.map((note) => {
-                const isEditing = editingNoteId === note.id;
-                return (
-                  <TableRow key={note.id}>
-                    <TableCell className="max-w-72 whitespace-normal font-medium text-foreground">
-                      {isEditing ? (
-                        <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="bg-white" />
-                      ) : (
-                        note.title
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {isEditing ? (
-                        <Select value={editBatchId} onValueChange={(value) => setEditBatchId(value ?? GENERAL_BATCH)}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={GENERAL_BATCH}>{t("form.batchGeneral")}</SelectItem>
-                            {batches.map((batch) => (
-                              <SelectItem key={batch.id} value={batch.id}>
-                                {batch.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        (note.batchTitle ?? t("form.batchGeneral"))
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{note.pageCount ?? "—"}</TableCell>
-                    <TableCell>
-                      <LockPill>{t("watermarked")}</LockPill>
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={note.isPublic}
-                        disabled={togglingId === note.id || (!note.isPublic && publicCount >= MAX_PUBLIC_NOTES)}
-                        onCheckedChange={(checked) => handleTogglePublic(note.id, checked)}
-                        aria-label={t("columns.freePreview")}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {isEditing ? (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Button type="button" size="sm" disabled={editSaving} onClick={() => handleSaveEdit(note.id)}>
-                            {tc("save")}
-                          </Button>
-                          <Button type="button" variant="outline" size="sm" onClick={cancelEdit}>
-                            {tc("cancel")}
-                          </Button>
-                          {editError && <span className="text-sm font-medium text-destructive">{editError}</span>}
-                        </div>
-                      ) : (
-                        <div className="flex flex-wrap items-center gap-1">
-                          <Button type="button" variant="ghost" size="sm" onClick={() => setViewingNoteId(note.id)}>
-                            {t("view")}
-                          </Button>
-                          <Button type="button" variant="ghost" size="sm" onClick={() => startEdit(note)}>
-                            {t("edit")}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            disabled={deletingId === note.id}
-                            onClick={() => handleDelete(note.id)}
-                          >
-                            {t("delete")}
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-            </Table>
+        <div className="rounded-lg border border-border bg-white p-5">
+          <div className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-border bg-muted/30 p-3.5">
+            <div className="grid min-w-48 flex-1 gap-1.5">
+              <Label htmlFor="note-filter-search">{t("filters.searchLabel")}</Label>
+              <Input
+                id="note-filter-search"
+                placeholder={t("filters.searchPlaceholder")}
+                value={filterQuery}
+                onChange={(e) => {
+                  setFilterQuery(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
+            <div className="grid w-44 gap-1.5">
+              <Label>{t("filters.batchLabel")}</Label>
+              <Select
+                value={filterBatch}
+                onValueChange={(v) => {
+                  setFilterBatch(v ?? ALL_BATCHES_FILTER);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_BATCHES_FILTER}>{t("filters.allBatches")}</SelectItem>
+                  <SelectItem value={GENERAL_BATCH}>{t("form.batchGeneral")}</SelectItem>
+                  {batches.map((batch) => (
+                    <SelectItem key={batch.id} value={batch.id}>
+                      {batch.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid w-44 gap-1.5">
+              <Label>{t("filters.sortLabel")}</Label>
+              <Select value={sortDir} onValueChange={(v) => setSortDir(v === "asc" ? "asc" : "desc")}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">{t("filters.sortNewest")}</SelectItem>
+                  <SelectItem value="asc">{t("filters.sortOldest")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {filtersActive && (
+              <Button type="button" variant="outline" size="sm" onClick={clearFilters}>
+                {t("filters.clearFilters")}
+              </Button>
+            )}
           </div>
-        ))
+
+          {filteredNotes.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">{t("filters.noResults")}</p>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("columns.title")}</TableHead>
+                    <TableHead>{t("columns.batch")}</TableHead>
+                    <TableHead>{t("columns.date")}</TableHead>
+                    <TableHead>{t("columns.pages")}</TableHead>
+                    <TableHead>{t("columns.protection")}</TableHead>
+                    <TableHead>{t("columns.freePreview")}</TableHead>
+                    <TableHead>{t("columns.actions")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pagedNotes.map((note) => {
+                    const isEditing = editingNoteId === note.id;
+                    return (
+                      <TableRow key={note.id}>
+                        <TableCell className="max-w-72 whitespace-normal font-medium text-foreground">
+                          {isEditing ? (
+                            <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="bg-white" />
+                          ) : (
+                            note.title
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {isEditing ? (
+                            <Select value={editBatchId} onValueChange={(value) => setEditBatchId(value ?? GENERAL_BATCH)}>
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value={GENERAL_BATCH}>{t("form.batchGeneral")}</SelectItem>
+                                {batches.map((batch) => (
+                                  <SelectItem key={batch.id} value={batch.id}>
+                                    {batch.title}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            (note.batchTitle ?? t("form.batchGeneral"))
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{note.createdLabel}</TableCell>
+                        <TableCell className="text-muted-foreground">{note.pageCount ?? "—"}</TableCell>
+                        <TableCell>
+                          <LockPill>{t("watermarked")}</LockPill>
+                        </TableCell>
+                        <TableCell>
+                          <Switch
+                            checked={note.isPublic}
+                            disabled={togglingId === note.id || (!note.isPublic && publicCount >= MAX_PUBLIC_NOTES)}
+                            onCheckedChange={(checked) => handleTogglePublic(note.id, checked)}
+                            aria-label={t("columns.freePreview")}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Button type="button" size="sm" disabled={editSaving} onClick={() => handleSaveEdit(note.id)}>
+                                {tc("save")}
+                              </Button>
+                              <Button type="button" variant="outline" size="sm" onClick={cancelEdit}>
+                                {tc("cancel")}
+                              </Button>
+                              {editError && <span className="text-sm font-medium text-destructive">{editError}</span>}
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap items-center gap-1">
+                              <Button type="button" variant="ghost" size="sm" onClick={() => setViewingNoteId(note.id)}>
+                                {t("view")}
+                              </Button>
+                              <Button type="button" variant="ghost" size="sm" onClick={() => startEdit(note)}>
+                                {t("edit")}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                disabled={deletingId === note.id}
+                                onClick={() => handleDelete(note.id)}
+                              >
+                                {t("delete")}
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-muted-foreground">
+                  {t("pagination.showingCount", { shown: pagedNotes.length, total: filteredNotes.length })}
+                </p>
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={currentPage <= 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    >
+                      {t("pagination.previous")}
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      {t("pagination.pageInfo", { page: currentPage, totalPages })}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    >
+                      {t("pagination.next")}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       )}
     </div>
   );

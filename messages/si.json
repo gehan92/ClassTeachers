@@ -1220,6 +1220,7 @@
         "title": "මාතෘකාව",
         "subject": "විෂය",
         "batch": "කණ්ඩායම",
+        "date": "දිනය",
         "pages": "පිටු",
         "views": "බැලීම්",
         "protection": "ආරක්ෂණය",
@@ -1237,6 +1238,23 @@
         "batchGeneral": "සාමාන්‍ය (සියලුම සිසුන්)",
         "fileLabel": "PDF ගොනුව",
         "missingFields": "කරුණාකර මාතෘකාවක් එක් කර PDF ගොනුවක් තෝරන්න."
+      },
+      "filters": {
+        "searchLabel": "සොයන්න",
+        "searchPlaceholder": "සටහන් හෝ කණ්ඩායම සොයන්න...",
+        "batchLabel": "කණ්ඩායම",
+        "allBatches": "සියලු පන්ති",
+        "sortLabel": "දිනය අනුව අනුපිළිවෙල",
+        "sortNewest": "අලුත්ම මුලින්",
+        "sortOldest": "පැරණිම මුලින්",
+        "clearFilters": "පෙරහන් ඉවත් කරන්න",
+        "noResults": "ඔබේ පෙරහන්වලට ගැලපෙන සටහන් නැත."
+      },
+      "pagination": {
+        "showingCount": "{total} න් {shown} පෙන්වයි",
+        "pageInfo": "පිටුව {page} න් {totalPages}",
+        "previous": "පෙර",
+        "next": "ඊළඟ"
       },
       "freePreviewCount": "ඔබේ දැන්වීමේ නොමිලේ පෙරදසුන් ලෙස සටහන් {count} ක් (උපරිම {max}) පෙන්වා ඇත — ගිණුමක් ඇති ඕනෑම කෙනෙකුට ඔබේ පන්තියට සම්බන්ධ නොවී එය බැලිය හැක.",
       "view": "බලන්න",

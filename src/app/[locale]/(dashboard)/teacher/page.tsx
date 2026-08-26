@@ -369,6 +369,8 @@ export default async function TeacherDashboardPage({
     batchTitle: batches.find((b) => b.id === n.batch_id)?.title ?? null,
     pageCount: n.page_count,
     isPublic: n.is_public,
+    createdAtIso: n.created_at,
+    createdLabel: dateFormatter.format(new Date(n.created_at)),
   }));
 
   const students: TeacherStudentRow[] = acceptedEnrollments.map((enrollment) => {

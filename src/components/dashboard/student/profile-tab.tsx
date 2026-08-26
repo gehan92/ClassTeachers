@@ -150,35 +150,43 @@ function ProfileCard({
 
   return (
     <>
-      <div className={panelClass}>
-        <div className="flex flex-wrap items-center gap-4">
+      {/* Same gradient-hero visual language as the teacher public-profile
+       * card (TeacherProfileView's Hero) — purely for consistency between
+       * the two dashboards. Unlike that one, this card is never public: no
+       * rating/join-button, and it's fine to show email/phone here since
+       * this is the student's own private view of their own account. */}
+      <div className="rounded-xl bg-gradient-to-br from-primary to-primary-light p-7 text-white sm:p-9">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
           {photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage public URL
-            <img src={photoUrl} alt="" className="size-20 shrink-0 rounded-full object-cover shadow-sm" />
+            <img
+              src={photoUrl}
+              alt=""
+              className="mx-auto size-28 shrink-0 rounded-full border-4 border-white object-cover shadow-md sm:mx-0"
+            />
           ) : (
             <div
-              className={`flex size-20 shrink-0 items-center justify-center rounded-full font-display text-2xl font-bold text-white shadow-sm ${avatarGradientClass(name)}`}
+              className={`mx-auto flex size-28 shrink-0 items-center justify-center rounded-full border-4 border-white font-display text-3xl font-bold text-white shadow-md sm:mx-0 ${avatarGradientClass(name)}`}
             >
               {name.charAt(0).toUpperCase()}
             </div>
           )}
-          <div className="min-w-0">
-            <h2 className="font-display text-xl text-foreground">{name}</h2>
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              {grade && (
-                <span className="rounded-full bg-background px-2.5 py-1 font-mono text-[11px] text-muted-foreground">
-                  {grade}
-                </span>
-              )}
-              {statusLabel && (
-                <span className="rounded-full bg-background px-2.5 py-1 font-mono text-[11px] text-muted-foreground">
-                  {statusLabel}
-                </span>
-              )}
-            </div>
+          <div className="min-w-0 flex-1">
+            {grade && (
+              <div className="mb-1.5 font-mono text-xs uppercase tracking-[0.12em] text-white/70">{grade}</div>
+            )}
+            <h1 className="mb-2 text-[28px] text-white sm:text-[34px]">{name}</h1>
+            {statusLabel && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-white/85">
+                <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium">{statusLabel}</span>
+              </div>
+            )}
           </div>
         </div>
-        <div className="mt-5 grid grid-cols-1 gap-4 border-t border-border pt-4 sm:grid-cols-3">
+      </div>
+
+      <div className={panelClass}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
             <div className="text-xs text-muted-foreground">{t("classesJoinedLabel")}</div>
             <div className="text-sm font-medium text-foreground">{classesCount}</div>

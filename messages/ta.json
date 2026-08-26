@@ -1340,6 +1340,7 @@
       "createExam": "+ தேர்வை உருவாக்கவும்",
       "examsHeading": "உங்கள் தேர்வுகள்",
       "grade": "மதிப்பிடு",
+      "gradeWithCount": "மதிப்பிடு ({count})",
       "minutes": "{count} நிமிடங்கள்",
       "columns": {
         "exam": "தேர்வு",
@@ -1521,6 +1522,10 @@
     "settings": {
       "heading": "அமைப்புகள்",
       "accountHeading": "கணக்கு",
+      "fields": {
+        "email": "மின்னஞ்சல்",
+        "phone": "தொலைபேசி"
+      },
       "changePassword": "கடவுச்சொல்லை மாற்றவும்",
       "contactHeading": "தொடர்பு விருப்பம்",
       "contactSubtitle": "நீங்கள் மாணவரின் இணைவு கோரிக்கையை ஏற்றுக்கொண்ட பிறகு அவர்கள் காண்பதை இது கட்டுப்படுத்துகிறது.",

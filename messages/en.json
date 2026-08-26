@@ -1340,6 +1340,7 @@
       "createExam": "+ Create exam",
       "examsHeading": "Your exams",
       "grade": "Grade",
+      "gradeWithCount": "Grade ({count})",
       "minutes": "{count} min",
       "columns": {
         "exam": "Exam",
@@ -1521,6 +1522,10 @@
     "settings": {
       "heading": "Settings",
       "accountHeading": "Account",
+      "fields": {
+        "email": "Email",
+        "phone": "Phone"
+      },
       "changePassword": "Change password",
       "contactHeading": "Contact preference",
       "contactSubtitle": "Controls what a student sees once you accept their request to join.",

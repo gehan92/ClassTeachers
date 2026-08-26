@@ -1340,6 +1340,7 @@
       "createExam": "+ විභාගයක් සාදන්න",
       "examsHeading": "ඔබේ විභාග",
       "grade": "ලකුණු කරන්න",
+      "gradeWithCount": "ලකුණු කරන්න ({count})",
       "minutes": "විනාඩි {count}",
       "columns": {
         "exam": "විභාගය",
@@ -1521,6 +1522,10 @@
     "settings": {
       "heading": "සැකසුම්",
       "accountHeading": "ගිණුම",
+      "fields": {
+        "email": "විද්‍යුත් තැපෑල",
+        "phone": "දුරකථනය"
+      },
       "changePassword": "මුරපදය වෙනස් කරන්න",
       "contactHeading": "සම්බන්ධතා මනාපය",
       "contactSubtitle": "ඔබ ශිෂ්‍යයෙකුගේ එකතු වීමේ ඉල්ලීම පිළිගත් පසු ඔවුන් දකින දේ මෙයින් පාලනය වේ.",

@@ -75,6 +75,11 @@ export async function createExam(input: {
       question_ids: parsed.data.questionIds,
       duration_minutes: parsed.data.durationMinutes,
       scheduled_at: parsed.data.scheduledAt,
+      // Draft by default (0063) — the teacher reviews the paper, then
+      // explicitly publishes it via setExamPublished. The column's own DB
+      // default stays true so existing exams weren't retroactively hidden;
+      // new ones start hidden by this app-level override instead.
+      published: false,
     })
     .select("id")
     .single();
@@ -91,6 +96,23 @@ export async function createExam(input: {
     }
   }
 
+  return {};
+}
+
+/** Teacher makes a draft exam visible to students (or pulls a published one
+ * back to draft) — exams' own UPDATE policy (0010) is owner/admin only, so
+ * a plain RLS-scoped update is enough; no manual ownership re-check needed
+ * the way gradeSubmission needs one (that table's RLS also lets a student
+ * update their own row, which this one's doesn't). */
+export async function setExamPublished(examId: string, published: boolean): Promise<ActionResult> {
+  if (!examId) {
+    return { error: "Invalid exam." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.from("exams").update({ published }).eq("id", examId);
+  if (error) {
+    return { error: "Couldn't update this exam. Please try again." };
+  }
   return {};
 }
 

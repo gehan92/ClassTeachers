@@ -1345,6 +1345,17 @@
       "grade": "Grade",
       "gradeWithCount": "Grade ({count})",
       "minutes": "{count} min",
+      "published": "Published",
+      "draft": "Draft",
+      "previewAction": "Preview",
+      "preview": {
+        "heading": "Preview — {title}",
+        "publishedNote": "This exam is live — students in scope can see and sit it.",
+        "draftNote": "This is a draft — students can't see it until you publish it.",
+        "close": "Close",
+        "empty": "No questions in this exam yet.",
+        "questionLabel": "Q{number}"
+      },
       "columns": {
         "exam": "Exam",
         "batch": "Batch",

@@ -8,13 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/features/status-badge";
 import { PhotoViewerPanel } from "@/components/dashboard/inline-file-viewer";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
-import { createExam, gradeSubmission } from "@/lib/dashboard/exams-actions";
+import { createExam, gradeSubmission, setExamPublished } from "@/lib/dashboard/exams-actions";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
+import { cn } from "@/lib/utils";
 
 export type TeacherExamBatchOption = { id: string; title: string; studentCount: number };
 export type TeacherExamStudentOption = { id: string; name: string; batchId: string | null };
@@ -25,7 +27,9 @@ export type TeacherExamRow = {
   durationMinutes: number;
   scheduledLabel: string;
   questionCount: number;
+  questionIds: string[];
   batchTitle: string | null;
+  published: boolean;
 };
 
 const NO_BATCH = "all";
@@ -77,8 +81,17 @@ export function ExamsTab({
   const [saving, setSaving] = useState(false);
 
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
+  const [previewExamId, setPreviewExamId] = useState<string | null>(null);
+  const [togglingPublishId, setTogglingPublishId] = useState<string | null>(null);
 
   const poolForBatch = studentPool.filter((s) => batchId === NO_BATCH || s.batchId === batchId);
+
+  async function handleTogglePublished(examId: string, next: boolean) {
+    setTogglingPublishId(examId);
+    const result = await setExamPublished(examId, next);
+    setTogglingPublishId(null);
+    if (!result.error) refresh();
+  }
 
   function setQuestionChecked(id: string, checked: boolean) {
     setSelectedQuestionIds((ids) => (checked ? [...ids, id] : ids.filter((x) => x !== id)));
@@ -148,6 +161,7 @@ export function ExamsTab({
   }
 
   const selectedExam = exams.find((e) => e.id === selectedExamId) ?? null;
+  const previewExam = exams.find((e) => e.id === previewExamId) ?? null;
   const examSubs = useMemo(
     () => submissions.filter((s) => s.examId === selectedExamId),
     [submissions, selectedExamId],
@@ -317,6 +331,7 @@ export function ExamsTab({
                 <TableHead>{t("columns.duration")}</TableHead>
                 <TableHead>{t("columns.date")}</TableHead>
                 <TableHead>{t("columns.questions")}</TableHead>
+                <TableHead>{t("columns.status")}</TableHead>
                 <TableHead>{t("columns.actions")}</TableHead>
               </TableRow>
             </TableHeader>
@@ -334,15 +349,32 @@ export function ExamsTab({
                     <TableCell className="text-muted-foreground">{exam.scheduledLabel}</TableCell>
                     <TableCell className="text-muted-foreground">{exam.questionCount}</TableCell>
                     <TableCell>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        disabled={total === 0}
-                        onClick={() => setSelectedExamId(exam.id)}
-                      >
-                        {pending > 0 ? t("gradeWithCount", { count: pending }) : t("grade")}
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={exam.published}
+                          disabled={togglingPublishId === exam.id}
+                          onCheckedChange={(checked) => handleTogglePublished(exam.id, checked)}
+                        />
+                        <StatusBadge variant={exam.published ? "active" : "pending"}>
+                          {exam.published ? t("published") : t("draft")}
+                        </StatusBadge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Button type="button" variant="ghost" size="sm" onClick={() => setPreviewExamId(exam.id)}>
+                          {t("previewAction")}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={total === 0}
+                          onClick={() => setSelectedExamId(exam.id)}
+                        >
+                          {pending > 0 ? t("gradeWithCount", { count: pending }) : t("grade")}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -352,12 +384,93 @@ export function ExamsTab({
         )}
       </div>
 
+      {previewExam && (
+        <ExamPreviewPanel exam={previewExam} questions={questions} onClose={() => setPreviewExamId(null)} />
+      )}
+
       {selectedExam && (
         <GradingPanel
           exam={selectedExam}
           submissions={examSubs}
           onClose={() => setSelectedExamId(null)}
         />
+      )}
+    </div>
+  );
+}
+
+/** Lets the teacher check the paper before publishing — the exact
+ * question/option list and order a student would see, plus the correct
+ * answer(s) highlighted (which a student's own view never shows). */
+function ExamPreviewPanel({
+  exam,
+  questions,
+  onClose,
+}: {
+  exam: TeacherExamRow;
+  questions: QuestionBankItem[];
+  onClose: () => void;
+}) {
+  const t = useTranslations("teacherDashboard.exams");
+  const tq = useTranslations("teacherDashboard.questionBank");
+  const questionById = new Map(questions.map((q) => [q.id, q]));
+  const examQuestions = exam.questionIds.map((id) => questionById.get(id)).filter((q): q is QuestionBankItem => Boolean(q));
+
+  return (
+    <div className="rounded-lg border border-border bg-white p-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg">{t("preview.heading", { title: exam.title })}</h3>
+          <p className="text-sm text-muted-foreground">
+            {exam.published ? t("preview.publishedNote") : t("preview.draftNote")}
+          </p>
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={onClose}>
+          {t("preview.close")}
+        </Button>
+      </div>
+      {examQuestions.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("preview.empty")}</p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {examQuestions.map((q, index) => (
+            <div key={q.id} className="rounded-md border border-border p-3.5">
+              <p className="mb-2 text-sm text-foreground">
+                {t("preview.questionLabel", { number: index + 1 })}. {q.text}{" "}
+                <span className="text-muted-foreground">
+                  ({tq(`typeLabel.${q.type}`)} · {t("form.questionMarks", { marks: q.marks })})
+                </span>
+              </p>
+              {q.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL
+                <img src={q.imageUrl} alt="" className="mb-2 max-w-sm rounded-md border border-border" />
+              )}
+              {q.type === "mcq" && q.options && (
+                <ul className="flex flex-col gap-1.5 pl-1">
+                  {q.options.map((option, optionIndex) => {
+                    const isCorrect = (q.correctOptionIds ?? []).includes(option.id);
+                    return (
+                      <li
+                        key={option.id}
+                        className={cn(
+                          "flex flex-wrap items-center gap-2 rounded-sm border px-2.5 py-1.5 text-sm",
+                          isCorrect ? "border-success bg-success/10 font-medium text-success" : "border-border text-foreground/80",
+                        )}
+                      >
+                        <span className="font-mono text-xs">{String.fromCharCode(65 + optionIndex)}.</span>
+                        <span>{option.text}</span>
+                        {option.imageUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL
+                          <img src={option.imageUrl} alt="" className="max-h-20 rounded-sm border border-border" />
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

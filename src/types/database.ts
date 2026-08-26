@@ -466,6 +466,7 @@ export type Database = {
           question_ids: string[];
           duration_minutes: number;
           scheduled_at: string | null;
+          published: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -479,6 +480,7 @@ export type Database = {
           question_ids?: string[];
           duration_minutes: number;
           scheduled_at?: string | null;
+          published?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -492,6 +494,7 @@ export type Database = {
           question_ids?: string[];
           duration_minutes?: number;
           scheduled_at?: string | null;
+          published?: boolean;
           created_at?: string;
           updated_at?: string;
         };

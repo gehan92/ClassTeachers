@@ -1345,6 +1345,17 @@
       "grade": "ලකුණු කරන්න",
       "gradeWithCount": "ලකුණු කරන්න ({count})",
       "minutes": "විනාඩි {count}",
+      "published": "ප්‍රකාශිතයි",
+      "draft": "කෙටුම්පත",
+      "previewAction": "පෙරදසුන",
+      "preview": {
+        "heading": "පෙරදසුන — {title}",
+        "publishedNote": "මෙම විභාගය දැන් සජීවීයි — විෂය පථයේ සිසුන්ට එය දැක ලිවිය හැක.",
+        "draftNote": "මෙය කෙටුම්පතක් — ඔබ ප්‍රකාශයට පත් කරන තෙක් සිසුන්ට එය දැක ගත නොහැක.",
+        "close": "වසන්න",
+        "empty": "මෙම විභාගයේ තවම ප්‍රශ්න නැත.",
+        "questionLabel": "ප්‍ර{number}"
+      },
       "columns": {
         "exam": "විභාගය",
         "batch": "කණ්ඩායම",

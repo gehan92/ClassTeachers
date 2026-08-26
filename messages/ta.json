@@ -1364,6 +1364,8 @@
         "titleLabel": "தேர்வு தலைப்பு",
         "titlePlaceholder": "எ.கா. Mechanics Unit Test — Term 3",
         "batchLabel": "தொகுதி",
+        "allStudentsOption": "என் அனைத்து மாணவர்களும்",
+        "selectAll": "அனைத்தையும் தேர்ந்தெடு",
         "durationLabel": "கால அளவு (நிமிடங்கள்)",
         "dateLabel": "திட்டமிடப்பட்ட தேதி",
         "datePlaceholder": "எ.கா. 10 ஆகஸ்ட் 2026",

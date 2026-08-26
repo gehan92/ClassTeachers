@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/features/status-badge";
 import { PhotoViewerPanel } from "@/components/dashboard/inline-file-viewer";
@@ -15,13 +16,19 @@ import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createExam, gradeSubmission } from "@/lib/dashboard/exams-actions";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
 
+export type TeacherExamBatchOption = { id: string; title: string; studentCount: number };
+export type TeacherExamStudentOption = { id: string; name: string; batchId: string | null };
+
 export type TeacherExamRow = {
   id: string;
   title: string;
   durationMinutes: number;
   scheduledLabel: string;
   questionCount: number;
+  batchTitle: string | null;
 };
+
+const NO_BATCH = "all";
 
 export type ExamSubmissionRow = {
   id: string;
@@ -42,10 +49,16 @@ export function ExamsTab({
   exams,
   submissions,
   questions,
+  batches,
+  totalStudentsCount,
+  studentPool,
 }: {
   exams: TeacherExamRow[];
   submissions: ExamSubmissionRow[];
   questions: QuestionBankItem[];
+  batches: TeacherExamBatchOption[];
+  totalStudentsCount: number;
+  studentPool: TeacherExamStudentOption[];
 }) {
   const t = useTranslations("teacherDashboard.exams");
   const tq = useTranslations("teacherDashboard.questionBank");
@@ -57,14 +70,34 @@ export function ExamsTab({
   const [duration, setDuration] = useState("60");
   const [scheduledAt, setScheduledAt] = useState("");
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
+  const [batchId, setBatchId] = useState<string>(NO_BATCH);
+  const [excludedStudentIds, setExcludedStudentIds] = useState<Set<string>>(new Set());
   const [created, setCreated] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
 
+  const poolForBatch = studentPool.filter((s) => batchId === NO_BATCH || s.batchId === batchId);
+
   function setQuestionChecked(id: string, checked: boolean) {
     setSelectedQuestionIds((ids) => (checked ? [...ids, id] : ids.filter((x) => x !== id)));
+  }
+
+  function handleBatchChange(value: string | null) {
+    setBatchId(value ?? NO_BATCH);
+    // Different pool of students — a leftover exclusion set from the
+    // previous batch wouldn't map to the right people here.
+    setExcludedStudentIds(new Set());
+  }
+
+  function toggleStudent(studentId: string) {
+    setExcludedStudentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(studentId)) next.delete(studentId);
+      else next.add(studentId);
+      return next;
+    });
   }
 
   function resetForm() {
@@ -72,12 +105,20 @@ export function ExamsTab({
     setDuration("60");
     setScheduledAt("");
     setSelectedQuestionIds([]);
+    setBatchId(NO_BATCH);
+    setExcludedStudentIds(new Set());
   }
 
   async function handleCreate() {
     if (!title.trim() || selectedQuestionIds.length === 0 || !scheduledAt) return;
     setSaving(true);
     setError(null);
+    // Nothing excluded = every current member of the pool gets in — see the
+    // comment on exam_participants (0060) for why "everyone" stays unsent.
+    const participantStudentIds =
+      excludedStudentIds.size > 0
+        ? poolForBatch.filter((s) => !excludedStudentIds.has(s.id)).map((s) => s.id)
+        : undefined;
     const result = await createExam({
       ownerType: "teacher",
       title,
@@ -86,6 +127,8 @@ export function ExamsTab({
       // Converted here in the browser — see the note in
       // live-classes-actions.ts's createLiveClassSchema for why.
       scheduledAt: new Date(scheduledAt).toISOString(),
+      batchId: batchId !== NO_BATCH ? batchId : undefined,
+      participantStudentIds,
     });
     setSaving(false);
     if (result.error) {
@@ -178,6 +221,50 @@ export function ExamsTab({
                 onChange={(e) => setScheduledAt(e.target.value)}
               />
             </div>
+            <div className="grid gap-1.5 sm:col-span-2">
+              <Label>{t("form.batchLabel")}</Label>
+              <Select value={batchId} onValueChange={handleBatchChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_BATCH}>
+                    {t("form.allStudentsOption")} ({totalStudentsCount})
+                  </SelectItem>
+                  {batches.map((batch) => (
+                    <SelectItem key={batch.id} value={batch.id}>
+                      {batch.title} ({batch.studentCount})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {poolForBatch.length > 0 && (
+              <div className="rounded-md border border-border p-3 sm:col-span-2">
+                <label className="mb-2 flex items-center gap-2 text-xs font-medium text-foreground">
+                  <input
+                    type="checkbox"
+                    className="size-3.5 accent-primary"
+                    checked={excludedStudentIds.size === 0}
+                    onChange={(e) => setExcludedStudentIds(e.target.checked ? new Set() : new Set(poolForBatch.map((s) => s.id)))}
+                  />
+                  {t("form.selectAll")}
+                </label>
+                <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
+                  {poolForBatch.map((s) => (
+                    <label key={s.id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        className="size-3.5 accent-primary"
+                        checked={!excludedStudentIds.has(s.id)}
+                        onChange={() => toggleStudent(s.id)}
+                      />
+                      {s.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-4">
@@ -226,6 +313,7 @@ export function ExamsTab({
             <TableHeader>
               <TableRow>
                 <TableHead>{t("columns.exam")}</TableHead>
+                <TableHead>{t("columns.batch")}</TableHead>
                 <TableHead>{t("columns.duration")}</TableHead>
                 <TableHead>{t("columns.date")}</TableHead>
                 <TableHead>{t("columns.questions")}</TableHead>
@@ -241,6 +329,7 @@ export function ExamsTab({
                     <TableCell className="max-w-64 whitespace-normal font-medium text-foreground">
                       {exam.title}
                     </TableCell>
+                    <TableCell className="text-muted-foreground">{exam.batchTitle ?? t("form.allStudentsOption")}</TableCell>
                     <TableCell className="text-muted-foreground">{t("minutes", { count: exam.durationMinutes })}</TableCell>
                     <TableCell className="text-muted-foreground">{exam.scheduledLabel}</TableCell>
                     <TableCell className="text-muted-foreground">{exam.questionCount}</TableCell>

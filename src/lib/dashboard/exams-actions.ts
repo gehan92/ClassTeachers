@@ -11,6 +11,12 @@ const createExamSchema = z.object({
   title: z.string().trim().min(2),
   questionIds: z.array(z.string().uuid()).min(1),
   durationMinutes: z.coerce.number().int().min(1),
+  batchId: z.string().uuid().optional(),
+  // Present only when the teacher deliberately excluded someone from the
+  // full batch/all-students pool — see the comment on exam_participants
+  // (0060, mirroring live_class_participants/0055) for why an "include
+  // everyone" selection is sent as nothing at all.
+  participantStudentIds: z.array(z.string().uuid()).optional(),
   // Must already be a UTC ISO string computed in the browser — see the
   // same note in live-classes-actions.ts's createLiveClassSchema.
   scheduledAt: z.iso.datetime(),
@@ -22,6 +28,8 @@ export async function createExam(input: {
   questionIds: string[];
   durationMinutes: string;
   scheduledAt: string;
+  batchId?: string;
+  participantStudentIds?: string[];
 }): Promise<ActionResult> {
   const parsed = createExamSchema.safeParse({
     ownerType: input.ownerType,
@@ -29,6 +37,8 @@ export async function createExam(input: {
     questionIds: input.questionIds,
     durationMinutes: input.durationMinutes || "60",
     scheduledAt: input.scheduledAt,
+    batchId: input.batchId || undefined,
+    participantStudentIds: input.participantStudentIds?.length ? input.participantStudentIds : undefined,
   });
   if (!parsed.success) {
     return { error: "Please add a title, pick at least one question, and set a schedule." };
@@ -55,17 +65,32 @@ export async function createExam(input: {
     ownerId = classProfile.id;
   }
 
-  const { error } = await supabase.from("exams").insert({
-    owner_type: parsed.data.ownerType,
-    owner_id: ownerId,
-    title: parsed.data.title,
-    question_ids: parsed.data.questionIds,
-    duration_minutes: parsed.data.durationMinutes,
-    scheduled_at: parsed.data.scheduledAt,
-  });
-  if (error) {
+  const { data: exam, error } = await supabase
+    .from("exams")
+    .insert({
+      owner_type: parsed.data.ownerType,
+      owner_id: ownerId,
+      batch_id: parsed.data.batchId ?? null,
+      title: parsed.data.title,
+      question_ids: parsed.data.questionIds,
+      duration_minutes: parsed.data.durationMinutes,
+      scheduled_at: parsed.data.scheduledAt,
+    })
+    .select("id")
+    .single();
+  if (error || !exam) {
     return { error: "Couldn't create this exam. Please try again." };
   }
+
+  if (parsed.data.participantStudentIds) {
+    const { error: participantsError } = await supabase
+      .from("exam_participants")
+      .insert(parsed.data.participantStudentIds.map((studentId) => ({ exam_id: exam.id, student_id: studentId })));
+    if (participantsError) {
+      return { error: "Exam was created, but the student list couldn't be saved. Please try again." };
+    }
+  }
+
   return {};
 }
 

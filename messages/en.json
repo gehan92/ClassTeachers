@@ -1364,6 +1364,8 @@
         "titleLabel": "Exam title",
         "titlePlaceholder": "e.g. Mechanics Unit Test — Term 3",
         "batchLabel": "Batch",
+        "allStudentsOption": "All my students",
+        "selectAll": "Select all",
         "durationLabel": "Duration (minutes)",
         "dateLabel": "Scheduled date",
         "datePlaceholder": "e.g. 10 Aug 2026",

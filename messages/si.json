@@ -1364,6 +1364,8 @@
         "titleLabel": "විභාග මාතෘකාව",
         "titlePlaceholder": "උදා: Mechanics Unit Test — Term 3",
         "batchLabel": "කණ්ඩායම",
+        "allStudentsOption": "මගේ සියලුම සිසුන්",
+        "selectAll": "සියල්ල තෝරන්න",
         "durationLabel": "කාල සීමාව (විනාඩි)",
         "dateLabel": "නියමිත දිනය",
         "datePlaceholder": "උදා: 10 අගෝස්තු 2026",

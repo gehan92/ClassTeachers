@@ -299,7 +299,7 @@ export default async function TeacherDashboardPage({
 
   const { data: examDetailRows } = await supabase
     .from("exams")
-    .select("id, title, question_ids, duration_minutes, scheduled_at")
+    .select("id, title, question_ids, duration_minutes, scheduled_at, batch_id")
     .eq("owner_type", "teacher")
     .eq("owner_id", userId)
     .order("scheduled_at", { ascending: false });
@@ -340,6 +340,7 @@ export default async function TeacherDashboardPage({
     durationMinutes: e.duration_minutes,
     scheduledLabel: e.scheduled_at ? scheduleFormatter.format(new Date(e.scheduled_at)) : "—",
     questionCount: e.question_ids.length,
+    batchTitle: e.batch_id ? (batchTitleById.get(e.batch_id) ?? null) : null,
   }));
 
   const examSubmissions: ExamSubmissionRow[] = (submissionDetailRows ?? []).map((s) => ({
@@ -632,7 +633,20 @@ export default async function TeacherDashboardPage({
         notes: <NotesTab notes={notes} batches={batches} />,
         classes: <ClassesTab batches={batches} rosterByBatch={rosterByBatch} />,
         questionBank: <QuestionBankTab initialQuestions={questions} batches={batches} />,
-        exams: <ExamsTab exams={exams} submissions={examSubmissions} questions={questions} />,
+        exams: (
+          <ExamsTab
+            exams={exams}
+            submissions={examSubmissions}
+            questions={questions}
+            batches={batches.map((b) => ({ id: b.id, title: b.title, studentCount: rosterByBatch[b.id]?.length ?? 0 }))}
+            totalStudentsCount={acceptedEnrollments.length}
+            studentPool={acceptedEnrollments.map((e) => ({
+              id: e.student_id,
+              name: studentById.get(e.student_id)?.full_name ?? "—",
+              batchId: e.batch_id,
+            }))}
+          />
+        ),
         assignments: (
           <AssignmentsTab
             assignments={assignments}

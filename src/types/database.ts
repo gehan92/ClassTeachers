@@ -458,6 +458,7 @@ export type Database = {
           owner_type: OwnerType;
           owner_id: string;
           subject_id: string | null;
+          batch_id: string | null;
           title: string;
           question_ids: string[];
           duration_minutes: number;
@@ -470,6 +471,7 @@ export type Database = {
           owner_type: OwnerType;
           owner_id: string;
           subject_id?: string | null;
+          batch_id?: string | null;
           title: string;
           question_ids?: string[];
           duration_minutes: number;
@@ -482,6 +484,7 @@ export type Database = {
           owner_type?: OwnerType;
           owner_id?: string;
           subject_id?: string | null;
+          batch_id?: string | null;
           title?: string;
           question_ids?: string[];
           duration_minutes?: number;
@@ -491,6 +494,22 @@ export type Database = {
         };
         // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
         // every table declares no relationships rather than a guessed one.
+        Relationships: [];
+      };
+
+      exam_participants: {
+        Row: {
+          exam_id: string;
+          student_id: string;
+        };
+        Insert: {
+          exam_id: string;
+          student_id: string;
+        };
+        Update: {
+          exam_id?: string;
+          student_id?: string;
+        };
         Relationships: [];
       };
 
@@ -1078,6 +1097,14 @@ export type Database = {
         Returns: boolean;
       };
       visible_live_class_ids: {
+        Args: { p_ids: string[] };
+        Returns: string[];
+      };
+      is_enrolled_in_exam: {
+        Args: { p_exam_id: string };
+        Returns: boolean;
+      };
+      visible_exam_ids: {
         Args: { p_ids: string[] };
         Returns: string[];
       };

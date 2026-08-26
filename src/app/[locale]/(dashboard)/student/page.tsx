@@ -66,7 +66,21 @@ export default async function StudentDashboardPage({
   const acceptedEnrollments = (enrollments ?? []).filter((e) => e.status === "accepted");
   const classesCount = acceptedEnrollments.length;
   const submissionByExamId = new Map((submissionRows ?? []).map((s) => [s.exam_id, s]));
-  const examsDueCount = (examRows ?? []).filter((e) => submissionByExamId.get(e.id)?.status !== "graded").length;
+
+  // An exam can be narrowed by batch and/or an explicit hand-picked student
+  // list (0060/0061) — is_enrolled_in_exam() is the one place both checks
+  // actually live, so this asks the database the same question its own
+  // question-bank/submission RLS asks, instead of re-deriving the batch/
+  // participant logic here and risking it drifting out of sync. Same
+  // pattern as visible_live_class_ids above.
+  const allExamIds = (examRows ?? []).map((e) => e.id);
+  const { data: visibleExamIds } = allExamIds.length
+    ? await supabase.rpc("visible_exam_ids", { p_ids: allExamIds })
+    : { data: [] as string[] };
+  const visibleExamIdSet = new Set(visibleExamIds ?? []);
+  const visibleExamRows = (examRows ?? []).filter((e) => visibleExamIdSet.has(e.id));
+
+  const examsDueCount = visibleExamRows.filter((e) => submissionByExamId.get(e.id)?.status !== "graded").length;
 
   const teacherIds = acceptedEnrollments.filter((e) => e.owner_type === "teacher").map((e) => e.owner_id);
   const classIds = acceptedEnrollments.filter((e) => e.owner_type === "class").map((e) => e.owner_id);
@@ -205,7 +219,7 @@ export default async function StudentDashboardPage({
     }));
 
   type RawQuestionOption = { id: string; text: string; imagePath?: string };
-  const allQuestionIds = [...new Set((examRows ?? []).flatMap((e) => e.question_ids))];
+  const allQuestionIds = [...new Set(visibleExamRows.flatMap((e) => e.question_ids))];
   const { data: examQuestionRows } = allQuestionIds.length
     ? await supabase
         .from("question_bank_items")
@@ -239,7 +253,7 @@ export default async function StudentDashboardPage({
     }
   }
 
-  const exams: StudentExamRow[] = (examRows ?? []).map((e) => {
+  const exams: StudentExamRow[] = visibleExamRows.map((e) => {
     const submission = submissionByExamId.get(e.id);
     return {
       id: e.id,

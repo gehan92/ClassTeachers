@@ -1371,6 +1371,34 @@
         "open": "Open",
         "closed": "Closed"
       },
+      "filters": {
+        "searchLabel": "Search",
+        "searchPlaceholder": "Search exam or batch...",
+        "batchLabel": "Batch",
+        "allBatches": "All batches",
+        "durationLabel": "Duration",
+        "durationAny": "Any duration",
+        "durationUnder30": "Under 30 min",
+        "duration30to60": "30–60 min",
+        "durationOver60": "Over 60 min",
+        "questionsLabel": "Questions",
+        "questionsAny": "Any",
+        "questions1to5": "1–5",
+        "questions6to10": "6–10",
+        "questions11plus": "11+",
+        "statusLabel": "Status",
+        "statusAny": "All statuses",
+        "dateFromLabel": "From",
+        "dateToLabel": "To",
+        "clearFilters": "Clear filters",
+        "noResults": "No exams match your filters."
+      },
+      "pagination": {
+        "showingCount": "Showing {shown} of {total}",
+        "pageInfo": "Page {page} of {totalPages}",
+        "previous": "Previous",
+        "next": "Next"
+      },
       "form": {
         "title": "New exam",
         "titleLabel": "Exam title",

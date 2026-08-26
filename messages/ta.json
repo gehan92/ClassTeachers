@@ -1371,6 +1371,34 @@
         "open": "திறந்துள்ளது",
         "closed": "முடிந்தது"
       },
+      "filters": {
+        "searchLabel": "தேடு",
+        "searchPlaceholder": "தேர்வு அல்லது குழுவைத் தேடு...",
+        "batchLabel": "குழு",
+        "allBatches": "அனைத்து குழுக்களும்",
+        "durationLabel": "கால அளவு",
+        "durationAny": "எந்த கால அளவும்",
+        "durationUnder30": "30 நிமிடங்களுக்கு கீழ்",
+        "duration30to60": "30–60 நிமிடங்கள்",
+        "durationOver60": "60 நிமிடங்களுக்கு மேல்",
+        "questionsLabel": "கேள்விகள்",
+        "questionsAny": "ஏதேனும்",
+        "questions1to5": "1–5",
+        "questions6to10": "6–10",
+        "questions11plus": "11+",
+        "statusLabel": "நிலை",
+        "statusAny": "அனைத்து நிலைகளும்",
+        "dateFromLabel": "இருந்து",
+        "dateToLabel": "வரை",
+        "clearFilters": "வடிகட்டிகளை அழி",
+        "noResults": "உங்கள் வடிகட்டிகளுக்கு பொருந்தும் தேர்வுகள் இல்லை."
+      },
+      "pagination": {
+        "showingCount": "{total} இல் {shown} காட்டப்படுகிறது",
+        "pageInfo": "பக்கம் {page} / {totalPages}",
+        "previous": "முந்தைய",
+        "next": "அடுத்து"
+      },
       "form": {
         "title": "புதிய தேர்வு",
         "titleLabel": "தேர்வு தலைப்பு",

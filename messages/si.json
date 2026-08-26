@@ -1371,6 +1371,34 @@
         "open": "විවෘතයි",
         "closed": "අවසන්"
       },
+      "filters": {
+        "searchLabel": "සොයන්න",
+        "searchPlaceholder": "විභාගය හෝ කණ්ඩායම සොයන්න...",
+        "batchLabel": "කණ්ඩායම",
+        "allBatches": "සියලු කණ්ඩායම්",
+        "durationLabel": "කාල සීමාව",
+        "durationAny": "ඕනෑම කාලයක්",
+        "durationUnder30": "විනාඩි 30 ට අඩු",
+        "duration30to60": "විනාඩි 30–60",
+        "durationOver60": "විනාඩි 60 ට වැඩි",
+        "questionsLabel": "ප්‍රශ්න",
+        "questionsAny": "ඕනෑම ගණනක්",
+        "questions1to5": "1–5",
+        "questions6to10": "6–10",
+        "questions11plus": "11+",
+        "statusLabel": "තත්ත්වය",
+        "statusAny": "සියලු තත්ත්ව",
+        "dateFromLabel": "සිට",
+        "dateToLabel": "දක්වා",
+        "clearFilters": "පෙරහන් ඉවත් කරන්න",
+        "noResults": "ඔබේ පෙරහන්වලට ගැලපෙන විභාග නැත."
+      },
+      "pagination": {
+        "showingCount": "{total} න් {shown} පෙන්වයි",
+        "pageInfo": "පිටුව {page} න් {totalPages}",
+        "previous": "පෙර",
+        "next": "ඊළඟ"
+      },
       "form": {
         "title": "නව විභාගය",
         "titleLabel": "විභාග මාතෘකාව",

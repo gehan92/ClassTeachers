@@ -425,6 +425,7 @@ export default async function TeacherDashboardPage({
     id: e.id,
     title: e.title,
     durationMinutes: e.duration_minutes,
+    scheduledAtIso: e.scheduled_at,
     scheduledLabel: e.scheduled_at ? scheduleFormatter.format(new Date(e.scheduled_at)) : "—",
     questionCount: e.question_ids.length,
     questionIds: e.question_ids,

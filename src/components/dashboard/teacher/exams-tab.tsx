@@ -25,12 +25,19 @@ export type TeacherExamRow = {
   id: string;
   title: string;
   durationMinutes: number;
+  scheduledAtIso: string | null;
   scheduledLabel: string;
   questionCount: number;
   questionIds: string[];
   batchTitle: string | null;
   published: boolean;
 };
+
+const PAGE_SIZE = 10;
+const ALL_BATCHES_FILTER = "all";
+const ALL_STATUS_FILTER = "all";
+const ALL_DURATION_FILTER = "all";
+const ALL_QUESTIONS_FILTER = "all";
 
 const NO_BATCH = "all";
 
@@ -84,7 +91,69 @@ export function ExamsTab({
   const [previewExamId, setPreviewExamId] = useState<string | null>(null);
   const [togglingPublishId, setTogglingPublishId] = useState<string | null>(null);
 
+  const [filterQuery, setFilterQuery] = useState("");
+  const [filterBatch, setFilterBatch] = useState(ALL_BATCHES_FILTER);
+  const [filterDuration, setFilterDuration] = useState(ALL_DURATION_FILTER);
+  const [filterStatus, setFilterStatus] = useState(ALL_STATUS_FILTER);
+  const [filterQuestions, setFilterQuestions] = useState(ALL_QUESTIONS_FILTER);
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+  const [page, setPage] = useState(1);
+
   const poolForBatch = studentPool.filter((s) => batchId === NO_BATCH || s.batchId === batchId);
+
+  const filtersActive =
+    filterQuery.trim() !== "" ||
+    filterBatch !== ALL_BATCHES_FILTER ||
+    filterDuration !== ALL_DURATION_FILTER ||
+    filterStatus !== ALL_STATUS_FILTER ||
+    filterQuestions !== ALL_QUESTIONS_FILTER ||
+    filterDateFrom !== "" ||
+    filterDateTo !== "";
+
+  const distinctBatchTitles = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of exams) if (e.batchTitle) set.add(e.batchTitle);
+    return Array.from(set).sort();
+  }, [exams]);
+  const hasUnscopedExam = exams.some((e) => e.batchTitle === null);
+
+  const filteredExams = useMemo(() => {
+    const q = filterQuery.trim().toLowerCase();
+    const fromDate = filterDateFrom ? new Date(`${filterDateFrom}T00:00:00`) : null;
+    const toDate = filterDateTo ? new Date(`${filterDateTo}T23:59:59`) : null;
+    return exams.filter((e) => {
+      if (q && !e.title.toLowerCase().includes(q) && !(e.batchTitle ?? "").toLowerCase().includes(q)) return false;
+      if (filterBatch === "unscoped" && e.batchTitle !== null) return false;
+      if (filterBatch !== ALL_BATCHES_FILTER && filterBatch !== "unscoped" && e.batchTitle !== filterBatch) return false;
+      if (filterDuration === "under30" && e.durationMinutes >= 30) return false;
+      if (filterDuration === "30to60" && (e.durationMinutes < 30 || e.durationMinutes > 60)) return false;
+      if (filterDuration === "over60" && e.durationMinutes <= 60) return false;
+      if (filterStatus === "published" && !e.published) return false;
+      if (filterStatus === "draft" && e.published) return false;
+      if (filterQuestions === "1to5" && (e.questionCount < 1 || e.questionCount > 5)) return false;
+      if (filterQuestions === "6to10" && (e.questionCount < 6 || e.questionCount > 10)) return false;
+      if (filterQuestions === "11plus" && e.questionCount <= 10) return false;
+      if (fromDate && (!e.scheduledAtIso || new Date(e.scheduledAtIso) < fromDate)) return false;
+      if (toDate && (!e.scheduledAtIso || new Date(e.scheduledAtIso) > toDate)) return false;
+      return true;
+    });
+  }, [exams, filterQuery, filterBatch, filterDuration, filterStatus, filterQuestions, filterDateFrom, filterDateTo]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredExams.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedExams = filteredExams.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  function clearFilters() {
+    setFilterQuery("");
+    setFilterBatch(ALL_BATCHES_FILTER);
+    setFilterDuration(ALL_DURATION_FILTER);
+    setFilterStatus(ALL_STATUS_FILTER);
+    setFilterQuestions(ALL_QUESTIONS_FILTER);
+    setFilterDateFrom("");
+    setFilterDateTo("");
+    setPage(1);
+  }
 
   async function handleTogglePublished(examId: string, next: boolean) {
     setTogglingPublishId(examId);
@@ -323,64 +392,238 @@ export function ExamsTab({
         {exams.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">{t("grading.noSubmissions")}</p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("columns.exam")}</TableHead>
-                <TableHead>{t("columns.batch")}</TableHead>
-                <TableHead>{t("columns.duration")}</TableHead>
-                <TableHead>{t("columns.date")}</TableHead>
-                <TableHead>{t("columns.questions")}</TableHead>
-                <TableHead>{t("columns.status")}</TableHead>
-                <TableHead>{t("columns.actions")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {exams.map((exam) => {
-                const total = submissionCountByExam.get(exam.id) ?? 0;
-                const pending = pendingCountByExam.get(exam.id) ?? 0;
-                return (
-                  <TableRow key={exam.id}>
-                    <TableCell className="max-w-64 whitespace-normal font-medium text-foreground">
-                      {exam.title}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{exam.batchTitle ?? t("form.allStudentsOption")}</TableCell>
-                    <TableCell className="text-muted-foreground">{t("minutes", { count: exam.durationMinutes })}</TableCell>
-                    <TableCell className="text-muted-foreground">{exam.scheduledLabel}</TableCell>
-                    <TableCell className="text-muted-foreground">{exam.questionCount}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={exam.published}
-                          disabled={togglingPublishId === exam.id}
-                          onCheckedChange={(checked) => handleTogglePublished(exam.id, checked)}
-                        />
-                        <StatusBadge variant={exam.published ? "active" : "pending"}>
-                          {exam.published ? t("published") : t("draft")}
-                        </StatusBadge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <Button type="button" variant="ghost" size="sm" onClick={() => setPreviewExamId(exam.id)}>
-                          {t("previewAction")}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          disabled={total === 0}
-                          onClick={() => setSelectedExamId(exam.id)}
-                        >
-                          {pending > 0 ? t("gradeWithCount", { count: pending }) : t("grade")}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <>
+            <div className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-border bg-muted/30 p-3.5">
+              <div className="grid min-w-48 flex-1 gap-1.5">
+                <Label htmlFor="exam-filter-search">{t("filters.searchLabel")}</Label>
+                <Input
+                  id="exam-filter-search"
+                  placeholder={t("filters.searchPlaceholder")}
+                  value={filterQuery}
+                  onChange={(e) => {
+                    setFilterQuery(e.target.value);
+                    setPage(1);
+                  }}
+                />
+              </div>
+              <div className="grid w-44 gap-1.5">
+                <Label>{t("filters.batchLabel")}</Label>
+                <Select
+                  value={filterBatch}
+                  onValueChange={(v) => {
+                    setFilterBatch(v ?? ALL_BATCHES_FILTER);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_BATCHES_FILTER}>{t("filters.allBatches")}</SelectItem>
+                    {hasUnscopedExam && (
+                      <SelectItem value="unscoped">{t("form.allStudentsOption")}</SelectItem>
+                    )}
+                    {distinctBatchTitles.map((title) => (
+                      <SelectItem key={title} value={title}>
+                        {title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid w-40 gap-1.5">
+                <Label>{t("filters.durationLabel")}</Label>
+                <Select
+                  value={filterDuration}
+                  onValueChange={(v) => {
+                    setFilterDuration(v ?? ALL_DURATION_FILTER);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_DURATION_FILTER}>{t("filters.durationAny")}</SelectItem>
+                    <SelectItem value="under30">{t("filters.durationUnder30")}</SelectItem>
+                    <SelectItem value="30to60">{t("filters.duration30to60")}</SelectItem>
+                    <SelectItem value="over60">{t("filters.durationOver60")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid w-36 gap-1.5">
+                <Label>{t("filters.questionsLabel")}</Label>
+                <Select
+                  value={filterQuestions}
+                  onValueChange={(v) => {
+                    setFilterQuestions(v ?? ALL_QUESTIONS_FILTER);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_QUESTIONS_FILTER}>{t("filters.questionsAny")}</SelectItem>
+                    <SelectItem value="1to5">{t("filters.questions1to5")}</SelectItem>
+                    <SelectItem value="6to10">{t("filters.questions6to10")}</SelectItem>
+                    <SelectItem value="11plus">{t("filters.questions11plus")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid w-36 gap-1.5">
+                <Label>{t("filters.statusLabel")}</Label>
+                <Select
+                  value={filterStatus}
+                  onValueChange={(v) => {
+                    setFilterStatus(v ?? ALL_STATUS_FILTER);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_STATUS_FILTER}>{t("filters.statusAny")}</SelectItem>
+                    <SelectItem value="published">{t("published")}</SelectItem>
+                    <SelectItem value="draft">{t("draft")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid w-36 gap-1.5">
+                <Label htmlFor="exam-filter-from">{t("filters.dateFromLabel")}</Label>
+                <Input
+                  id="exam-filter-from"
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => {
+                    setFilterDateFrom(e.target.value);
+                    setPage(1);
+                  }}
+                />
+              </div>
+              <div className="grid w-36 gap-1.5">
+                <Label htmlFor="exam-filter-to">{t("filters.dateToLabel")}</Label>
+                <Input
+                  id="exam-filter-to"
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => {
+                    setFilterDateTo(e.target.value);
+                    setPage(1);
+                  }}
+                />
+              </div>
+              {filtersActive && (
+                <Button type="button" variant="outline" size="sm" onClick={clearFilters}>
+                  {t("filters.clearFilters")}
+                </Button>
+              )}
+            </div>
+
+            {filteredExams.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">{t("filters.noResults")}</p>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("columns.exam")}</TableHead>
+                      <TableHead>{t("columns.batch")}</TableHead>
+                      <TableHead>{t("columns.duration")}</TableHead>
+                      <TableHead>{t("columns.date")}</TableHead>
+                      <TableHead>{t("columns.questions")}</TableHead>
+                      <TableHead>{t("columns.status")}</TableHead>
+                      <TableHead>{t("columns.actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pagedExams.map((exam) => {
+                      const total = submissionCountByExam.get(exam.id) ?? 0;
+                      const pending = pendingCountByExam.get(exam.id) ?? 0;
+                      return (
+                        <TableRow key={exam.id}>
+                          <TableCell className="max-w-64 whitespace-normal font-medium text-foreground">
+                            {exam.title}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {exam.batchTitle ?? t("form.allStudentsOption")}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {t("minutes", { count: exam.durationMinutes })}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{exam.scheduledLabel}</TableCell>
+                          <TableCell className="text-muted-foreground">{exam.questionCount}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={exam.published}
+                                disabled={togglingPublishId === exam.id}
+                                onCheckedChange={(checked) => handleTogglePublished(exam.id, checked)}
+                              />
+                              <StatusBadge variant={exam.published ? "active" : "pending"}>
+                                {exam.published ? t("published") : t("draft")}
+                              </StatusBadge>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <Button type="button" variant="ghost" size="sm" onClick={() => setPreviewExamId(exam.id)}>
+                                {t("previewAction")}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                disabled={total === 0}
+                                onClick={() => setSelectedExamId(exam.id)}
+                              >
+                                {pending > 0 ? t("gradeWithCount", { count: pending }) : t("grade")}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-muted-foreground">
+                    {t("pagination.showingCount", {
+                      shown: pagedExams.length,
+                      total: filteredExams.length,
+                    })}
+                  </p>
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage <= 1}
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      >
+                        {t("pagination.previous")}
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        {t("pagination.pageInfo", { page: currentPage, totalPages })}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage >= totalPages}
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      >
+                        {t("pagination.next")}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </>
         )}
       </div>
 

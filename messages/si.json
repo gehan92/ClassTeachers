@@ -1051,6 +1051,28 @@
       "saveChanges": "වෙනස්කම් සුරකින්න",
       "saved": "සුරකින ලදී",
       "changePassword": "මුරපදය වෙනස් කරන්න",
+      "aboutHeading": "මා ගැන",
+      "bioPlaceholder": "ඔබ ගැන ටිකක් කියන්න...",
+      "educationHeading": "අධ්‍යාපනය",
+      "educationLevelPlaceholder": "ඔබේ වත්මන් තත්ත්වය තෝරන්න",
+      "educationOptions": {
+        "school": "දැනට පාසලේ",
+        "campus": "දැනට කැම්පස් / විශ්වවිද්‍යාලයේ",
+        "graduated": "උපාධිධාරී / දැනට අධ්‍යාපනය නොලබයි"
+      },
+      "institutionPlaceholder": "උදා: රාජකීය විද්‍යාලය, කොළඹ",
+      "qualificationPlaceholder": "උදා: තොරතුරු තාක්ෂණ ඩිප්ලෝමාව",
+      "subjectsPlaceholder": "උදා: සංයුක්ත ගණිතය, භෞතික විද්‍යාව, රසායන විද්‍යාව",
+      "languagesPlaceholder": "උදා: සිංහල, ඉංග්‍රීසි",
+      "commaHint": "අල්පවිරාම මගින් වෙන් කරන්න",
+      "fields": {
+        "bio": "මා ගැන",
+        "educationLevel": "වත්මන් තත්ත්වය",
+        "institutionName": "පාසල / ආයතනයේ නම",
+        "qualification": "උපාධිය / ඩිප්ලෝමාව (තිබේ නම්)",
+        "subjects": "විෂයයන්",
+        "languages": "භාෂා"
+      },
       "notificationsTitle": "දැනුම්දීම්",
       "notifNewNotes": "නව සටහන්",
       "notifLiveReminders": "සජීවී පන්ති මතක් කිරීම්",

@@ -5,18 +5,42 @@ import { createClient } from "@/lib/supabase/server";
 
 type ActionResult = { error: string } | { error?: undefined };
 
+const educationLevels = ["school", "campus", "graduated"] as const;
+
 const studentProfileSchema = z.object({
   fullName: z.string().trim().min(2),
   phone: z.string().trim().optional(),
   gradeLevel: z.string().trim().optional(),
+  bio: z.string().trim().optional(),
+  educationLevel: z.enum(educationLevels).optional(),
+  institutionName: z.string().trim().optional(),
+  qualification: z.string().trim().optional(),
+  subjects: z.array(z.string().trim()).transform((arr) => arr.filter(Boolean)),
+  languages: z.array(z.string().trim()).transform((arr) => arr.filter(Boolean)),
 });
 
 export async function updateStudentProfile(input: {
   fullName: string;
   phone: string;
   gradeLevel: string;
+  bio: string;
+  educationLevel: string;
+  institutionName: string;
+  qualification: string;
+  subjects: string[];
+  languages: string[];
 }): Promise<ActionResult> {
-  const parsed = studentProfileSchema.safeParse(input);
+  const parsed = studentProfileSchema.safeParse({
+    fullName: input.fullName,
+    phone: input.phone,
+    gradeLevel: input.gradeLevel,
+    bio: input.bio,
+    educationLevel: input.educationLevel || undefined,
+    institutionName: input.institutionName,
+    qualification: input.qualification,
+    subjects: input.subjects,
+    languages: input.languages,
+  });
   if (!parsed.success) {
     return { error: "Please check your name and try again." };
   }
@@ -35,6 +59,12 @@ export async function updateStudentProfile(input: {
       full_name: parsed.data.fullName,
       phone: parsed.data.phone || null,
       grade_level: parsed.data.gradeLevel || null,
+      bio: parsed.data.bio || null,
+      education_level: parsed.data.educationLevel ?? null,
+      institution_name: parsed.data.institutionName || null,
+      qualification: parsed.data.qualification || null,
+      subjects: parsed.data.subjects.length > 0 ? parsed.data.subjects : null,
+      languages: parsed.data.languages.length > 0 ? parsed.data.languages : null,
     })
     .eq("id", user.id);
   if (error) {

@@ -58,6 +58,12 @@ export type Database = {
           phone: string | null;
           avatar_url: string | null;
           grade_level: string | null;
+          bio: string | null;
+          education_level: "school" | "campus" | "graduated" | null;
+          institution_name: string | null;
+          qualification: string | null;
+          subjects: string[] | null;
+          languages: string[] | null;
           notification_prefs: Json;
           preferred_locale: string;
           created_at: string;
@@ -70,6 +76,12 @@ export type Database = {
           phone?: string | null;
           avatar_url?: string | null;
           grade_level?: string | null;
+          bio?: string | null;
+          education_level?: "school" | "campus" | "graduated" | null;
+          institution_name?: string | null;
+          qualification?: string | null;
+          subjects?: string[] | null;
+          languages?: string[] | null;
           notification_prefs?: Json;
           preferred_locale?: string;
           created_at?: string;
@@ -82,6 +94,12 @@ export type Database = {
           phone?: string | null;
           avatar_url?: string | null;
           grade_level?: string | null;
+          bio?: string | null;
+          education_level?: "school" | "campus" | "graduated" | null;
+          institution_name?: string | null;
+          qualification?: string | null;
+          subjects?: string[] | null;
+          languages?: string[] | null;
           notification_prefs?: Json;
           preferred_locale?: string;
           created_at?: string;

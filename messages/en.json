@@ -1051,6 +1051,28 @@
       "saveChanges": "Save changes",
       "saved": "Saved",
       "changePassword": "Change password",
+      "aboutHeading": "About me",
+      "bioPlaceholder": "Tell us a little about yourself...",
+      "educationHeading": "Education",
+      "educationLevelPlaceholder": "Select your current status",
+      "educationOptions": {
+        "school": "Currently in school",
+        "campus": "Currently at campus / university",
+        "graduated": "Graduated / not currently studying"
+      },
+      "institutionPlaceholder": "e.g. Royal College, Colombo",
+      "qualificationPlaceholder": "e.g. Diploma in Information Technology",
+      "subjectsPlaceholder": "e.g. Combined Maths, Physics, Chemistry",
+      "languagesPlaceholder": "e.g. Sinhala, English",
+      "commaHint": "Separate with commas",
+      "fields": {
+        "bio": "About me",
+        "educationLevel": "Current status",
+        "institutionName": "School / Institution name",
+        "qualification": "Degree / Diploma (if any)",
+        "subjects": "Subjects",
+        "languages": "Languages"
+      },
       "notificationsTitle": "Notifications",
       "notifNewNotes": "New notes",
       "notifLiveReminders": "Live class reminders",

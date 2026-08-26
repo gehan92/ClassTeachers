@@ -71,7 +71,9 @@ export default async function StudentDashboardPage({
   ] = await Promise.all([
     supabase
       .from("profiles")
-      .select("full_name, phone, grade_level, notification_prefs, avatar_url")
+      .select(
+        "full_name, phone, grade_level, notification_prefs, avatar_url, bio, education_level, institution_name, qualification, subjects, languages",
+      )
       .eq("id", userId)
       .single(),
     supabase.from("enrollments").select("id, owner_type, owner_id, batch_id, joined_at, status"),
@@ -496,6 +498,12 @@ export default async function StudentDashboardPage({
             initialGrade={profile?.grade_level ?? ""}
             initialNotificationPrefs={(profile?.notification_prefs as Record<string, boolean>) ?? {}}
             initialPhotoUrl={profile?.avatar_url ?? null}
+            initialBio={profile?.bio ?? ""}
+            initialEducationLevel={profile?.education_level ?? null}
+            initialInstitutionName={profile?.institution_name ?? ""}
+            initialQualification={profile?.qualification ?? ""}
+            initialSubjects={profile?.subjects ?? []}
+            initialLanguages={profile?.languages ?? []}
             classesCount={classesCount}
             email={user!.email ?? ""}
           />

@@ -913,7 +913,8 @@
       "assignments": "Assignments",
       "reviews": "My Reviews",
       "profile": "Profile",
-      "settings": "Settings"
+      "settings": "Settings",
+      "wantedAds": "Post an Ad"
     },
     "overview": {
       "greeting": "Good evening, {name}",
@@ -1164,6 +1165,39 @@
       "changePassword": "Change password",
       "contactHeading": "Contact preference",
       "contactSubtitle": "Controls what your teachers can see about you."
+    },
+    "wantedAds": {
+      "heading": "Post an Ad",
+      "subtitle": "Let teachers and institutes know what you're looking for.",
+      "creatorHeading": "What are you looking for?",
+      "creatorSubtitle": "Post a request and teachers or institutes can reach out to you.",
+      "postAd": "Post ad",
+      "lookingForLabel": "I'm looking for",
+      "lookingForOptions": {
+        "teacher": "A teacher",
+        "institute": "An institute"
+      },
+      "subjectLabel": "Subject",
+      "subjectPlaceholder": "Select a subject",
+      "modeLabel": "Mode",
+      "modePlaceholder": "Select a mode",
+      "modeOptions": {
+        "online": "Online",
+        "physical": "In-person",
+        "both": "Either"
+      },
+      "gradeLabel": "Grade / level",
+      "gradePlaceholder": "e.g. Grade 11",
+      "titleLabel": "Ad headline",
+      "titlePlaceholder": "e.g. Looking for a Maths tutor for O/L",
+      "titleRequired": "Please add a headline for your ad.",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Share a bit more about what you need...",
+      "emptyState": "You haven't posted any ads yet.",
+      "statusOpen": "Open",
+      "statusClosed": "Closed",
+      "editAd": "Edit",
+      "deleteAd": "Delete"
     },
     "common": {
       "save": "Save",

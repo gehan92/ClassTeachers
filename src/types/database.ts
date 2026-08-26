@@ -914,6 +914,49 @@ export type Database = {
         Relationships: [];
       };
 
+      wanted_ads: {
+        Row: {
+          id: string;
+          student_id: string;
+          looking_for: "teacher" | "institute";
+          subject_id: string | null;
+          mode: "online" | "physical" | "both" | null;
+          grade_level: string | null;
+          title: string;
+          description: string | null;
+          status: "active" | "closed";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          student_id: string;
+          looking_for: "teacher" | "institute";
+          subject_id?: string | null;
+          mode?: "online" | "physical" | "both" | null;
+          grade_level?: string | null;
+          title: string;
+          description?: string | null;
+          status?: "active" | "closed";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          student_id?: string;
+          looking_for?: "teacher" | "institute";
+          subject_id?: string | null;
+          mode?: "online" | "physical" | "both" | null;
+          grade_level?: string | null;
+          title?: string;
+          description?: string | null;
+          status?: "active" | "closed";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+
       reviews: {
         Row: {
           id: string;

@@ -9,6 +9,7 @@ import { AssignmentsTab } from "@/components/dashboard/student/assignments-tab";
 import { ReviewsTab } from "@/components/dashboard/student/reviews-tab";
 import { ProfileTab } from "@/components/dashboard/student/profile-tab";
 import { SettingsTab } from "@/components/dashboard/student/settings-tab";
+import { WantedAdsTab } from "@/components/dashboard/student/wanted-ads-tab";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import type { MyClassRow, AvailableBatchRow } from "@/components/dashboard/student/classes-tab";
@@ -17,6 +18,7 @@ import type { ReviewTarget, StudentPostedReview } from "@/components/dashboard/s
 import type { StudentLiveClassRow } from "@/components/dashboard/student/live-classes-tab";
 import type { StudentExamRow, StudentExamQuestion } from "@/components/dashboard/student/exams-tab";
 import type { StudentAssignmentRow } from "@/components/dashboard/student/assignments-tab";
+import type { WantedAdRow } from "@/components/dashboard/student/wanted-ads-tab";
 
 type RawQuestionOption = { id: string; text: string; imagePath?: string };
 type RawLiveClassRow = {
@@ -69,6 +71,8 @@ export default async function StudentDashboardPage({
     { data: assignmentRows },
     { data: assignmentSubmissionRows },
     { data: myReviewRows },
+    { data: wantedAdRows },
+    { data: subjectRows },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -103,6 +107,16 @@ export default async function StudentDashboardPage({
       .select("id, target_type, target_id, rating, comment, created_at")
       .eq("reviewer_id", userId)
       .in("target_type", ["teacher", "class"]),
+    supabase
+      .from("wanted_ads")
+      .select("id, looking_for, subject_id, mode, grade_level, title, description, status")
+      .eq("student_id", userId)
+      .order("created_at", { ascending: false }),
+    // The full catalog, not just subjects this student already has a class
+    // in — unlike the teacher Ads tab (scoped to subject_links, what that
+    // teacher already teaches), a student can be looking for help with any
+    // subject that exists, including ones they've never had a class for.
+    supabase.from("subjects").select("id, translations"),
   ]);
 
   const fullName = profile?.full_name ?? user!.email ?? "Student";
@@ -436,6 +450,24 @@ export default async function StudentDashboardPage({
     .slice(0, 2)
     .map((e) => e.title);
 
+  const subjectOptions = (subjectRows ?? [])
+    .map((s) => ({ id: s.id, name: (s.translations as Record<string, string> | null)?.en ?? "" }))
+    .filter((s) => s.name)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const subjectNameById = new Map(subjectOptions.map((s) => [s.id, s.name]));
+
+  const wantedAds: WantedAdRow[] = (wantedAdRows ?? []).map((ad) => ({
+    id: ad.id,
+    lookingFor: ad.looking_for,
+    subjectId: ad.subject_id,
+    subjectName: ad.subject_id ? (subjectNameById.get(ad.subject_id) ?? null) : null,
+    mode: ad.mode,
+    gradeLevel: ad.grade_level,
+    title: ad.title,
+    description: ad.description,
+    status: ad.status,
+  }));
+
   const reviewTargets: ReviewTarget[] = [...joinedOwnerKeys].map((key) => {
     const [ownerType, ownerId] = key.split(":") as ["teacher" | "class", string];
     return { ownerType, ownerId, name: ownerName(ownerType, ownerId) };
@@ -468,6 +500,7 @@ export default async function StudentDashboardPage({
           items: [
             { key: "classes", label: t("tabs.classes") },
             { key: "live", label: t("tabs.live") },
+            { key: "wantedAds", label: t("tabs.wantedAds") },
           ],
         },
         {
@@ -502,6 +535,7 @@ export default async function StudentDashboardPage({
         ),
         classes: <ClassesTab myClasses={myClasses} availableBatches={availableBatches} />,
         live: <LiveClassesTab classes={liveClasses} studentName={fullName} reminderClassIds={reminderClassIds} />,
+        wantedAds: <WantedAdsTab wantedAds={wantedAds} subjectOptions={subjectOptions} />,
         notes: <NotesTab notes={studentNotes} studentName={fullName} />,
         exams: <ExamsTab exams={exams} />,
         assignments: <AssignmentsTab assignments={assignments} />,

@@ -913,7 +913,8 @@
       "reviews": "මගේ සමාලෝචන",
       "profile": "පැතිකඩ",
       "assignments": "පැවරුම්",
-      "settings": "සැකසුම්"
+      "settings": "සැකසුම්",
+      "wantedAds": "දැන්වීමක් පළ කරන්න"
     },
     "overview": {
       "greeting": "සුබ සන්ධ්‍යාවක්, {name}",
@@ -1164,6 +1165,39 @@
       "changePassword": "මුරපදය වෙනස් කරන්න",
       "contactHeading": "සම්බන්ධතා මනාපය",
       "contactSubtitle": "ඔබේ ගුරුවරුන්ට ඔබ ගැන පෙනෙන දේ මෙයින් පාලනය වේ."
+    },
+    "wantedAds": {
+      "heading": "දැන්වීමක් පළ කරන්න",
+      "subtitle": "ඔබ සොයන දේ ගුරුවරුන්ට සහ ආයතනවලට දැනගන්න දෙන්න.",
+      "creatorHeading": "ඔබ සොයන්නේ කුමක්ද?",
+      "creatorSubtitle": "ඉල්ලීමක් පළ කරන්න, ගුරුවරුන්ට හෝ ආයතනවලට ඔබව සම්බන්ධ කර ගත හැක.",
+      "postAd": "දැන්වීම පළ කරන්න",
+      "lookingForLabel": "මම සොයන්නේ",
+      "lookingForOptions": {
+        "teacher": "ගුරුවරයෙකු",
+        "institute": "ආයතනයක්"
+      },
+      "subjectLabel": "විෂයය",
+      "subjectPlaceholder": "විෂයයක් තෝරන්න",
+      "modeLabel": "ක්‍රමය",
+      "modePlaceholder": "ක්‍රමයක් තෝරන්න",
+      "modeOptions": {
+        "online": "සජීවී අන්තර්ජාලය",
+        "physical": "සජීවීව මුණගැසී",
+        "both": "දෙකම සුදුසුයි"
+      },
+      "gradeLabel": "ශ්‍රේණිය / මට්ටම",
+      "gradePlaceholder": "උදා: 11 ශ්‍රේණිය",
+      "titleLabel": "දැන්වීමේ ශීර්ෂය",
+      "titlePlaceholder": "උදා: උ.පෙළ සඳහා ගණිත උපදේශකයෙකු සොයමින්",
+      "titleRequired": "කරුණාකර ඔබේ දැන්වීමට ශීර්ෂයක් එකතු කරන්න.",
+      "descriptionLabel": "විස්තරය",
+      "descriptionPlaceholder": "ඔබට අවශ්‍ය දේ ගැන තව ටිකක් කියන්න...",
+      "emptyState": "ඔබ තවම දැන්වීමක් පළ කර නැත.",
+      "statusOpen": "විවෘතයි",
+      "statusClosed": "වසා ඇත",
+      "editAd": "සංස්කරණය කරන්න",
+      "deleteAd": "මකන්න"
     },
     "common": {
       "save": "සුරකින්න",

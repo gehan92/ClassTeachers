@@ -1000,6 +1000,7 @@
       "timeRemainingLabel": "Time remaining",
       "exitConfirm": "Leave the exam? Your answers won't be saved unless you submit first.",
       "mcqSectionTitle": "Multiple choice questions",
+      "selectAllHint": "(select all that apply)",
       "essaySectionTitle": "Written answers",
       "essayInstructions": "Upload clear photos of your written answer sheets.",
       "addPhotos": "Add photos",
@@ -1333,7 +1334,7 @@
         "optionFallback": "Option {number}",
         "addOption": "Add option",
         "removeOption": "Remove option",
-        "correctHint": "Select the radio button next to the correct option. An option can carry its own image too — useful for \"which of these graphs...\" style questions."
+        "correctHint": "Tick the box next to each correct option — tick more than one to make this a \"select all that apply\" question. An option can carry its own image too — useful for \"which of these graphs...\" style questions."
       }
     },
     "exams": {

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
@@ -45,7 +45,8 @@ type FormState = {
   type: QuestionBankItem["type"];
   language: QuestionBankItem["language"];
   optionRows: OptionRow[];
-  correctIndex: string;
+  /** More than one checked = "select all that apply" for students. */
+  correctIndexes: Set<number>;
   questionImageExistingUrl: string | null;
   questionImageFile: File | null;
   questionImagePreviewUrl: string | null;
@@ -67,7 +68,7 @@ function blankForm(): FormState {
     type: "mcq",
     language: "en",
     optionRows: [blankOptionRow(), blankOptionRow(), blankOptionRow(), blankOptionRow()],
-    correctIndex: "0",
+    correctIndexes: new Set([0]),
     questionImageExistingUrl: null,
     questionImageFile: null,
     questionImagePreviewUrl: null,
@@ -202,7 +203,10 @@ export function QuestionBankTab({
       removeImage: false,
     }));
     while (optionRows.length < 4) optionRows.push(blankOptionRow());
-    const correctIndex = question.options?.findIndex((o) => o.id === question.correctOptionId) ?? 0;
+    const correctIds = new Set(question.correctOptionIds ?? []);
+    const correctIndexes = new Set(
+      (question.options ?? []).flatMap((o, i) => (correctIds.has(o.id) ? [i] : [])),
+    );
     setForm({
       text: question.text,
       topic: question.topic,
@@ -213,7 +217,7 @@ export function QuestionBankTab({
       type: question.type,
       language: question.language,
       optionRows,
-      correctIndex: String(Math.max(correctIndex, 0)),
+      correctIndexes: correctIndexes.size > 0 ? correctIndexes : new Set([0]),
       questionImageExistingUrl: question.imageUrl ?? null,
       questionImageFile: null,
       questionImagePreviewUrl: null,
@@ -243,16 +247,27 @@ export function QuestionBankTab({
       const removedRow = f.optionRows[index];
       if (removedRow.imagePreviewUrl) URL.revokeObjectURL(removedRow.imagePreviewUrl);
       const optionRows = f.optionRows.filter((_, i) => i !== index);
-      const removedIndex = Number(f.correctIndex);
-      let correctIndex = removedIndex;
-      if (removedIndex === index) correctIndex = 0;
-      else if (removedIndex > index) correctIndex = removedIndex - 1;
-      return { ...f, optionRows, correctIndex: String(correctIndex) };
+      const correctIndexes = new Set(
+        [...f.correctIndexes].flatMap((i) => {
+          if (i === index) return [];
+          return [i > index ? i - 1 : i];
+        }),
+      );
+      return { ...f, optionRows, correctIndexes: correctIndexes.size > 0 ? correctIndexes : new Set([0]) };
     });
   }
 
   function updateOptionRow(index: number, patch: Partial<OptionRow>) {
     setForm((f) => ({ ...f, optionRows: f.optionRows.map((row, i) => (i === index ? { ...row, ...patch } : row)) }));
+  }
+
+  function toggleCorrectIndex(index: number) {
+    setForm((f) => {
+      const next = new Set(f.correctIndexes);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return { ...f, correctIndexes: next };
+    });
   }
 
   function pickOptionImage(index: number, file: File) {
@@ -304,7 +319,7 @@ export function QuestionBankTab({
     fd.set("difficulty", form.difficulty);
     fd.set("marks", form.marks);
     fd.set("language", form.language);
-    fd.set("correctIndex", form.correctIndex);
+    fd.set("correctIndexes", JSON.stringify([...form.correctIndexes]));
     if (form.questionImageFile) fd.set("questionImage", form.questionImageFile);
     if (form.removeQuestionImage) fd.set("removeQuestionImage", "1");
 
@@ -318,6 +333,10 @@ export function QuestionBankTab({
         if (row.removeImage) fd.set(`optionRemoveImage-${i}`, "1");
       });
       if (rows.length < MIN_OPTIONS) {
+        setError(t("form.correctHint"));
+        return;
+      }
+      if (form.correctIndexes.size === 0) {
         setError(t("form.correctHint"));
         return;
       }
@@ -512,14 +531,11 @@ export function QuestionBankTab({
             {form.type === "mcq" && (
               <div className="grid gap-2 sm:col-span-2">
                 <Label>{t("form.optionsLabel")}</Label>
-                <RadioGroup
-                  value={form.correctIndex}
-                  onValueChange={(value) => setForm((f) => ({ ...f, correctIndex: value }))}
-                >
+                <div className="flex flex-col gap-2">
                   {form.optionRows.map((row, i) => (
                     <div key={i} className="flex flex-col gap-2 rounded-md border border-border p-2.5">
                       <div className="flex items-center gap-2.5">
-                        <RadioGroupItem value={String(i)} />
+                        <Checkbox checked={form.correctIndexes.has(i)} onCheckedChange={() => toggleCorrectIndex(i)} />
                         <Input
                           placeholder={t("form.optionPlaceholder", { number: i + 1 })}
                           value={row.text}
@@ -551,7 +567,7 @@ export function QuestionBankTab({
                       </div>
                     </div>
                   ))}
-                </RadioGroup>
+                </div>
                 <Button
                   type="button"
                   variant="outline"
@@ -703,7 +719,7 @@ export function QuestionBankTab({
                         {q.type === "mcq" && q.options && (
                           <ul className="flex flex-col gap-1.5">
                             {q.options.map((option) => {
-                              const isCorrect = option.id === q.correctOptionId;
+                              const isCorrect = (q.correctOptionIds ?? []).includes(option.id);
                               return (
                                 <li
                                   key={option.id}

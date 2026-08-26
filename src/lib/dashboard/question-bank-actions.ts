@@ -48,6 +48,20 @@ function readOptionRows(formData: FormData): { id: string; text: string; image: 
   return rows;
 }
 
+/** correctIndexes is sent as a JSON array of option-row indices — more than
+ * one means "select all that apply" (checkboxes on the student side). */
+function readCorrectIndexes(formData: FormData): number[] {
+  const raw = formData.get("correctIndexes");
+  if (typeof raw !== "string" || !raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((n): n is number => typeof n === "number" && Number.isInteger(n) && n >= 0);
+  } catch {
+    return [];
+  }
+}
+
 async function uploadQuestionImage(
   supabase: Awaited<ReturnType<typeof createClient>>,
   ownerId: string,
@@ -84,8 +98,8 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
   }
 
   const optionRows = parsed.data.type === "mcq" ? readOptionRows(formData) : [];
-  const correctIndex = Number(formData.get("correctIndex") ?? "0");
-  if (parsed.data.type === "mcq" && (optionRows.length < 2 || !optionRows[correctIndex])) {
+  const correctIndexes = readCorrectIndexes(formData);
+  if (parsed.data.type === "mcq" && (optionRows.length < 2 || correctIndexes.every((i) => !optionRows[i]))) {
     return { error: "MCQ questions need at least two options and a correct answer." };
   }
 
@@ -137,7 +151,10 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
     }
     options.push({ id, text: row.text, ...(imagePath ? { imagePath } : {}) });
   }
-  const correctOptionId = parsed.data.type === "mcq" ? options[correctIndex]?.id : undefined;
+  const correctOptionIds =
+    parsed.data.type === "mcq"
+      ? correctIndexes.map((i) => options[i]?.id).filter((id): id is string => Boolean(id))
+      : [];
 
   const { error } = await supabase.from("question_bank_items").insert({
     id: questionId,
@@ -153,7 +170,8 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
     language: parsed.data.language,
     question_image_path: questionImagePath,
     options: parsed.data.type === "mcq" ? options : null,
-    correct_option_id: correctOptionId ?? null,
+    correct_option_id: correctOptionIds[0] ?? null,
+    correct_option_ids: correctOptionIds,
   });
   if (error) {
     if (uploadedPaths.length > 0) await supabase.storage.from("question-images").remove(uploadedPaths);
@@ -182,8 +200,8 @@ export async function updateQuestion(questionId: string, formData: FormData): Pr
   }
 
   const optionRows = parsed.data.type === "mcq" ? readOptionRows(formData) : [];
-  const correctIndex = Number(formData.get("correctIndex") ?? "0");
-  if (parsed.data.type === "mcq" && (optionRows.length < 2 || !optionRows[correctIndex])) {
+  const correctIndexes = readCorrectIndexes(formData);
+  if (parsed.data.type === "mcq" && (optionRows.length < 2 || correctIndexes.every((i) => !optionRows[i]))) {
     return { error: "MCQ questions need at least two options and a correct answer." };
   }
 
@@ -252,7 +270,10 @@ export async function updateQuestion(questionId: string, formData: FormData): Pr
     if (path && !keptOptionIds.has(id)) removedPaths.push(path);
   }
 
-  const correctOptionId = parsed.data.type === "mcq" ? options[correctIndex]?.id : undefined;
+  const correctOptionIds =
+    parsed.data.type === "mcq"
+      ? correctIndexes.map((i) => options[i]?.id).filter((id): id is string => Boolean(id))
+      : [];
 
   const { error } = await supabase
     .from("question_bank_items")
@@ -267,7 +288,8 @@ export async function updateQuestion(questionId: string, formData: FormData): Pr
       language: parsed.data.language,
       question_image_path: questionImagePath,
       options: parsed.data.type === "mcq" ? options : null,
-      correct_option_id: correctOptionId ?? null,
+      correct_option_id: correctOptionIds[0] ?? null,
+      correct_option_ids: correctOptionIds,
     })
     .eq("id", questionId)
     .eq("owner_type", "teacher")

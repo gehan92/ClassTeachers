@@ -139,7 +139,7 @@ export default async function TeacherDashboardPage({
     supabase
       .from("question_bank_items")
       .select(
-        "id, question_text, topic, grade_band, batch_id, type, difficulty, marks, language, options, correct_option_id, question_image_path",
+        "id, question_text, topic, grade_band, batch_id, type, difficulty, marks, language, options, correct_option_ids, question_image_path",
       )
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
@@ -413,7 +413,7 @@ export default async function TeacherDashboardPage({
       text: o.text,
       imageUrl: o.imagePath ? questionImageUrlByPath.get(o.imagePath) : undefined,
     })),
-    correctOptionId: q.correct_option_id ?? undefined,
+    correctOptionIds: q.correct_option_ids.length > 0 ? q.correct_option_ids : undefined,
   }));
 
   const signedUrlByPath = new Map<string, string>();

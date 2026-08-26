@@ -27,9 +27,15 @@ export type StudentExamQuestion = {
   type: "mcq" | "essay";
   marks: number;
   imageUrl?: string;
-  /** MCQ only — the student picks one directly in the app (auto-graded on
-   * submit). No correct-answer marker is ever sent to the student. */
+  /** MCQ only — the student picks one (or more, if multiSelect) directly in
+   * the app (auto-graded on submit). No correct-answer marker is ever sent
+   * to the student. */
   options?: { id: string; text: string; imageUrl?: string }[];
+  /** MCQ only — true when this question has more than one correct option
+   * ("select all that apply"), so the app renders checkboxes instead of a
+   * single radio. Just the shape of the question, not which options are
+   * actually correct. */
+  multiSelect?: boolean;
 };
 export type StudentExamRow = {
   id: string;
@@ -225,19 +231,21 @@ function QuestionBlock({ question, number }: { question: StudentExamQuestion; nu
 function McqQuestionBlock({
   question,
   number,
-  selectedOptionId,
-  onSelect,
+  selectedOptionIds,
+  onToggle,
 }: {
   question: StudentExamQuestion;
   number: number;
-  selectedOptionId: string | undefined;
-  onSelect: (optionId: string) => void;
+  selectedOptionIds: string[];
+  onToggle: (optionId: string) => void;
 }) {
   const t = useTranslations("studentDashboard.exams");
+  const multiSelect = Boolean(question.multiSelect);
   return (
     <div className="flex flex-col gap-2">
       <p className="text-sm text-foreground">
         {t("questionLabel", { number })}. {question.text}
+        {multiSelect && <span className="ml-1.5 text-xs font-normal text-muted-foreground">{t("selectAllHint")}</span>}
       </p>
       {question.imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, not a local/optimizable asset
@@ -251,10 +259,10 @@ function McqQuestionBlock({
               className="flex flex-wrap items-center gap-2 rounded-md p-1.5 text-sm text-foreground/80 hover:bg-secondary/40"
             >
               <input
-                type="radio"
-                name={`mcq-${question.id}`}
-                checked={selectedOptionId === option.id}
-                onChange={() => onSelect(option.id)}
+                type={multiSelect ? "checkbox" : "radio"}
+                name={multiSelect ? undefined : `mcq-${question.id}`}
+                checked={selectedOptionIds.includes(option.id)}
+                onChange={() => onToggle(option.id)}
                 className="accent-primary"
               />
               <span className="font-mono text-xs text-muted-foreground">
@@ -287,7 +295,7 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
   const tc = useTranslations("studentDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [photos, setPhotos] = useState<File[]>([]);
-  const [mcqAnswers, setMcqAnswers] = useState<Record<string, string>>({});
+  const [mcqAnswers, setMcqAnswers] = useState<Record<string, string[]>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoGrade, setAutoGrade] = useState<{ score: number; maxScore: number } | null>(null);
@@ -297,7 +305,7 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
   const autoSubmittedRef = useRef(false);
   const mcqQuestions = exam.questions.filter((q) => q.type === "mcq");
   const essayQuestions = exam.questions.filter((q) => q.type !== "mcq");
-  const allMcqAnswered = mcqQuestions.every((q) => Boolean(mcqAnswers[q.id]));
+  const allMcqAnswered = mcqQuestions.every((q) => (mcqAnswers[q.id]?.length ?? 0) > 0);
   const canSubmit = allMcqAnswered && (essayQuestions.length === 0 || photos.length > 0);
 
   // Full-screen takeover: lock background scroll while this is open.
@@ -400,8 +408,17 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
                   key={q.id}
                   question={q}
                   number={index + 1}
-                  selectedOptionId={mcqAnswers[q.id]}
-                  onSelect={(optionId) => setMcqAnswers((prev) => ({ ...prev, [q.id]: optionId }))}
+                  selectedOptionIds={mcqAnswers[q.id] ?? []}
+                  onToggle={(optionId) =>
+                    setMcqAnswers((prev) => {
+                      const current = prev[q.id] ?? [];
+                      if (!q.multiSelect) return { ...prev, [q.id]: [optionId] };
+                      const next = current.includes(optionId)
+                        ? current.filter((id) => id !== optionId)
+                        : [...current, optionId];
+                      return { ...prev, [q.id]: next };
+                    })
+                  }
                 />
               ))}
             </div>

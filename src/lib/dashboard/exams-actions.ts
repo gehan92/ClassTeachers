@@ -102,7 +102,7 @@ const allowedPhotoTypes: Record<string, string> = {
 
 /**
  * Student submits an exam — MCQ answers (auto-graded here, server-side, so
- * correct_option_id never has to reach the browser) plus, only if the exam
+ * correct_option_ids never has to reach the browser) plus, only if the exam
  * has essay questions, photo(s) of handwritten answers. A pure-MCQ exam
  * needs no photo at all: it's graded immediately and exam_submissions goes
  * straight to 'graded', skipping the teacher's grading queue entirely.
@@ -126,11 +126,20 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
     return { error: "Invalid exam." };
   }
 
-  let mcqAnswers: Record<string, string> = {};
+  // Each question's answer is an array of selected option ids — a
+  // single-answer question just has 0 or 1 entries, a "select all that
+  // apply" one can have more. Grading is all-or-nothing: the selected set
+  // must exactly match the correct set.
+  let mcqAnswers: Record<string, string[]> = {};
   if (typeof mcqAnswersRaw === "string" && mcqAnswersRaw) {
     try {
       const parsed: unknown = JSON.parse(mcqAnswersRaw);
-      if (parsed && typeof parsed === "object") mcqAnswers = parsed as Record<string, string>;
+      if (parsed && typeof parsed === "object") {
+        const entries = Object.entries(parsed as Record<string, unknown>).map(
+          ([qid, v]): [string, string[]] => [qid, Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []],
+        );
+        mcqAnswers = Object.fromEntries(entries);
+      }
     } catch {
       return { error: "Invalid answers." };
     }
@@ -168,9 +177,9 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
   const { data: questionRows } = exam.question_ids.length
     ? await supabase
         .from("question_bank_items")
-        .select("id, type, marks, correct_option_id")
+        .select("id, type, marks, correct_option_ids")
         .in("id", exam.question_ids)
-    : { data: [] as { id: string; type: "mcq" | "essay"; marks: number; correct_option_id: string | null }[] };
+    : { data: [] as { id: string; type: "mcq" | "essay"; marks: number; correct_option_ids: string[] }[] };
 
   const mcqQuestions = (questionRows ?? []).filter((q) => q.type === "mcq");
   const hasEssayQuestions = (questionRows ?? []).some((q) => q.type === "essay");
@@ -186,7 +195,11 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
   let mcqMaxScore = 0;
   for (const q of mcqQuestions) {
     mcqMaxScore += q.marks;
-    if (q.correct_option_id && mcqAnswers[q.id] === q.correct_option_id) {
+    const correctSet = new Set(q.correct_option_ids);
+    const selectedSet = new Set(mcqAnswers[q.id] ?? []);
+    const isCorrect =
+      correctSet.size > 0 && correctSet.size === selectedSet.size && [...correctSet].every((id) => selectedSet.has(id));
+    if (isCorrect) {
       mcqScore += q.marks;
     }
   }

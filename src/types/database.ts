@@ -403,6 +403,7 @@ export type Database = {
           language: "en" | "si" | "ta";
           options: Json | null;
           correct_option_id: string | null;
+          correct_option_ids: string[];
           question_image_path: string | null;
           created_at: string;
           updated_at: string;
@@ -423,6 +424,7 @@ export type Database = {
           language?: "en" | "si" | "ta";
           options?: Json | null;
           correct_option_id?: string | null;
+          correct_option_ids?: string[];
           question_image_path?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -444,6 +446,7 @@ export type Database = {
           options?: Json | null;
           question_image_path?: string | null;
           correct_option_id?: string | null;
+          correct_option_ids?: string[];
           created_at?: string;
           updated_at?: string;
         };
@@ -520,7 +523,7 @@ export type Database = {
           student_id: string;
           photo_urls: string[];
           compiled_pdf_path: string | null;
-          mcq_answers: Record<string, string>;
+          mcq_answers: Record<string, string[]>;
           mcq_score: number | null;
           mcq_max_score: number | null;
           status: "pending" | "graded";
@@ -535,7 +538,7 @@ export type Database = {
           student_id: string;
           photo_urls?: string[];
           compiled_pdf_path?: string | null;
-          mcq_answers?: Record<string, string>;
+          mcq_answers?: Record<string, string[]>;
           mcq_score?: number | null;
           mcq_max_score?: number | null;
           status?: "pending" | "graded";
@@ -550,7 +553,7 @@ export type Database = {
           student_id?: string;
           photo_urls?: string[];
           compiled_pdf_path?: string | null;
-          mcq_answers?: Record<string, string>;
+          mcq_answers?: Record<string, string[]>;
           mcq_score?: number | null;
           mcq_max_score?: number | null;
           status?: "pending" | "graded";

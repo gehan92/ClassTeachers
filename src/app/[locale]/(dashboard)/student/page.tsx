@@ -195,7 +195,7 @@ export default async function StudentDashboardPage({
     allQuestionIds.length
       ? supabase
           .from("question_bank_items")
-          .select("id, question_text, type, marks, options, question_image_path")
+          .select("id, question_text, type, marks, options, correct_option_ids, question_image_path")
           .in("id", allQuestionIds)
       : Promise.resolve({
           data: [] as {
@@ -204,6 +204,7 @@ export default async function StudentDashboardPage({
             type: "mcq" | "essay";
             marks: number;
             options: unknown;
+            correct_option_ids: string[];
             question_image_path: string | null;
           }[],
         }),
@@ -215,9 +216,10 @@ export default async function StudentDashboardPage({
   const nextLiveLabel = nextLive ? scheduleFormatter.format(new Date(nextLive.scheduled_at)) : null;
   const liveClassIds = liveClassRows.map((r) => r.id);
 
-  // Never select/forward correct_option_id here — this is the student's
-  // own view of the exam, and leaking the correct answer would defeat the
-  // point of it not being graded automatically yet.
+  // correct_option_ids IS selected above (needed to derive multiSelect
+  // below) but must never be forwarded into StudentExamQuestion — this is
+  // the student's own view of the exam, and leaking the correct answer(s)
+  // would defeat the point of not grading it in front of them.
   const questionById = new Map(
     (examQuestionRows ?? []).map((q) => [q.id, { ...q, options: (q.options as RawQuestionOption[] | null) ?? null }]),
   );
@@ -336,6 +338,7 @@ export default async function StudentDashboardPage({
               text: o.text,
               imageUrl: o.imagePath ? questionImageUrlByPath.get(o.imagePath) : undefined,
             })),
+            multiSelect: q.correct_option_ids.length > 1,
           };
         })
         .filter((q): q is StudentExamQuestion => q !== null),

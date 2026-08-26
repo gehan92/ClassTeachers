@@ -29,10 +29,12 @@ export type QuestionBankItem = {
   difficulty: "easy" | "medium" | "hard";
   marks: number;
   language: "en" | "si" | "ta";
-  /** MCQ only — any number of options (2+), one correct. */
+  /** MCQ only — any number of options (2+), one or more correct. */
   options?: McqOption[];
-  /** MCQ only — the id of the correct entry in `options`. */
-  correctOptionId?: string;
+  /** MCQ only — ids of the correct entries in `options`. More than one
+   * means the question is "select all that apply" (checkboxes on the
+   * student side instead of a single radio). */
+  correctOptionIds?: string[];
   /** Signed URL — set when the question stem itself is a graph/diagram. */
   imageUrl?: string;
 };

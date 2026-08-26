@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 type ActionResult = { error: string } | { error?: undefined };
 
 const educationLevels = ["school", "campus", "graduated"] as const;
+const preferredModes = ["online", "in_person", "both"] as const;
 
 const studentProfileSchema = z.object({
   fullName: z.string().trim().min(2),
@@ -17,6 +18,13 @@ const studentProfileSchema = z.object({
   workExperience: z.array(z.string().trim()).transform((arr) => arr.filter(Boolean)),
   subjects: z.array(z.string().trim()).transform((arr) => arr.filter(Boolean)),
   languages: z.array(z.string().trim()).transform((arr) => arr.filter(Boolean)),
+  dateOfBirth: z.string().trim().optional(),
+  location: z.string().trim().optional(),
+  learningGoals: z.string().trim().optional(),
+  preferredMode: z.enum(preferredModes).optional(),
+  achievements: z.array(z.string().trim()).transform((arr) => arr.filter(Boolean)),
+  interests: z.array(z.string().trim()).transform((arr) => arr.filter(Boolean)),
+  availability: z.string().trim().optional(),
 });
 
 export async function updateStudentProfile(input: {
@@ -29,6 +37,13 @@ export async function updateStudentProfile(input: {
   workExperience: string[];
   subjects: string[];
   languages: string[];
+  dateOfBirth: string;
+  location: string;
+  learningGoals: string;
+  preferredMode: string;
+  achievements: string[];
+  interests: string[];
+  availability: string;
 }): Promise<ActionResult> {
   const parsed = studentProfileSchema.safeParse({
     fullName: input.fullName,
@@ -40,6 +55,13 @@ export async function updateStudentProfile(input: {
     workExperience: input.workExperience,
     subjects: input.subjects,
     languages: input.languages,
+    dateOfBirth: input.dateOfBirth,
+    location: input.location,
+    learningGoals: input.learningGoals,
+    preferredMode: input.preferredMode || undefined,
+    achievements: input.achievements,
+    interests: input.interests,
+    availability: input.availability,
   });
   if (!parsed.success) {
     return { error: "Please check your name and try again." };
@@ -65,6 +87,13 @@ export async function updateStudentProfile(input: {
       work_experience: parsed.data.workExperience.length > 0 ? parsed.data.workExperience : null,
       subjects: parsed.data.subjects.length > 0 ? parsed.data.subjects : null,
       languages: parsed.data.languages.length > 0 ? parsed.data.languages : null,
+      date_of_birth: parsed.data.dateOfBirth || null,
+      location: parsed.data.location || null,
+      learning_goals: parsed.data.learningGoals || null,
+      preferred_mode: parsed.data.preferredMode ?? null,
+      achievements: parsed.data.achievements.length > 0 ? parsed.data.achievements : null,
+      interests: parsed.data.interests.length > 0 ? parsed.data.interests : null,
+      availability: parsed.data.availability || null,
     })
     .eq("id", user.id);
   if (error) {

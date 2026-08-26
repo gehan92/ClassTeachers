@@ -17,6 +17,22 @@ const textareaClass =
   "min-h-24 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm";
 type EducationLevel = "school" | "campus" | "graduated";
 const EDUCATION_LEVELS: EducationLevel[] = ["school", "campus", "graduated"];
+type PreferredMode = "online" | "in_person" | "both";
+const PREFERRED_MODES: PreferredMode[] = ["online", "in_person", "both"];
+
+// Age is shown, not the raw date of birth — more useful at a glance and it
+// stays correct year over year without anyone editing it. Stored as a date
+// (not a maintained age number) so this is the only place it's computed.
+function calculateAge(dateOfBirth: string | null): number | null {
+  if (!dateOfBirth) return null;
+  const dob = new Date(dateOfBirth);
+  if (Number.isNaN(dob.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
+  return age;
+}
 
 export function ProfileTab({
   initialName,
@@ -31,6 +47,13 @@ export function ProfileTab({
   initialSubjects,
   initialLanguages,
   initialSharePhoneWithTeachers,
+  initialDateOfBirth,
+  initialLocation,
+  initialLearningGoals,
+  initialPreferredMode,
+  initialAchievements,
+  initialInterests,
+  initialAvailability,
   classesCount,
   email,
 }: {
@@ -46,6 +69,13 @@ export function ProfileTab({
   initialSubjects: string[];
   initialLanguages: string[];
   initialSharePhoneWithTeachers: boolean;
+  initialDateOfBirth: string | null;
+  initialLocation: string;
+  initialLearningGoals: string;
+  initialPreferredMode: PreferredMode | null;
+  initialAchievements: string[];
+  initialInterests: string[];
+  initialAvailability: string;
   classesCount: number;
   email: string;
 }) {
@@ -98,6 +128,13 @@ export function ProfileTab({
               subjects={initialSubjects}
               languages={initialLanguages}
               sharePhoneWithTeachers={initialSharePhoneWithTeachers}
+              dateOfBirth={initialDateOfBirth}
+              location={initialLocation}
+              learningGoals={initialLearningGoals}
+              preferredMode={initialPreferredMode}
+              achievements={initialAchievements}
+              interests={initialInterests}
+              availability={initialAvailability}
             />
           </div>
         </div>
@@ -114,6 +151,13 @@ export function ProfileTab({
             initialWorkExperience={initialWorkExperience}
             initialSubjects={initialSubjects}
             initialLanguages={initialLanguages}
+            initialDateOfBirth={initialDateOfBirth}
+            initialLocation={initialLocation}
+            initialLearningGoals={initialLearningGoals}
+            initialPreferredMode={initialPreferredMode}
+            initialAchievements={initialAchievements}
+            initialInterests={initialInterests}
+            initialAvailability={initialAvailability}
           />
         </>
       )}
@@ -141,6 +185,13 @@ function ProfileCard({
   subjects,
   languages,
   sharePhoneWithTeachers,
+  dateOfBirth,
+  location,
+  learningGoals,
+  preferredMode,
+  achievements,
+  interests,
+  availability,
 }: {
   name: string;
   grade: string;
@@ -156,9 +207,17 @@ function ProfileCard({
   subjects: string[];
   languages: string[];
   sharePhoneWithTeachers: boolean;
+  dateOfBirth: string | null;
+  location: string;
+  learningGoals: string;
+  preferredMode: PreferredMode | null;
+  achievements: string[];
+  interests: string[];
+  availability: string;
 }) {
   const t = useTranslations("studentDashboard.profile");
   const statusLabel = educationLabel(t, educationLevel);
+  const age = calculateAge(dateOfBirth);
 
   return (
     <>
@@ -188,9 +247,13 @@ function ProfileCard({
               <div className="mb-1.5 font-mono text-xs uppercase tracking-[0.12em] text-white/70">{grade}</div>
             )}
             <h1 className="mb-2 text-[28px] text-white sm:text-[34px]">{name}</h1>
-            {statusLabel && (
+            {(statusLabel || age !== null || location) && (
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-white/85">
-                <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium">{statusLabel}</span>
+                {statusLabel && (
+                  <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium">{statusLabel}</span>
+                )}
+                {age !== null && <span>{t("ageLabel", { age })}</span>}
+                {location && <span>{location}</span>}
               </div>
             )}
           </div>
@@ -219,10 +282,16 @@ function ProfileCard({
         </div>
       </div>
 
-      {bio && (
+      {(bio || learningGoals) && (
         <div className={panelClass}>
           <h3 className="mb-2 text-lg">{t("aboutHeading")}</h3>
-          <p className="text-sm whitespace-pre-line text-foreground/85">{bio}</p>
+          {bio && <p className="text-sm whitespace-pre-line text-foreground/85">{bio}</p>}
+          {learningGoals && (
+            <div className={bio ? "mt-4" : ""}>
+              <div className="mb-1 text-xs text-muted-foreground">{t("fields.learningGoals")}</div>
+              <p className="text-sm font-medium text-foreground">{learningGoals}</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -264,9 +333,23 @@ function ProfileCard({
         </div>
       )}
 
-      {(subjects.length > 0 || languages.length > 0) && (
+      {achievements.length > 0 && (
         <div className={panelClass}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <h3 className="mb-3 text-lg">{t("achievementsHeading")}</h3>
+          <ul className="flex flex-col gap-1">
+            {achievements.map((achievement, i) => (
+              <li key={i} className="text-sm font-medium text-foreground">
+                {achievement}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {(subjects.length > 0 || languages.length > 0 || interests.length > 0) && (
+        <div className={panelClass}>
+          <h3 className="mb-4 text-lg">{t("tagsHeading")}</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {subjects.length > 0 && (
               <div>
                 <div className="mb-1.5 text-xs text-muted-foreground">{t("fields.subjects")}</div>
@@ -289,6 +372,38 @@ function ProfileCard({
                     </span>
                   ))}
                 </div>
+              </div>
+            )}
+            {interests.length > 0 && (
+              <div>
+                <div className="mb-1.5 text-xs text-muted-foreground">{t("fields.interests")}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {interests.map((interest, i) => (
+                    <span key={i} className="rounded-full bg-background px-2.5 py-1 text-xs text-foreground">
+                      {interest}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {(preferredMode || availability) && (
+        <div className={panelClass}>
+          <h3 className="mb-4 text-lg">{t("preferencesHeading")}</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {preferredMode && (
+              <div>
+                <div className="text-xs text-muted-foreground">{t("fields.preferredMode")}</div>
+                <div className="text-sm font-medium text-foreground">{t(`preferredModeOptions.${preferredMode}`)}</div>
+              </div>
+            )}
+            {availability && (
+              <div>
+                <div className="text-xs text-muted-foreground">{t("fields.availability")}</div>
+                <div className="text-sm font-medium text-foreground">{availability}</div>
               </div>
             )}
           </div>
@@ -369,9 +484,10 @@ function PhotoPanel({ initialPhotoUrl, studentName }: { initialPhotoUrl: string 
 
 /**
  * Add/remove list of free-text entries — used for qualifications, work
- * experience, subjects and languages so a student adds one entry at a time
- * instead of typing a comma-separated string into a single Input. Same
- * shape as the teacher profile tab's qualifications/work-experience lists.
+ * experience, subjects, languages, achievements and interests so a student
+ * adds one entry at a time instead of typing a comma-separated string into
+ * a single Input. Same shape as the teacher profile tab's qualifications/
+ * work-experience lists.
  */
 function RepeatableListField({
   label,
@@ -424,11 +540,11 @@ function RepeatableListField({
 }
 
 /**
- * One shared save button for everything below — Personal details, About me
- * and Education are visually separate panels but a single form/save action,
- * same shape as the teacher profile tab's several panels sharing one
- * "Save changes" button at the bottom. Photo saves immediately on upload
- * instead (see PhotoPanel), so it isn't part of this form.
+ * One shared save button for everything below — each panel is visually
+ * separate but a single form/save action, same shape as the teacher profile
+ * tab's several panels sharing one "Save changes" button at the bottom.
+ * Photo saves immediately on upload instead (see PhotoPanel), so it isn't
+ * part of this form.
  */
 function EditForm({
   initialName,
@@ -440,6 +556,13 @@ function EditForm({
   initialWorkExperience,
   initialSubjects,
   initialLanguages,
+  initialDateOfBirth,
+  initialLocation,
+  initialLearningGoals,
+  initialPreferredMode,
+  initialAchievements,
+  initialInterests,
+  initialAvailability,
 }: {
   initialName: string;
   initialGrade: string;
@@ -450,30 +573,48 @@ function EditForm({
   initialWorkExperience: string[];
   initialSubjects: string[];
   initialLanguages: string[];
+  initialDateOfBirth: string | null;
+  initialLocation: string;
+  initialLearningGoals: string;
+  initialPreferredMode: PreferredMode | null;
+  initialAchievements: string[];
+  initialInterests: string[];
+  initialAvailability: string;
 }) {
   const t = useTranslations("studentDashboard.profile");
   const nameId = useId();
   const gradeId = useId();
+  const dobId = useId();
+  const locationId = useId();
   const bioId = useId();
+  const learningGoalsId = useId();
   const institutionId = useId();
+  const availabilityId = useId();
   const { refresh } = useDashboardRefresh();
 
   const [form, setForm] = useState({
     name: initialName,
     grade: initialGrade,
+    dateOfBirth: initialDateOfBirth ?? "",
+    location: initialLocation,
     bio: initialBio,
+    learningGoals: initialLearningGoals,
     educationLevel: initialEducationLevel ?? ("" as EducationLevel | ""),
     institutionName: initialInstitutionName,
+    preferredMode: initialPreferredMode ?? ("" as PreferredMode | ""),
+    availability: initialAvailability,
   });
   const [qualifications, setQualifications] = useState(initialQualifications);
   const [workExperience, setWorkExperience] = useState(initialWorkExperience);
   const [subjects, setSubjects] = useState(initialSubjects);
   const [languages, setLanguages] = useState(initialLanguages);
+  const [achievements, setAchievements] = useState(initialAchievements);
+  const [interests, setInterests] = useState(initialInterests);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  function update(field: "name" | "grade" | "institutionName") {
+  function update(field: "name" | "grade" | "dateOfBirth" | "location" | "institutionName" | "availability") {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [field]: e.target.value }));
   }
 
@@ -490,6 +631,13 @@ function EditForm({
       workExperience,
       subjects,
       languages,
+      dateOfBirth: form.dateOfBirth,
+      location: form.location,
+      learningGoals: form.learningGoals,
+      preferredMode: form.preferredMode,
+      achievements,
+      interests,
+      availability: form.availability,
     });
     setSaving(false);
     if (result.error) {
@@ -521,20 +669,48 @@ function EditForm({
             </Label>
             <Input id={gradeId} value={form.grade} onChange={update("grade")} />
           </div>
+          <div>
+            <Label htmlFor={dobId} className="mb-1.5">
+              {t("fields.dateOfBirth")}
+            </Label>
+            <Input id={dobId} type="date" value={form.dateOfBirth} onChange={update("dateOfBirth")} />
+          </div>
+          <div>
+            <Label htmlFor={locationId} className="mb-1.5">
+              {t("fields.location")}
+            </Label>
+            <Input
+              id={locationId}
+              value={form.location}
+              onChange={update("location")}
+              placeholder={t("locationPlaceholder")}
+            />
+          </div>
         </div>
       </div>
 
       <div className={panelClass}>
         <h3 className="mb-4 text-lg">{t("aboutHeading")}</h3>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={bioId}>{t("fields.bio")}</Label>
-          <textarea
-            id={bioId}
-            className={textareaClass}
-            value={form.bio}
-            onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
-            placeholder={t("bioPlaceholder")}
-          />
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={bioId}>{t("fields.bio")}</Label>
+            <textarea
+              id={bioId}
+              className={textareaClass}
+              value={form.bio}
+              onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
+              placeholder={t("bioPlaceholder")}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={learningGoalsId}>{t("fields.learningGoals")}</Label>
+            <Input
+              id={learningGoalsId}
+              value={form.learningGoals}
+              onChange={(e) => setForm((f) => ({ ...f, learningGoals: e.target.value }))}
+              placeholder={t("learningGoalsPlaceholder")}
+            />
+          </div>
         </div>
       </div>
 
@@ -587,6 +763,24 @@ function EditForm({
             addLabel={t("addWorkExperience")}
             removeLabel={t("removeWorkExperience")}
           />
+        </div>
+      </div>
+
+      <div className={panelClass}>
+        <h3 className="mb-4 text-lg">{t("achievementsHeading")}</h3>
+        <RepeatableListField
+          label={t("fields.achievements")}
+          items={achievements}
+          onChange={setAchievements}
+          placeholder={t("achievementPlaceholder")}
+          addLabel={t("addAchievement")}
+          removeLabel={t("removeAchievement")}
+        />
+      </div>
+
+      <div className={panelClass}>
+        <h3 className="mb-4 text-lg">{t("tagsHeading")}</h3>
+        <div className="flex flex-col gap-5">
           <RepeatableListField
             label={t("fields.subjects")}
             items={subjects}
@@ -603,6 +797,47 @@ function EditForm({
             addLabel={t("addLanguage")}
             removeLabel={t("removeLanguage")}
           />
+          <RepeatableListField
+            label={t("fields.interests")}
+            items={interests}
+            onChange={setInterests}
+            placeholder={t("interestPlaceholder")}
+            addLabel={t("addInterest")}
+            removeLabel={t("removeInterest")}
+          />
+        </div>
+      </div>
+
+      <div className={panelClass}>
+        <h3 className="mb-4 text-lg">{t("preferencesHeading")}</h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label>{t("fields.preferredMode")}</Label>
+            <Select
+              value={form.preferredMode}
+              onValueChange={(value) => setForm((f) => ({ ...f, preferredMode: (value as PreferredMode) ?? "" }))}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t("preferredModePlaceholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                {PREFERRED_MODES.map((mode) => (
+                  <SelectItem key={mode} value={mode}>
+                    {t(`preferredModeOptions.${mode}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={availabilityId}>{t("fields.availability")}</Label>
+            <Input
+              id={availabilityId}
+              value={form.availability}
+              onChange={update("availability")}
+              placeholder={t("availabilityPlaceholder")}
+            />
+          </div>
         </div>
       </div>
 

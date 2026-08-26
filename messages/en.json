@@ -305,6 +305,8 @@
       "subtitle": "Real requests from students searching for a teacher or institute — respond if you can help."
     },
     "searchPlaceholder": "Search by subject or keyword...",
+    "resultsCount": "{count} requests",
+    "clearFilters": "Clear filters",
     "filterLabel": "Filter requests",
     "filterOptions": {
       "all": "All",

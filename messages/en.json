@@ -23,6 +23,7 @@
     "searchInstitutes": "Institutes / classes",
     "searchCampusLecturers": "Campus lecturers",
     "searchOnlineLessons": "Online lessons",
+    "studentRequests": "Students looking for a teacher",
     "postYourAd": "Post your ad",
     "inCallBanner": "In call — {title}",
     "stillExposedBanner": "Camera/mic still on — {title}",
@@ -158,6 +159,25 @@
     "cancelReply": "Cancel",
     "yourReply": "Your reply"
   },
+  "wantedAdsBrowseTab": {
+    "heading": "Student Requests",
+    "subtitle": "Students looking for a teacher or institute like you.",
+    "empty": "No open requests right now.",
+    "lookingForOptions": {
+      "teacher": "Looking for a teacher",
+      "institute": "Looking for an institute"
+    },
+    "modeOptions": {
+      "online": "Online",
+      "physical": "In-person",
+      "both": "Either"
+    },
+    "respond": "Respond",
+    "cancelReply": "Cancel",
+    "sendResponse": "Send response",
+    "responsePlaceholder": "Introduce yourself and how you can help...",
+    "yourResponse": "Your response"
+  },
   "comingSoon": {
     "badge": "Coming soon",
     "backHome": "Back to home"
@@ -277,6 +297,31 @@
       "alreadyHaveAccount": "Already have an account?",
       "loginLink": "Log in"
     }
+  },
+  "requestsPage": {
+    "hero": {
+      "eyebrow": "Students looking for help",
+      "title": "See what students are looking for",
+      "subtitle": "Real requests from students searching for a teacher or institute — respond if you can help."
+    },
+    "searchPlaceholder": "Search by subject or keyword...",
+    "filterLabel": "Filter requests",
+    "filterOptions": {
+      "all": "All",
+      "teacher": "Looking for a teacher",
+      "institute": "Looking for an institute"
+    },
+    "lookingForOptions": {
+      "teacher": "Looking for a teacher",
+      "institute": "Looking for an institute"
+    },
+    "modeOptions": {
+      "online": "Online",
+      "physical": "In-person",
+      "both": "Either"
+    },
+    "respondCta": "Respond",
+    "empty": "No requests match this filter yet."
   },
   "termsPage": {
     "title": "Terms of service",
@@ -734,6 +779,7 @@
       "teachers": "Teachers",
       "batches": "Classes & Batches",
       "inquiries": "Inquiries",
+      "studentRequests": "Student Requests",
       "ads": "Advertisement",
       "reviews": "Reviews",
       "settings": "Settings"
@@ -1176,7 +1222,12 @@
       "statusOpen": "Open",
       "statusClosed": "Closed",
       "editAd": "Edit",
-      "deleteAd": "Delete"
+      "deleteAd": "Delete",
+      "responsesHeading": "{count} responses",
+      "responderTypeLabels": {
+        "teacher": "Teacher",
+        "class": "Institute"
+      }
     },
     "common": {
       "save": "Save",
@@ -1217,6 +1268,7 @@
       "students": "Students",
       "attendance": "Attendance",
       "inquiries": "Inquiries",
+      "studentRequests": "Student Requests",
       "reviews": "Reviews",
       "ads": "Advertisement",
       "settings": "Settings"

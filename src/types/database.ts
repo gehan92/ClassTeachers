@@ -957,6 +957,34 @@ export type Database = {
         Relationships: [];
       };
 
+      wanted_ad_responses: {
+        Row: {
+          id: string;
+          wanted_ad_id: string;
+          responder_type: "teacher" | "class";
+          responder_id: string;
+          message: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          wanted_ad_id: string;
+          responder_type: "teacher" | "class";
+          responder_id: string;
+          message: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          wanted_ad_id?: string;
+          responder_type?: "teacher" | "class";
+          responder_id?: string;
+          message?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+
       reviews: {
         Row: {
           id: string;
@@ -1366,6 +1394,44 @@ export type Database = {
           monthly_rate: number | null;
           rating: number;
           review_count: number;
+        }[];
+      };
+      list_public_wanted_ads: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          looking_for: string;
+          subject: string | null;
+          mode: string | null;
+          grade_level: string | null;
+          title: string;
+          description: string | null;
+          created_at: string;
+        }[];
+      };
+      list_wanted_ads_for_responder: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          looking_for: string;
+          subject: string | null;
+          mode: string | null;
+          grade_level: string | null;
+          title: string;
+          description: string | null;
+          created_at: string;
+          my_response: string | null;
+        }[];
+      };
+      list_wanted_ad_responses_for_student: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          wanted_ad_id: string;
+          responder_type: string;
+          responder_name: string | null;
+          message: string;
+          created_at: string;
         }[];
       };
     };

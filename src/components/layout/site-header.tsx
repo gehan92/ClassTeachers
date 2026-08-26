@@ -30,6 +30,7 @@ const searchItems = [
     href: { pathname: "/teachers", query: { category: "teacher", online: "true" } },
     key: "searchOnlineLessons",
   },
+  { href: { pathname: "/requests", query: { category: undefined } }, key: "studentRequests" },
 ] as const;
 
 export function SiteHeader({

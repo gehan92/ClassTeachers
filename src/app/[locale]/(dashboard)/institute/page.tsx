@@ -7,6 +7,7 @@ import { AdvertisementTab } from "@/components/dashboard/institute/advertisement
 import { ReviewsTab } from "@/components/dashboard/institute/reviews-tab";
 import { SettingsTab } from "@/components/dashboard/institute/settings-tab";
 import { InquiriesTab, type InquiryRow } from "@/components/dashboard/inquiries-tab";
+import { WantedAdsBrowseTab, type WantedAdBrowseRow } from "@/components/dashboard/wanted-ads-browse-tab";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter } from "@/lib/format-date";
 import type { TeachersAtGlance } from "@/types/dashboard-institute";
@@ -51,6 +52,7 @@ export default async function InstituteDashboardPage({
     { data: priceRow },
     { data: adRow },
     { data: inquiryRows },
+    { data: wantedAdRows },
     { data: myReviewRows },
     { data: batchRows },
     { data: batchEnrollmentRows },
@@ -103,6 +105,7 @@ export default async function InstituteDashboardPage({
             created_at: string;
           }[],
         }),
+    supabase.rpc("list_wanted_ads_for_responder"),
     // Same RPC the public /class/[id] page uses — masked reviewer names,
     // consistent with what this institute's own public profile shows.
     instituteId
@@ -210,6 +213,17 @@ export default async function InstituteDashboardPage({
     reply: row.reply,
     createdLabel: dateFormatter.format(new Date(row.created_at)),
   }));
+  const wantedAdRequests: WantedAdBrowseRow[] = (wantedAdRows ?? []).map((row) => ({
+    id: row.id,
+    lookingFor: row.looking_for as "teacher" | "institute",
+    subject: row.subject,
+    mode: row.mode as "online" | "physical" | "both" | null,
+    gradeLevel: row.grade_level,
+    title: row.title,
+    description: row.description,
+    createdLabel: dateFormatter.format(new Date(row.created_at)),
+    myResponse: row.my_response,
+  }));
   const reviews = (myReviewRows ?? []).map((r) => ({
     id: r.id,
     author: r.author ?? "Anonymous",
@@ -269,6 +283,11 @@ export default async function InstituteDashboardPage({
               label: t("tabs.inquiries"),
               count: inquiries.filter((i) => i.status === "new").length,
             },
+            {
+              key: "studentRequests",
+              label: t("tabs.studentRequests"),
+              count: wantedAdRequests.filter((r) => !r.myResponse).length,
+            },
             { key: "ads", label: t("tabs.ads") },
             { key: "reviews", label: t("tabs.reviews"), count: reviewRows?.length ?? 0 },
             { key: "settings", label: t("tabs.settings") },
@@ -289,6 +308,7 @@ export default async function InstituteDashboardPage({
         teachers: <TeachersTab teachers={instituteTeachers} />,
         batches: <BatchesTab batches={batches} />,
         inquiries: <InquiriesTab inquiries={inquiries} />,
+        studentRequests: <WantedAdsBrowseTab requests={wantedAdRequests} />,
         ads: <AdvertisementTab initialContent={adRow?.content ?? ""} />,
         reviews: (
           <ReviewsTab initialReviews={reviews} averageRating={averageRating ?? "0.0"} reviewCount={reviewRows?.length ?? 0} />

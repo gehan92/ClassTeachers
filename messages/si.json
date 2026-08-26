@@ -23,6 +23,7 @@
     "searchInstitutes": "ආයතන / පන්ති",
     "searchCampusLecturers": "කැම්පස් කථිකාචාර්යවරු",
     "searchOnlineLessons": "මාර්ගගත පාඩම්",
+    "studentRequests": "ගුරුවරයෙකු සොයන සිසුන්",
     "postYourAd": "ඔබේ දැන්වීම පළ කරන්න",
     "inCallBanner": "ඇමතුමේ පවතී — {title}",
     "stillExposedBanner": "කැමරාව/මයික්‍රෆෝනය තවම ක්‍රියාත්මකයි — {title}",
@@ -158,6 +159,25 @@
     "cancelReply": "අවලංගු කරන්න",
     "yourReply": "ඔබේ පිළිතුර"
   },
+  "wantedAdsBrowseTab": {
+    "heading": "සිසුන්ගේ ඉල්ලීම්",
+    "subtitle": "ඔබ වැනි ගුරුවරයෙකු හෝ ආයතනයක් සොයන සිසුන්.",
+    "empty": "දැනට විවෘත ඉල්ලීම් නැත.",
+    "lookingForOptions": {
+      "teacher": "ගුරුවරයෙකු සොයයි",
+      "institute": "ආයතනයක් සොයයි"
+    },
+    "modeOptions": {
+      "online": "සජීවී අන්තර්ජාලය",
+      "physical": "සජීවීව මුණගැසී",
+      "both": "දෙකම සුදුසුයි"
+    },
+    "respond": "පිළිතුරු දෙන්න",
+    "cancelReply": "අවලංගු කරන්න",
+    "sendResponse": "පිළිතුර යවන්න",
+    "responsePlaceholder": "ඔබව හඳුන්වා දී ඔබට උදව් කළ හැකි ආකාරය කියන්න...",
+    "yourResponse": "ඔබේ පිළිතුර"
+  },
   "comingSoon": {
     "badge": "ඉක්මනින්",
     "backHome": "මුල් පිටුවට"
@@ -277,6 +297,31 @@
       "alreadyHaveAccount": "දැනටමත් ගිණුමක් තිබේද?",
       "loginLink": "පිවිසෙන්න"
     }
+  },
+  "requestsPage": {
+    "hero": {
+      "eyebrow": "උදව් සොයන සිසුන්",
+      "title": "සිසුන් සොයන දේ බලන්න",
+      "subtitle": "ගුරුවරයෙකු හෝ ආයතනයක් සොයන සිසුන්ගෙන් සැබෑ ඉල්ලීම් — ඔබට උදව් කළ හැකි නම් පිළිතුරු දෙන්න."
+    },
+    "searchPlaceholder": "විෂය හෝ මූලපදයකින් සොයන්න...",
+    "filterLabel": "ඉල්ලීම් පෙරහන් කරන්න",
+    "filterOptions": {
+      "all": "සියල්ල",
+      "teacher": "ගුරුවරයෙකු සොයයි",
+      "institute": "ආයතනයක් සොයයි"
+    },
+    "lookingForOptions": {
+      "teacher": "ගුරුවරයෙකු සොයයි",
+      "institute": "ආයතනයක් සොයයි"
+    },
+    "modeOptions": {
+      "online": "සජීවී අන්තර්ජාලය",
+      "physical": "සජීවීව මුණගැසී",
+      "both": "දෙකම සුදුසුයි"
+    },
+    "respondCta": "පිළිතුරු දෙන්න",
+    "empty": "මෙම පෙරහන සමඟ ගැළපෙන ඉල්ලීම් නැත."
   },
   "termsPage": {
     "title": "සේවා නියමයන්",
@@ -734,6 +779,7 @@
       "teachers": "ගුරුවරුන්",
       "batches": "පන්ති සහ කණ්ඩායම්",
       "inquiries": "විමසීම්",
+      "studentRequests": "සිසුන්ගේ ඉල්ලීම්",
       "ads": "දැන්වීම",
       "reviews": "සමාලෝචන",
       "settings": "සැකසුම්"
@@ -1176,7 +1222,12 @@
       "statusOpen": "විවෘතයි",
       "statusClosed": "වසා ඇත",
       "editAd": "සංස්කරණය කරන්න",
-      "deleteAd": "මකන්න"
+      "deleteAd": "මකන්න",
+      "responsesHeading": "පිළිතුරු {count}",
+      "responderTypeLabels": {
+        "teacher": "ගුරුවරයා",
+        "class": "ආයතනය"
+      }
     },
     "common": {
       "save": "සුරකින්න",
@@ -1216,6 +1267,7 @@
       "students": "සිසුන්",
       "attendance": "පැමිණීම",
       "inquiries": "විමසීම්",
+      "studentRequests": "සිසුන්ගේ ඉල්ලීම්",
       "reviews": "සමාලෝචන",
       "ads": "දැන්වීම",
       "settings": "සැකසුම්",

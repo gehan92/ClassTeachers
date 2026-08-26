@@ -23,6 +23,7 @@
     "searchInstitutes": "நிறுவனங்கள் / வகுப்புகள்",
     "searchCampusLecturers": "வளாக விரிவுரையாளர்கள்",
     "searchOnlineLessons": "ஆன்லைன் பாடங்கள்",
+    "studentRequests": "ஆசிரியர் தேடும் மாணவர்கள்",
     "postYourAd": "உங்கள் விளம்பரத்தை இடுங்கள்",
     "inCallBanner": "அழைப்பில் உள்ளீர்கள் — {title}",
     "stillExposedBanner": "கேமரா/மைக் இன்னும் இயங்குகிறது — {title}",
@@ -158,6 +159,25 @@
     "cancelReply": "ரத்துசெய்",
     "yourReply": "உங்கள் பதில்"
   },
+  "wantedAdsBrowseTab": {
+    "heading": "மாணவர் கோரிக்கைகள்",
+    "subtitle": "உங்களைப் போன்ற ஆசிரியர் அல்லது நிறுவனத்தைத் தேடும் மாணவர்கள்.",
+    "empty": "தற்போது திறந்த கோரிக்கைகள் இல்லை.",
+    "lookingForOptions": {
+      "teacher": "ஆசிரியரைத் தேடுகிறது",
+      "institute": "நிறுவனத்தைத் தேடுகிறது"
+    },
+    "modeOptions": {
+      "online": "ஆன்லைன்",
+      "physical": "நேரடியாக",
+      "both": "இரண்டும் சரி"
+    },
+    "respond": "பதிலளி",
+    "cancelReply": "ரத்துசெய்",
+    "sendResponse": "பதிலை அனுப்பு",
+    "responsePlaceholder": "உங்களை அறிமுகப்படுத்தி நீங்கள் எப்படி உதவ முடியும் என்று சொல்லுங்கள்...",
+    "yourResponse": "உங்கள் பதில்"
+  },
   "comingSoon": {
     "badge": "விரைவில் வருகிறது",
     "backHome": "முகப்புக்குத் திரும்பு"
@@ -277,6 +297,31 @@
       "alreadyHaveAccount": "ஏற்கனவே கணக்கு உள்ளதா?",
       "loginLink": "உள்நுழையவும்"
     }
+  },
+  "requestsPage": {
+    "hero": {
+      "eyebrow": "உதவி தேடும் மாணவர்கள்",
+      "title": "மாணவர்கள் என்ன தேடுகிறார்கள் என்று பாருங்கள்",
+      "subtitle": "ஆசிரியர் அல்லது நிறுவனத்தைத் தேடும் மாணவர்களிடமிருந்து உண்மையான கோரிக்கைகள் — நீங்கள் உதவ முடிந்தால் பதிலளியுங்கள்."
+    },
+    "searchPlaceholder": "பாடம் அல்லது முக்கிய வார்த்தையால் தேடுங்கள்...",
+    "filterLabel": "கோரிக்கைகளை வடிகட்டவும்",
+    "filterOptions": {
+      "all": "அனைத்தும்",
+      "teacher": "ஆசிரியரைத் தேடுகிறது",
+      "institute": "நிறுவனத்தைத் தேடுகிறது"
+    },
+    "lookingForOptions": {
+      "teacher": "ஆசிரியரைத் தேடுகிறது",
+      "institute": "நிறுவனத்தைத் தேடுகிறது"
+    },
+    "modeOptions": {
+      "online": "ஆன்லைன்",
+      "physical": "நேரடியாக",
+      "both": "இரண்டும் சரி"
+    },
+    "respondCta": "பதிலளி",
+    "empty": "இந்த வடிகட்டலுக்குப் பொருந்தும் கோரிக்கைகள் இல்லை."
   },
   "termsPage": {
     "title": "சேவை விதிமுறைகள்",
@@ -734,6 +779,7 @@
       "teachers": "ஆசிரியர்கள்",
       "batches": "வகுப்புகள் மற்றும் தொகுதிகள்",
       "inquiries": "விசாரணைகள்",
+      "studentRequests": "மாணவர் கோரிக்கைகள்",
       "ads": "விளம்பரம்",
       "reviews": "மதிப்புரைகள்",
       "settings": "அமைப்புகள்"
@@ -1176,7 +1222,12 @@
       "statusOpen": "திறந்துள்ளது",
       "statusClosed": "மூடப்பட்டது",
       "editAd": "திருத்து",
-      "deleteAd": "நீக்கு"
+      "deleteAd": "நீக்கு",
+      "responsesHeading": "{count} பதில்கள்",
+      "responderTypeLabels": {
+        "teacher": "ஆசிரியர்",
+        "class": "நிறுவனம்"
+      }
     },
     "common": {
       "save": "சேமி",
@@ -1216,6 +1267,7 @@
       "students": "மாணவர்கள்",
       "attendance": "வருகை",
       "inquiries": "விசாரணைகள்",
+      "studentRequests": "மாணவர் கோரிக்கைகள்",
       "reviews": "மதிப்புரைகள்",
       "ads": "விளம்பரம்",
       "settings": "அமைப்புகள்",

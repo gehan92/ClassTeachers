@@ -12,6 +12,7 @@ import { StudentsTab } from "@/components/dashboard/teacher/students-tab";
 import { AttendanceTab } from "@/components/dashboard/teacher/attendance-tab";
 import { ReviewsTab } from "@/components/dashboard/teacher/reviews-tab";
 import { InquiriesTab } from "@/components/dashboard/inquiries-tab";
+import { WantedAdsBrowseTab } from "@/components/dashboard/wanted-ads-browse-tab";
 import { AdvertisementTab } from "@/components/dashboard/teacher/advertisement-tab";
 import type { TeacherAdBatchRow } from "@/components/dashboard/teacher/advertisement-tab";
 import { SettingsTab } from "@/components/dashboard/teacher/settings-tab";
@@ -32,6 +33,7 @@ import type {
   TeacherLessonOption,
 } from "@/components/dashboard/teacher/assignments-tab";
 import type { InquiryRow } from "@/components/dashboard/inquiries-tab";
+import type { WantedAdBrowseRow } from "@/components/dashboard/wanted-ads-browse-tab";
 
 type RawQuestionOption = { id: string; text: string; imagePath?: string };
 
@@ -70,6 +72,7 @@ export default async function TeacherDashboardPage({
     { data: examRows },
     { data: pendingSubmissionRows },
     { data: inquiryRows },
+    { data: wantedAdRows },
     { data: myReviewRows },
     { data: batchRows },
     { data: enrollmentRows },
@@ -107,6 +110,7 @@ export default async function TeacherDashboardPage({
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
       .order("created_at", { ascending: false }),
+    supabase.rpc("list_wanted_ads_for_responder"),
     // Same RPC the public /teacher/[id] page uses — masked reviewer names,
     // consistent with what this teacher's own public profile shows.
     supabase.rpc("list_public_reviews", { p_target_type: "teacher", p_target_id: userId }),
@@ -293,6 +297,18 @@ export default async function TeacherDashboardPage({
     status: row.status,
     reply: row.reply,
     createdLabel: dateFormatter.format(new Date(row.created_at)),
+  }));
+
+  const wantedAdRequests: WantedAdBrowseRow[] = (wantedAdRows ?? []).map((row) => ({
+    id: row.id,
+    lookingFor: row.looking_for as "teacher" | "institute",
+    subject: row.subject,
+    mode: row.mode as "online" | "physical" | "both" | null,
+    gradeLevel: row.grade_level,
+    title: row.title,
+    description: row.description,
+    createdLabel: dateFormatter.format(new Date(row.created_at)),
+    myResponse: row.my_response,
   }));
 
   const examIds = new Set((examRows ?? []).map((e) => e.id));
@@ -632,6 +648,11 @@ export default async function TeacherDashboardPage({
               label: t("tabs.inquiries"),
               count: inquiries.filter((i) => i.status === "new").length,
             },
+            {
+              key: "studentRequests",
+              label: t("tabs.studentRequests"),
+              count: wantedAdRequests.filter((r) => !r.myResponse).length,
+            },
           ],
         },
         {
@@ -713,6 +734,7 @@ export default async function TeacherDashboardPage({
         students: <StudentsTab students={students} requests={requests} />,
         attendance: <AttendanceTab sessions={attendanceSessions} />,
         inquiries: <InquiriesTab inquiries={inquiries} />,
+        studentRequests: <WantedAdsBrowseTab requests={wantedAdRequests} />,
         reviews: <ReviewsTab initialReviews={reviews} averageRating={averageRating ?? "0.0"} reviewCount={reviewRows?.length ?? 0} />,
         ads: (
           <AdvertisementTab

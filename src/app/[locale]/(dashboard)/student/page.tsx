@@ -18,7 +18,7 @@ import type { ReviewTarget, StudentPostedReview } from "@/components/dashboard/s
 import type { StudentLiveClassRow } from "@/components/dashboard/student/live-classes-tab";
 import type { StudentExamRow, StudentExamQuestion } from "@/components/dashboard/student/exams-tab";
 import type { StudentAssignmentRow } from "@/components/dashboard/student/assignments-tab";
-import type { WantedAdRow } from "@/components/dashboard/student/wanted-ads-tab";
+import type { WantedAdRow, WantedAdResponseRow } from "@/components/dashboard/student/wanted-ads-tab";
 
 type RawQuestionOption = { id: string; text: string; imagePath?: string };
 type RawLiveClassRow = {
@@ -73,6 +73,7 @@ export default async function StudentDashboardPage({
     { data: myReviewRows },
     { data: wantedAdRows },
     { data: subjectRows },
+    { data: wantedAdResponseRows },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -117,6 +118,7 @@ export default async function StudentDashboardPage({
     // teacher already teaches), a student can be looking for help with any
     // subject that exists, including ones they've never had a class for.
     supabase.from("subjects").select("id, translations"),
+    supabase.rpc("list_wanted_ad_responses_for_student"),
   ]);
 
   const fullName = profile?.full_name ?? user!.email ?? "Student";
@@ -468,6 +470,15 @@ export default async function StudentDashboardPage({
     status: ad.status,
   }));
 
+  const wantedAdResponses: WantedAdResponseRow[] = (wantedAdResponseRows ?? []).map((r) => ({
+    id: r.id,
+    wantedAdId: r.wanted_ad_id,
+    responderType: r.responder_type as "teacher" | "class",
+    responderName: r.responder_name,
+    message: r.message,
+    createdLabel: dateFormatter.format(new Date(r.created_at)),
+  }));
+
   const reviewTargets: ReviewTarget[] = [...joinedOwnerKeys].map((key) => {
     const [ownerType, ownerId] = key.split(":") as ["teacher" | "class", string];
     return { ownerType, ownerId, name: ownerName(ownerType, ownerId) };
@@ -535,7 +546,9 @@ export default async function StudentDashboardPage({
         ),
         classes: <ClassesTab myClasses={myClasses} availableBatches={availableBatches} />,
         live: <LiveClassesTab classes={liveClasses} studentName={fullName} reminderClassIds={reminderClassIds} />,
-        wantedAds: <WantedAdsTab wantedAds={wantedAds} subjectOptions={subjectOptions} />,
+        wantedAds: (
+          <WantedAdsTab wantedAds={wantedAds} subjectOptions={subjectOptions} responses={wantedAdResponses} />
+        ),
         notes: <NotesTab notes={studentNotes} studentName={fullName} />,
         exams: <ExamsTab exams={exams} />,
         assignments: <AssignmentsTab assignments={assignments} />,

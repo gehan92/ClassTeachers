@@ -31,14 +31,25 @@ export type WantedAdRow = {
   status: "active" | "closed";
 };
 
+export type WantedAdResponseRow = {
+  id: string;
+  wantedAdId: string;
+  responderType: "teacher" | "class";
+  responderName: string | null;
+  message: string;
+  createdLabel: string;
+};
+
 type SubjectOption = { id: string; name: string };
 
 export function WantedAdsTab({
   wantedAds,
   subjectOptions,
+  responses,
 }: {
   wantedAds: WantedAdRow[];
   subjectOptions: SubjectOption[];
+  responses: WantedAdResponseRow[];
 }) {
   const t = useTranslations("studentDashboard.wantedAds");
 
@@ -57,7 +68,14 @@ export function WantedAdsTab({
             {t("emptyState")}
           </div>
         ) : (
-          wantedAds.map((ad) => <WantedAdCard key={ad.id} ad={ad} subjectOptions={subjectOptions} />)
+          wantedAds.map((ad) => (
+            <WantedAdCard
+              key={ad.id}
+              ad={ad}
+              subjectOptions={subjectOptions}
+              responses={responses.filter((r) => r.wantedAdId === ad.id)}
+            />
+          ))
         )}
       </div>
     </div>
@@ -271,7 +289,15 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
   );
 }
 
-function WantedAdCard({ ad, subjectOptions }: { ad: WantedAdRow; subjectOptions: SubjectOption[] }) {
+function WantedAdCard({
+  ad,
+  subjectOptions,
+  responses,
+}: {
+  ad: WantedAdRow;
+  subjectOptions: SubjectOption[];
+  responses: WantedAdResponseRow[];
+}) {
   const t = useTranslations("studentDashboard.wantedAds");
   const tc = useTranslations("studentDashboard.common");
   const { refresh } = useDashboardRefresh();
@@ -352,6 +378,28 @@ function WantedAdCard({ ad, subjectOptions }: { ad: WantedAdRow; subjectOptions:
       {!editing && (
         <div>
           {ad.description && <p className="mb-3 text-sm text-muted-foreground">{ad.description}</p>}
+
+          {responses.length > 0 && (
+            <div className="mb-3 flex flex-col gap-2 border-t border-border pt-3">
+              <p className="text-xs font-semibold text-muted-foreground">
+                {t("responsesHeading", { count: responses.length })}
+              </p>
+              {responses.map((response) => (
+                <div key={response.id} className="rounded-md bg-secondary/60 px-3 py-2">
+                  <div className="mb-0.5 flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-foreground">
+                      {response.responderName ?? t(`responderTypeLabels.${response.responderType}`)}
+                      {" · "}
+                      {t(`responderTypeLabels.${response.responderType}`)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{response.createdLabel}</span>
+                  </div>
+                  <p className="text-sm text-foreground/85">{response.message}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="flex items-center gap-3">
             <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
               {t("editAd")}

@@ -337,6 +337,7 @@ export type Database = {
           subject_id: string | null;
           title: string;
           mode: "online" | "physical";
+          class_size_type: "group" | "individual";
           location: string | null;
           schedule_note: string | null;
           teacher_label: string | null;
@@ -354,6 +355,7 @@ export type Database = {
           subject_id?: string | null;
           title: string;
           mode: "online" | "physical";
+          class_size_type?: "group" | "individual";
           location?: string | null;
           schedule_note?: string | null;
           teacher_label?: string | null;
@@ -371,6 +373,7 @@ export type Database = {
           subject_id?: string | null;
           title?: string;
           mode?: "online" | "physical";
+          class_size_type?: "group" | "individual";
           location?: string | null;
           schedule_note?: string | null;
           teacher_label?: string | null;

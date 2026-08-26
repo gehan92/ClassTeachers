@@ -112,7 +112,9 @@ export default async function TeacherDashboardPage({
     supabase.rpc("list_public_reviews", { p_target_type: "teacher", p_target_id: userId }),
     supabase
       .from("batches")
-      .select("id, title, mode, location, schedule_note, grade_band, status, subject_id, hourly_rate, monthly_rate")
+      .select(
+        "id, title, mode, class_size_type, location, schedule_note, grade_band, status, subject_id, hourly_rate, monthly_rate",
+      )
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
       .order("created_at", { ascending: false }),
@@ -320,13 +322,22 @@ export default async function TeacherDashboardPage({
   }
   const topGradeBand = [...subjectGradeBandCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 
+  // Deleting a batch cascades to delete its search-results ad (0039) — the
+  // Classes tab needs to know this up front to disable the Delete action
+  // rather than let the teacher hit the server-side block after the fact.
+  const activeAdBatchIds = new Set(
+    (batchAdRows ?? []).filter((a) => a.batch_id && a.status === "active").map((a) => a.batch_id as string),
+  );
+
   const batches: TeacherBatchRow[] = (batchRows ?? []).map((b) => ({
     id: b.id,
     title: b.title,
     mode: b.mode,
+    classSizeType: b.class_size_type,
     location: b.location,
     scheduleNote: b.schedule_note,
     gradeBand: b.grade_band,
+    hasActiveAd: activeAdBatchIds.has(b.id),
   }));
   const batchTitleById = new Map(batches.map((b) => [b.id, b.title]));
 

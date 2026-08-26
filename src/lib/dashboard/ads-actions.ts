@@ -271,6 +271,7 @@ export async function createIndividualAd(input: {
       subject_id: parsed.data.subjectId,
       hourly_rate: parsed.data.hourlyRate ?? null,
       monthly_rate: parsed.data.monthlyRate ?? null,
+      class_size_type: "individual",
     })
     .select("id")
     .single();

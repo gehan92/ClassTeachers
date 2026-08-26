@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { resolveApproval } from "@/lib/dashboard/admin-actions";
 import { cn } from "@/lib/utils";
 import { avatarGradientClass } from "@/lib/avatar-color";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import type { ApprovalEntityType, PendingApproval } from "@/types/dashboard-admin";
 
 function initialsFor(name: string) {
@@ -23,6 +25,8 @@ function initialsFor(name: string) {
 
 export function ApprovalsTab({ initialApprovals }: { initialApprovals: PendingApproval[] }) {
   const t = useTranslations("adminDashboard.approvals");
+  const tc = useTranslations("adminDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [approvals, setApprovals] = useState(initialApprovals);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +48,9 @@ export function ApprovalsTab({ initialApprovals }: { initialApprovals: PendingAp
       return;
     }
     setApprovals((prev) => prev.filter((a) => a.id !== approval.id));
+    // The Overview tab's pending-approvals count is a separately pre-built
+    // panel — it won't reflect this until the server data is refetched.
+    refresh();
   }
 
   return (
@@ -54,6 +61,15 @@ export function ApprovalsTab({ initialApprovals }: { initialApprovals: PendingAp
       </div>
 
       {error && <p className="mb-4 text-sm font-medium text-destructive">{error}</p>}
+
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+        className="mb-4"
+      />
 
       <div className="rounded-lg border border-border bg-white p-5">
         {approvals.length === 0 ? (

@@ -11,6 +11,8 @@ import { Switch } from "@/components/ui/switch";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { updateTeacherProfile, updateTeacherSubjects, setListingPublished, resubmitListing } from "@/lib/dashboard/actions";
 import { uploadAvatar } from "@/lib/dashboard/avatar-actions";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import type { ProfileStatus } from "@/types/database";
 
 const panelClass = "rounded-lg border border-border bg-white p-5";
@@ -55,6 +57,7 @@ export function ProfileTab({
 }) {
   const t = useTranslations("teacherDashboard.profile");
   const tc = useTranslations("teacherDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
 
   const [mode, setMode] = useState<"edit" | "live">("live");
   const [status, setStatus] = useState(initialStatus);
@@ -170,6 +173,9 @@ export function ProfileTab({
     setPhotoUrl(result.url);
     setPhotoSaved(true);
     setTimeout(() => setPhotoSaved(false), 2500);
+    // liveView below is a server-rendered snapshot passed in as a prop —
+    // needs a refetch to pick up the new photo.
+    refresh();
   }
 
   async function handleSaveChanges() {
@@ -197,6 +203,8 @@ export function ProfileTab({
     }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+    // Same reason as the photo upload above — liveView needs a refetch.
+    refresh();
   }
 
   if (mode === "live") {
@@ -220,6 +228,14 @@ export function ProfileTab({
             {t("preview.hiddenNote")}
           </p>
         )}
+
+        <RefreshStatus
+          pending={isRefreshing}
+          stuck={refreshStuck}
+          pendingLabel={tc("updatingList")}
+          stuckLabel={tc("updateStuck")}
+          reloadLabel={tc("reloadPage")}
+        />
 
         <div className="overflow-hidden rounded-xl border border-border bg-muted/30">{liveView}</div>
       </div>
@@ -424,6 +440,13 @@ export function ProfileTab({
         </Button>
         {saved && <span className="text-sm font-medium text-success">{tc("saved")}</span>}
         {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+        <RefreshStatus
+          pending={isRefreshing}
+          stuck={refreshStuck}
+          pendingLabel={tc("updatingList")}
+          stuckLabel={tc("updateStuck")}
+          reloadLabel={tc("reloadPage")}
+        />
       </div>
 
       <div className={panelClass}>

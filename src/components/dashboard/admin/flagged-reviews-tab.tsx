@@ -6,10 +6,14 @@ import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { resolveFlaggedReview } from "@/lib/dashboard/admin-actions";
 import { cn } from "@/lib/utils";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import type { FlaggedReview } from "@/types/dashboard-admin";
 
 export function FlaggedReviewsTab({ initialReviews }: { initialReviews: FlaggedReview[] }) {
   const t = useTranslations("adminDashboard.flagged");
+  const tc = useTranslations("adminDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [reviews, setReviews] = useState(initialReviews);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +28,7 @@ export function FlaggedReviewsTab({ initialReviews }: { initialReviews: FlaggedR
       return;
     }
     setReviews((prev) => prev.filter((review) => review.id !== id));
+    refresh();
   }
 
   return (
@@ -34,6 +39,15 @@ export function FlaggedReviewsTab({ initialReviews }: { initialReviews: FlaggedR
       </div>
 
       {error && <p className="mb-4 text-sm font-medium text-destructive">{error}</p>}
+
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+        className="mb-4"
+      />
 
       <div className="rounded-lg border border-border bg-white p-5">
         {reviews.length === 0 ? (

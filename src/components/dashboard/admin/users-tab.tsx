@@ -10,6 +10,8 @@ import { StatusBadge } from "@/components/features/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { setUserSuspended } from "@/lib/dashboard/admin-actions";
 import { avatarGradientClass } from "@/lib/avatar-color";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import type { PlatformUser, PlatformUserRole } from "@/types/dashboard-admin";
 
 type RoleFilter = "all" | PlatformUserRole;
@@ -26,6 +28,8 @@ function initialsFor(name: string) {
 
 export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
   const t = useTranslations("adminDashboard.users");
+  const tc = useTranslations("adminDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [users, setUsers] = useState<PlatformUser[]>(initialUsers);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<RoleFilter>("all");
@@ -63,6 +67,7 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
     setUsers((prev) =>
       prev.map((u) => (u.id === user.id ? { ...u, status: suspended ? "suspended" : "active" } : u)),
     );
+    refresh();
   }
 
   return (
@@ -73,6 +78,15 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
       </div>
 
       {error && <p className="mb-4 text-sm font-medium text-destructive">{error}</p>}
+
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+        className="mb-4"
+      />
 
       <div className="mb-4 flex flex-col gap-2.5 sm:flex-row sm:items-center">
         <Input

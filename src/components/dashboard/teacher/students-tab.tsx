@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { avatarGradientClass } from "@/lib/avatar-color";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { respondToJoinRequest } from "@/lib/dashboard/batches-actions";
 
 export type TeacherStudentRow = {
@@ -32,8 +34,13 @@ export function StudentsTab({
   requests: TeacherJoinRequestRow[];
 }) {
   const t = useTranslations("teacherDashboard.students");
+  const tc = useTranslations("teacherDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [query, setQuery] = useState("");
-  const [requests, setRequests] = useState(initialRequests);
+  // Read straight from the prop (filtered by a locally-handled set), not a
+  // useState copy — see the identical fix + note in question-bank-tab.tsx.
+  const [handledRequestIds, setHandledRequestIds] = useState<Set<string>>(new Set());
+  const requests = initialRequests.filter((r) => !handledRequestIds.has(r.id));
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +61,10 @@ export function StudentsTab({
       setError(result.error);
       return;
     }
-    setRequests((list) => list.filter((r) => r.id !== id));
+    setHandledRequestIds((prev) => new Set(prev).add(id));
+    // Accepting moves the student into the roster below, which reads
+    // straight from the `students` prop — needs a refetch to show up.
+    refresh();
   }
 
   return (
@@ -68,6 +78,14 @@ export function StudentsTab({
           className="w-full sm:w-64"
         />
       </div>
+
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+      />
 
       {requests.length > 0 && (
         <div className="rounded-lg border border-border bg-white p-5">

@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createBatch } from "@/lib/dashboard/batches-actions";
 import type { GradeBand } from "@/types/grade-band";
 
@@ -37,6 +39,7 @@ export function ClassesTab({
   const t = useTranslations("teacherDashboard.classes");
   const tc = useTranslations("teacherDashboard.common");
   const tg = useTranslations("search");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
 
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
@@ -77,6 +80,7 @@ export function ClassesTab({
     setShowForm(false);
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
+    refresh();
   }
 
   return (
@@ -91,6 +95,14 @@ export function ClassesTab({
           <Button onClick={() => setShowForm((v) => !v)}>{t("addBatch")}</Button>
         </div>
       </div>
+
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+      />
 
       {showForm && (
         <div className="rounded-lg border border-border bg-white p-5">

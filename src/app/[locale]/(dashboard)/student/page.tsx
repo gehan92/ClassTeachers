@@ -443,11 +443,18 @@ export default async function StudentDashboardPage({
       realtimeWatch={[{ table: "live_class_reminders", filter: `student_id=eq.${userId}` }]}
       groups={[
         {
-          label: t("groupLearn"),
+          items: [{ key: "overview", label: t("tabs.overview") }],
+        },
+        {
+          label: t("groupClasses"),
           items: [
-            { key: "overview", label: t("tabs.overview") },
             { key: "classes", label: t("tabs.classes") },
             { key: "live", label: t("tabs.live") },
+          ],
+        },
+        {
+          label: t("groupContent"),
+          items: [
             { key: "notes", label: t("tabs.notes") },
             { key: "exams", label: t("tabs.exams"), count: examsDueCount },
             { key: "assignments", label: t("tabs.assignments"), count: assignmentsDueCount },

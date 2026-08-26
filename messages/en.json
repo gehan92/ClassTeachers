@@ -901,7 +901,8 @@
   },
   "studentDashboard": {
     "logout": "Log out",
-    "groupLearn": "Learn",
+    "groupClasses": "Classes",
+    "groupContent": "Content",
     "groupAccount": "Account",
     "tabs": {
       "overview": "Overview",

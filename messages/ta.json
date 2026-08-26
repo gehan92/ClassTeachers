@@ -901,7 +901,8 @@
   },
   "studentDashboard": {
     "logout": "வெளியேறு",
-    "groupLearn": "கற்றல்",
+    "groupClasses": "வகுப்புகள்",
+    "groupContent": "உள்ளடக்கம்",
     "groupAccount": "கணக்கு",
     "tabs": {
       "overview": "கண்ணோட்டம்",

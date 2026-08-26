@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Pencil, Check } from "lucide-react";
+import { Pencil, Check, Plus, X } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,8 @@ export function ProfileTab({
   initialBio,
   initialEducationLevel,
   initialInstitutionName,
-  initialQualification,
+  initialQualifications,
+  initialWorkExperience,
   initialSubjects,
   initialLanguages,
   classesCount,
@@ -43,7 +44,8 @@ export function ProfileTab({
   initialBio: string;
   initialEducationLevel: EducationLevel | null;
   initialInstitutionName: string;
-  initialQualification: string;
+  initialQualifications: string[];
+  initialWorkExperience: string[];
   initialSubjects: string[];
   initialLanguages: string[];
   classesCount: number;
@@ -86,7 +88,8 @@ export function ProfileTab({
           bio={initialBio}
           educationLevel={initialEducationLevel}
           institutionName={initialInstitutionName}
-          qualification={initialQualification}
+          qualifications={initialQualifications}
+          workExperience={initialWorkExperience}
           subjects={initialSubjects}
           languages={initialLanguages}
         />
@@ -100,7 +103,8 @@ export function ProfileTab({
             initialBio={initialBio}
             initialEducationLevel={initialEducationLevel}
             initialInstitutionName={initialInstitutionName}
-            initialQualification={initialQualification}
+            initialQualifications={initialQualifications}
+            initialWorkExperience={initialWorkExperience}
             initialSubjects={initialSubjects}
             initialLanguages={initialLanguages}
             email={email}
@@ -128,7 +132,8 @@ function ProfileCard({
   bio,
   educationLevel,
   institutionName,
-  qualification,
+  qualifications,
+  workExperience,
   subjects,
   languages,
 }: {
@@ -141,7 +146,8 @@ function ProfileCard({
   bio: string;
   educationLevel: EducationLevel | null;
   institutionName: string;
-  qualification: string;
+  qualifications: string[];
+  workExperience: string[];
   subjects: string[];
   languages: string[];
 }) {
@@ -209,28 +215,53 @@ function ProfileCard({
         </div>
       )}
 
-      {(institutionName || qualification || subjects.length > 0 || languages.length > 0) && (
+      {(institutionName || qualifications.length > 0 || workExperience.length > 0) && (
         <div className={panelClass}>
           <h3 className="mb-4 text-lg">{t("educationHeading")}</h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-4">
             {institutionName && (
               <div>
                 <div className="text-xs text-muted-foreground">{t("fields.institutionName")}</div>
                 <div className="text-sm font-medium text-foreground">{institutionName}</div>
               </div>
             )}
-            {qualification && (
+            {qualifications.length > 0 && (
               <div>
-                <div className="text-xs text-muted-foreground">{t("fields.qualification")}</div>
-                <div className="text-sm font-medium text-foreground">{qualification}</div>
+                <div className="mb-1.5 text-xs text-muted-foreground">{t("fields.qualifications")}</div>
+                <ul className="flex flex-col gap-1">
+                  {qualifications.map((qualification, i) => (
+                    <li key={i} className="text-sm font-medium text-foreground">
+                      {qualification}
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
+            {workExperience.length > 0 && (
+              <div>
+                <div className="mb-1.5 text-xs text-muted-foreground">{t("fields.workExperience")}</div>
+                <ul className="flex flex-col gap-1">
+                  {workExperience.map((entry, i) => (
+                    <li key={i} className="text-sm font-medium text-foreground">
+                      {entry}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {(subjects.length > 0 || languages.length > 0) && (
+        <div className={panelClass}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {subjects.length > 0 && (
-              <div className="sm:col-span-2">
+              <div>
                 <div className="mb-1.5 text-xs text-muted-foreground">{t("fields.subjects")}</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {subjects.map((subject) => (
-                    <span key={subject} className="rounded-full bg-background px-2.5 py-1 text-xs text-foreground">
+                  {subjects.map((subject, i) => (
+                    <span key={i} className="rounded-full bg-background px-2.5 py-1 text-xs text-foreground">
                       {subject}
                     </span>
                   ))}
@@ -238,11 +269,11 @@ function ProfileCard({
               </div>
             )}
             {languages.length > 0 && (
-              <div className="sm:col-span-2">
+              <div>
                 <div className="mb-1.5 text-xs text-muted-foreground">{t("fields.languages")}</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {languages.map((language) => (
-                    <span key={language} className="rounded-full bg-background px-2.5 py-1 text-xs text-foreground">
+                  {languages.map((language, i) => (
+                    <span key={i} className="rounded-full bg-background px-2.5 py-1 text-xs text-foreground">
                       {language}
                     </span>
                   ))}
@@ -326,6 +357,62 @@ function PhotoPanel({ initialPhotoUrl, studentName }: { initialPhotoUrl: string 
 }
 
 /**
+ * Add/remove list of free-text entries — used for qualifications, work
+ * experience, subjects and languages so a student adds one entry at a time
+ * instead of typing a comma-separated string into a single Input. Same
+ * shape as the teacher profile tab's qualifications/work-experience lists.
+ */
+function RepeatableListField({
+  label,
+  items,
+  onChange,
+  placeholder,
+  addLabel,
+  removeLabel,
+}: {
+  label: string;
+  items: string[];
+  onChange: (items: string[]) => void;
+  placeholder: string;
+  addLabel: string;
+  removeLabel: string;
+}) {
+  function updateItem(index: number, value: string) {
+    onChange(items.map((item, i) => (i === index ? value : item)));
+  }
+
+  function addItem() {
+    onChange([...items, ""]);
+  }
+
+  function removeItem(index: number) {
+    onChange(items.filter((_, i) => i !== index));
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label>{label}</Label>
+      {items.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {items.map((item, index) => (
+            <div key={index} className="flex gap-2">
+              <Input value={item} placeholder={placeholder} onChange={(e) => updateItem(index, e.target.value)} />
+              <Button type="button" variant="ghost" size="icon" aria-label={removeLabel} onClick={() => removeItem(index)}>
+                <X className="size-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+      <Button type="button" variant="outline" size="sm" className="mt-1 self-start" onClick={addItem}>
+        <Plus className="size-4" />
+        {addLabel}
+      </Button>
+    </div>
+  );
+}
+
+/**
  * One shared save button for everything below — Personal details, About me
  * and Education are visually separate panels but a single form/save action,
  * same shape as the teacher profile tab's several panels sharing one
@@ -339,7 +426,8 @@ function EditForm({
   initialBio,
   initialEducationLevel,
   initialInstitutionName,
-  initialQualification,
+  initialQualifications,
+  initialWorkExperience,
   initialSubjects,
   initialLanguages,
   email,
@@ -350,7 +438,8 @@ function EditForm({
   initialBio: string;
   initialEducationLevel: EducationLevel | null;
   initialInstitutionName: string;
-  initialQualification: string;
+  initialQualifications: string[];
+  initialWorkExperience: string[];
   initialSubjects: string[];
   initialLanguages: string[];
   email: string;
@@ -362,9 +451,6 @@ function EditForm({
   const phoneId = useId();
   const bioId = useId();
   const institutionId = useId();
-  const qualificationId = useId();
-  const subjectsId = useId();
-  const languagesId = useId();
   const { refresh } = useDashboardRefresh();
 
   const [form, setForm] = useState({
@@ -374,15 +460,16 @@ function EditForm({
     bio: initialBio,
     educationLevel: initialEducationLevel ?? ("" as EducationLevel | ""),
     institutionName: initialInstitutionName,
-    qualification: initialQualification,
-    subjects: initialSubjects.join(", "),
-    languages: initialLanguages.join(", "),
   });
+  const [qualifications, setQualifications] = useState(initialQualifications);
+  const [workExperience, setWorkExperience] = useState(initialWorkExperience);
+  const [subjects, setSubjects] = useState(initialSubjects);
+  const [languages, setLanguages] = useState(initialLanguages);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  function update(field: "name" | "grade" | "phone" | "institutionName" | "qualification" | "subjects" | "languages") {
+  function update(field: "name" | "grade" | "phone" | "institutionName") {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [field]: e.target.value }));
   }
 
@@ -396,9 +483,10 @@ function EditForm({
       bio: form.bio,
       educationLevel: form.educationLevel,
       institutionName: form.institutionName,
-      qualification: form.qualification,
-      subjects: form.subjects.split(","),
-      languages: form.languages.split(","),
+      qualifications,
+      workExperience,
+      subjects,
+      languages,
     });
     setSaving(false);
     if (result.error) {
@@ -489,35 +577,41 @@ function EditForm({
               placeholder={t("institutionPlaceholder")}
             />
           </div>
-          <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label htmlFor={qualificationId}>{t("fields.qualification")}</Label>
-            <Input
-              id={qualificationId}
-              value={form.qualification}
-              onChange={update("qualification")}
-              placeholder={t("qualificationPlaceholder")}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label htmlFor={subjectsId}>{t("fields.subjects")}</Label>
-            <Input
-              id={subjectsId}
-              value={form.subjects}
-              onChange={update("subjects")}
-              placeholder={t("subjectsPlaceholder")}
-            />
-            <p className="text-xs text-muted-foreground">{t("commaHint")}</p>
-          </div>
-          <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label htmlFor={languagesId}>{t("fields.languages")}</Label>
-            <Input
-              id={languagesId}
-              value={form.languages}
-              onChange={update("languages")}
-              placeholder={t("languagesPlaceholder")}
-            />
-            <p className="text-xs text-muted-foreground">{t("commaHint")}</p>
-          </div>
+        </div>
+
+        <div className="mt-5 flex flex-col gap-5">
+          <RepeatableListField
+            label={t("fields.qualifications")}
+            items={qualifications}
+            onChange={setQualifications}
+            placeholder={t("qualificationPlaceholder")}
+            addLabel={t("addQualification")}
+            removeLabel={t("removeQualification")}
+          />
+          <RepeatableListField
+            label={t("fields.workExperience")}
+            items={workExperience}
+            onChange={setWorkExperience}
+            placeholder={t("workExperiencePlaceholder")}
+            addLabel={t("addWorkExperience")}
+            removeLabel={t("removeWorkExperience")}
+          />
+          <RepeatableListField
+            label={t("fields.subjects")}
+            items={subjects}
+            onChange={setSubjects}
+            placeholder={t("subjectsPlaceholder")}
+            addLabel={t("addSubject")}
+            removeLabel={t("removeSubject")}
+          />
+          <RepeatableListField
+            label={t("fields.languages")}
+            items={languages}
+            onChange={setLanguages}
+            placeholder={t("languagesPlaceholder")}
+            addLabel={t("addLanguage")}
+            removeLabel={t("removeLanguage")}
+          />
         </div>
       </div>
 

@@ -14,7 +14,8 @@ const studentProfileSchema = z.object({
   bio: z.string().trim().optional(),
   educationLevel: z.enum(educationLevels).optional(),
   institutionName: z.string().trim().optional(),
-  qualification: z.string().trim().optional(),
+  qualifications: z.array(z.string().trim()).transform((arr) => arr.filter(Boolean)),
+  workExperience: z.array(z.string().trim()).transform((arr) => arr.filter(Boolean)),
   subjects: z.array(z.string().trim()).transform((arr) => arr.filter(Boolean)),
   languages: z.array(z.string().trim()).transform((arr) => arr.filter(Boolean)),
 });
@@ -26,7 +27,8 @@ export async function updateStudentProfile(input: {
   bio: string;
   educationLevel: string;
   institutionName: string;
-  qualification: string;
+  qualifications: string[];
+  workExperience: string[];
   subjects: string[];
   languages: string[];
 }): Promise<ActionResult> {
@@ -37,7 +39,8 @@ export async function updateStudentProfile(input: {
     bio: input.bio,
     educationLevel: input.educationLevel || undefined,
     institutionName: input.institutionName,
-    qualification: input.qualification,
+    qualifications: input.qualifications,
+    workExperience: input.workExperience,
     subjects: input.subjects,
     languages: input.languages,
   });
@@ -62,7 +65,8 @@ export async function updateStudentProfile(input: {
       bio: parsed.data.bio || null,
       education_level: parsed.data.educationLevel ?? null,
       institution_name: parsed.data.institutionName || null,
-      qualification: parsed.data.qualification || null,
+      qualifications: parsed.data.qualifications.length > 0 ? parsed.data.qualifications : null,
+      work_experience: parsed.data.workExperience.length > 0 ? parsed.data.workExperience : null,
       subjects: parsed.data.subjects.length > 0 ? parsed.data.subjects : null,
       languages: parsed.data.languages.length > 0 ? parsed.data.languages : null,
     })

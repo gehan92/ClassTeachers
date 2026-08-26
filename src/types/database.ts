@@ -61,7 +61,8 @@ export type Database = {
           bio: string | null;
           education_level: "school" | "campus" | "graduated" | null;
           institution_name: string | null;
-          qualification: string | null;
+          qualifications: string[] | null;
+          work_experience: string[] | null;
           subjects: string[] | null;
           languages: string[] | null;
           notification_prefs: Json;
@@ -79,7 +80,8 @@ export type Database = {
           bio?: string | null;
           education_level?: "school" | "campus" | "graduated" | null;
           institution_name?: string | null;
-          qualification?: string | null;
+          qualifications?: string[] | null;
+          work_experience?: string[] | null;
           subjects?: string[] | null;
           languages?: string[] | null;
           notification_prefs?: Json;
@@ -97,7 +99,8 @@ export type Database = {
           bio?: string | null;
           education_level?: "school" | "campus" | "graduated" | null;
           institution_name?: string | null;
-          qualification?: string | null;
+          qualifications?: string[] | null;
+          work_experience?: string[] | null;
           subjects?: string[] | null;
           languages?: string[] | null;
           notification_prefs?: Json;

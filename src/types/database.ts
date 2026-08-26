@@ -1159,6 +1159,10 @@ export type Database = {
         };
         Returns: undefined;
       };
+      rejoin_after_decline: {
+        Args: { p_batch_id: string };
+        Returns: undefined;
+      };
       owns_exam: {
         Args: { p_exam_id: string };
         Returns: boolean;

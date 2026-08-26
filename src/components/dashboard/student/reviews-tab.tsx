@@ -35,13 +35,32 @@ export function ReviewsTab({
 }) {
   const t = useTranslations("studentDashboard.reviews");
   const [reviews, setReviews] = useState<StudentPostedReview[]>(initialReviews);
-  const [targetKey, setTargetKey] = useState(targets[0] ? `${targets[0].ownerType}:${targets[0].ownerId}` : "");
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState("");
+  const initialTargetKey = targets[0] ? `${targets[0].ownerType}:${targets[0].ownerId}` : "";
+  const initialExistingReview = initialReviews.find((r) => `${r.ownerType}:${r.ownerId}` === initialTargetKey);
+  const [targetKey, setTargetKey] = useState(initialTargetKey);
+  const [rating, setRating] = useState(initialExistingReview?.rating ?? 0);
+  const [comment, setComment] = useState(initialExistingReview?.body ?? "");
   const [ratingResetKey, setRatingResetKey] = useState(0);
   const [posted, setPosted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Switching targets loads that target's existing review (if any) into the
+  // form instead of leaving stale values from the previous target — posting
+  // is an upsert server-side, so without this a student picking a
+  // teacher/class they'd already reviewed would silently overwrite it
+  // starting from a blank-looking form. ratingResetKey forces
+  // StarRatingInput to remount with the new value, since it only reads its
+  // `value` prop once on mount (see its own initial-state comment).
+  function handleTargetChange(value: string | null) {
+    const key = value ?? "";
+    setTargetKey(key);
+    const existing = reviews.find((r) => `${r.ownerType}:${r.ownerId}` === key);
+    setRating(existing?.rating ?? 0);
+    setComment(existing?.body ?? "");
+    setRatingResetKey((k) => k + 1);
+    setError(null);
+  }
 
   async function handlePost() {
     const target = targets.find((t) => `${t.ownerType}:${t.ownerId}` === targetKey);
@@ -117,7 +136,7 @@ export function ReviewsTab({
           <div className="flex flex-col gap-4">
             <div>
               <Label className="mb-1.5">{t("targetLabel")}</Label>
-              <Select value={targetKey} onValueChange={(value) => setTargetKey(value ?? "")}>
+              <Select value={targetKey} onValueChange={handleTargetChange}>
                 <SelectTrigger className="w-full sm:w-80">
                   <SelectValue placeholder={t("targetLabel")} />
                 </SelectTrigger>
@@ -151,7 +170,7 @@ export function ReviewsTab({
             </div>
 
             <div className="flex items-center gap-3">
-              <Button onClick={handlePost} disabled={saving}>
+              <Button onClick={handlePost} disabled={saving || rating === 0 || comment.trim() === ""}>
                 {t("postButton")}
               </Button>
               {posted && <span className="text-sm font-medium text-success">{t("posted")}</span>}

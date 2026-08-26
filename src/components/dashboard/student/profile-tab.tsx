@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { updateStudentProfile, updateNotificationPrefs } from "@/lib/dashboard/actions";
 
 export function ProfileTab({
@@ -46,6 +47,7 @@ function ProfilePanel({
   const gradeId = useId();
   const emailId = useId();
   const phoneId = useId();
+  const { refresh } = useDashboardRefresh();
 
   const [name, setName] = useState(initialName);
   const [grade, setGrade] = useState(initialGrade);
@@ -65,6 +67,10 @@ function ProfilePanel({
     }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+    // The dashboard shell's header avatar/name comes from the server page,
+    // not this component's own state — without a refresh it keeps showing
+    // the old name until a hard reload.
+    refresh();
   }
 
   return (
@@ -115,14 +121,25 @@ function NotificationsPanel({ initialPrefs }: { initialPrefs: Record<string, boo
   const [newNotes, setNewNotes] = useState(initialPrefs.newNotes ?? true);
   const [liveReminders, setLiveReminders] = useState(initialPrefs.liveReminders ?? true);
   const [examGraded, setExamGraded] = useState(initialPrefs.examGraded ?? true);
+  const [toggleError, setToggleError] = useState<string | null>(null);
   const newNotesId = useId();
   const liveRemindersId = useId();
   const examGradedId = useId();
 
-  function handleToggle(key: string, setter: (value: boolean) => void) {
-    return (checked: boolean) => {
+  // Optimistic toggle: flips immediately for responsiveness, then reverts
+  // itself (`current` is the pre-toggle value, captured fresh each render)
+  // and shows an error if the save actually failed — previously the switch
+  // just stayed flipped regardless of whether updateNotificationPrefs
+  // succeeded, since its result was never checked.
+  function handleToggle(key: string, current: boolean, setter: (value: boolean) => void) {
+    return async (checked: boolean) => {
       setter(checked);
-      updateNotificationPrefs({ [key]: checked });
+      setToggleError(null);
+      const result = await updateNotificationPrefs({ [key]: checked });
+      if (result.error) {
+        setter(current);
+        setToggleError(result.error);
+      }
     };
   }
 
@@ -132,14 +149,18 @@ function NotificationsPanel({ initialPrefs }: { initialPrefs: Record<string, boo
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
           <Label htmlFor={newNotesId}>{t("notifNewNotes")}</Label>
-          <Switch id={newNotesId} checked={newNotes} onCheckedChange={handleToggle("newNotes", setNewNotes)} />
+          <Switch
+            id={newNotesId}
+            checked={newNotes}
+            onCheckedChange={handleToggle("newNotes", newNotes, setNewNotes)}
+          />
         </div>
         <div className="flex items-center justify-between gap-3">
           <Label htmlFor={liveRemindersId}>{t("notifLiveReminders")}</Label>
           <Switch
             id={liveRemindersId}
             checked={liveReminders}
-            onCheckedChange={handleToggle("liveReminders", setLiveReminders)}
+            onCheckedChange={handleToggle("liveReminders", liveReminders, setLiveReminders)}
           />
         </div>
         <div className="flex items-center justify-between gap-3">
@@ -147,10 +168,11 @@ function NotificationsPanel({ initialPrefs }: { initialPrefs: Record<string, boo
           <Switch
             id={examGradedId}
             checked={examGraded}
-            onCheckedChange={handleToggle("examGraded", setExamGraded)}
+            onCheckedChange={handleToggle("examGraded", examGraded, setExamGraded)}
           />
         </div>
       </div>
+      {toggleError && <p className="mt-3 text-sm font-medium text-destructive">{toggleError}</p>}
     </div>
   );
 }

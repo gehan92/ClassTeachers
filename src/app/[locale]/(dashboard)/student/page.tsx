@@ -269,8 +269,22 @@ export default async function StudentDashboardPage({
   }));
 
   const batchById = new Map((allBatches ?? []).map((b) => [b.id, b]));
-  const joinedOwnerKeys = new Set((enrollments ?? []).map((e) => `${e.owner_type}:${e.owner_id}`));
-  const enrolledBatchIds = new Set((enrollments ?? []).map((e) => e.batch_id).filter((id): id is string => Boolean(id)));
+  // A declined enrollment must not count as "already joined" (or the
+  // teacher's class becomes permanently unrequestable — see
+  // rejoin_after_decline, 0066) and must not unlock batch-scoped content —
+  // is_enrolled() only checks status at the owner level, so a student
+  // accepted into one batch but declined from another under the same
+  // teacher would otherwise still see the declined batch's notes/
+  // assignments through this filter alone.
+  const joinedOwnerKeys = new Set(
+    (enrollments ?? []).filter((e) => e.status !== "declined").map((e) => `${e.owner_type}:${e.owner_id}`),
+  );
+  const enrolledBatchIds = new Set(
+    (enrollments ?? [])
+      .filter((e) => e.status === "accepted")
+      .map((e) => e.batch_id)
+      .filter((id): id is string => Boolean(id)),
+  );
 
   const myClasses: MyClassRow[] = (enrollments ?? [])
     .filter((e) => e.status !== "declined")
@@ -278,6 +292,7 @@ export default async function StudentDashboardPage({
       const batch = e.batch_id ? batchById.get(e.batch_id) : undefined;
       return {
         enrollmentId: e.id,
+        ownerId: e.owner_id,
         batchTitle: batch?.title ?? null,
         ownerName: ownerName(e.owner_type, e.owner_id),
         ownerType: e.owner_type,

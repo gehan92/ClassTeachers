@@ -197,6 +197,15 @@ export async function deleteBatch(batchId: string): Promise<ActionResult> {
  * instant/accepted for now — there's no institute-side accept/decline UI
  * yet, so the RLS policy requires 'accepted' there instead; see 0040.
  */
+/**
+ * Routed through rejoin_after_decline (0066) rather than a plain insert —
+ * enrollments' unique (student_id, owner_type, owner_id) constraint (0013)
+ * means a previously-declined request still occupies that row, so a plain
+ * insert would always hit a duplicate-key error and report the misleading
+ * "already sent a request" message even though the student was actually
+ * turned down. The RPC transparently handles both the fresh-join and
+ * re-request-after-decline cases in one atomic step.
+ */
 export async function requestToJoin(batchId: string): Promise<ActionResult> {
   if (!batchId) {
     return { error: "Invalid class." };
@@ -210,24 +219,12 @@ export async function requestToJoin(batchId: string): Promise<ActionResult> {
     return { error: "You need to be signed in." };
   }
 
-  const { data: batch } = await supabase
-    .from("batches")
-    .select("owner_type, owner_id")
-    .eq("id", batchId)
-    .maybeSingle();
-  if (!batch) {
-    return { error: "That class couldn't be found." };
-  }
-
-  const { error } = await supabase.from("enrollments").insert({
-    student_id: user.id,
-    owner_type: batch.owner_type,
-    owner_id: batch.owner_id,
-    batch_id: batchId,
-    status: batch.owner_type === "teacher" ? "pending" : "accepted",
-  });
+  const { error } = await supabase.rpc("rejoin_after_decline", { p_batch_id: batchId });
   if (error) {
-    if (error.code === "23505") {
+    if (error.message.includes("class_not_found")) {
+      return { error: "That class couldn't be found." };
+    }
+    if (error.message.includes("already_requested")) {
       return { error: "You've already sent a request (or joined) this teacher." };
     }
     return { error: "Couldn't send your request. Please try again." };

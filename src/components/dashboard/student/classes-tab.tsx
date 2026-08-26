@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { requestToJoin } from "@/lib/dashboard/batches-actions";
 
 export type MyClassRow = {
   enrollmentId: string;
+  ownerId: string;
   batchTitle: string | null;
   ownerName: string;
   ownerType: "teacher" | "class";
@@ -116,6 +118,12 @@ export function ClassesTab({
                 {item.batchTitle && <div className="text-sm text-muted-foreground">{item.batchTitle}</div>}
                 {item.scheduleNote && <div className="mt-1 text-xs text-muted-foreground">{item.scheduleNote}</div>}
               </div>
+              <Link
+                href={`/${item.ownerType === "teacher" ? "teacher" : "class"}/${item.ownerId}`}
+                className="shrink-0 text-sm font-medium text-primary hover:underline"
+              >
+                {t("viewProfile")}
+              </Link>
             </div>
           ))}
         </div>

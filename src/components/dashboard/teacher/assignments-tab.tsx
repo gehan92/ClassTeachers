@@ -1,7 +1,6 @@
 "use client";
 
 import { useId, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/features/status-badge";
 import { PdfViewerPanel, PhotoViewerPanel } from "@/components/dashboard/inline-file-viewer";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createAssignment, deleteAssignment, gradeAssignmentSubmission } from "@/lib/dashboard/assignments-actions";
 
 export type TeacherLessonOption = { id: string; title: string };
@@ -53,7 +54,7 @@ export function AssignmentsTab({
 }) {
   const t = useTranslations("teacherDashboard.assignments");
   const tc = useTranslations("teacherDashboard.common");
-  const router = useRouter();
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const fileInputId = useId();
 
   const [creating, setCreating] = useState(false);
@@ -105,7 +106,7 @@ export function AssignmentsTab({
     setCreating(false);
     setCreated(true);
     setTimeout(() => setCreated(false), 2500);
-    router.refresh();
+    refresh();
   }
 
   async function handleDelete(assignmentId: string) {
@@ -113,7 +114,7 @@ export function AssignmentsTab({
     const result = await deleteAssignment(assignmentId);
     setDeletingId(null);
     if (!result.error) {
-      router.refresh();
+      refresh();
     }
   }
 
@@ -182,6 +183,14 @@ export function AssignmentsTab({
           </Button>
         </div>
       </div>
+
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+      />
 
       {creating && (
         <div className="rounded-lg border border-border bg-white p-5">
@@ -356,7 +365,7 @@ function GradingPanel({
 }) {
   const t = useTranslations("teacherDashboard.assignments");
   const tc = useTranslations("teacherDashboard.common");
-  const router = useRouter();
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
 
   return (
     <div className="rounded-lg border border-border bg-white p-5">
@@ -366,10 +375,18 @@ function GradingPanel({
           {tc("close")}
         </Button>
       </div>
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+        className="mb-3"
+      />
       <div className="flex flex-col gap-4">
         {submissions.length === 0 && <p className="text-sm text-muted-foreground">{t("grading.noSubmissions")}</p>}
         {submissions.map((submission) => (
-          <SubmissionCard key={submission.id} submission={submission} onGraded={() => router.refresh()} />
+          <SubmissionCard key={submission.id} submission={submission} onGraded={() => refresh()} />
         ))}
       </div>
     </div>

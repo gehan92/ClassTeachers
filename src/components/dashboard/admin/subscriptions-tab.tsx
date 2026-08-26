@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { updatePlatformSetting } from "@/lib/dashboard/admin-actions";
 
 export function SubscriptionsTab({
@@ -30,7 +31,8 @@ export function SubscriptionsTab({
 }) {
   const t = useTranslations("adminDashboard.subscriptions");
   const tCommon = useTranslations("adminDashboard");
-  const router = useRouter();
+  const tc = useTranslations("adminDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [standardPrice, setStandardPrice] = useState(initialStandardPrice);
   const [premiumPrice, setPremiumPrice] = useState(initialPremiumPrice);
   const [saved, setSaved] = useState(false);
@@ -51,7 +53,7 @@ export function SubscriptionsTab({
     }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
-    router.refresh();
+    refresh();
   }
 
   return (
@@ -100,6 +102,14 @@ export function SubscriptionsTab({
           {saved && <span className="text-sm font-medium text-success">{tCommon("saved")}</span>}
           {error && <span className="text-sm font-medium text-destructive">{error}</span>}
         </div>
+        <RefreshStatus
+          pending={isRefreshing}
+          stuck={refreshStuck}
+          pendingLabel={tc("updatingList")}
+          stuckLabel={tc("updateStuck")}
+          reloadLabel={tc("reloadPage")}
+          className="mt-2"
+        />
       </div>
     </div>
   );

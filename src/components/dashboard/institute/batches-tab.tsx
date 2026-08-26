@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createBatch } from "@/lib/dashboard/batches-actions";
 
 export type InstituteBatchRow = {
@@ -21,7 +22,8 @@ export type InstituteBatchRow = {
 
 export function BatchesTab({ batches }: { batches: InstituteBatchRow[] }) {
   const t = useTranslations("instituteDashboard.batches");
-  const router = useRouter();
+  const tc = useTranslations("instituteDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [teacherName, setTeacherName] = useState("");
@@ -60,7 +62,7 @@ export function BatchesTab({ batches }: { batches: InstituteBatchRow[] }) {
     setShowForm(false);
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
-    router.refresh();
+    refresh();
   }
 
   return (
@@ -75,6 +77,14 @@ export function BatchesTab({ batches }: { batches: InstituteBatchRow[] }) {
           <Button onClick={() => setShowForm(true)}>{t("addBatch")}</Button>
         </div>
       </div>
+
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+      />
 
       {showForm && (
         <div className="rounded-lg border border-border bg-white p-5">

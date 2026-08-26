@@ -1,7 +1,6 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Check, ImagePlus, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createQuestion, updateQuestion, deleteQuestion } from "@/lib/dashboard/question-bank-actions";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
 import type { GradeBand } from "@/types/grade-band";
@@ -137,11 +138,11 @@ export function QuestionBankTab({
   const t = useTranslations("teacherDashboard.questionBank");
   const tc = useTranslations("teacherDashboard.common");
   const tg = useTranslations("search");
-  const router = useRouter();
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
 
   // Read straight from the prop, not a useState snapshot — a useState
-  // initializer only runs once, on mount, so after create/edit/delete call
-  // router.refresh() and the server sends a fresh initialQuestions prop, a
+  // initializer only runs once, on mount, so after create/edit/delete
+  // refresh the router and the server sends a fresh initialQuestions prop, a
   // useState copy would keep showing the stale list until a full page
   // reload remounts the component. Every sibling tab (Notes, Assignments,
   // Live Classes, Exams) already reads its list prop directly for this
@@ -334,7 +335,7 @@ export function QuestionBankTab({
     closeForm();
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
-    router.refresh();
+    refresh();
   }
 
   async function handleDelete(questionId: string) {
@@ -342,7 +343,7 @@ export function QuestionBankTab({
     const result = await deleteQuestion(questionId);
     setDeletingId(null);
     if (!result.error) {
-      router.refresh();
+      refresh();
     }
   }
 
@@ -360,6 +361,14 @@ export function QuestionBankTab({
           </Button>
         </div>
       </div>
+
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+      />
 
       {formMode && (
         <div className="rounded-lg border border-border bg-white p-5">

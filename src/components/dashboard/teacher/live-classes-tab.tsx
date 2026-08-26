@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/features/status-badge";
 import { useLiveCall } from "@/components/dashboard/live-call-context";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createLiveClass, deleteLiveClass, setAttendanceStatus, sendLiveClassReminder } from "@/lib/dashboard/live-classes-actions";
 import { cn } from "@/lib/utils";
 
@@ -59,7 +60,7 @@ export function LiveClassesTab({
   const t = useTranslations("teacherDashboard.live");
   const ta = useTranslations("teacherDashboard.attendance");
   const tc = useTranslations("teacherDashboard.common");
-  const router = useRouter();
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const { activeCall, startCall, restoreCall } = useLiveCall();
 
   const [viewingRosterId, setViewingRosterId] = useState<string | null>(null);
@@ -141,7 +142,7 @@ export function LiveClassesTab({
     resetForm();
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
-    router.refresh();
+    refresh();
   }
 
   async function handleDelete(liveClassId: string) {
@@ -149,7 +150,7 @@ export function LiveClassesTab({
     const result = await deleteLiveClass(liveClassId);
     setDeletingId(null);
     if (!result.error) {
-      router.refresh();
+      refresh();
     }
   }
 
@@ -273,6 +274,14 @@ export function LiveClassesTab({
           {added && <span className="text-sm font-medium text-success">{tc("added")}</span>}
         </div>
       </div>
+
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+      />
 
       {adding && (
         <div className="rounded-lg border border-border bg-white p-5">

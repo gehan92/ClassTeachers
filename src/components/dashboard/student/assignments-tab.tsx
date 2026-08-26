@@ -1,7 +1,6 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PdfViewerPanel } from "@/components/dashboard/inline-file-viewer";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { submitAssignment } from "@/lib/dashboard/assignments-actions";
 import { groupByClass } from "@/lib/dashboard/group-by-class";
 
@@ -291,7 +292,8 @@ function SubmitWorkspace({
   onViewWorksheet: () => void;
 }) {
   const t = useTranslations("studentDashboard.assignments");
-  const router = useRouter();
+  const tc = useTranslations("studentDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [photos, setPhotos] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -320,7 +322,7 @@ function SubmitWorkspace({
       return;
     }
     setSubmitted(true);
-    router.refresh();
+    refresh();
   }
 
   if (submitted) {
@@ -330,6 +332,14 @@ function SubmitWorkspace({
         <div className="rounded-lg border border-border bg-white p-5">
           <h3 className="mb-2 text-lg">{t("submittedTitle")}</h3>
           <p className="text-sm text-muted-foreground">{t("submittedPendingNote")}</p>
+          <RefreshStatus
+            pending={isRefreshing}
+            stuck={refreshStuck}
+            pendingLabel={tc("updatingList")}
+            stuckLabel={tc("updateStuck")}
+            reloadLabel={tc("reloadPage")}
+            className="mt-3"
+          />
           <Button className="mt-4" size="sm" variant="outline" onClick={onExit}>
             {t("backToAssignments")}
           </Button>

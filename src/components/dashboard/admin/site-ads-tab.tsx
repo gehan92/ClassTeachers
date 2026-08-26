@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/features/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createSiteAd } from "@/lib/dashboard/admin-actions";
 import type { SiteAd, SiteAdPlacement, SiteAdPlan } from "@/types/dashboard-admin";
 
 export function SiteAdsTab({ initialAds }: { initialAds: SiteAd[] }) {
   const t = useTranslations("adminDashboard.siteAds");
-  const router = useRouter();
+  const tc = useTranslations("adminDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [showForm, setShowForm] = useState(false);
   const [sponsor, setSponsor] = useState("");
   const [plan, setPlan] = useState<SiteAdPlan>("basic");
@@ -59,7 +61,7 @@ export function SiteAdsTab({ initialAds }: { initialAds: SiteAd[] }) {
       return;
     }
     resetForm();
-    router.refresh();
+    refresh();
   }
 
   return (
@@ -71,6 +73,15 @@ export function SiteAdsTab({ initialAds }: { initialAds: SiteAd[] }) {
         </div>
         <Button onClick={() => setShowForm((prev) => !prev)}>{t("newAdSlot")}</Button>
       </div>
+
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+        className="mb-4"
+      />
 
       {error && <p className="mb-4 text-sm font-medium text-destructive">{error}</p>}
 

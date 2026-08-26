@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { requestToJoin } from "@/lib/dashboard/batches-actions";
 
 export type MyClassRow = {
@@ -33,7 +34,8 @@ export function ClassesTab({
   availableBatches: AvailableBatchRow[];
 }) {
   const t = useTranslations("studentDashboard.classes");
-  const router = useRouter();
+  const tc = useTranslations("studentDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +48,7 @@ export function ClassesTab({
       setError(result.error);
       return;
     }
-    router.refresh();
+    refresh();
   }
 
   const acceptedClasses = myClasses.filter((item) => item.status === "accepted");
@@ -58,6 +60,15 @@ export function ClassesTab({
         <h1 className="mb-1 text-2xl">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
+
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+        className="mb-5"
+      />
 
       {pendingClasses.length > 0 && (
         <div className="mb-8">

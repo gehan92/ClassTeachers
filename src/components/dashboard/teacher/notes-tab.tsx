@@ -1,7 +1,6 @@
 "use client";
 
 import { useId, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LockPill } from "@/components/features/lock-pill";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { uploadNote, updateNote, deleteNote, toggleNotePublic } from "@/lib/dashboard/notes-actions";
 import type { TeacherBatchRow } from "./classes-tab";
 
@@ -28,7 +29,7 @@ const MAX_PUBLIC_NOTES = 3;
 export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches: TeacherBatchRow[] }) {
   const t = useTranslations("teacherDashboard.notes");
   const tc = useTranslations("teacherDashboard.common");
-  const router = useRouter();
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const locale = useLocale();
   const fileInputId = useId();
 
@@ -101,7 +102,7 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
     setAdding(false);
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
-    router.refresh();
+    refresh();
   }
 
   async function handleDelete(noteId: string) {
@@ -109,7 +110,7 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
     const result = await deleteNote(noteId);
     setDeletingId(null);
     if (!result.error) {
-      router.refresh();
+      refresh();
     }
   }
 
@@ -122,7 +123,7 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
       setToggleError(result.error);
       return;
     }
-    router.refresh();
+    refresh();
   }
 
   function startEdit(note: TeacherNoteRow) {
@@ -154,7 +155,7 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
       return;
     }
     setEditingNoteId(null);
-    router.refresh();
+    refresh();
   }
 
   if (viewingNote) {
@@ -198,6 +199,13 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
           {added && <span className="text-sm font-medium text-success">{tc("added")}</span>}
         </div>
       </div>
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+      />
       {toggleError && <p className="text-sm font-medium text-destructive">{toggleError}</p>}
 
       {adding && (

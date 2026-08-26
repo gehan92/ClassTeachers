@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -11,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { avatarGradientClass } from "@/lib/avatar-color";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { addTeacherToRoster, removeTeacherFromRoster, setTeacherVisibility } from "@/lib/dashboard/institute-actions";
 
 export type InstituteTeacherRow = {
@@ -35,7 +36,8 @@ function initialsFor(name: string) {
 
 export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
   const t = useTranslations("instituteDashboard.teachers");
-  const router = useRouter();
+  const tc = useTranslations("instituteDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [showAddForm, setShowAddForm] = useState(false);
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
@@ -57,19 +59,19 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
     }
     setEmail("");
     setShowAddForm(false);
-    router.refresh();
+    refresh();
   }
 
   async function handleRemove(teacher: InstituteTeacherRow) {
     if (!window.confirm(t("confirmRemove", { name: teacher.name }))) return;
     await removeTeacherFromRoster(teacher.id);
-    router.refresh();
+    refresh();
   }
 
   async function handleVisibilityChange(teacherId: string, checked: boolean) {
     setVisibility((prev) => ({ ...prev, [teacherId]: checked }));
     await setTeacherVisibility(teacherId, checked);
-    router.refresh();
+    refresh();
   }
 
   return (
@@ -81,6 +83,14 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
         </div>
         <Button onClick={() => setShowAddForm(true)}>{t("addTeacher")}</Button>
       </div>
+
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+      />
 
       {showAddForm && (
         <div className="rounded-lg border border-border bg-white p-5">

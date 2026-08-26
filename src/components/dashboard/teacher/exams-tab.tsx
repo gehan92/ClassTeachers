@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/features/status-badge";
 import { PhotoViewerPanel } from "@/components/dashboard/inline-file-viewer";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createExam, gradeSubmission } from "@/lib/dashboard/exams-actions";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
 
@@ -49,7 +50,7 @@ export function ExamsTab({
   const t = useTranslations("teacherDashboard.exams");
   const tq = useTranslations("teacherDashboard.questionBank");
   const tc = useTranslations("teacherDashboard.common");
-  const router = useRouter();
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
 
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState("");
@@ -95,7 +96,7 @@ export function ExamsTab({
     setCreating(false);
     setCreated(true);
     setTimeout(() => setCreated(false), 2500);
-    router.refresh();
+    refresh();
   }
 
   function handleCancelCreate() {
@@ -135,6 +136,14 @@ export function ExamsTab({
           </Button>
         </div>
       </div>
+
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+      />
 
       {creating && (
         <div className="rounded-lg border border-border bg-white p-5">
@@ -275,7 +284,8 @@ function GradingPanel({
   onClose: () => void;
 }) {
   const t = useTranslations("teacherDashboard.exams");
-  const router = useRouter();
+  const tc = useTranslations("teacherDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
 
   return (
     <div className="rounded-lg border border-border bg-white p-5">
@@ -285,10 +295,18 @@ function GradingPanel({
           {t("grading.close")}
         </Button>
       </div>
+      <RefreshStatus
+        pending={isRefreshing}
+        stuck={refreshStuck}
+        pendingLabel={tc("updatingList")}
+        stuckLabel={tc("updateStuck")}
+        reloadLabel={tc("reloadPage")}
+        className="mb-3"
+      />
       <div className="flex flex-col gap-4">
         {submissions.length === 0 && <p className="text-sm text-muted-foreground">{t("grading.noSubmissions")}</p>}
         {submissions.map((submission) => (
-          <SubmissionCard key={submission.id} submission={submission} onGraded={() => router.refresh()} />
+          <SubmissionCard key={submission.id} submission={submission} onGraded={() => refresh()} />
         ))}
       </div>
     </div>

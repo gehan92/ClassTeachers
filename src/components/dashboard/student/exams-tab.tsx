@@ -1,7 +1,6 @@
 "use client";
 
 import { useId, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { submitExam } from "@/lib/dashboard/exams-actions";
 
 export type StudentExamQuestion = {
@@ -276,7 +277,8 @@ function McqQuestionBlock({
 
 function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => void }) {
   const t = useTranslations("studentDashboard.exams");
-  const router = useRouter();
+  const tc = useTranslations("studentDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [photos, setPhotos] = useState<File[]>([]);
   const [mcqAnswers, setMcqAnswers] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -313,7 +315,7 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
     }
     setAutoGrade(result.autoGrade ?? null);
     setSubmitted(true);
-    router.refresh();
+    refresh();
   }
 
   if (submitted) {
@@ -329,6 +331,14 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
                 ? t("essayPendingNote")
                 : t("essayOnlyPendingNote")}
           </p>
+          <RefreshStatus
+            pending={isRefreshing}
+            stuck={refreshStuck}
+            pendingLabel={tc("updatingList")}
+            stuckLabel={tc("updateStuck")}
+            reloadLabel={tc("reloadPage")}
+            className="mt-3"
+          />
           <Button className="mt-4" size="sm" variant="outline" onClick={onExit}>
             {t("backToExams")}
           </Button>

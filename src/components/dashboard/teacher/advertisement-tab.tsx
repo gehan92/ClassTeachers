@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { AdSlot } from "@/components/features/ad-slot";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { updateOwnProfileAd, upsertBatchAd, setBatchAdActive, createIndividualAd } from "@/lib/dashboard/ads-actions";
 import type { GradeBand } from "@/types/grade-band";
 
@@ -328,7 +329,7 @@ function IndividualAdCreator({
   const t = useTranslations("teacherDashboard.ads.individualAd");
   const tc = useTranslations("teacherDashboard.common");
   const tg = useTranslations("search");
-  const router = useRouter();
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
 
   const [open, setOpen] = useState(false);
   const [subjectId, setSubjectId] = useState(subjectOptions[0]?.id ?? "");
@@ -364,7 +365,7 @@ function IndividualAdCreator({
     setContent("");
     setHourlyRate("");
     setMonthlyRate("");
-    router.refresh();
+    refresh();
   }
 
   if (!open) {
@@ -375,6 +376,14 @@ function IndividualAdCreator({
         <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
           {t("createAd")}
         </Button>
+        <RefreshStatus
+          pending={isRefreshing}
+          stuck={refreshStuck}
+          pendingLabel={tc("updatingList")}
+          stuckLabel={tc("updateStuck")}
+          reloadLabel={tc("reloadPage")}
+          className="mt-3"
+        />
       </div>
     );
   }

@@ -739,6 +739,11 @@
         "accepted": "Accepted",
         "declined": "Declined"
       }
+    },
+    "common": {
+      "updatingList": "Updating…",
+      "updateStuck": "Still not updated — your change was saved.",
+      "reloadPage": "Reload page"
     }
   },
   "instituteDashboard": {
@@ -855,7 +860,10 @@
     },
     "common": {
       "cancel": "Cancel",
-      "postReply": "Post reply"
+      "postReply": "Post reply",
+      "updatingList": "Updating…",
+      "updateStuck": "Still not updated — your change was saved.",
+      "reloadPage": "Reload page"
     },
     "settings": {
       "title": "Institute Settings",
@@ -1071,7 +1079,10 @@
       "backToAssignments": "Back to assignments"
     },
     "common": {
-      "close": "Close"
+      "close": "Close",
+      "updatingList": "Updating…",
+      "updateStuck": "Still not updated — your change was saved.",
+      "reloadPage": "Reload page"
     }
   },
   "teacherDashboard": {
@@ -1087,7 +1098,10 @@
       "added": "Added",
       "cancel": "Cancel",
       "postReply": "Post reply",
-      "close": "Close"
+      "close": "Close",
+      "updatingList": "Updating…",
+      "updateStuck": "Still not updated — your change was saved.",
+      "reloadPage": "Reload page"
     },
     "tabs": {
       "overview": "Overview",

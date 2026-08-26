@@ -3,15 +3,13 @@
 import { useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Pencil, Check, Plus, X } from "lucide-react";
-import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
-import { updateStudentProfile, updateNotificationPrefs, updatePhoneSharingPref } from "@/lib/dashboard/actions";
+import { updateStudentProfile } from "@/lib/dashboard/actions";
 import { uploadAvatar } from "@/lib/dashboard/avatar-actions";
 
 const panelClass = "rounded-lg border border-border bg-white p-5";
@@ -24,7 +22,6 @@ export function ProfileTab({
   initialName,
   initialPhone,
   initialGrade,
-  initialNotificationPrefs,
   initialPhotoUrl,
   initialBio,
   initialEducationLevel,
@@ -40,7 +37,6 @@ export function ProfileTab({
   initialName: string;
   initialPhone: string;
   initialGrade: string;
-  initialNotificationPrefs: Record<string, boolean>;
   initialPhotoUrl: string | null;
   initialBio: string;
   initialEducationLevel: EducationLevel | null;
@@ -110,22 +106,17 @@ export function ProfileTab({
           <PhotoPanel initialPhotoUrl={initialPhotoUrl} studentName={initialName} />
           <EditForm
             initialName={initialName}
-            initialPhone={initialPhone}
             initialGrade={initialGrade}
             initialBio={initialBio}
             initialEducationLevel={initialEducationLevel}
             initialInstitutionName={initialInstitutionName}
             initialQualifications={initialQualifications}
             initialWorkExperience={initialWorkExperience}
-            initialSharePhoneWithTeachers={initialSharePhoneWithTeachers}
             initialSubjects={initialSubjects}
             initialLanguages={initialLanguages}
-            email={email}
           />
         </>
       )}
-
-      <NotificationsPanel initialPrefs={initialNotificationPrefs} />
     </div>
   );
 }
@@ -441,65 +432,35 @@ function RepeatableListField({
  */
 function EditForm({
   initialName,
-  initialPhone,
   initialGrade,
   initialBio,
   initialEducationLevel,
   initialInstitutionName,
   initialQualifications,
   initialWorkExperience,
-  initialSharePhoneWithTeachers,
   initialSubjects,
   initialLanguages,
-  email,
 }: {
   initialName: string;
-  initialPhone: string;
   initialGrade: string;
   initialBio: string;
   initialEducationLevel: EducationLevel | null;
   initialInstitutionName: string;
   initialQualifications: string[];
   initialWorkExperience: string[];
-  initialSharePhoneWithTeachers: boolean;
   initialSubjects: string[];
   initialLanguages: string[];
-  email: string;
 }) {
   const t = useTranslations("studentDashboard.profile");
   const nameId = useId();
   const gradeId = useId();
-  const emailId = useId();
-  const phoneId = useId();
   const bioId = useId();
   const institutionId = useId();
-  const sharePhoneId = useId();
   const { refresh } = useDashboardRefresh();
-
-  const [sharePhone, setSharePhone] = useState(initialSharePhoneWithTeachers);
-  const [phoneShareSaving, setPhoneShareSaving] = useState(false);
-  const [phoneShareError, setPhoneShareError] = useState<string | null>(null);
-
-  // Instant, independent save — matches NotificationsPanel's pattern
-  // (this is a privacy preference, not profile content, so it shouldn't
-  // wait for the big "Save changes" click below). Optimistic with revert
-  // on failure.
-  async function handleTogglePhoneShare(checked: boolean) {
-    setSharePhone(checked);
-    setPhoneShareSaving(true);
-    setPhoneShareError(null);
-    const result = await updatePhoneSharingPref(checked);
-    setPhoneShareSaving(false);
-    if (result.error) {
-      setSharePhone(!checked);
-      setPhoneShareError(result.error);
-    }
-  }
 
   const [form, setForm] = useState({
     name: initialName,
     grade: initialGrade,
-    phone: initialPhone,
     bio: initialBio,
     educationLevel: initialEducationLevel ?? ("" as EducationLevel | ""),
     institutionName: initialInstitutionName,
@@ -512,7 +473,7 @@ function EditForm({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  function update(field: "name" | "grade" | "phone" | "institutionName") {
+  function update(field: "name" | "grade" | "institutionName") {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [field]: e.target.value }));
   }
 
@@ -521,7 +482,6 @@ function EditForm({
     setError(null);
     const result = await updateStudentProfile({
       fullName: form.name,
-      phone: form.phone,
       gradeLevel: form.grade,
       bio: form.bio,
       educationLevel: form.educationLevel,
@@ -561,33 +521,7 @@ function EditForm({
             </Label>
             <Input id={gradeId} value={form.grade} onChange={update("grade")} />
           </div>
-          <div>
-            <Label htmlFor={emailId} className="mb-1.5">
-              {t("emailLabel")}
-            </Label>
-            <Input id={emailId} type="email" value={email} readOnly disabled />
-          </div>
-          <div>
-            <Label htmlFor={phoneId} className="mb-1.5">
-              {t("phoneLabel")}
-            </Label>
-            <Input id={phoneId} type="tel" value={form.phone} onChange={update("phone")} />
-          </div>
         </div>
-
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
-          <div>
-            <Label htmlFor={sharePhoneId}>{t("sharePhoneLabel")}</Label>
-            <p className="mt-0.5 text-xs text-muted-foreground">{t("sharePhoneHint")}</p>
-          </div>
-          <Switch
-            id={sharePhoneId}
-            checked={sharePhone}
-            disabled={phoneShareSaving}
-            onCheckedChange={handleTogglePhoneShare}
-          />
-        </div>
-        {phoneShareError && <p className="mt-2 text-sm font-medium text-destructive">{phoneShareError}</p>}
       </div>
 
       <div className={panelClass}>
@@ -678,71 +612,7 @@ function EditForm({
         </Button>
         {saved && <span className="text-sm font-medium text-success">{t("saved")}</span>}
         {error && <span className="text-sm font-medium text-destructive">{error}</span>}
-        <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline">
-          {t("changePassword")}
-        </Link>
       </div>
     </>
-  );
-}
-
-function NotificationsPanel({ initialPrefs }: { initialPrefs: Record<string, boolean> }) {
-  const t = useTranslations("studentDashboard.profile");
-  const [newNotes, setNewNotes] = useState(initialPrefs.newNotes ?? true);
-  const [liveReminders, setLiveReminders] = useState(initialPrefs.liveReminders ?? true);
-  const [examGraded, setExamGraded] = useState(initialPrefs.examGraded ?? true);
-  const [toggleError, setToggleError] = useState<string | null>(null);
-  const newNotesId = useId();
-  const liveRemindersId = useId();
-  const examGradedId = useId();
-
-  // Optimistic toggle: flips immediately for responsiveness, then reverts
-  // itself (`current` is the pre-toggle value, captured fresh each render)
-  // and shows an error if the save actually failed — previously the switch
-  // just stayed flipped regardless of whether updateNotificationPrefs
-  // succeeded, since its result was never checked.
-  function handleToggle(key: string, current: boolean, setter: (value: boolean) => void) {
-    return async (checked: boolean) => {
-      setter(checked);
-      setToggleError(null);
-      const result = await updateNotificationPrefs({ [key]: checked });
-      if (result.error) {
-        setter(current);
-        setToggleError(result.error);
-      }
-    };
-  }
-
-  return (
-    <div className={panelClass}>
-      <h3 className="mb-4 text-lg">{t("notificationsTitle")}</h3>
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <Label htmlFor={newNotesId}>{t("notifNewNotes")}</Label>
-          <Switch
-            id={newNotesId}
-            checked={newNotes}
-            onCheckedChange={handleToggle("newNotes", newNotes, setNewNotes)}
-          />
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <Label htmlFor={liveRemindersId}>{t("notifLiveReminders")}</Label>
-          <Switch
-            id={liveRemindersId}
-            checked={liveReminders}
-            onCheckedChange={handleToggle("liveReminders", liveReminders, setLiveReminders)}
-          />
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <Label htmlFor={examGradedId}>{t("notifExamGraded")}</Label>
-          <Switch
-            id={examGradedId}
-            checked={examGraded}
-            onCheckedChange={handleToggle("examGraded", examGraded, setExamGraded)}
-          />
-        </div>
-      </div>
-      {toggleError && <p className="mt-3 text-sm font-medium text-destructive">{toggleError}</p>}
-    </div>
   );
 }

@@ -8,6 +8,7 @@ import { ExamsTab } from "@/components/dashboard/student/exams-tab";
 import { AssignmentsTab } from "@/components/dashboard/student/assignments-tab";
 import { ReviewsTab } from "@/components/dashboard/student/reviews-tab";
 import { ProfileTab } from "@/components/dashboard/student/profile-tab";
+import { SettingsTab } from "@/components/dashboard/student/settings-tab";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import type { MyClassRow, AvailableBatchRow } from "@/components/dashboard/student/classes-tab";
@@ -472,6 +473,7 @@ export default async function StudentDashboardPage({
           items: [
             { key: "reviews", label: t("tabs.reviews") },
             { key: "profile", label: t("tabs.profile") },
+            { key: "settings", label: t("tabs.settings") },
           ],
         },
       ]}
@@ -496,7 +498,6 @@ export default async function StudentDashboardPage({
             initialName={fullName}
             initialPhone={profile?.phone ?? ""}
             initialGrade={profile?.grade_level ?? ""}
-            initialNotificationPrefs={(profile?.notification_prefs as Record<string, boolean>) ?? {}}
             initialPhotoUrl={profile?.avatar_url ?? null}
             initialBio={profile?.bio ?? ""}
             initialEducationLevel={profile?.education_level ?? null}
@@ -507,6 +508,14 @@ export default async function StudentDashboardPage({
             initialSubjects={profile?.subjects ?? []}
             initialLanguages={profile?.languages ?? []}
             classesCount={classesCount}
+            email={user!.email ?? ""}
+          />
+        ),
+        settings: (
+          <SettingsTab
+            initialPhone={profile?.phone ?? ""}
+            initialSharePhoneWithTeachers={profile?.share_phone_with_teachers ?? true}
+            initialNotificationPrefs={(profile?.notification_prefs as Record<string, boolean>) ?? {}}
             email={user!.email ?? ""}
           />
         ),

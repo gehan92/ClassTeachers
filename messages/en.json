@@ -912,7 +912,8 @@
       "exams": "Exams",
       "assignments": "Assignments",
       "reviews": "My Reviews",
-      "profile": "Profile & Account"
+      "profile": "Profile",
+      "settings": "Settings"
     },
     "overview": {
       "greeting": "Good evening, {name}",
@@ -1054,7 +1055,6 @@
       "sharePhoneHint": "Teachers you're enrolled with can see this number to contact you. Turn off to hide it — they'll still see your name.",
       "saveChanges": "Save changes",
       "saved": "Saved",
-      "changePassword": "Change password",
       "aboutHeading": "About me",
       "bioPlaceholder": "Tell us a little about yourself...",
       "educationHeading": "Education",
@@ -1123,7 +1123,20 @@
       "submittedPendingNote": "We've received your answer photos. You'll see your grade and feedback here once it's ready.",
       "backToAssignments": "Back to assignments"
     },
+    "settings": {
+      "heading": "Settings",
+      "accountHeading": "Account",
+      "fields": {
+        "email": "Email",
+        "phone": "Phone"
+      },
+      "changePassword": "Change password",
+      "contactHeading": "Contact preference",
+      "contactSubtitle": "Controls what your teachers can see about you."
+    },
     "common": {
+      "save": "Save",
+      "saved": "Saved",
       "close": "Close",
       "updatingList": "Updating…",
       "updateStuck": "Still not updated — your change was saved.",

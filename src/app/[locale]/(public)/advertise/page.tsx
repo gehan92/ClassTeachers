@@ -1,20 +1,27 @@
 import { useTranslations } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Check } from "lucide-react";
 import { RoleCard } from "@/components/features/role-card";
 import { AdBoard } from "@/components/features/ad-board";
+import { getPublicListings } from "@/lib/public-directory";
 import { cn } from "@/lib/utils";
 
 export default async function AdvertisePage({ params }: PageProps<"/[locale]/advertise">) {
   const { locale } = await params;
   setRequestLocale(locale);
 
+  const [tPage, tSearch] = await Promise.all([
+    getTranslations({ locale, namespace: "teachersPage" }),
+    getTranslations({ locale, namespace: "search" }),
+  ]);
+  const listings = await getPublicListings(tPage, tSearch);
+
   return (
     <>
       <Hero />
       <CompareSection />
       <PlansSection />
-      <AdBoard />
+      <AdBoard listings={listings} />
     </>
   );
 }

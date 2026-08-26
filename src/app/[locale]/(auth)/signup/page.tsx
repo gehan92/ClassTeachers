@@ -1,10 +1,12 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { Suspense, useActionState, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { AuthShell } from "@/components/features/auth-shell";
 import { RoleSelect, type SignupRole } from "@/components/features/role-select";
+import { signupRoles } from "@/types/signup-role";
 import { TeacherFields } from "@/components/features/teacher-fields";
 import { LecturerFields } from "@/components/features/lecturer-fields";
 import { InstituteFields } from "@/components/features/institute-fields";
@@ -15,9 +17,25 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { signUpAction } from "@/lib/auth/actions";
 
 export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupForm />
+    </Suspense>
+  );
+}
+
+function SignupForm() {
   const t = useTranslations("signup");
   const stats = t.raw("stats") as { value: string; label: string }[];
-  const [role, setRole] = useState<SignupRole>("student");
+  // A link into signup can pre-pick a role via ?role= (e.g. the /advertise
+  // page's "I'm a teacher" / "I'm an institute" CTAs) — falls back to the
+  // default student role for a plain /signup visit or an unrecognized value.
+  const searchParams = useSearchParams();
+  const roleParam = searchParams.get("role");
+  const initialRole = (signupRoles as readonly string[]).includes(roleParam ?? "")
+    ? (roleParam as SignupRole)
+    : "student";
+  const [role, setRole] = useState<SignupRole>(initialRole);
   const [state, formAction, pending] = useActionState(signUpAction, undefined);
 
   if (state?.pendingConfirmationEmail) {

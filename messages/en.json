@@ -1611,6 +1611,7 @@
       "viewWorksheet": "View worksheet",
       "columns": {
         "title": "Title",
+        "batch": "Class",
         "lesson": "Lesson",
         "due": "Due",
         "worksheet": "Worksheet",
@@ -1625,6 +1626,23 @@
         "missingFields": "Please add a title and choose a PDF file.",
         "batchLabel": "Class",
         "noBatch": "No specific class (general)"
+      },
+      "filters": {
+        "searchLabel": "Search",
+        "searchPlaceholder": "Search assignments, class or lesson...",
+        "allClasses": "All classes",
+        "allLessons": "All lessons",
+        "sortLabel": "Sort by due date",
+        "sortSoonest": "Soonest first",
+        "sortLatest": "Latest first",
+        "clearFilters": "Clear filters",
+        "noResults": "No assignments match your filters."
+      },
+      "pagination": {
+        "showingCount": "Showing {shown} of {total}",
+        "pageInfo": "Page {page} of {totalPages}",
+        "previous": "Previous",
+        "next": "Next"
       },
       "grading": {
         "heading": "Grading — {title}",

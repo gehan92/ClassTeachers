@@ -1611,6 +1611,7 @@
       "viewWorksheet": "වැඩ පත්‍රිකාව බලන්න",
       "columns": {
         "title": "මාතෘකාව",
+        "batch": "පන්තිය",
         "lesson": "පාඩම",
         "due": "නියමිත දිනය",
         "worksheet": "වැඩ පත්‍රිකාව",
@@ -1625,6 +1626,23 @@
         "missingFields": "කරුණාකර මාතෘකාවක් එක් කර PDF ගොනුවක් තෝරන්න.",
         "batchLabel": "පන්තිය",
         "noBatch": "විශේෂිත පන්තියක් නැත (සාමාන්‍ය)"
+      },
+      "filters": {
+        "searchLabel": "සොයන්න",
+        "searchPlaceholder": "පැවරුම්, පන්තිය හෝ පාඩම සොයන්න...",
+        "allClasses": "සියලු පන්ති",
+        "allLessons": "සියලු පාඩම්",
+        "sortLabel": "නියමිත දිනය අනුව අනුපිළිවෙල",
+        "sortSoonest": "ළඟම දිනය මුලින්",
+        "sortLatest": "දුරින්ම දිනය මුලින්",
+        "clearFilters": "පෙරහන් ඉවත් කරන්න",
+        "noResults": "ඔබේ පෙරහන්වලට ගැලපෙන පැවරුම් නැත."
+      },
+      "pagination": {
+        "showingCount": "{total} න් {shown} පෙන්වයි",
+        "pageInfo": "පිටුව {page} න් {totalPages}",
+        "previous": "පෙර",
+        "next": "ඊළඟ"
       },
       "grading": {
         "heading": "ලකුණු දීම — {title}",

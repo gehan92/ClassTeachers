@@ -22,10 +22,16 @@ export type TeacherAssignmentRow = {
   title: string;
   batchId: string | null;
   batchTitle: string | null;
+  lessonId: string | null;
   lessonTitle: string | null;
+  dueAtIso: string | null;
   dueLabel: string | null;
   fileUrl: string;
 };
+
+const ALL_BATCHES_FILTER = "all";
+const ALL_LESSONS_FILTER = "all";
+const PAGE_SIZE = 10;
 
 export type AssignmentSubmissionRow = {
   id: string;
@@ -137,25 +143,53 @@ export function AssignmentsTab({
     return map;
   }, [submissions]);
 
-  // Grouped by class/batch — same organizing principle as the Notes tab —
-  // so a teacher running several classes isn't hunting through one flat
-  // list. Batches with assignments appear in the same order as `batches`
-  // (a teacher's own class list), with unassigned ones in a trailing group.
-  const groupedAssignments = useMemo(() => {
-    const byBatch = new Map<string, TeacherAssignmentRow[]>();
-    for (const a of assignments) {
-      const key = a.batchId ?? NO_BATCH;
-      (byBatch.get(key) ?? byBatch.set(key, []).get(key)!).push(a);
-    }
-    const groups: { key: string; title: string; rows: TeacherAssignmentRow[] }[] = [];
-    for (const batch of batches) {
-      const rows = byBatch.get(batch.id);
-      if (rows) groups.push({ key: batch.id, title: batch.title, rows });
-    }
-    const general = byBatch.get(NO_BATCH);
-    if (general) groups.push({ key: NO_BATCH, title: t("form.noBatch"), rows: general });
-    return groups;
-  }, [assignments, batches, t]);
+  const [filterQuery, setFilterQuery] = useState("");
+  const [filterBatch, setFilterBatch] = useState(ALL_BATCHES_FILTER);
+  const [filterLesson, setFilterLesson] = useState(ALL_LESSONS_FILTER);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [page, setPage] = useState(1);
+
+  const filtersActive =
+    filterQuery.trim() !== "" || filterBatch !== ALL_BATCHES_FILTER || filterLesson !== ALL_LESSONS_FILTER;
+
+  const filteredAssignments = useMemo(() => {
+    const q = filterQuery.trim().toLowerCase();
+    const list = assignments.filter((a) => {
+      if (
+        q &&
+        !a.title.toLowerCase().includes(q) &&
+        !(a.batchTitle ?? "").toLowerCase().includes(q) &&
+        !(a.lessonTitle ?? "").toLowerCase().includes(q)
+      )
+        return false;
+      if (filterBatch === NO_BATCH && a.batchId !== null) return false;
+      if (filterBatch !== ALL_BATCHES_FILTER && filterBatch !== NO_BATCH && a.batchId !== filterBatch) return false;
+      if (filterLesson === NO_LESSON && a.lessonId !== null) return false;
+      if (filterLesson !== ALL_LESSONS_FILTER && filterLesson !== NO_LESSON && a.lessonId !== filterLesson)
+        return false;
+      return true;
+    });
+    // Assignments with no due date always trail, regardless of sort direction.
+    return [...list].sort((a, b) => {
+      const ta = a.dueAtIso ? new Date(a.dueAtIso).getTime() : Number.POSITIVE_INFINITY;
+      const tb = b.dueAtIso ? new Date(b.dueAtIso).getTime() : Number.POSITIVE_INFINITY;
+      if (ta === tb) return 0;
+      if (ta === Number.POSITIVE_INFINITY) return 1;
+      if (tb === Number.POSITIVE_INFINITY) return -1;
+      return sortDir === "asc" ? ta - tb : tb - ta;
+    });
+  }, [assignments, filterQuery, filterBatch, filterLesson, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredAssignments.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedAssignments = filteredAssignments.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  function clearFilters() {
+    setFilterQuery("");
+    setFilterBatch(ALL_BATCHES_FILTER);
+    setFilterLesson(ALL_LESSONS_FILTER);
+    setPage(1);
+  }
 
   if (viewingWorksheet) {
     return (
@@ -275,72 +309,188 @@ export function AssignmentsTab({
           <p className="py-6 text-center text-sm text-muted-foreground">{t("emptyState")}</p>
         </div>
       ) : (
-        groupedAssignments.map((group) => (
-          <div key={group.key} className="rounded-lg border border-border bg-white p-5">
-            <h3 className="mb-3 text-sm font-semibold text-foreground">{group.title}</h3>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("columns.title")}</TableHead>
-                  <TableHead>{t("columns.lesson")}</TableHead>
-                  <TableHead>{t("columns.due")}</TableHead>
-                  <TableHead>{t("columns.worksheet")}</TableHead>
-                  <TableHead>{t("columns.actions")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {group.rows.map((assignment) => {
-                  const total = submissionCountByAssignment.get(assignment.id) ?? 0;
-                  const pending = pendingCountByAssignment.get(assignment.id) ?? 0;
-                  return (
-                    <TableRow key={assignment.id}>
-                      <TableCell className="max-w-64 whitespace-normal font-medium text-foreground">
-                        {assignment.title}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {assignment.lessonTitle ?? t("form.noLesson")}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{assignment.dueLabel ?? "—"}</TableCell>
-                      <TableCell>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto p-0 font-semibold text-primary hover:underline"
-                          onClick={() => setViewingWorksheetId(assignment.id)}
-                        >
-                          {t("viewWorksheet")}
-                        </Button>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap items-center gap-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            disabled={total === 0}
-                            onClick={() => setSelectedAssignmentId(assignment.id)}
-                          >
-                            {pending > 0 ? t("gradeWithCount", { count: pending }) : t("grade")}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            disabled={deletingId === assignment.id}
-                            onClick={() => handleDelete(assignment.id)}
-                          >
-                            {t("delete")}
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+        <div className="rounded-lg border border-border bg-white p-5">
+          <div className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-border bg-muted/30 p-3.5">
+            <div className="grid min-w-48 flex-1 gap-1.5">
+              <Label htmlFor="assignment-filter-search">{t("filters.searchLabel")}</Label>
+              <Input
+                id="assignment-filter-search"
+                placeholder={t("filters.searchPlaceholder")}
+                value={filterQuery}
+                onChange={(e) => {
+                  setFilterQuery(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
+            <div className="grid w-44 gap-1.5">
+              <Label>{t("form.batchLabel")}</Label>
+              <Select
+                value={filterBatch}
+                onValueChange={(v) => {
+                  setFilterBatch(v ?? ALL_BATCHES_FILTER);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_BATCHES_FILTER}>{t("filters.allClasses")}</SelectItem>
+                  <SelectItem value={NO_BATCH}>{t("form.noBatch")}</SelectItem>
+                  {batches.map((batch) => (
+                    <SelectItem key={batch.id} value={batch.id}>
+                      {batch.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid w-44 gap-1.5">
+              <Label>{t("form.lessonLabel")}</Label>
+              <Select
+                value={filterLesson}
+                onValueChange={(v) => {
+                  setFilterLesson(v ?? ALL_LESSONS_FILTER);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_LESSONS_FILTER}>{t("filters.allLessons")}</SelectItem>
+                  <SelectItem value={NO_LESSON}>{t("form.noLesson")}</SelectItem>
+                  {lessons.map((lesson) => (
+                    <SelectItem key={lesson.id} value={lesson.id}>
+                      {lesson.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid w-44 gap-1.5">
+              <Label>{t("filters.sortLabel")}</Label>
+              <Select value={sortDir} onValueChange={(v) => setSortDir(v === "desc" ? "desc" : "asc")}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="asc">{t("filters.sortSoonest")}</SelectItem>
+                  <SelectItem value="desc">{t("filters.sortLatest")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {filtersActive && (
+              <Button type="button" variant="outline" size="sm" onClick={clearFilters}>
+                {t("filters.clearFilters")}
+              </Button>
+            )}
           </div>
-        ))
+
+          {filteredAssignments.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">{t("filters.noResults")}</p>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("columns.title")}</TableHead>
+                    <TableHead>{t("columns.batch")}</TableHead>
+                    <TableHead>{t("columns.lesson")}</TableHead>
+                    <TableHead>{t("columns.due")}</TableHead>
+                    <TableHead>{t("columns.worksheet")}</TableHead>
+                    <TableHead>{t("columns.actions")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pagedAssignments.map((assignment) => {
+                    const total = submissionCountByAssignment.get(assignment.id) ?? 0;
+                    const pending = pendingCountByAssignment.get(assignment.id) ?? 0;
+                    return (
+                      <TableRow key={assignment.id}>
+                        <TableCell className="max-w-64 whitespace-normal font-medium text-foreground">
+                          {assignment.title}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {assignment.batchTitle ?? t("form.noBatch")}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {assignment.lessonTitle ?? t("form.noLesson")}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{assignment.dueLabel ?? "—"}</TableCell>
+                        <TableCell>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-auto p-0 font-semibold text-primary hover:underline"
+                            onClick={() => setViewingWorksheetId(assignment.id)}
+                          >
+                            {t("viewWorksheet")}
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              disabled={total === 0}
+                              onClick={() => setSelectedAssignmentId(assignment.id)}
+                            >
+                              {pending > 0 ? t("gradeWithCount", { count: pending }) : t("grade")}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              disabled={deletingId === assignment.id}
+                              onClick={() => handleDelete(assignment.id)}
+                            >
+                              {t("delete")}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-muted-foreground">
+                  {t("pagination.showingCount", { shown: pagedAssignments.length, total: filteredAssignments.length })}
+                </p>
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={currentPage <= 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    >
+                      {t("pagination.previous")}
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      {t("pagination.pageInfo", { page: currentPage, totalPages })}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    >
+                      {t("pagination.next")}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       )}
 
       {selectedAssignment && (

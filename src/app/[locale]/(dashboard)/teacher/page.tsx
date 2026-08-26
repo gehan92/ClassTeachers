@@ -499,7 +499,9 @@ export default async function TeacherDashboardPage({
     title: a.title,
     batchId: a.batch_id,
     batchTitle: a.batch_id ? (batchTitleById.get(a.batch_id) ?? null) : null,
+    lessonId: a.lesson_id,
     lessonTitle: a.lesson_id ? (lessonTitleById.get(a.lesson_id) ?? null) : null,
+    dueAtIso: a.due_at,
     dueLabel: a.due_at ? dateFormatter.format(new Date(a.due_at)) : null,
     fileUrl: assignmentFileUrlByPath.get(a.file_path) ?? "",
   }));

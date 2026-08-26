@@ -1611,6 +1611,7 @@
       "viewWorksheet": "பணித்தாளைக் காண்க",
       "columns": {
         "title": "தலைப்பு",
+        "batch": "வகுப்பு",
         "lesson": "பாடம்",
         "due": "கெடு",
         "worksheet": "பணித்தாள்",
@@ -1625,6 +1626,23 @@
         "missingFields": "தலைப்பு ஒன்றைச் சேர்த்து PDF கோப்பைத் தேர்ந்தெடுக்கவும்.",
         "batchLabel": "வகுப்பு",
         "noBatch": "குறிப்பிட்ட வகுப்பு இல்லை (பொது)"
+      },
+      "filters": {
+        "searchLabel": "தேடு",
+        "searchPlaceholder": "பணிகள், வகுப்பு அல்லது பாடத்தைத் தேடு...",
+        "allClasses": "அனைத்து வகுப்புகளும்",
+        "allLessons": "அனைத்து பாடங்களும்",
+        "sortLabel": "கெடு தேதி வரிசைப்படுத்தல்",
+        "sortSoonest": "விரைவில் வருவது முதலில்",
+        "sortLatest": "தாமதமானது முதலில்",
+        "clearFilters": "வடிகட்டிகளை அழி",
+        "noResults": "உங்கள் வடிகட்டிகளுக்கு பொருந்தும் பணிகள் இல்லை."
+      },
+      "pagination": {
+        "showingCount": "{total} இல் {shown} காட்டப்படுகிறது",
+        "pageInfo": "பக்கம் {page} / {totalPages}",
+        "previous": "முந்தைய",
+        "next": "அடுத்து"
       },
       "grading": {
         "heading": "மதிப்பீடு — {title}",

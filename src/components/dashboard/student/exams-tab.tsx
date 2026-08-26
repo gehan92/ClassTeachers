@@ -1,6 +1,7 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,9 @@ import {
 } from "@/components/ui/table";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
+import { useIsMounted } from "@/lib/hooks/use-is-mounted";
 import { submitExam } from "@/lib/dashboard/exams-actions";
+import { cn } from "@/lib/utils";
 
 export type StudentExamQuestion = {
   id: string;
@@ -275,6 +278,15 @@ function McqQuestionBlock({
   );
 }
 
+function formatCountdown(totalSeconds: number) {
+  const clamped = Math.max(0, totalSeconds);
+  const minutes = Math.floor(clamped / 60);
+  const seconds = clamped % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+const LOW_TIME_THRESHOLD_SECONDS = 5 * 60;
+
 function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => void }) {
   const t = useTranslations("studentDashboard.exams");
   const tc = useTranslations("studentDashboard.common");
@@ -285,10 +297,28 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
   const [error, setError] = useState<string | null>(null);
   const [autoGrade, setAutoGrade] = useState<{ score: number; maxScore: number } | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const mounted = useIsMounted();
+  const [timeLeft, setTimeLeft] = useState(() => exam.durationMinutes * 60);
+  const autoSubmittedRef = useRef(false);
   const mcqQuestions = exam.questions.filter((q) => q.type === "mcq");
   const essayQuestions = exam.questions.filter((q) => q.type !== "mcq");
   const allMcqAnswered = mcqQuestions.every((q) => Boolean(mcqAnswers[q.id]));
   const canSubmit = allMcqAnswered && (essayQuestions.length === 0 || photos.length > 0);
+
+  // Full-screen takeover: lock background scroll while this is open.
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (submitted) return;
+    const id = setInterval(() => setTimeLeft((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [submitted]);
 
   function handleAdd(fileList: FileList | null) {
     if (!fileList) return;
@@ -299,17 +329,20 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   }
 
-  async function handleSubmit() {
-    if (!canSubmit) return;
+  async function handleSubmit(forced = false) {
+    if (!forced && !canSubmit) return;
     setSaving(true);
     setError(null);
     const formData = new FormData();
     formData.set("examId", exam.id);
     formData.set("mcqAnswers", JSON.stringify(mcqAnswers));
+    if (forced) formData.set("timeExpired", "1");
     for (const photo of photos) formData.append("photos", photo);
     const result = await submitExam(formData);
     setSaving(false);
     if (result.error) {
+      // A forced (timeout) submit failing server-side has nowhere else to
+      // go — surface it, but there's no more time left to fix and retry.
       setError(result.error);
       return;
     }
@@ -318,42 +351,48 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
     refresh();
   }
 
-  if (submitted) {
-    return (
-      <div className="mx-auto max-w-160">
-        <h1 className="mb-4 text-2xl">{exam.title}</h1>
-        <div className="rounded-lg border border-border bg-white p-5">
-          <h3 className="mb-2 text-lg">{t("submittedTitle")}</h3>
-          <p className="text-sm text-muted-foreground">
-            {autoGrade
-              ? t("autoGradedNote", { score: autoGrade.score, max: autoGrade.maxScore })
-              : mcqQuestions.length > 0
-                ? t("essayPendingNote")
-                : t("essayOnlyPendingNote")}
-          </p>
-          <RefreshStatus
-            pending={isRefreshing}
-            stuck={refreshStuck}
-            pendingLabel={tc("updatingList")}
-            stuckLabel={tc("updateStuck")}
-            reloadLabel={tc("reloadPage")}
-            className="mt-3"
-          />
-          <Button className="mt-4" size="sm" variant="outline" onClick={onExit}>
-            {t("backToExams")}
-          </Button>
-        </div>
-      </div>
-    );
+  useEffect(() => {
+    if (timeLeft > 0 || submitted || autoSubmittedRef.current) return;
+    autoSubmittedRef.current = true;
+    void handleSubmit(true);
+    // handleSubmit closes over current answers/photos each render; only the
+    // 0-crossing should retrigger this, not every keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft, submitted]);
+
+  function handleExit() {
+    if (window.confirm(t("exitConfirm"))) onExit();
   }
 
-  return (
-    <div className="mx-auto max-w-160">
-      <div className="mb-4">
-        <h1 className="mb-1 text-2xl">{exam.title}</h1>
-        <p className="text-sm text-muted-foreground">{t("durationLabel", { minutes: exam.durationMinutes })}</p>
-      </div>
+  const lowOnTime = timeLeft <= LOW_TIME_THRESHOLD_SECONDS;
 
+  const content = submitted ? (
+    <div className="mx-auto max-w-160">
+      <h1 className="mb-4 text-2xl">{exam.title}</h1>
+      <div className="rounded-lg border border-border bg-white p-5">
+        <h3 className="mb-2 text-lg">{t("submittedTitle")}</h3>
+        <p className="text-sm text-muted-foreground">
+          {autoGrade
+            ? t("autoGradedNote", { score: autoGrade.score, max: autoGrade.maxScore })
+            : mcqQuestions.length > 0
+              ? t("essayPendingNote")
+              : t("essayOnlyPendingNote")}
+        </p>
+        <RefreshStatus
+          pending={isRefreshing}
+          stuck={refreshStuck}
+          pendingLabel={tc("updatingList")}
+          stuckLabel={tc("updateStuck")}
+          reloadLabel={tc("reloadPage")}
+          className="mt-3"
+        />
+        <Button className="mt-4" size="sm" variant="outline" onClick={onExit}>
+          {t("backToExams")}
+        </Button>
+      </div>
+    </div>
+  ) : (
+    <div className="mx-auto max-w-160">
       <div className="mb-6">
         {mcqQuestions.length > 0 && (
           <div className="mb-5">
@@ -390,14 +429,38 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button onClick={handleSubmit} disabled={!canSubmit || saving}>
+        <Button onClick={() => handleSubmit()} disabled={!canSubmit || saving}>
           {t("submitExam")}
         </Button>
-        <Button variant="outline" onClick={onExit} disabled={saving}>
+        <Button variant="outline" onClick={handleExit} disabled={saving}>
           {t("backToExams")}
         </Button>
         {error && <span className="text-sm font-medium text-destructive">{error}</span>}
       </div>
     </div>
+  );
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-white px-4 py-3 sm:px-8">
+        <h1 className="truncate text-lg font-semibold text-foreground sm:text-xl">{exam.title}</h1>
+        {!submitted && (
+          <div
+            role="timer"
+            aria-label={t("timeRemainingLabel")}
+            className={cn(
+              "shrink-0 rounded-full px-3 py-1 font-mono text-sm font-semibold tabular-nums",
+              lowOnTime ? "bg-destructive/10 text-destructive" : "bg-secondary text-foreground",
+            )}
+          >
+            {formatCountdown(timeLeft)}
+          </div>
+        )}
+      </div>
+      <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">{content}</div>
+    </div>,
+    document.body,
   );
 }

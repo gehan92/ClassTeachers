@@ -91,6 +91,11 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
   const examId = formData.get("examId");
   const mcqAnswersRaw = formData.get("mcqAnswers");
   const files = formData.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
+  // Set when the countdown timer hit zero and the client auto-submitted —
+  // whatever's answered goes in as-is, unanswered MCQs just score 0 and a
+  // missing essay photo lands as an empty submission for the teacher to see,
+  // rather than blocking the submit the way a manual click would.
+  const timeExpired = formData.get("timeExpired") === "1";
   if (typeof examId !== "string" || !examId) {
     return { error: "Invalid exam." };
   }
@@ -134,10 +139,10 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
   const mcqQuestions = (questionRows ?? []).filter((q) => q.type === "mcq");
   const hasEssayQuestions = (questionRows ?? []).some((q) => q.type === "essay");
 
-  if (mcqQuestions.length > 0 && Object.keys(mcqAnswers).length === 0) {
+  if (!timeExpired && mcqQuestions.length > 0 && Object.keys(mcqAnswers).length === 0) {
     return { error: "Please answer the MCQ questions before submitting." };
   }
-  if (hasEssayQuestions && files.length === 0) {
+  if (!timeExpired && hasEssayQuestions && files.length === 0) {
     return { error: "Please add at least one photo of your written answers." };
   }
 

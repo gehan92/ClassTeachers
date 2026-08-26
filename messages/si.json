@@ -997,6 +997,8 @@
       "startExam": "විභාගය ආරම්භ කරන්න",
       "continueExam": "විභාගය දිගටම කරන්න",
       "backToExams": "විභාග වෙත ආපසු",
+      "timeRemainingLabel": "ඉතිරි කාලය",
+      "exitConfirm": "විභාගයෙන් ඉවත් වන්නද? ඔබ ඉදිරිපත් නොකළහොත් ඔබේ පිළිතුරු සුරැකෙන්නේ නැත.",
       "mcqSectionTitle": "බහුවරණ ප්‍රශ්න",
       "essaySectionTitle": "රචනා පිළිතුරු",
       "essayInstructions": "ඔබේ ලිඛිත පිළිතුරු පත්‍රවල පැහැදිලි ඡායාරූප උඩුගත කරන්න.",

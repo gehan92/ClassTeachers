@@ -997,6 +997,8 @@
       "startExam": "Start exam",
       "continueExam": "Continue exam",
       "backToExams": "Back to exams",
+      "timeRemainingLabel": "Time remaining",
+      "exitConfirm": "Leave the exam? Your answers won't be saved unless you submit first.",
       "mcqSectionTitle": "Multiple choice questions",
       "essaySectionTitle": "Written answers",
       "essayInstructions": "Upload clear photos of your written answer sheets.",

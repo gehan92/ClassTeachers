@@ -964,6 +964,7 @@ export type Database = {
           responder_type: "teacher" | "class";
           responder_id: string;
           message: string;
+          status: "new" | "read";
           created_at: string;
         };
         Insert: {
@@ -972,6 +973,7 @@ export type Database = {
           responder_type: "teacher" | "class";
           responder_id: string;
           message: string;
+          status?: "new" | "read";
           created_at?: string;
         };
         Update: {
@@ -980,6 +982,7 @@ export type Database = {
           responder_type?: "teacher" | "class";
           responder_id?: string;
           message?: string;
+          status?: "new" | "read";
           created_at?: string;
         };
         Relationships: [];
@@ -1431,6 +1434,7 @@ export type Database = {
           responder_type: string;
           responder_name: string | null;
           message: string;
+          status: string;
           created_at: string;
         }[];
       };

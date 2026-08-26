@@ -1236,7 +1236,9 @@
       "responderTypeLabels": {
         "teacher": "Teacher",
         "class": "Institute"
-      }
+      },
+      "newResponseBadge": "New",
+      "markResponseRead": "Mark as read"
     },
     "common": {
       "save": "Save",

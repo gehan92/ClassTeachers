@@ -205,6 +205,8 @@ export function DashboardShell(props: {
   defaultTab: string;
   /** Tables to silently live-refresh on — see RealtimeRefresh. Mounted once here, outside panels[activeTab], so it keeps listening no matter which tab is open. */
   realtimeWatch?: RealtimeWatch[];
+  /** Which nav item's `count` drives the header bell — "inquiries" for teacher/institute, "wantedAds" for student (their equivalent inbound-message tab). Defaults to "inquiries" since that's every existing caller. */
+  bellKey?: string;
 }) {
   // The call's connection lifetime needs to survive tab switches, so its
   // state has to live above wherever panels[activeTab] gets swapped — see
@@ -228,6 +230,7 @@ function DashboardShellInner({
   panels,
   defaultTab,
   realtimeWatch,
+  bellKey = "inquiries",
 }: {
   brandBadge?: string;
   userLabel: string;
@@ -239,6 +242,7 @@ function DashboardShellInner({
   panels: Record<string, React.ReactNode>;
   defaultTab: string;
   realtimeWatch?: RealtimeWatch[];
+  bellKey?: string;
 }) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const t = useTranslations("nav");
@@ -300,9 +304,10 @@ function DashboardShellInner({
   const siteNavItems = siteNavItemDefs.filter((item) => navKeys.includes(item.key));
 
   // Reuses the count already passed into groups for the sidebar's own
-  // "Inquiries" badge (see teacher/institute page.tsx) — no separate prop
-  // needed. Only roles that pass an "inquiries" nav item get the bell.
-  const inquiriesItem = groups.flatMap((g) => g.items).find((item) => item.key === "inquiries");
+  // badge (see teacher/institute/student page.tsx) — no separate prop
+  // needed. Only roles that pass a nav item matching bellKey get the bell —
+  // "inquiries" for teacher/institute, "wantedAds" for student.
+  const bellItem = groups.flatMap((g) => g.items).find((item) => item.key === bellKey);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -364,17 +369,17 @@ function DashboardShellInner({
           >
             {t("postYourAd")}
           </Button>
-          {inquiriesItem && (
+          {bellItem && (
             <button
               type="button"
-              onClick={() => select("inquiries")}
-              aria-label={inquiriesItem.label}
+              onClick={() => select(bellKey)}
+              aria-label={bellItem.label}
               className="relative flex size-8 items-center justify-center rounded-md text-white/70 hover:bg-white/10 hover:text-white"
             >
               <Bell className="size-4.5" />
-              {!!inquiriesItem.count && (
+              {!!bellItem.count && (
                 <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-cta font-mono text-[9px] font-bold text-cta-foreground">
-                  {inquiriesItem.count > 9 ? "9+" : inquiriesItem.count}
+                  {bellItem.count > 9 ? "9+" : bellItem.count}
                 </span>
               )}
             </button>

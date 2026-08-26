@@ -7,9 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { StatusBadge } from "@/components/features/status-badge";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
-import { createWantedAd, updateWantedAd, setWantedAdStatus, deleteWantedAd } from "@/lib/dashboard/wanted-ads-actions";
+import {
+  createWantedAd,
+  updateWantedAd,
+  setWantedAdStatus,
+  deleteWantedAd,
+  markWantedAdResponseRead,
+} from "@/lib/dashboard/wanted-ads-actions";
 import type { PublicWantedAd } from "@/components/features/wanted-ads-board";
 
 const textareaClass =
@@ -38,6 +45,7 @@ export type WantedAdResponseRow = {
   responderType: "teacher" | "class";
   responderName: string | null;
   message: string;
+  status: "new" | "read";
   createdLabel: string;
 };
 
@@ -421,17 +429,7 @@ function WantedAdCard({
                 {t("responsesHeading", { count: responses.length })}
               </p>
               {responses.map((response) => (
-                <div key={response.id} className="rounded-md bg-secondary/60 px-3 py-2">
-                  <div className="mb-0.5 flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-foreground">
-                      {response.responderName ?? t(`responderTypeLabels.${response.responderType}`)}
-                      {" · "}
-                      {t(`responderTypeLabels.${response.responderType}`)}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{response.createdLabel}</span>
-                  </div>
-                  <p className="text-sm text-foreground/85">{response.message}</p>
-                </div>
+                <ResponseItem key={response.id} response={response} />
               ))}
             </div>
           )}
@@ -476,6 +474,44 @@ function WantedAdCard({
             {error && <span className="text-sm font-medium text-destructive">{error}</span>}
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+// Mirrors InquiryItem's new/read shape (inquiries-tab.tsx) — full page
+// refresh() rather than local list splicing, matching how the rest of this
+// tab already handles its own mutations (create/update/delete above).
+function ResponseItem({ response }: { response: WantedAdResponseRow }) {
+  const t = useTranslations("studentDashboard.wantedAds");
+  const { refresh } = useDashboardRefresh();
+  const [marking, setMarking] = useState(false);
+
+  async function handleMarkRead() {
+    setMarking(true);
+    await markWantedAdResponseRead(response.id);
+    setMarking(false);
+    refresh();
+  }
+
+  return (
+    <div className="rounded-md bg-secondary/60 px-3 py-2">
+      <div className="mb-0.5 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-foreground">
+            {response.responderName ?? t(`responderTypeLabels.${response.responderType}`)}
+            {" · "}
+            {t(`responderTypeLabels.${response.responderType}`)}
+          </span>
+          {response.status === "new" && <StatusBadge variant="pending">{t("newResponseBadge")}</StatusBadge>}
+        </div>
+        <span className="text-xs text-muted-foreground">{response.createdLabel}</span>
+      </div>
+      <p className="text-sm text-foreground/85">{response.message}</p>
+      {response.status === "new" && (
+        <Button type="button" variant="ghost" size="sm" className="mt-1 h-7 px-2" onClick={handleMarkRead} disabled={marking}>
+          {t("markResponseRead")}
+        </Button>
       )}
     </div>
   );

@@ -1236,7 +1236,9 @@
       "responderTypeLabels": {
         "teacher": "ஆசிரியர்",
         "class": "நிறுவனம்"
-      }
+      },
+      "newResponseBadge": "புதியது",
+      "markResponseRead": "படித்ததாகக் குறி"
     },
     "common": {
       "save": "சேமி",

@@ -1236,7 +1236,9 @@
       "responderTypeLabels": {
         "teacher": "ගුරුවරයා",
         "class": "ආයතනය"
-      }
+      },
+      "newResponseBadge": "අලුත්",
+      "markResponseRead": "කියවූ බව සලකුණු කරන්න"
     },
     "common": {
       "save": "සුරකින්න",

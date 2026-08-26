@@ -205,3 +205,21 @@ export async function respondToWantedAd(wantedAdId: string, message: string): Pr
   }
   return {};
 }
+
+/** Mirrors markInquiryRead (0037) — same 'new'/'read' shape, scoped by RLS
+ * (0073) to the student who posted the ad this response belongs to. */
+export async function markWantedAdResponseRead(responseId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error } = await supabase.from("wanted_ad_responses").update({ status: "read" }).eq("id", responseId);
+  if (error) {
+    return { error: "Couldn't update this. Please try again." };
+  }
+  return {};
+}

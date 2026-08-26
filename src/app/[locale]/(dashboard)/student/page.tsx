@@ -482,8 +482,10 @@ export default async function StudentDashboardPage({
     responderType: r.responder_type as "teacher" | "class",
     responderName: r.responder_name,
     message: r.message,
+    status: r.status as "new" | "read",
     createdLabel: dateFormatter.format(new Date(r.created_at)),
   }));
+  const unreadResponsesCount = wantedAdResponses.filter((r) => r.status === "new").length;
 
   // A few, not many — just enough to show real activity and give writing
   // inspiration, not a full second copy of the /requests board. Excludes
@@ -526,6 +528,7 @@ export default async function StudentDashboardPage({
       userPhotoUrl={profile?.avatar_url ?? null}
       logoutLabel={t("logout")}
       demoRole="student"
+      bellKey="wantedAds"
       realtimeWatch={[{ table: "live_class_reminders", filter: `student_id=eq.${userId}` }]}
       groups={[
         {
@@ -536,7 +539,7 @@ export default async function StudentDashboardPage({
           items: [
             { key: "classes", label: t("tabs.classes") },
             { key: "live", label: t("tabs.live") },
-            { key: "wantedAds", label: t("tabs.wantedAds") },
+            { key: "wantedAds", label: t("tabs.wantedAds"), count: unreadResponsesCount },
           ],
         },
         {

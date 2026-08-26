@@ -426,6 +426,16 @@ export default async function StudentDashboardPage({
     (a) => assignmentSubmissionByAssignmentId.get(a.id)?.status !== "graded",
   ).length;
 
+  // Overview's quick-action cards need real content, not just counts — the
+  // teacher's name/class title for the next live class, and a couple of
+  // actual exam titles that are still due, so the card can say something
+  // true instead of static placeholder copy.
+  const nextLiveTeacherName = nextLive ? ownerName(nextLive.ownerType, nextLive.owner_id) : null;
+  const dueExamTitles = visibleExamRows
+    .filter((e) => submissionByExamId.get(e.id)?.status !== "graded")
+    .slice(0, 2)
+    .map((e) => e.title);
+
   const reviewTargets: ReviewTarget[] = [...joinedOwnerKeys].map((key) => {
     const [ownerType, ownerId] = key.split(":") as ["teacher" | "class", string];
     return { ownerType, ownerId, name: ownerName(ownerType, ownerId) };
@@ -482,8 +492,11 @@ export default async function StudentDashboardPage({
           <OverviewTab
             studentName={fullName}
             classesCount={classesCount}
+            nextLiveTitle={nextLive?.title ?? null}
+            nextLiveTeacherName={nextLiveTeacherName}
             nextLiveLabel={nextLiveLabel}
             examsDueCount={examsDueCount}
+            dueExamTitles={dueExamTitles}
             notesCount={studentNotes.length}
           />
         ),

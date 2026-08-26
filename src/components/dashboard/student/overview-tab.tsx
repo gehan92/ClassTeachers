@@ -27,17 +27,33 @@ function ActionCard({
   );
 }
 
+// Joins up to two titles as a natural English list ("A", "A and B", "A, B
+// and 1 more") — good enough for this card; the rest of the codebase
+// doesn't localize list grammar elsewhere either.
+function joinTitles(titles: string[], totalCount: number): string {
+  const remaining = totalCount - titles.length;
+  if (titles.length === 0) return "";
+  if (titles.length === 1) return remaining > 0 ? `${titles[0]} and ${remaining} more` : titles[0];
+  return remaining > 0 ? `${titles[0]}, ${titles[1]} and ${remaining} more` : `${titles[0]} and ${titles[1]}`;
+}
+
 export function OverviewTab({
   studentName,
   classesCount,
+  nextLiveTitle,
+  nextLiveTeacherName,
   nextLiveLabel,
   examsDueCount,
+  dueExamTitles,
   notesCount,
 }: {
   studentName: string;
   classesCount: number;
+  nextLiveTitle: string | null;
+  nextLiveTeacherName: string | null;
   nextLiveLabel: string | null;
   examsDueCount: number;
+  dueExamTitles: string[];
   notesCount: number;
 }) {
   const t = useTranslations("studentDashboard.overview");
@@ -57,24 +73,53 @@ export function OverviewTab({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <ActionCard
-          heading={t("actionLiveTitle")}
-          body={t("actionLiveBody")}
-          actionLabel={t("actionLiveCta")}
-          tab="live"
-        />
-        <ActionCard
-          heading={t("actionExamsTitle")}
-          body={t("actionExamsBody")}
-          actionLabel={t("actionExamsCta")}
-          tab="exams"
-        />
-        <ActionCard
-          heading={t("actionNotesTitle")}
-          body={t("actionNotesBody")}
-          actionLabel={t("actionNotesCta")}
-          tab="notes"
-        />
+        {nextLiveTitle && nextLiveLabel ? (
+          <ActionCard
+            heading={t("actionLiveTitle", { title: nextLiveTitle, time: nextLiveLabel })}
+            body={t("actionLiveBody", { teacher: nextLiveTeacherName ?? "—" })}
+            actionLabel={t("actionLiveCta")}
+            tab="live"
+          />
+        ) : (
+          <ActionCard
+            heading={t("actionLiveEmptyTitle")}
+            body={t("actionLiveEmptyBody")}
+            actionLabel={t("actionLiveCta")}
+            tab="live"
+          />
+        )}
+
+        {examsDueCount > 0 ? (
+          <ActionCard
+            heading={t("actionExamsTitle", { count: examsDueCount })}
+            body={t("actionExamsBody", { titles: joinTitles(dueExamTitles, examsDueCount) })}
+            actionLabel={t("actionExamsCta")}
+            tab="exams"
+          />
+        ) : (
+          <ActionCard
+            heading={t("actionExamsEmptyTitle")}
+            body={t("actionExamsEmptyBody")}
+            actionLabel={t("actionExamsCta")}
+            tab="exams"
+          />
+        )}
+
+        {notesCount > 0 ? (
+          <ActionCard
+            heading={t("actionNotesTitle", { count: notesCount })}
+            body={t("actionNotesBody")}
+            actionLabel={t("actionNotesCta")}
+            tab="notes"
+          />
+        ) : (
+          <ActionCard
+            heading={t("actionNotesEmptyTitle")}
+            body={t("actionNotesEmptyBody")}
+            actionLabel={t("actionNotesCta")}
+            tab="notes"
+          />
+        )}
       </div>
     </div>
   );

@@ -6,8 +6,13 @@
 -- (0072) had no such column yet, so there was nothing to count. This adds
 -- the same 'new'/'read' shape inquiries already uses.
 
+-- Safe to run more than once: IF NOT EXISTS on the column, drop-then-create
+-- on the policy and function (CREATE OR REPLACE can't change an existing
+-- function's return columns, and CREATE POLICY has no IF NOT EXISTS).
 alter table wanted_ad_responses
-  add column status text not null default 'new' check (status in ('new', 'read'));
+  add column if not exists status text not null default 'new' check (status in ('new', 'read'));
+
+drop policy if exists "the posting student can mark a response as read" on wanted_ad_responses;
 
 create policy "the posting student can mark a response as read"
   on wanted_ad_responses for update
@@ -18,7 +23,9 @@ create policy "the posting student can mark a response as read"
     exists (select 1 from wanted_ads wa where wa.id = wanted_ad_id and wa.student_id = auth.uid())
   );
 
-create or replace function public.list_wanted_ad_responses_for_student()
+drop function if exists public.list_wanted_ad_responses_for_student();
+
+create function public.list_wanted_ad_responses_for_student()
 returns table (
   id uuid,
   wanted_ad_id uuid,

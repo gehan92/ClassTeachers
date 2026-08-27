@@ -19,6 +19,7 @@ export function JoinRequestBox({
   loggedIn,
   isStudent,
   existingStatus,
+  isCampusLecturer = false,
 }: {
   batchId: string;
   teacherId: string;
@@ -27,6 +28,7 @@ export function JoinRequestBox({
   loggedIn: boolean;
   isStudent: boolean;
   existingStatus: "pending" | "accepted" | "declined" | null;
+  isCampusLecturer?: boolean;
 }) {
   const t = useTranslations("adPage.join");
   const tp = useTranslations("priceBox");
@@ -84,18 +86,18 @@ export function JoinRequestBox({
         ) : existingStatus === "declined" ? (
           <p className="text-sm font-medium text-destructive">{t("declined")}</p>
         ) : loggedIn && isStudent ? (
-          <StudentRequestForm batchId={batchId} />
+          <StudentRequestForm batchId={batchId} isCampusLecturer={isCampusLecturer} />
         ) : loggedIn ? (
-          <p className="text-sm text-muted-foreground">{t("notStudent")}</p>
+          <p className="text-sm text-muted-foreground">{isCampusLecturer ? t("notStudentCampus") : t("notStudent")}</p>
         ) : (
-          <AnonymousRequestForm teacherId={teacherId} />
+          <AnonymousRequestForm teacherId={teacherId} isCampusLecturer={isCampusLecturer} />
         )}
       </div>
     </div>
   );
 }
 
-function StudentRequestForm({ batchId }: { batchId: string }) {
+function StudentRequestForm({ batchId, isCampusLecturer }: { batchId: string; isCampusLecturer: boolean }) {
   const t = useTranslations("adPage.join");
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
@@ -120,7 +122,9 @@ function StudentRequestForm({ batchId }: { batchId: string }) {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <p className="text-sm font-semibold text-foreground">{t("requestToJoin")}</p>
+      <p className="text-sm font-semibold text-foreground">
+        {isCampusLecturer ? t("requestToEnroll") : t("requestToJoin")}
+      </p>
       <textarea
         className={cn(fieldClass, "min-h-18 resize-none py-1.75")}
         placeholder={t("notePlaceholder")}
@@ -135,7 +139,7 @@ function StudentRequestForm({ batchId }: { batchId: string }) {
   );
 }
 
-function AnonymousRequestForm({ teacherId }: { teacherId: string }) {
+function AnonymousRequestForm({ teacherId, isCampusLecturer }: { teacherId: string; isCampusLecturer: boolean }) {
   const t = useTranslations("adPage.join");
   const [form, setForm] = useState({ name: "", contact: "", message: "" });
   const [sending, setSending] = useState(false);
@@ -160,7 +164,9 @@ function AnonymousRequestForm({ teacherId }: { teacherId: string }) {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <p className="text-sm font-semibold text-foreground">{t("requestToJoin")}</p>
+      <p className="text-sm font-semibold text-foreground">
+        {isCampusLecturer ? t("requestToEnroll") : t("requestToJoin")}
+      </p>
       <input
         className={fieldClass}
         placeholder={t("namePlaceholder")}

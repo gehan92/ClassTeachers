@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/features/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { setUserSuspended, setInstitutionVerified } from "@/lib/dashboard/admin-actions";
+import { setUserSuspended, setInstitutionVerified, getVerificationDocumentUrl } from "@/lib/dashboard/admin-actions";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
@@ -83,6 +83,18 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
     }
     setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, institutionVerified: verified } : u)));
     refresh();
+  }
+
+  async function viewDocument(user: PlatformUser) {
+    setPendingId(user.id);
+    setError(null);
+    const result = await getVerificationDocumentUrl(user.id);
+    setPendingId(null);
+    if (result.error || !result.url) {
+      setError(result.error ?? t("documentUnavailable"));
+      return;
+    }
+    window.open(result.url, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -160,12 +172,27 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-end gap-2">
+                    {user.role === "campus_lecturer" && user.hasVerificationDocument && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => viewDocument(user)}
+                        disabled={pendingId === user.id}
+                      >
+                        {t("actions.viewDocument")}
+                      </Button>
+                    )}
                     {user.role === "campus_lecturer" && (
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => toggleInstitutionVerified(user)}
-                        disabled={pendingId === user.id}
+                        disabled={pendingId === user.id || (!user.institutionVerified && !user.hasVerificationDocument)}
+                        title={
+                          !user.institutionVerified && !user.hasVerificationDocument
+                            ? t("actions.verifyDisabledHint")
+                            : undefined
+                        }
                       >
                         {user.institutionVerified ? t("actions.unverify") : t("actions.verify")}
                       </Button>

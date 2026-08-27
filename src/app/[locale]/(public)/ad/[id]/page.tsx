@@ -134,11 +134,16 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
         </div>
       </div>
 
-      <h2 className="mt-7 mb-4 text-2xl text-primary sm:text-[26px]">{ad.ad_title}</h2>
+      <h2 className="mt-7 mb-4 text-2xl text-primary sm:text-[26px]">
+        {ad.is_campus_lecturer && ad.course_code && (
+          <span className="text-muted-foreground">{ad.course_code} · </span>
+        )}
+        {ad.ad_title}
+      </h2>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
-          <h3 className="mb-3 text-lg">{t("aboutHeading")}</h3>
+          <h3 className="mb-3 text-lg">{ad.is_campus_lecturer ? t("aboutHeadingCampus") : t("aboutHeading")}</h3>
           {contentLines.length > 1 ? (
             <ul className="list-disc space-y-1.5 pl-5 text-sm text-foreground/85">
               {contentLines.map((line, i) => (
@@ -153,7 +158,9 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
               {t("schedule")}: {ad.schedule_note}
             </p>
           )}
-          <p className="mt-6 text-xs text-muted-foreground">{t("limitedNote")}</p>
+          <p className="mt-6 text-xs text-muted-foreground">
+            {ad.is_campus_lecturer ? t("limitedNoteCampus") : t("limitedNote")}
+          </p>
         </div>
 
         <div className="flex flex-col gap-6">
@@ -172,6 +179,7 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
             loggedIn={Boolean(user)}
             isStudent={viewerRole === "student"}
             existingStatus={existingStatus}
+            isCampusLecturer={ad.is_campus_lecturer}
           />
 
           {freeNoteRows && freeNoteRows.length > 0 && (

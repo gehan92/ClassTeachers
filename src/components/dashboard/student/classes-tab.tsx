@@ -17,6 +17,8 @@ export type MyClassRow = {
   mode: "online" | "physical" | null;
   scheduleNote: string | null;
   status: "pending" | "accepted" | "declined";
+  /** Swaps this row's "Teacher"/"Class" badge and any join-flow wording to campus terminology (0076) — a mixed list can have both, so this is per-row, not page-level. */
+  isCampusLecturer: boolean;
 };
 
 export type AvailableBatchRow = {
@@ -26,6 +28,8 @@ export type AvailableBatchRow = {
   mode: "online" | "physical";
   location: string | null;
   scheduleNote: string | null;
+  isCampusLecturer: boolean;
+  courseCode: string | null;
 };
 
 export function ClassesTab({
@@ -85,7 +89,11 @@ export function ClassesTab({
                   <div className="mb-1 flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-foreground">{item.ownerName}</span>
                     <span className="rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-                      {item.ownerType === "teacher" ? t("typeTeacher") : t("typeClass")}
+                      {item.isCampusLecturer
+                        ? t("typeCampusLecturer")
+                        : item.ownerType === "teacher"
+                          ? t("typeTeacher")
+                          : t("typeClass")}
                     </span>
                   </div>
                   {item.batchTitle && <div className="text-sm text-muted-foreground">{item.batchTitle}</div>}
@@ -143,7 +151,10 @@ export function ClassesTab({
               className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4.5 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="min-w-0">
-                <div className="font-semibold text-foreground">{batch.title}</div>
+                <div className="font-semibold text-foreground">
+                  {batch.courseCode && <span className="text-muted-foreground">{batch.courseCode} · </span>}
+                  {batch.title}
+                </div>
                 <div className="text-sm text-muted-foreground">{batch.ownerName}</div>
                 <div className="mt-1 text-xs text-muted-foreground">
                   {batch.mode === "online" ? t("modeOnline") : t("modePhysical")}
@@ -157,7 +168,7 @@ export function ClassesTab({
                 onClick={() => handleJoin(batch.id)}
                 className="shrink-0"
               >
-                {t("requestToJoin")}
+                {batch.isCampusLecturer ? t("requestToEnroll") : t("requestToJoin")}
               </Button>
             </div>
           ))}

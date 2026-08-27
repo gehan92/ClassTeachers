@@ -42,5 +42,6 @@ export type Listing = {
     institution: string | null;
     academicTitle: string | null;
     verified: boolean;
+    courseCode: string | null;
   };
 };

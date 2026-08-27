@@ -42,7 +42,12 @@ export function ListingCard({ listing }: { listing: Listing }) {
         </div>
         <div className="mb-2.5 text-[12.5px] text-muted-foreground">{listing.roleLabel}</div>
         {listing.headline && (
-          <div className="mb-1 line-clamp-2 text-[13.5px] font-semibold text-foreground">{listing.headline}</div>
+          <div className="mb-1 line-clamp-2 text-[13.5px] font-semibold text-foreground">
+            {listing.campusCredential?.courseCode && (
+              <span className="text-muted-foreground">{listing.campusCredential.courseCode} · </span>
+            )}
+            {listing.headline}
+          </div>
         )}
         {listing.excerpt && (
           <p className="mb-2.5 line-clamp-2 text-[12.5px] text-muted-foreground">{listing.excerpt}</p>

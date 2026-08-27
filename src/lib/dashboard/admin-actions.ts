@@ -54,6 +54,10 @@ export async function resolveApproval(input: {
  * touches institution_verified, so a teacher can't self-verify even though
  * teacher_profiles' RLS technically allows a self-update (same discipline
  * as `status` above).
+ *
+ * Verifying without evidence (0076) is refused outright — a badge with
+ * nothing behind it is worse than no badge. Unverifying never needs a
+ * document check, an admin can always revoke.
  */
 export async function setInstitutionVerified(input: { teacherId: string; verified: boolean }): Promise<ActionResult> {
   const admin = await requireAdmin();
@@ -62,6 +66,17 @@ export async function setInstitutionVerified(input: { teacherId: string; verifie
   }
 
   const supabase = await createClient();
+  if (input.verified) {
+    const { data: teacher } = await supabase
+      .from("teacher_profiles")
+      .select("verification_document_path")
+      .eq("id", input.teacherId)
+      .maybeSingle();
+    if (!teacher?.verification_document_path) {
+      return { error: "This lecturer hasn't submitted a verification document yet." };
+    }
+  }
+
   const { error } = await supabase
     .from("teacher_profiles")
     .update({ institution_verified: input.verified })
@@ -70,6 +85,38 @@ export async function setInstitutionVerified(input: { teacherId: string; verifie
     return { error: "Couldn't update this. Please try again." };
   }
   return {};
+}
+
+/**
+ * "View document" on Admin -> Users. The verification-docs bucket (0076) is
+ * private, so the admin needs a short-lived signed URL rather than a plain
+ * public one — same hand-off shape as the notes file route, just as a
+ * server action instead of a redirect route since it's opened from a button
+ * click, not a link a student might bookmark.
+ */
+export async function getVerificationDocumentUrl(teacherId: string): Promise<ActionResult & { url?: string }> {
+  const admin = await requireAdmin();
+  if ("error" in admin) {
+    return { error: admin.error };
+  }
+
+  const supabase = await createClient();
+  const { data: teacher } = await supabase
+    .from("teacher_profiles")
+    .select("verification_document_path")
+    .eq("id", teacherId)
+    .maybeSingle();
+  if (!teacher?.verification_document_path) {
+    return { error: "No document has been submitted." };
+  }
+
+  const { data: signed, error } = await supabase.storage
+    .from("verification-docs")
+    .createSignedUrl(teacher.verification_document_path, 60);
+  if (error || !signed) {
+    return { error: "Couldn't open this document. Please try again." };
+  }
+  return { url: signed.signedUrl };
 }
 
 /**

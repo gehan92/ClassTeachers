@@ -93,7 +93,7 @@ export default async function StudentDashboardPage({
     supabase.from("exam_submissions").select("exam_id, status, grade, feedback, submitted_at").eq("student_id", userId),
     supabase
       .from("batches")
-      .select("id, owner_type, owner_id, title, mode, location, schedule_note")
+      .select("id, owner_type, owner_id, title, mode, location, schedule_note, course_code")
       .order("created_at", { ascending: false }),
     // No explicit owner filter here — RLS (is_enrolled, 0047) already
     // scopes which assignment rows come back.
@@ -187,7 +187,7 @@ export default async function StudentDashboardPage({
     // specifically for teachers the caller is actually enrolled with.
     teacherOwnerIds.size
       ? supabase.rpc("get_enrolled_teacher_names", { p_teacher_ids: [...teacherOwnerIds] })
-      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+      : Promise.resolve({ data: [] as { id: string; full_name: string; is_campus_lecturer: boolean }[] }),
     classOwnerIds.size
       ? supabase.from("class_profiles").select("id, name").in("id", [...classOwnerIds])
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
@@ -281,6 +281,9 @@ export default async function StudentDashboardPage({
   const reminderClassIds = (reminderRows ?? []).map((r) => r.live_class_id);
 
   const teacherNameById = new Map((teacherOwners ?? []).map((p) => [p.id, p.full_name]));
+  const campusLecturerTeacherIds = new Set(
+    (teacherOwners ?? []).filter((p) => p.is_campus_lecturer).map((p) => p.id),
+  );
   const classNameById = new Map((classOwners ?? []).map((c) => [c.id, c.name]));
   function ownerName(ownerType: "teacher" | "class", ownerId: string) {
     return (ownerType === "teacher" ? teacherNameById.get(ownerId) : classNameById.get(ownerId)) ?? "—";
@@ -328,6 +331,7 @@ export default async function StudentDashboardPage({
         mode: batch?.mode ?? null,
         scheduleNote: batch?.schedule_note ?? null,
         status: e.status,
+        isCampusLecturer: e.owner_type === "teacher" && campusLecturerTeacherIds.has(e.owner_id),
       };
     });
 
@@ -340,6 +344,8 @@ export default async function StudentDashboardPage({
       mode: b.mode,
       location: b.location,
       scheduleNote: b.schedule_note,
+      isCampusLecturer: b.owner_type === "teacher" && campusLecturerTeacherIds.has(b.owner_id),
+      courseCode: b.course_code,
     }));
 
   const studentNotes: StudentNoteRow[] = (noteRows ?? [])

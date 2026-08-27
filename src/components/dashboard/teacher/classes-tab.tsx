@@ -30,6 +30,8 @@ export type TeacherBatchRow = {
   location: string | null;
   scheduleNote: string | null;
   gradeBand: GradeBand | null;
+  /** Campus lecturer only (0076) — a module/course code distinct from the generic subject list, e.g. "CS301". Null for regular teacher batches. */
+  courseCode: string | null;
   /** Deleting a batch cascades to delete its search-results ad (0039) —
    * used to disable/explain the Delete action up front rather than let the
    * teacher hit the server-side block after clicking. */
@@ -64,6 +66,7 @@ export function ClassesTab({
   const [location, setLocation] = useState("");
   const [scheduleNote, setScheduleNote] = useState("");
   const [gradeBand, setGradeBand] = useState<GradeBand>("12-13");
+  const [courseCode, setCourseCode] = useState("");
   const [added, setAdded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -75,6 +78,7 @@ export function ClassesTab({
   const [editLocation, setEditLocation] = useState("");
   const [editScheduleNote, setEditScheduleNote] = useState("");
   const [editGradeBand, setEditGradeBand] = useState<GradeBand>("12-13");
+  const [editCourseCode, setEditCourseCode] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -89,6 +93,7 @@ export function ClassesTab({
     setLocation("");
     setScheduleNote("");
     setGradeBand("12-13");
+    setCourseCode("");
   }
 
   async function handleAdd() {
@@ -103,6 +108,7 @@ export function ClassesTab({
       location,
       scheduleNote,
       gradeBand,
+      courseCode: isCampusLecturer ? courseCode : undefined,
     });
     setCreating(false);
     if (result.error) {
@@ -124,6 +130,7 @@ export function ClassesTab({
     setEditLocation(batch.location ?? "");
     setEditScheduleNote(batch.scheduleNote ?? "");
     setEditGradeBand(batch.gradeBand ?? "12-13");
+    setEditCourseCode(batch.courseCode ?? "");
     setEditError(null);
   }
 
@@ -143,6 +150,7 @@ export function ClassesTab({
       location: editLocation,
       scheduleNote: editScheduleNote,
       gradeBand: editGradeBand,
+      courseCode: isCampusLecturer ? editCourseCode : undefined,
     });
     setEditSaving(false);
     if (result.error) {
@@ -179,7 +187,9 @@ export function ClassesTab({
         </div>
         <div className="flex items-center gap-3">
           {added && <span className="text-sm font-medium text-success">{tc("added")}</span>}
-          <Button onClick={() => setShowForm((v) => !v)}>{t("addBatch")}</Button>
+          <Button onClick={() => setShowForm((v) => !v)}>
+            {isCampusLecturer ? t("addBatchCampus") : t("addBatch")}
+          </Button>
         </div>
       </div>
 
@@ -193,17 +203,28 @@ export function ClassesTab({
 
       {showForm && (
         <div className="rounded-lg border border-border bg-white p-5">
-          <h3 className="mb-4 text-lg">{t("form.title")}</h3>
+          <h3 className="mb-4 text-lg">{isCampusLecturer ? t("form.titleCampus") : t("form.title")}</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="grid gap-1.5 sm:col-span-2">
-              <Label htmlFor="batch-title">{t("form.titleLabel")}</Label>
+            <div className={isCampusLecturer ? "grid gap-1.5" : "grid gap-1.5 sm:col-span-2"}>
+              <Label htmlFor="batch-title">{isCampusLecturer ? t("form.titleLabelCampus") : t("form.titleLabel")}</Label>
               <Input
                 id="batch-title"
-                placeholder={t("form.titlePlaceholder")}
+                placeholder={isCampusLecturer ? t("form.titlePlaceholderCampus") : t("form.titlePlaceholder")}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
             </div>
+            {isCampusLecturer && (
+              <div className="grid gap-1.5">
+                <Label htmlFor="batch-course-code">{t("form.courseCodeLabel")}</Label>
+                <Input
+                  id="batch-course-code"
+                  placeholder={t("form.courseCodePlaceholder")}
+                  value={courseCode}
+                  onChange={(e) => setCourseCode(e.target.value)}
+                />
+              </div>
+            )}
             <div className="grid gap-1.5">
               <Label htmlFor="batch-mode">{t("form.modeLabel")}</Label>
               <Select value={mode} onValueChange={(value) => setMode(value as "online" | "physical")}>
@@ -232,7 +253,7 @@ export function ClassesTab({
               </Select>
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="batch-size-type">{t("form.classSizeLabel")}</Label>
+              <Label htmlFor="batch-size-type">{isCampusLecturer ? t("form.classSizeLabelCampus") : t("form.classSizeLabel")}</Label>
               <Select
                 value={classSizeType}
                 onValueChange={(value) => setClassSizeType(value as "group" | "individual")}
@@ -267,7 +288,7 @@ export function ClassesTab({
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button onClick={handleAdd} disabled={creating}>
-              {t("form.submit")}
+              {isCampusLecturer ? t("form.submitCampus") : t("form.submit")}
             </Button>
             <Button
               variant="outline"
@@ -285,7 +306,7 @@ export function ClassesTab({
 
       {batches.length === 0 ? (
         <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
-          {t("emptyState")}
+          {isCampusLecturer ? t("emptyStateCampus") : t("emptyState")}
         </div>
       ) : (
         <div className="flex flex-col gap-5">
@@ -297,14 +318,27 @@ export function ClassesTab({
                 {isEditing ? (
                   <div className="mb-4 rounded-md border border-border bg-muted/30 p-4">
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <div className="grid gap-1.5 sm:col-span-2">
-                        <Label htmlFor={`edit-title-${batch.id}`}>{t("form.titleLabel")}</Label>
+                      <div className={isCampusLecturer ? "grid gap-1.5" : "grid gap-1.5 sm:col-span-2"}>
+                        <Label htmlFor={`edit-title-${batch.id}`}>
+                          {isCampusLecturer ? t("form.titleLabelCampus") : t("form.titleLabel")}
+                        </Label>
                         <Input
                           id={`edit-title-${batch.id}`}
                           value={editTitle}
                           onChange={(e) => setEditTitle(e.target.value)}
                         />
                       </div>
+                      {isCampusLecturer && (
+                        <div className="grid gap-1.5">
+                          <Label htmlFor={`edit-course-code-${batch.id}`}>{t("form.courseCodeLabel")}</Label>
+                          <Input
+                            id={`edit-course-code-${batch.id}`}
+                            placeholder={t("form.courseCodePlaceholder")}
+                            value={editCourseCode}
+                            onChange={(e) => setEditCourseCode(e.target.value)}
+                          />
+                        </div>
+                      )}
                       <div className="grid gap-1.5">
                         <Label>{t("form.modeLabel")}</Label>
                         <Select value={editMode} onValueChange={(value) => setEditMode(value as "online" | "physical")}>
@@ -318,7 +352,7 @@ export function ClassesTab({
                         </Select>
                       </div>
                       <div className="grid gap-1.5">
-                        <Label>{t("form.classSizeLabel")}</Label>
+                        <Label>{isCampusLecturer ? t("form.classSizeLabelCampus") : t("form.classSizeLabel")}</Label>
                         <Select
                           value={editClassSizeType}
                           onValueChange={(value) => setEditClassSizeType(value as "group" | "individual")}
@@ -377,7 +411,10 @@ export function ClassesTab({
                 ) : (
                   <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <h3 className="text-lg text-foreground">{batch.title}</h3>
+                      <h3 className="text-lg text-foreground">
+                        {batch.courseCode && <span className="text-muted-foreground">{batch.courseCode} · </span>}
+                        {batch.title}
+                      </h3>
                       <p className="mt-0.5 text-sm text-muted-foreground">
                         {batch.gradeBand ? `${tg(`grades.${batch.gradeBand}`)} · ` : ""}
                         {batch.mode === "online" ? t("form.modeOnline") : t("form.modePhysical")}
@@ -399,7 +436,13 @@ export function ClassesTab({
                         variant="ghost"
                         size="sm"
                         disabled={batch.hasActiveAd}
-                        title={batch.hasActiveAd ? t("deleteBlockedByAd") : undefined}
+                        title={
+                          batch.hasActiveAd
+                            ? isCampusLecturer
+                              ? t("deleteBlockedByAdCampus")
+                              : t("deleteBlockedByAd")
+                            : undefined
+                        }
                         onClick={() => {
                           setDeleteError(null);
                           setConfirmDeleteId(batch.id);
@@ -451,7 +494,11 @@ export function ClassesTab({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {batchPendingDelete ? t("deleteDialog.title", { title: batchPendingDelete.title }) : t("deleteDialog.titleFallback")}
+              {batchPendingDelete
+                ? t("deleteDialog.title", { title: batchPendingDelete.title })
+                : isCampusLecturer
+                  ? t("deleteDialog.titleFallbackCampus")
+                  : t("deleteDialog.titleFallback")}
             </AlertDialogTitle>
             <AlertDialogDescription>{t("deleteDialog.description")}</AlertDialogDescription>
           </AlertDialogHeader>

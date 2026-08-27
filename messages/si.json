@@ -695,8 +695,11 @@
         "manage": "අත්හිටුවන්න",
         "reactivate": "නැවත සක්‍රීය කරන්න",
         "verify": "ආයතනය තහවුරු කරන්න",
-        "unverify": "තහවුරු කිරීම ඉවත් කරන්න"
+        "unverify": "තහවුරු කිරීම ඉවත් කරන්න",
+        "viewDocument": "ලේඛනය බලන්න",
+        "verifyDisabledHint": "මෙම කථිකාචාර්යවරයා තවම තහවුරු කිරීමේ ලේඛනයක් ඉදිරිපත් කර නැත."
       },
+      "documentUnavailable": "මෙම ලේඛනය විවෘත කළ නොහැකි විය.",
       "institutionVerified": "ආයතනය තහවුරු කර ඇත",
       "confirmSuspend": "{name} අත්හිටුවනවාද? නැවත සක්‍රීය කරන තෙක් ඔවුන්ට පිවිසිය නොහැක.",
       "empty": "ඔබේ සෙවීමට ගැලපෙන පරිශීලකයන් නොමැත."
@@ -994,6 +997,7 @@
       "subtitle": "ඔබ එකතු වූ ගුරුවරුන් සහ පන්ති.",
       "typeTeacher": "ගුරුවරයා",
       "typeClass": "පන්තිය",
+      "typeCampusLecturer": "කැම්පස් කථිකාචාර්ය",
       "viewProfile": "පැතිකඩ බලන්න",
       "emptyState": "ඔබ තවම කිසිදු පන්තියකට එකතු වී නැත.",
       "pendingTitle": "විසඳීමට ඇති ඉල්ලීම්",
@@ -1002,7 +1006,8 @@
       "browseEmpty": "දැනට එකතු විය හැකි පන්ති නොමැත.",
       "modeOnline": "මාර්ගගත",
       "modePhysical": "භෞතික",
-      "requestToJoin": "එකතු වීමට ඉල්ලන්න"
+      "requestToJoin": "එකතු වීමට ඉල්ලන්න",
+      "requestToEnroll": "ලියාපදිංචි වීමට ඉල්ලන්න"
     },
     "live": {
       "title": "සජීවී පන්ති",
@@ -1356,6 +1361,11 @@
       "removePublication": "ප්‍රකාශනය ඉවත් කරන්න",
       "institutionVerifiedNote": "ඔබගේ ආයතනය පරිපාලකයෙකු විසින් තහවුරු කර ඇත.",
       "institutionNotVerifiedNote": "තවම පරිපාලකයෙකු විසින් තහවුරු කර නැත — මෙය ඔබගේ පැතිකඩ පොදු වීම නවත්වන්නේ නැත.",
+      "institutionPendingReviewNote": "ලේඛනය ඉදිරිපත් කර ඇත — පරිපාලක සමාලෝචනය සඳහා රැඳී සිටී.",
+      "verificationDocumentLabel": "තහවුරු කිරීමේ ලේඛනය",
+      "verificationDocumentHint": "පරිපාලකයෙකුට ඔබගේ ආයතනය තහවුරු කළ හැකි වන පරිදි කාර්ය මණ්ඩල හැඳුනුම්පතක් හෝ පත්වීම් ලිපියක් උඩුගත කරන්න. PDF, JPG, PNG, හෝ WEBP.",
+      "uploadDocument": "ලේඛනය උඩුගත කරන්න",
+      "replaceDocument": "ලේඛනය ප්‍රතිස්ථාපනය කරන්න",
       "fields": {
         "headline": "ශීර්ෂ පාඨය",
         "bio": "ඔබ ගැන",
@@ -1453,15 +1463,19 @@
       "headingCampus": "පාඨමාලා",
       "subtitle": "ඔබේම කණ්ඩායම් සහ එක් එක් කණ්ඩායමට ලියාපදිංචි වූවන්.",
       "addBatch": "+ කණ්ඩායමක් එකතු කරන්න",
+      "addBatchCampus": "+ පාඨමාලාවක් එකතු කරන්න",
       "emptyState": "ඔබ තවම කණ්ඩායමක් සාදා නැත.",
+      "emptyStateCampus": "ඔබ තවම පාඨමාලාවක් සාදා නැත.",
       "studentCount": "සිසුන් {count}",
       "noStudents": "තවම සිසුන් ලියාපදිංචි වී නැත.",
       "edit": "සංස්කරණය කරන්න",
       "delete": "මකන්න",
       "deleteBlockedByAd": "මෙම පන්තියට සජීවී දැන්වීමක් ඇත. මෙම පන්තිය මැකීමට පෙර දැන්වීම් ටැබයේදී එය නවතන්න හෝ ඉවත් කරන්න.",
+      "deleteBlockedByAdCampus": "මෙම පාඨමාලාවට සජීවී දැන්වීමක් ඇත. මෙම පාඨමාලාව මැකීමට පෙර දැන්වීම් ටැබයේදී එය නවතන්න හෝ ඉවත් කරන්න.",
       "deleteDialog": {
         "title": "\"{title}\" මකන්නද?",
         "titleFallback": "මෙම පන්තිය මකන්නද?",
+        "titleFallbackCampus": "මෙම පාඨමාලාව මකන්නද?",
         "description": "මෙයට ලියාපදිංචි වූ සිසුන් ඔබේ සාමාන්‍ය ලියාපදිංචියට මාරු වන අතර, මෙයට සම්බන්ධ සටහන්, විභාග හෝ පැවරුම් මකා නොදමා පරාසයෙන් තොර වේ. මෙය ආපසු හැරවිය නොහැක."
       },
       "columns": {
@@ -1471,12 +1485,18 @@
       },
       "form": {
         "title": "නව කණ්ඩායම",
+        "titleCampus": "නව පාඨමාලාව",
         "titleLabel": "කණ්ඩායමේ මාතෘකාව",
+        "titleLabelCampus": "පාඨමාලා මාතෘකාව",
         "titlePlaceholder": "උදා: A/L සංයුක්ත ගණිතය — සඳුදා/බදාදා",
+        "titlePlaceholderCampus": "උදා: Data Structures — 1 වන සෙමෙස්තරය",
+        "courseCodeLabel": "පාඨමාලා කේතය (විකල්ප)",
+        "courseCodePlaceholder": "උදා: CS301",
         "modeLabel": "ආකාරය",
         "modeOnline": "මාර්ගගත",
         "modePhysical": "භෞතික",
         "classSizeLabel": "පන්ති වර්ගය",
+        "classSizeLabelCampus": "ආකෘතිය",
         "classSizeGroup": "සමූහ",
         "classSizeIndividual": "තනි",
         "gradeLabel": "ශ්‍රේණිය",
@@ -1484,7 +1504,8 @@
         "locationPlaceholder": "උදා: කොළඹ 05",
         "scheduleLabel": "කාලසටහන",
         "schedulePlaceholder": "උදා: සඳුදා, බදාදා · පස්වරු 5:00",
-        "submit": "කණ්ඩායම සාදන්න"
+        "submit": "කණ්ඩායම සාදන්න",
+        "submitCampus": "පාඨමාලාව සාදන්න"
       }
     },
     "questionBank": {
@@ -1897,16 +1918,19 @@
     "teacherFallback": "ගුරුවරයා",
     "breadcrumbHome": "ගුරුවරුන් සොයන්න",
     "aboutHeading": "මෙම පන්තිය ගැන",
+    "aboutHeadingCampus": "මෙම පාඨමාලාව ගැන",
     "online": "මාර්ගගත",
     "physical": "භෞතික",
     "schedule": "කාලසටහන",
     "limitedNote": "මෙය සීමිත පෙරදසුනකි. ගුරුවරයා ඔබේ එකතු වීමේ ඉල්ලීම පිළිගත් පසු සම්පූර්ණ පැතිකඩ විස්තර විවෘත වේ.",
+    "limitedNoteCampus": "මෙය සීමිත පෙරදසුනකි. කථිකාචාර්යවරයා ඔබේ ලියාපදිංචි වීමේ ඉල්ලීම පිළිගත් පසු සම්පූර්ණ පැතිකඩ විස්තර විවෘත වේ.",
     "levelHeading": "පාඩම් මට්ටම",
     "share": {
       "heading": "මෙම දැන්වීම බෙදාගන්න"
     },
     "join": {
       "requestToJoin": "එකතු වීමට ඉල්ලන්න",
+      "requestToEnroll": "ලියාපදිංචි වීමට ඉල්ලන්න",
       "notePlaceholder": "ගුරුවරයාට සටහනක් එක් කරන්න (විකල්පයි)",
       "namePlaceholder": "ඔබේ නම",
       "contactPlaceholder": "දුරකථනය හෝ විද්‍යුත් තැපෑල",
@@ -1916,6 +1940,7 @@
       "accepted": "ඔබ දැනටමත් මෙම ගුරුවරයා සමඟ සම්බන්ධ වී ඇත.",
       "declined": "ඔබේ ඉල්ලීම ප්‍රතික්ෂේප කරන ලදී.",
       "notStudent": "සිසු ගිණුම් වලට පමණක් එකතු වීමට ඉල්ලීම් කළ හැක.",
+      "notStudentCampus": "සිසු ගිණුම් වලට පමණක් ලියාපදිංචි වීමට ඉල්ලීම් කළ හැක.",
       "viewProfile": "සම්පූර්ණ පැතිකඩ බලන්න",
       "anonymousHint": "ගිණුමක් අවශ්‍ය නැත — ඉහත සම්බන්ධතා විස්තර භාවිතයෙන් ගුරුවරයා ඔබ හා සම්බන්ධ වනු ඇත."
     },

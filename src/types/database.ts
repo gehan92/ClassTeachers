@@ -152,6 +152,8 @@ export type Database = {
           academic_title: string | null;
           institution_verified: boolean;
           publications: string[] | null;
+          verification_document_path: string | null;
+          verification_submitted_at: string | null;
           status: ProfileStatus;
           owner_published: boolean;
           contact_mode: "phone" | "messaging_only";
@@ -173,6 +175,8 @@ export type Database = {
           academic_title?: string | null;
           institution_verified?: boolean;
           publications?: string[] | null;
+          verification_document_path?: string | null;
+          verification_submitted_at?: string | null;
           status?: ProfileStatus;
           owner_published?: boolean;
           contact_mode?: "phone" | "messaging_only";
@@ -194,6 +198,8 @@ export type Database = {
           academic_title?: string | null;
           institution_verified?: boolean;
           publications?: string[] | null;
+          verification_document_path?: string | null;
+          verification_submitted_at?: string | null;
           status?: ProfileStatus;
           owner_published?: boolean;
           contact_mode?: "phone" | "messaging_only";
@@ -396,6 +402,7 @@ export type Database = {
           status: "active" | "upcoming" | "closed";
           hourly_rate: number | null;
           monthly_rate: number | null;
+          course_code: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -414,6 +421,7 @@ export type Database = {
           status?: "active" | "upcoming" | "closed";
           hourly_rate?: number | null;
           monthly_rate?: number | null;
+          course_code?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -432,6 +440,7 @@ export type Database = {
           status?: "active" | "upcoming" | "closed";
           hourly_rate?: number | null;
           monthly_rate?: number | null;
+          course_code?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1260,7 +1269,7 @@ export type Database = {
       };
       get_enrolled_teacher_names: {
         Args: { p_teacher_ids: string[] };
-        Returns: { id: string; full_name: string }[];
+        Returns: { id: string; full_name: string; is_campus_lecturer: boolean }[];
       };
       get_roster_student_info: {
         Args: { p_student_ids: string[] };
@@ -1391,6 +1400,7 @@ export type Database = {
           institution: string | null;
           academic_title: string | null;
           institution_verified: boolean;
+          course_code: string | null;
         }[];
       };
       get_public_ad: {
@@ -1412,6 +1422,8 @@ export type Database = {
           monthly_rate: number | null;
           rating: number;
           review_count: number;
+          is_campus_lecturer: boolean;
+          course_code: string | null;
         }[];
       };
       list_public_wanted_ads: {

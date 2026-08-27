@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { BadgeCheck, Eye, Pencil, Plus, X } from "lucide-react";
+import { BadgeCheck, Eye, Pencil, Plus, Upload, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { updateTeacherProfile, updateTeacherSubjects, setListingPublished, resubmitListing } from "@/lib/dashboard/actions";
 import { uploadAvatar } from "@/lib/dashboard/avatar-actions";
+import { uploadVerificationDocument } from "@/lib/dashboard/verification-actions";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import type { ProfileStatus } from "@/types/database";
@@ -42,6 +43,7 @@ export function ProfileTab({
   initialAcademicTitle,
   initialPublications,
   institutionVerified,
+  initialHasVerificationDocument,
   liveView,
 }: {
   initialHeadline: string;
@@ -66,6 +68,8 @@ export function ProfileTab({
   initialPublications: string[];
   /** Admin-only toggle (Admin -> Users) — shown here read-only so a lecturer can see their own status, never editable from this form. */
   institutionVerified: boolean;
+  /** Whether a verification document has already been submitted (0076) — separate from institutionVerified since a document can be pending review. */
+  initialHasVerificationDocument: boolean;
   liveView: React.ReactNode;
 }) {
   const t = useTranslations("teacherDashboard.profile");
@@ -205,6 +209,39 @@ export function ProfileTab({
     setTimeout(() => setPhotoSaved(false), 2500);
     // liveView below is a server-rendered snapshot passed in as a prop —
     // needs a refetch to pick up the new photo.
+    refresh();
+  }
+
+  const [hasDocument, setHasDocument] = useState(initialHasVerificationDocument);
+  const [docUploading, setDocUploading] = useState(false);
+  const [docSaved, setDocSaved] = useState(false);
+  const [docError, setDocError] = useState<string | null>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
+
+  function handleUploadDocument() {
+    docInputRef.current?.click();
+  }
+
+  async function handleDocumentSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setDocUploading(true);
+    setDocError(null);
+    const formData = new FormData();
+    formData.set("file", file);
+    const result = await uploadVerificationDocument(formData);
+    setDocUploading(false);
+    if (result.error) {
+      setDocError(result.error);
+      return;
+    }
+    setHasDocument(true);
+    setDocSaved(true);
+    setTimeout(() => setDocSaved(false), 2500);
+    // Uploading resets institution_verified server-side — refetch so the
+    // verified note below reflects that immediately.
     refresh();
   }
 
@@ -518,12 +555,34 @@ export function ProfileTab({
             </Button>
           </div>
 
+          <div className="mt-5 border-t border-border pt-4">
+            <Label className="mb-1.5 block">{t("verificationDocumentLabel")}</Label>
+            <p className="mb-2.5 text-xs text-muted-foreground">{t("verificationDocumentHint")}</p>
+            <input
+              ref={docInputRef}
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleDocumentSelected}
+            />
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Button type="button" variant="outline" size="sm" onClick={handleUploadDocument} disabled={docUploading}>
+                <Upload className="size-4" />
+                {hasDocument ? t("replaceDocument") : t("uploadDocument")}
+              </Button>
+              {docSaved && <span className="text-sm font-medium text-success">{tc("saved")}</span>}
+              {docError && <span className="text-sm font-medium text-destructive">{docError}</span>}
+            </div>
+          </div>
+
           <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
             {institutionVerified ? (
               <>
                 <BadgeCheck className="size-3.5 shrink-0 text-primary" />
                 {t("institutionVerifiedNote")}
               </>
+            ) : hasDocument ? (
+              t("institutionPendingReviewNote")
             ) : (
               t("institutionNotVerifiedNote")
             )}

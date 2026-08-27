@@ -24,6 +24,8 @@ export type PlatformUser = {
   status: PlatformUserStatus;
   /** Only meaningful for role: "campus_lecturer" — an admin-toggled credential badge (0075), undefined for every other role. */
   institutionVerified: boolean | undefined;
+  /** Only meaningful for role: "campus_lecturer" — whether a verification document has been submitted (0076); gates whether the Verify button can be used at all. */
+  hasVerificationDocument: boolean | undefined;
 };
 
 export type SiteAdPlan = "basic" | "featured" | "homepage_spotlight";

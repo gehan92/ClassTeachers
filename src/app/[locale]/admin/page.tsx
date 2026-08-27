@@ -122,7 +122,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
       .limit(50),
     supabase.from("platform_subscriptions").select("plan, status, updated_at"),
     supabase.from("platform_settings").select("key, value").in("key", ["standard_price", "premium_price"]),
-    supabase.from("teacher_profiles").select("id, created_at, institution_verified"),
+    supabase.from("teacher_profiles").select("id, created_at, institution_verified, verification_document_path"),
     supabase.from("class_profiles").select("id, created_at"),
   ]);
 
@@ -193,6 +193,9 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
 
   const bannedUntilById = new Map(authUsersPage?.users.map((u) => [u.id, u.banned_until]) ?? []);
   const institutionVerifiedById = new Map((teacherProfileRows ?? []).map((tp) => [tp.id, tp.institution_verified]));
+  const hasVerificationDocumentById = new Map(
+    (teacherProfileRows ?? []).map((tp) => [tp.id, tp.verification_document_path !== null]),
+  );
 
   const platformUsers: PlatformUser[] = (allProfiles ?? [])
     .map((p) => {
@@ -206,6 +209,8 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
         joinedAt: dateFormatter.format(new Date(p.created_at)),
         status: suspended ? "suspended" : "active",
         institutionVerified: platformRole === "campus_lecturer" ? (institutionVerifiedById.get(p.id) ?? false) : undefined,
+        hasVerificationDocument:
+          platformRole === "campus_lecturer" ? (hasVerificationDocumentById.get(p.id) ?? false) : undefined,
       } satisfies PlatformUser;
     })
     .filter((u): u is PlatformUser => u !== null);

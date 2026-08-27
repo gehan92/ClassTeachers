@@ -17,6 +17,7 @@ const createBatchSchema = z.object({
   scheduleNote: z.string().trim().optional(),
   teacherLabel: z.string().trim().optional(),
   gradeBand: z.enum(gradeBands).optional(),
+  courseCode: z.string().trim().max(30).optional(),
 });
 
 export async function createBatch(input: {
@@ -28,6 +29,7 @@ export async function createBatch(input: {
   scheduleNote: string;
   teacherLabel?: string;
   gradeBand: string;
+  courseCode?: string;
 }): Promise<ActionResult> {
   const parsed = createBatchSchema.safeParse({
     ownerType: input.ownerType,
@@ -38,6 +40,7 @@ export async function createBatch(input: {
     scheduleNote: input.scheduleNote || undefined,
     teacherLabel: input.teacherLabel || undefined,
     gradeBand: input.gradeBand || undefined,
+    courseCode: input.courseCode || undefined,
   });
   if (!parsed.success) {
     return { error: "Please check the highlighted fields and try again." };
@@ -74,6 +77,7 @@ export async function createBatch(input: {
     schedule_note: parsed.data.scheduleNote || null,
     teacher_label: parsed.data.ownerType === "class" ? parsed.data.teacherLabel || null : null,
     grade_band: parsed.data.gradeBand ?? null,
+    course_code: parsed.data.courseCode ?? null,
   });
   if (error) {
     return { error: "Couldn't create the batch. Please try again." };
@@ -88,6 +92,7 @@ const updateBatchSchema = z.object({
   location: z.string().trim().optional(),
   scheduleNote: z.string().trim().optional(),
   gradeBand: z.enum(gradeBands).optional(),
+  courseCode: z.string().trim().max(30).optional(),
 });
 
 export async function updateBatch(
@@ -99,6 +104,7 @@ export async function updateBatch(
     location: string;
     scheduleNote: string;
     gradeBand: string;
+    courseCode?: string;
   },
 ): Promise<ActionResult> {
   if (!batchId) {
@@ -111,6 +117,7 @@ export async function updateBatch(
     location: input.location || undefined,
     scheduleNote: input.scheduleNote || undefined,
     gradeBand: input.gradeBand || undefined,
+    courseCode: input.courseCode || undefined,
   });
   if (!parsed.success) {
     return { error: "Please check the highlighted fields and try again." };
@@ -133,6 +140,7 @@ export async function updateBatch(
       location: parsed.data.location || null,
       schedule_note: parsed.data.scheduleNote || null,
       grade_band: parsed.data.gradeBand ?? null,
+      course_code: parsed.data.courseCode ?? null,
     })
     .eq("id", batchId)
     .eq("owner_type", "teacher")

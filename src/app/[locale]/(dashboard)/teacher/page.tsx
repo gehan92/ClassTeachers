@@ -117,7 +117,7 @@ export default async function TeacherDashboardPage({
     supabase
       .from("batches")
       .select(
-        "id, title, mode, class_size_type, location, schedule_note, grade_band, status, subject_id, hourly_rate, monthly_rate",
+        "id, title, mode, class_size_type, location, schedule_note, grade_band, status, subject_id, hourly_rate, monthly_rate, course_code",
       )
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
@@ -354,6 +354,7 @@ export default async function TeacherDashboardPage({
     location: b.location,
     scheduleNote: b.schedule_note,
     gradeBand: b.grade_band,
+    courseCode: b.course_code,
     hasActiveAd: activeAdBatchIds.has(b.id),
   }));
   const batchTitleById = new Map(batches.map((b) => [b.id, b.title]));
@@ -705,6 +706,7 @@ export default async function TeacherDashboardPage({
             initialAcademicTitle={teacherProfile?.academic_title ?? ""}
             initialPublications={teacherProfile?.publications ?? []}
             institutionVerified={teacherProfile?.institution_verified ?? false}
+            initialHasVerificationDocument={Boolean(teacherProfile?.verification_document_path)}
             liveView={<TeacherProfileView teacher={liveProfile} showGate={false} isOwnerView />}
           />
         ),

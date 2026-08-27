@@ -71,7 +71,12 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
       price,
       href: `/ad/${row.ad_id}`,
       campusCredential: row.is_campus_lecturer
-        ? { institution: row.institution, academicTitle: row.academic_title, verified: row.institution_verified }
+        ? {
+            institution: row.institution,
+            academicTitle: row.academic_title,
+            verified: row.institution_verified,
+            courseCode: row.course_code,
+          }
         : undefined,
     };
     return [listing];

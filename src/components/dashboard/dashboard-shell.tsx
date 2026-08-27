@@ -552,7 +552,7 @@ function DashboardShellInner({
         </main>
       </div>
 
-      <SiteFooter />
+      <SiteFooter withTopSpacing={false} />
     </div>
   );
 }

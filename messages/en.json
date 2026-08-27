@@ -1063,6 +1063,8 @@
       "exitConfirm": "Leave the exam? Your answers won't be saved unless you submit first.",
       "mcqSectionTitle": "Multiple choice questions",
       "selectAllHint": "(select all that apply)",
+      "codeSectionTitle": "Code / Terminal questions",
+      "codeAnswerPlaceholder": "Type your answer here...",
       "essaySectionTitle": "Written answers",
       "essayInstructions": "Upload clear photos of your written answer sheets.",
       "addPhotos": "Add photos",
@@ -1078,8 +1080,8 @@
       "gradedResultTitle": "Your result",
       "gradedResultBody": "This exam was auto-graded — nice work!",
       "scoreLabel": "{score} / {max}",
-      "essayPendingNote": "Your multiple-choice answers are auto-graded above. Your written answers are pending your teacher's review.",
-      "essayOnlyPendingNote": "We've received your answer photos. You'll see your grade and feedback here once your teacher has graded it.",
+      "essayPendingNote": "Your multiple-choice answers are auto-graded above. The rest of your answers are pending your teacher's review.",
+      "essayOnlyPendingNote": "We've received your answers. You'll see your grade and feedback here once your teacher has graded it.",
       "autoGradedNote": "You scored {score} / {max} — every question here was multiple choice, so it's graded instantly.",
       "questionLabel": "Question {number}",
       "examClosedNotAttempted": "This exam is closed and you did not attempt it."
@@ -1538,7 +1540,8 @@
       },
       "typeLabel": {
         "mcq": "MCQ",
-        "essay": "Essay"
+        "essay": "Essay",
+        "code": "Code / Terminal"
       },
       "languages": {
         "en": "English",
@@ -1566,6 +1569,20 @@
         "typeLabel": "Question type",
         "typeMcq": "MCQ",
         "typeEssay": "Essay",
+        "typeCode": "Code / Terminal",
+        "codeFormatLabel": "Code formatting",
+        "codeFormatToggle": "Format as code / terminal",
+        "codeFormatHint": "Renders the question text (and, for MCQ, each option) as a dark, monospace terminal block — useful for IT/programming questions with code in them.",
+        "sampleAnswerLabel": "Reference answer (optional)",
+        "sampleAnswerPlaceholder": "Paste the expected code/output — only you see this, it's never shown to students.",
+        "sampleAnswerHint": "Your own note for when you grade this later. Students type their own answer; this is never sent to them.",
+        "answerModeLabel": "Answer mode",
+        "answerModeSingle": "Single answer",
+        "answerModeMulti": "Multiple answers",
+        "answerModeSingleHint": "Students pick exactly one option (radio buttons). Mark the one correct option below.",
+        "answerModeMultiHint": "Students can pick several options (checkboxes) — \"select all that apply\". Mark every correct option below.",
+        "singleAnswerHint": "Single-answer questions need exactly one correct option ticked.",
+        "markCorrect": "Mark as correct",
         "questionImageLabel": "Question image (optional — a diagram or graph)",
         "addImage": "Add image",
         "removeImage": "Remove image",
@@ -1594,7 +1611,8 @@
         "draftNote": "This is a draft — students can't see it until you publish it.",
         "close": "Close",
         "empty": "No questions in this exam yet.",
-        "questionLabel": "Q{number}"
+        "questionLabel": "Q{number}",
+        "referenceAnswerLabel": "Reference answer (only you see this)"
       },
       "columns": {
         "exam": "Exam",
@@ -1668,6 +1686,8 @@
         "hideFiles": "Hide files",
         "noFiles": "No essay files uploaded.",
         "filesHeading": "Uploaded sheets",
+        "codeHeading": "Code answers",
+        "noCodeAnswer": "No answer submitted.",
         "previewNote": "Preview only — actual uploaded sheets aren't available in this demo.",
         "scoreLabel": "Score",
         "feedbackLabel": "Feedback",

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { TerminalBlock } from "@/components/dashboard/terminal-block";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createQuestion, updateQuestion, deleteQuestion } from "@/lib/dashboard/question-bank-actions";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
@@ -45,8 +46,19 @@ type FormState = {
   type: QuestionBankItem["type"];
   language: QuestionBankItem["language"];
   optionRows: OptionRow[];
-  /** More than one checked = "select all that apply" for students. */
+  /** Which option rows are ticked correct. In single-answer mode this is
+   * kept to exactly one entry (radio-button behavior); in multi-answer mode
+   * it can hold several ("select all that apply"). */
   correctIndexes: Set<number>;
+  /** Explicit answer-mode choice — false renders radio buttons and enforces
+   * exactly one correct option, true renders checkboxes. Persisted, not
+   * inferred from correctIndexes.size. */
+  multiSelect: boolean;
+  /** Renders the question text (and, for MCQ, each option) as a dark,
+   * monospace terminal block — for IT/programming questions with code. */
+  codeFormat: boolean;
+  /** "code" type only — the teacher's own reference/expected answer. */
+  sampleAnswer: string;
   questionImageExistingUrl: string | null;
   questionImageFile: File | null;
   questionImagePreviewUrl: string | null;
@@ -69,6 +81,9 @@ function blankForm(): FormState {
     language: "en",
     optionRows: [blankOptionRow(), blankOptionRow(), blankOptionRow(), blankOptionRow()],
     correctIndexes: new Set([0]),
+    multiSelect: false,
+    codeFormat: false,
+    sampleAnswer: "",
     questionImageExistingUrl: null,
     questionImageFile: null,
     questionImagePreviewUrl: null,
@@ -218,6 +233,9 @@ export function QuestionBankTab({
       language: question.language,
       optionRows,
       correctIndexes: correctIndexes.size > 0 ? correctIndexes : new Set([0]),
+      multiSelect: question.multiSelect ?? false,
+      codeFormat: question.codeFormat ?? false,
+      sampleAnswer: question.sampleAnswer ?? "",
       questionImageExistingUrl: question.imageUrl ?? null,
       questionImageFile: null,
       questionImagePreviewUrl: null,
@@ -261,12 +279,28 @@ export function QuestionBankTab({
     setForm((f) => ({ ...f, optionRows: f.optionRows.map((row, i) => (i === index ? { ...row, ...patch } : row)) }));
   }
 
+  /** In single-answer mode this behaves like a radio button — picking one
+   * option replaces the whole set rather than toggling membership. */
   function toggleCorrectIndex(index: number) {
     setForm((f) => {
+      if (!f.multiSelect) return { ...f, correctIndexes: new Set([index]) };
       const next = new Set(f.correctIndexes);
       if (next.has(index)) next.delete(index);
       else next.add(index);
       return { ...f, correctIndexes: next };
+    });
+  }
+
+  function setAnswerMode(multiSelect: boolean) {
+    setForm((f) => {
+      if (multiSelect === f.multiSelect) return f;
+      // Switching single -> multi keeps whatever was ticked. Switching
+      // multi -> single collapses down to just the first ticked option (or
+      // the first row) so it lands as a valid single-answer question.
+      const correctIndexes = multiSelect
+        ? f.correctIndexes
+        : new Set([[...f.correctIndexes][0] ?? 0]);
+      return { ...f, multiSelect, correctIndexes };
     });
   }
 
@@ -320,6 +354,9 @@ export function QuestionBankTab({
     fd.set("marks", form.marks);
     fd.set("language", form.language);
     fd.set("correctIndexes", JSON.stringify([...form.correctIndexes]));
+    fd.set("multiSelect", form.multiSelect ? "1" : "0");
+    fd.set("codeFormat", form.codeFormat ? "1" : "0");
+    if (form.type === "code" && form.sampleAnswer.trim()) fd.set("sampleAnswer", form.sampleAnswer.trim());
     if (form.questionImageFile) fd.set("questionImage", form.questionImageFile);
     if (form.removeQuestionImage) fd.set("removeQuestionImage", "1");
 
@@ -338,6 +375,10 @@ export function QuestionBankTab({
       }
       if (form.correctIndexes.size === 0) {
         setError(t("form.correctHint"));
+        return;
+      }
+      if (!form.multiSelect && form.correctIndexes.size !== 1) {
+        setError(t("form.singleAnswerHint"));
         return;
       }
     }
@@ -400,6 +441,7 @@ export function QuestionBankTab({
                 placeholder={t("form.textPlaceholder")}
                 value={form.text}
                 onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))}
+                className={cn(form.codeFormat && "font-mono text-sm")}
               />
             </div>
             <div className="grid gap-1.5 sm:col-span-2">
@@ -508,7 +550,7 @@ export function QuestionBankTab({
             </div>
             <div className="grid gap-1.5">
               <Label>{t("form.typeLabel")}</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
                   size="sm"
@@ -525,21 +567,89 @@ export function QuestionBankTab({
                 >
                   {t("form.typeEssay")}
                 </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={form.type === "code" ? "default" : "outline"}
+                  onClick={() => setForm((f) => ({ ...f, type: "code" }))}
+                >
+                  {t("form.typeCode")}
+                </Button>
               </div>
             </div>
 
+            <div className="grid gap-1.5">
+              <Label>{t("form.codeFormatLabel")}</Label>
+              <label className="flex w-fit items-center gap-2 text-sm text-foreground">
+                <Checkbox
+                  checked={form.codeFormat}
+                  onCheckedChange={(checked) => setForm((f) => ({ ...f, codeFormat: checked === true }))}
+                />
+                {t("form.codeFormatToggle")}
+              </label>
+              <p className="text-xs text-muted-foreground">{t("form.codeFormatHint")}</p>
+            </div>
+
+            {form.type === "code" && (
+              <div className="grid gap-1.5 sm:col-span-2">
+                <Label htmlFor="qb-sample-answer">{t("form.sampleAnswerLabel")}</Label>
+                <Textarea
+                  id="qb-sample-answer"
+                  placeholder={t("form.sampleAnswerPlaceholder")}
+                  value={form.sampleAnswer}
+                  onChange={(e) => setForm((f) => ({ ...f, sampleAnswer: e.target.value }))}
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">{t("form.sampleAnswerHint")}</p>
+              </div>
+            )}
+
             {form.type === "mcq" && (
               <div className="grid gap-2 sm:col-span-2">
-                <Label>{t("form.optionsLabel")}</Label>
+                <Label>{t("form.answerModeLabel")}</Label>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={!form.multiSelect ? "default" : "outline"}
+                    onClick={() => setAnswerMode(false)}
+                  >
+                    {t("form.answerModeSingle")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={form.multiSelect ? "default" : "outline"}
+                    onClick={() => setAnswerMode(true)}
+                  >
+                    {t("form.answerModeMulti")}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {form.multiSelect ? t("form.answerModeMultiHint") : t("form.answerModeSingleHint")}
+                </p>
+                <Label className="mt-1">{t("form.optionsLabel")}</Label>
                 <div className="flex flex-col gap-2">
                   {form.optionRows.map((row, i) => (
                     <div key={i} className="flex flex-col gap-2 rounded-md border border-border p-2.5">
                       <div className="flex items-center gap-2.5">
-                        <Checkbox checked={form.correctIndexes.has(i)} onCheckedChange={() => toggleCorrectIndex(i)} />
+                        {form.multiSelect ? (
+                          <Checkbox checked={form.correctIndexes.has(i)} onCheckedChange={() => toggleCorrectIndex(i)} />
+                        ) : (
+                          <input
+                            type="radio"
+                            name="qb-correct-option"
+                            checked={form.correctIndexes.has(i)}
+                            onChange={() => toggleCorrectIndex(i)}
+                            className="size-4 accent-primary"
+                            aria-label={t("form.markCorrect")}
+                          />
+                        )}
                         <Input
                           placeholder={t("form.optionPlaceholder", { number: i + 1 })}
                           value={row.text}
                           onChange={(e) => updateOptionRow(i, { text: e.target.value })}
+                          className={cn(form.codeFormat && "font-mono text-sm")}
                         />
                         <Button
                           type="button"
@@ -579,7 +689,6 @@ export function QuestionBankTab({
                   <Plus className="size-3.5" />
                   {t("form.addOption")}
                 </Button>
-                <p className="text-xs text-muted-foreground">{t("form.correctHint")}</p>
               </div>
             )}
           </div>
@@ -711,10 +820,19 @@ export function QuestionBankTab({
                   {viewingId === q.id && (
                     <TableRow>
                       <TableCell colSpan={9} className="bg-secondary/20">
-                        <p className="mb-2 text-sm whitespace-pre-wrap text-foreground">{q.text}</p>
+                        {q.codeFormat ? (
+                          <TerminalBlock className="mb-2">{q.text}</TerminalBlock>
+                        ) : (
+                          <p className="mb-2 text-sm whitespace-pre-wrap text-foreground">{q.text}</p>
+                        )}
                         {q.imageUrl && (
                           // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL
                           <img src={q.imageUrl} alt="" className="mb-3 max-w-sm rounded-md border border-border" />
+                        )}
+                        {q.type === "mcq" && (
+                          <p className="mb-1.5 text-xs text-muted-foreground">
+                            {q.multiSelect ? t("form.answerModeMulti") : t("form.answerModeSingle")}
+                          </p>
                         )}
                         {q.type === "mcq" && q.options && (
                           <ul className="flex flex-col gap-1.5">
@@ -731,7 +849,7 @@ export function QuestionBankTab({
                                   )}
                                 >
                                   {isCorrect ? <Check className="size-3.5 shrink-0" /> : <span className="size-3.5 shrink-0" />}
-                                  {option.text}
+                                  {q.codeFormat ? <TerminalBlock compact>{option.text}</TerminalBlock> : option.text}
                                   {option.imageUrl && (
                                     // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL
                                     <img src={option.imageUrl} alt="" className="h-12 w-12 rounded-sm border border-border object-cover" />
@@ -740,6 +858,12 @@ export function QuestionBankTab({
                               );
                             })}
                           </ul>
+                        )}
+                        {q.type === "code" && q.sampleAnswer && (
+                          <div className="mt-1">
+                            <p className="mb-1.5 text-xs font-medium text-muted-foreground">{t("form.sampleAnswerLabel")}</p>
+                            <TerminalBlock>{q.sampleAnswer}</TerminalBlock>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>

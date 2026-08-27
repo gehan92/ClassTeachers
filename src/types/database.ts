@@ -456,7 +456,7 @@ export type Database = {
           owner_id: string;
           subject_id: string | null;
           question_text: string;
-          type: "mcq" | "essay";
+          type: "mcq" | "essay" | "code";
           difficulty: "easy" | "medium" | "hard";
           correct_answer: string | null;
           topic: string | null;
@@ -467,6 +467,9 @@ export type Database = {
           options: Json | null;
           correct_option_id: string | null;
           correct_option_ids: string[];
+          multi_select: boolean;
+          code_format: boolean;
+          sample_answer: string | null;
           question_image_path: string | null;
           created_at: string;
           updated_at: string;
@@ -477,7 +480,7 @@ export type Database = {
           owner_id: string;
           subject_id?: string | null;
           question_text: string;
-          type: "mcq" | "essay";
+          type: "mcq" | "essay" | "code";
           difficulty?: "easy" | "medium" | "hard";
           correct_answer?: string | null;
           topic?: string | null;
@@ -488,6 +491,9 @@ export type Database = {
           options?: Json | null;
           correct_option_id?: string | null;
           correct_option_ids?: string[];
+          multi_select?: boolean;
+          code_format?: boolean;
+          sample_answer?: string | null;
           question_image_path?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -498,7 +504,7 @@ export type Database = {
           owner_id?: string;
           subject_id?: string | null;
           question_text?: string;
-          type?: "mcq" | "essay";
+          type?: "mcq" | "essay" | "code";
           difficulty?: "easy" | "medium" | "hard";
           correct_answer?: string | null;
           topic?: string | null;
@@ -510,6 +516,9 @@ export type Database = {
           question_image_path?: string | null;
           correct_option_id?: string | null;
           correct_option_ids?: string[];
+          multi_select?: boolean;
+          code_format?: boolean;
+          sample_answer?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -592,6 +601,7 @@ export type Database = {
           mcq_answers: Record<string, string[]>;
           mcq_score: number | null;
           mcq_max_score: number | null;
+          code_answers: Record<string, string>;
           status: "pending" | "graded";
           grade: number | null;
           feedback: string | null;
@@ -607,6 +617,7 @@ export type Database = {
           mcq_answers?: Record<string, string[]>;
           mcq_score?: number | null;
           mcq_max_score?: number | null;
+          code_answers?: Record<string, string>;
           status?: "pending" | "graded";
           grade?: number | null;
           feedback?: string | null;
@@ -622,6 +633,7 @@ export type Database = {
           mcq_answers?: Record<string, string[]>;
           mcq_score?: number | null;
           mcq_max_score?: number | null;
+          code_answers?: Record<string, string>;
           status?: "pending" | "graded";
           grade?: number | null;
           feedback?: string | null;

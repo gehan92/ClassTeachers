@@ -25,16 +25,29 @@ export type QuestionBankItem = {
   gradeBand: GradeBand;
   /** Optional — ties the question to one specific class/batch instead of the teacher's whole subject. */
   batchId?: string;
-  type: "mcq" | "essay";
+  type: "mcq" | "essay" | "code";
   difficulty: "easy" | "medium" | "hard";
   marks: number;
   language: "en" | "si" | "ta";
   /** MCQ only — any number of options (2+), one or more correct. */
   options?: McqOption[];
-  /** MCQ only — ids of the correct entries in `options`. More than one
-   * means the question is "select all that apply" (checkboxes on the
-   * student side instead of a single radio). */
+  /** MCQ only — ids of the correct entries in `options`. */
   correctOptionIds?: string[];
+  /** MCQ only — the teacher's explicit choice of answer mode: false renders
+   * radio buttons and requires exactly one correct option, true renders
+   * checkboxes ("select all that apply") and allows several. Persisted
+   * rather than inferred from correctOptionIds.length so a multi-answer
+   * question mid-edit with only one option ticked still renders correctly
+   * to students. */
+  multiSelect?: boolean;
+  /** Renders the question stem (and MCQ options) as a dark, monospace,
+   * terminal-styled block instead of plain text — for IT/programming
+   * questions with code in them. */
+  codeFormat?: boolean;
+  /** "code" type only — the teacher's own reference/expected answer, shown
+   * only in the teacher's question bank and grading views, never sent to
+   * the student. */
+  sampleAnswer?: string;
   /** Signed URL — set when the question stem itself is a graph/diagram. */
   imageUrl?: string;
 };

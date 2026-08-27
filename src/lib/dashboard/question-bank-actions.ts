@@ -20,11 +20,18 @@ const questionFieldsSchema = z.object({
   topic: z.string().trim().min(1),
   gradeBand: z.enum(["1-5", "6-9", "10-11", "12-13", "campus"]),
   batchId: z.string().uuid().optional(),
-  type: z.enum(["mcq", "essay"]),
+  type: z.enum(["mcq", "essay", "code"]),
   difficulty: z.enum(["easy", "medium", "hard"]),
   marks: z.coerce.number().int().min(1),
   language: z.enum(["en", "si", "ta"]),
 });
+
+/** "1"/absent flags, same convention as removeQuestionImage/optionRemoveImage
+ * below — not run through zod's coerce.boolean(), which would treat the
+ * literal string "false" as truthy. */
+function readFlag(formData: FormData, key: string): boolean {
+  return formData.get(key) === "1";
+}
 
 /** Reads the option-N fields a FormData submission carries — text is
  * required per row, id is present only for a row that already existed
@@ -97,10 +104,20 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
     return { error: parsed.success ? "Invalid owner." : (parsed.error.issues[0]?.message ?? "Please check the question fields.") };
   }
 
+  const multiSelect = readFlag(formData, "multiSelect");
+  const codeFormat = readFlag(formData, "codeFormat");
+  const sampleAnswerRaw = formData.get("sampleAnswer");
+  const sampleAnswer = typeof sampleAnswerRaw === "string" && sampleAnswerRaw.trim() ? sampleAnswerRaw.trim() : null;
+
   const optionRows = parsed.data.type === "mcq" ? readOptionRows(formData) : [];
   const correctIndexes = readCorrectIndexes(formData);
-  if (parsed.data.type === "mcq" && (optionRows.length < 2 || correctIndexes.every((i) => !optionRows[i]))) {
-    return { error: "MCQ questions need at least two options and a correct answer." };
+  if (parsed.data.type === "mcq") {
+    if (optionRows.length < 2 || correctIndexes.every((i) => !optionRows[i])) {
+      return { error: "MCQ questions need at least two options and a correct answer." };
+    }
+    if (!multiSelect && correctIndexes.length !== 1) {
+      return { error: "Single-answer questions need exactly one correct option." };
+    }
   }
 
   const supabase = await createClient();
@@ -172,6 +189,9 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
     options: parsed.data.type === "mcq" ? options : null,
     correct_option_id: correctOptionIds[0] ?? null,
     correct_option_ids: correctOptionIds,
+    multi_select: parsed.data.type === "mcq" ? multiSelect : false,
+    code_format: codeFormat,
+    sample_answer: parsed.data.type === "code" ? sampleAnswer : null,
   });
   if (error) {
     if (uploadedPaths.length > 0) await supabase.storage.from("question-images").remove(uploadedPaths);
@@ -199,10 +219,20 @@ export async function updateQuestion(questionId: string, formData: FormData): Pr
     return { error: parsed.error.issues[0]?.message ?? "Please check the question fields." };
   }
 
+  const multiSelect = readFlag(formData, "multiSelect");
+  const codeFormat = readFlag(formData, "codeFormat");
+  const sampleAnswerRaw = formData.get("sampleAnswer");
+  const sampleAnswer = typeof sampleAnswerRaw === "string" && sampleAnswerRaw.trim() ? sampleAnswerRaw.trim() : null;
+
   const optionRows = parsed.data.type === "mcq" ? readOptionRows(formData) : [];
   const correctIndexes = readCorrectIndexes(formData);
-  if (parsed.data.type === "mcq" && (optionRows.length < 2 || correctIndexes.every((i) => !optionRows[i]))) {
-    return { error: "MCQ questions need at least two options and a correct answer." };
+  if (parsed.data.type === "mcq") {
+    if (optionRows.length < 2 || correctIndexes.every((i) => !optionRows[i])) {
+      return { error: "MCQ questions need at least two options and a correct answer." };
+    }
+    if (!multiSelect && correctIndexes.length !== 1) {
+      return { error: "Single-answer questions need exactly one correct option." };
+    }
   }
 
   const supabase = await createClient();
@@ -290,6 +320,9 @@ export async function updateQuestion(questionId: string, formData: FormData): Pr
       options: parsed.data.type === "mcq" ? options : null,
       correct_option_id: correctOptionIds[0] ?? null,
       correct_option_ids: correctOptionIds,
+      multi_select: parsed.data.type === "mcq" ? multiSelect : false,
+      code_format: codeFormat,
+      sample_answer: parsed.data.type === "code" ? sampleAnswer : null,
     })
     .eq("id", questionId)
     .eq("owner_type", "teacher")

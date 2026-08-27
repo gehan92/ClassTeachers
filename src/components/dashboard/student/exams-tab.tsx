@@ -5,8 +5,10 @@ import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/features/status-badge";
 import { LockPill } from "@/components/features/lock-pill";
+import { TerminalBlock } from "@/components/dashboard/terminal-block";
 import {
   Table,
   TableBody,
@@ -24,18 +26,20 @@ import { cn } from "@/lib/utils";
 export type StudentExamQuestion = {
   id: string;
   text: string;
-  type: "mcq" | "essay";
+  type: "mcq" | "essay" | "code";
   marks: number;
   imageUrl?: string;
   /** MCQ only — the student picks one (or more, if multiSelect) directly in
    * the app (auto-graded on submit). No correct-answer marker is ever sent
    * to the student. */
   options?: { id: string; text: string; imageUrl?: string }[];
-  /** MCQ only — true when this question has more than one correct option
-   * ("select all that apply"), so the app renders checkboxes instead of a
-   * single radio. Just the shape of the question, not which options are
-   * actually correct. */
+  /** MCQ only — true when the teacher set up this question as "select all
+   * that apply", so the app renders checkboxes instead of a single radio.
+   * Just the shape of the question, not which options are actually correct. */
   multiSelect?: boolean;
+  /** Renders the question stem (and, for MCQ, each option) as a dark,
+   * monospace terminal block — for IT/programming questions with code. */
+  codeFormat?: boolean;
 };
 export type StudentExamRow = {
   id: string;
@@ -214,13 +218,53 @@ function QuestionBlock({ question, number }: { question: StudentExamQuestion; nu
   const t = useTranslations("studentDashboard.exams");
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-sm text-foreground">
-        {t("questionLabel", { number })}. {question.text}
-      </p>
+      <p className="text-sm text-foreground">{t("questionLabel", { number })}.</p>
+      {question.codeFormat ? (
+        <TerminalBlock>{question.text}</TerminalBlock>
+      ) : (
+        <p className="-mt-1.5 text-sm text-foreground">{question.text}</p>
+      )}
       {question.imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, not a local/optimizable asset
         <img src={question.imageUrl} alt="" className="max-w-sm rounded-md border border-border" />
       )}
+    </div>
+  );
+}
+
+/** Code/Terminal questions are typed directly in the app, not written on
+ * paper — same idea as MCQ auto-answering, but the answer is free-form code
+ * text a teacher grades manually (see the note on `submitExam`). */
+function CodeQuestionBlock({
+  question,
+  number,
+  value,
+  onChange,
+}: {
+  question: StudentExamQuestion;
+  number: number;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const t = useTranslations("studentDashboard.exams");
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm text-foreground">{t("questionLabel", { number })}.</p>
+      {question.codeFormat ? (
+        <TerminalBlock>{question.text}</TerminalBlock>
+      ) : (
+        <p className="-mt-1.5 text-sm text-foreground">{question.text}</p>
+      )}
+      {question.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, not a local/optimizable asset
+        <img src={question.imageUrl} alt="" className="max-w-sm rounded-md border border-border" />
+      )}
+      <Textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={t("codeAnswerPlaceholder")}
+        className="min-h-32 border-[#1f2a44] bg-[#0b1120] font-mono text-sm text-[#d1f7dc] placeholder:text-[#5a6b8c] focus-visible:ring-primary/50"
+      />
     </div>
   );
 }
@@ -244,9 +288,11 @@ function McqQuestionBlock({
   return (
     <div className="flex flex-col gap-2">
       <p className="text-sm text-foreground">
-        {t("questionLabel", { number })}. {question.text}
+        {t("questionLabel", { number })}.{" "}
+        {!question.codeFormat && question.text}
         {multiSelect && <span className="ml-1.5 text-xs font-normal text-muted-foreground">{t("selectAllHint")}</span>}
       </p>
+      {question.codeFormat && <TerminalBlock>{question.text}</TerminalBlock>}
       {question.imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, not a local/optimizable asset
         <img src={question.imageUrl} alt="" className="max-w-sm rounded-md border border-border" />
@@ -268,7 +314,7 @@ function McqQuestionBlock({
               <span className="font-mono text-xs text-muted-foreground">
                 {String.fromCharCode(65 + optionIndex)}.
               </span>
-              <span>{option.text}</span>
+              {question.codeFormat ? <TerminalBlock compact>{option.text}</TerminalBlock> : <span>{option.text}</span>}
               {option.imageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, not a local/optimizable asset
                 <img src={option.imageUrl} alt="" className="max-h-24 rounded-sm border border-border" />
@@ -296,6 +342,7 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [photos, setPhotos] = useState<File[]>([]);
   const [mcqAnswers, setMcqAnswers] = useState<Record<string, string[]>>({});
+  const [codeAnswers, setCodeAnswers] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoGrade, setAutoGrade] = useState<{ score: number; maxScore: number } | null>(null);
@@ -304,9 +351,11 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
   const [timeLeft, setTimeLeft] = useState(() => exam.durationMinutes * 60);
   const autoSubmittedRef = useRef(false);
   const mcqQuestions = exam.questions.filter((q) => q.type === "mcq");
-  const essayQuestions = exam.questions.filter((q) => q.type !== "mcq");
+  const essayQuestions = exam.questions.filter((q) => q.type === "essay");
+  const codeQuestions = exam.questions.filter((q) => q.type === "code");
   const allMcqAnswered = mcqQuestions.every((q) => (mcqAnswers[q.id]?.length ?? 0) > 0);
-  const canSubmit = allMcqAnswered && (essayQuestions.length === 0 || photos.length > 0);
+  const allCodeAnswered = codeQuestions.every((q) => (codeAnswers[q.id]?.trim().length ?? 0) > 0);
+  const canSubmit = allMcqAnswered && allCodeAnswered && (essayQuestions.length === 0 || photos.length > 0);
 
   // Full-screen takeover: lock background scroll while this is open.
   useEffect(() => {
@@ -339,6 +388,7 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
     const formData = new FormData();
     formData.set("examId", exam.id);
     formData.set("mcqAnswers", JSON.stringify(mcqAnswers));
+    formData.set("codeAnswers", JSON.stringify(codeAnswers));
     if (forced) formData.set("timeExpired", "1");
     for (const photo of photos) formData.append("photos", photo);
     const result = await submitExam(formData);
@@ -419,6 +469,24 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
                       return { ...prev, [q.id]: next };
                     })
                   }
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {codeQuestions.length > 0 && (
+          <div className="mb-5">
+            <h3 className="mb-3 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+              {t("codeSectionTitle")}
+            </h3>
+            <div className="flex flex-col gap-5 rounded-lg border border-border bg-white p-4">
+              {codeQuestions.map((q, index) => (
+                <CodeQuestionBlock
+                  key={q.id}
+                  question={q}
+                  number={index + 1}
+                  value={codeAnswers[q.id] ?? ""}
+                  onChange={(value) => setCodeAnswers((prev) => ({ ...prev, [q.id]: value }))}
                 />
               ))}
             </div>

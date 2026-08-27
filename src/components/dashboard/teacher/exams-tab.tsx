@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { StatusBadge } from "@/components/features/status-badge";
 import { PhotoViewerPanel } from "@/components/dashboard/inline-file-viewer";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { TerminalBlock } from "@/components/dashboard/terminal-block";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createExam, gradeSubmission, setExamPublished } from "@/lib/dashboard/exams-actions";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
@@ -54,6 +55,9 @@ export type ExamSubmissionRow = {
    * has any MCQ questions, regardless of whether it also has essay ones. */
   mcqScore: number | null;
   mcqMaxScore: number | null;
+  /** Code/Terminal questions — questionId -> the student's typed answer,
+   * always manually graded like essay photos are. */
+  codeAnswers: Record<string, string>;
 };
 
 export function ExamsTab({
@@ -635,6 +639,7 @@ export function ExamsTab({
         <GradingPanel
           exam={selectedExam}
           submissions={examSubs}
+          questions={questions}
           onClose={() => setSelectedExamId(null)}
         />
       )}
@@ -679,11 +684,15 @@ function ExamPreviewPanel({
           {examQuestions.map((q, index) => (
             <div key={q.id} className="rounded-md border border-border p-3.5">
               <p className="mb-2 text-sm text-foreground">
-                {t("preview.questionLabel", { number: index + 1 })}. {q.text}{" "}
+                {t("preview.questionLabel", { number: index + 1 })}.{" "}
+                {!q.codeFormat && q.text}{" "}
                 <span className="text-muted-foreground">
-                  ({tq(`typeLabel.${q.type}`)} · {t("form.questionMarks", { marks: q.marks })})
+                  ({tq(`typeLabel.${q.type}`)}
+                  {q.type === "mcq" ? ` · ${tq(q.multiSelect ? "form.answerModeMulti" : "form.answerModeSingle")}` : ""} ·{" "}
+                  {t("form.questionMarks", { marks: q.marks })})
                 </span>
               </p>
+              {q.codeFormat && <TerminalBlock className="mb-2">{q.text}</TerminalBlock>}
               {q.imageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL
                 <img src={q.imageUrl} alt="" className="mb-2 max-w-sm rounded-md border border-border" />
@@ -701,7 +710,7 @@ function ExamPreviewPanel({
                         )}
                       >
                         <span className="font-mono text-xs">{String.fromCharCode(65 + optionIndex)}.</span>
-                        <span>{option.text}</span>
+                        {q.codeFormat ? <TerminalBlock compact>{option.text}</TerminalBlock> : <span>{option.text}</span>}
                         {option.imageUrl && (
                           // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL
                           <img src={option.imageUrl} alt="" className="max-h-20 rounded-sm border border-border" />
@@ -710,6 +719,12 @@ function ExamPreviewPanel({
                     );
                   })}
                 </ul>
+              )}
+              {q.type === "code" && q.sampleAnswer && (
+                <div className="mt-1">
+                  <p className="mb-1.5 text-xs font-medium text-muted-foreground">{t("preview.referenceAnswerLabel")}</p>
+                  <TerminalBlock>{q.sampleAnswer}</TerminalBlock>
+                </div>
               )}
             </div>
           ))}
@@ -722,15 +737,22 @@ function ExamPreviewPanel({
 function GradingPanel({
   exam,
   submissions,
+  questions,
   onClose,
 }: {
   exam: TeacherExamRow;
   submissions: ExamSubmissionRow[];
+  questions: QuestionBankItem[];
   onClose: () => void;
 }) {
   const t = useTranslations("teacherDashboard.exams");
   const tc = useTranslations("teacherDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
+
+  const questionById = new Map(questions.map((q) => [q.id, q]));
+  const codeQuestions = exam.questionIds
+    .map((id) => questionById.get(id))
+    .filter((q): q is QuestionBankItem => Boolean(q) && q?.type === "code");
 
   return (
     <div className="rounded-lg border border-border bg-white p-5">
@@ -751,7 +773,12 @@ function GradingPanel({
       <div className="flex flex-col gap-4">
         {submissions.length === 0 && <p className="text-sm text-muted-foreground">{t("grading.noSubmissions")}</p>}
         {submissions.map((submission) => (
-          <SubmissionCard key={submission.id} submission={submission} onGraded={() => refresh()} />
+          <SubmissionCard
+            key={submission.id}
+            submission={submission}
+            codeQuestions={codeQuestions}
+            onGraded={() => refresh()}
+          />
         ))}
       </div>
     </div>
@@ -760,9 +787,11 @@ function GradingPanel({
 
 function SubmissionCard({
   submission,
+  codeQuestions,
   onGraded,
 }: {
   submission: ExamSubmissionRow;
+  codeQuestions: QuestionBankItem[];
   onGraded: () => void;
 }) {
   const t = useTranslations("teacherDashboard.exams");
@@ -809,6 +838,24 @@ function SubmissionCard({
         <p className="mb-3 text-xs text-muted-foreground">
           {t("grading.autoScore", { score: submission.mcqScore, max: submission.mcqMaxScore })}
         </p>
+      )}
+
+      {codeQuestions.length > 0 && (
+        <div className="mb-3 flex flex-col gap-2.5">
+          <div className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+            {t("grading.codeHeading")}
+          </div>
+          {codeQuestions.map((q) => (
+            <div key={q.id} className="flex flex-col gap-1">
+              <p className="text-xs text-muted-foreground">{q.text}</p>
+              {submission.codeAnswers[q.id] ? (
+                <TerminalBlock>{submission.codeAnswers[q.id]}</TerminalBlock>
+              ) : (
+                <p className="text-sm text-muted-foreground">{t("grading.noCodeAnswer")}</p>
+              )}
+            </div>
+          ))}
+        </div>
       )}
 
       <div className="mb-3">

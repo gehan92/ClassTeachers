@@ -138,6 +138,7 @@ const allowedPhotoTypes: Record<string, string> = {
 export async function submitExam(formData: FormData): Promise<SubmitExamResult> {
   const examId = formData.get("examId");
   const mcqAnswersRaw = formData.get("mcqAnswers");
+  const codeAnswersRaw = formData.get("codeAnswers");
   const files = formData.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
   // Set when the countdown timer hit zero and the client auto-submitted —
   // whatever's answered goes in as-is, unanswered MCQs just score 0 and a
@@ -161,6 +162,24 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
           ([qid, v]): [string, string[]] => [qid, Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []],
         );
         mcqAnswers = Object.fromEntries(entries);
+      }
+    } catch {
+      return { error: "Invalid answers." };
+    }
+  }
+
+  // Code/Terminal questions — questionId -> the student's typed answer text,
+  // always manually graded like essay (see 0078). Capped defensively so a
+  // pasted wall of text can't bloat the row.
+  let codeAnswers: Record<string, string> = {};
+  if (typeof codeAnswersRaw === "string" && codeAnswersRaw) {
+    try {
+      const parsed: unknown = JSON.parse(codeAnswersRaw);
+      if (parsed && typeof parsed === "object") {
+        const entries = Object.entries(parsed as Record<string, unknown>)
+          .filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0)
+          .map(([qid, v]): [string, string] => [qid, v.slice(0, 20000)]);
+        codeAnswers = Object.fromEntries(entries);
       }
     } catch {
       return { error: "Invalid answers." };
@@ -201,16 +220,21 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
         .from("question_bank_items")
         .select("id, type, marks, correct_option_ids")
         .in("id", exam.question_ids)
-    : { data: [] as { id: string; type: "mcq" | "essay"; marks: number; correct_option_ids: string[] }[] };
+    : { data: [] as { id: string; type: "mcq" | "essay" | "code"; marks: number; correct_option_ids: string[] }[] };
 
   const mcqQuestions = (questionRows ?? []).filter((q) => q.type === "mcq");
+  const codeQuestions = (questionRows ?? []).filter((q) => q.type === "code");
   const hasEssayQuestions = (questionRows ?? []).some((q) => q.type === "essay");
+  const hasCodeQuestions = codeQuestions.length > 0;
 
   if (!timeExpired && mcqQuestions.length > 0 && Object.keys(mcqAnswers).length === 0) {
     return { error: "Please answer the MCQ questions before submitting." };
   }
   if (!timeExpired && hasEssayQuestions && files.length === 0) {
     return { error: "Please add at least one photo of your written answers." };
+  }
+  if (!timeExpired && hasCodeQuestions && codeQuestions.some((q) => !codeAnswers[q.id])) {
+    return { error: "Please answer the code questions before submitting." };
   }
 
   let mcqScore = 0;
@@ -239,9 +263,9 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
     photoUrls.push(path);
   }
 
-  // Fully auto-graded only when the exam is pure MCQ — any essay question
-  // still needs a human to look at the photographed answer.
-  const isFullyAutoGraded = mcqQuestions.length > 0 && !hasEssayQuestions;
+  // Fully auto-graded only when the exam is pure MCQ — any essay or code
+  // question still needs a human to look at the answer.
+  const isFullyAutoGraded = mcqQuestions.length > 0 && !hasEssayQuestions && !hasCodeQuestions;
 
   const { error } = await supabase.from("exam_submissions").insert({
     exam_id: examId,
@@ -250,6 +274,7 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
     mcq_answers: mcqAnswers,
     mcq_score: mcqQuestions.length > 0 ? mcqScore : null,
     mcq_max_score: mcqQuestions.length > 0 ? mcqMaxScore : null,
+    code_answers: codeAnswers,
     status: isFullyAutoGraded ? "graded" : "pending",
     grade: isFullyAutoGraded ? mcqScore : null,
     feedback: null,

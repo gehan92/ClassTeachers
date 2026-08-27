@@ -224,16 +224,19 @@ export default async function StudentDashboardPage({
     allQuestionIds.length
       ? supabase
           .from("question_bank_items")
-          .select("id, question_text, type, marks, options, correct_option_ids, question_image_path")
+          .select(
+            "id, question_text, type, marks, options, multi_select, code_format, question_image_path",
+          )
           .in("id", allQuestionIds)
       : Promise.resolve({
           data: [] as {
             id: string;
             question_text: string;
-            type: "mcq" | "essay";
+            type: "mcq" | "essay" | "code";
             marks: number;
             options: unknown;
-            correct_option_ids: string[];
+            multi_select: boolean;
+            code_format: boolean;
             question_image_path: string | null;
           }[],
         }),
@@ -245,10 +248,10 @@ export default async function StudentDashboardPage({
   const nextLiveLabel = nextLive ? scheduleFormatter.format(new Date(nextLive.scheduled_at)) : null;
   const liveClassIds = liveClassRows.map((r) => r.id);
 
-  // correct_option_ids IS selected above (needed to derive multiSelect
-  // below) but must never be forwarded into StudentExamQuestion — this is
-  // the student's own view of the exam, and leaking the correct answer(s)
-  // would defeat the point of not grading it in front of them.
+  // correct_option_ids is deliberately NOT selected above — this is the
+  // student's own view of the exam, and leaking the correct answer(s) would
+  // defeat the point of not grading it in front of them. multiSelect comes
+  // from the teacher's own explicit multi_select column instead (0077).
   const questionById = new Map(
     (examQuestionRows ?? []).map((q) => [q.id, { ...q, options: (q.options as RawQuestionOption[] | null) ?? null }]),
   );
@@ -388,7 +391,8 @@ export default async function StudentDashboardPage({
               text: o.text,
               imageUrl: o.imagePath ? questionImageUrlByPath.get(o.imagePath) : undefined,
             })),
-            multiSelect: q.correct_option_ids.length > 1,
+            multiSelect: q.multi_select,
+            codeFormat: q.code_format,
           };
         })
         .filter((q): q is StudentExamQuestion => q !== null),

@@ -151,7 +151,7 @@ export default async function TeacherDashboardPage({
     supabase
       .from("question_bank_items")
       .select(
-        "id, question_text, topic, grade_band, batch_id, type, difficulty, marks, language, options, correct_option_ids, question_image_path",
+        "id, question_text, topic, grade_band, batch_id, type, difficulty, marks, language, options, correct_option_ids, multi_select, code_format, sample_answer, question_image_path",
       )
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
@@ -227,7 +227,9 @@ export default async function TeacherDashboardPage({
     examDetailIds.length
       ? supabase
           .from("exam_submissions")
-          .select("id, exam_id, student_id, photo_urls, status, grade, feedback, submitted_at, mcq_score, mcq_max_score")
+          .select(
+            "id, exam_id, student_id, photo_urls, status, grade, feedback, submitted_at, mcq_score, mcq_max_score, code_answers",
+          )
           .in("exam_id", examDetailIds)
       : Promise.resolve({
           data: [] as {
@@ -241,6 +243,7 @@ export default async function TeacherDashboardPage({
             submitted_at: string;
             mcq_score: number | null;
             mcq_max_score: number | null;
+            code_answers: Record<string, string>;
           }[],
         }),
     liveClassIds.length
@@ -451,6 +454,9 @@ export default async function TeacherDashboardPage({
       imageUrl: o.imagePath ? questionImageUrlByPath.get(o.imagePath) : undefined,
     })),
     correctOptionIds: q.correct_option_ids.length > 0 ? q.correct_option_ids : undefined,
+    multiSelect: q.multi_select,
+    codeFormat: q.code_format,
+    sampleAnswer: q.sample_answer ?? undefined,
   }));
 
   const signedUrlByPath = new Map<string, string>();
@@ -481,6 +487,7 @@ export default async function TeacherDashboardPage({
     photoUrls: s.photo_urls.map((p) => signedUrlByPath.get(p)).filter((u): u is string => Boolean(u)),
     mcqScore: s.mcq_score,
     mcqMaxScore: s.mcq_max_score,
+    codeAnswers: s.code_answers ?? {},
   }));
 
   // Analytics tab — pure computation over data already fetched above for

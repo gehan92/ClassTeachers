@@ -6,19 +6,25 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  LabelList,
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
+  Legend,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
 } from "recharts";
+import { TrendingUp, Award, CalendarCheck, Users, BarChart3, PieChart as PieChartIcon, Activity, ChartNoAxesColumn } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { StatusBadge } from "@/components/features/status-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { avatarGradientClass } from "@/lib/avatar-color";
 
 export type AnalyticsExamResultRow = {
   examId: string;
@@ -56,6 +62,28 @@ function withinRange(dateIso: string | null, range: TimeRange): boolean {
   const days = range === "30d" ? 30 : range === "90d" ? 90 : 365;
   const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
   return new Date(dateIso).getTime() >= cutoff;
+}
+
+function initialsFor(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
+const chartCardClass =
+  "rounded-lg border border-border bg-white p-5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]";
+
+function ChartHeading({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <div className="mb-4 flex items-center gap-2">
+      <Icon className="size-4 text-primary" />
+      <h3 className="text-sm font-semibold text-foreground">{children}</h3>
+    </div>
+  );
 }
 
 export function AnalyticsTab({
@@ -194,7 +222,7 @@ export function AnalyticsTab({
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4 sm:flex-row sm:flex-wrap sm:items-center">
         <Select
           value={batchFilter}
           onValueChange={(value) => {
@@ -244,71 +272,143 @@ export function AnalyticsTab({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label={t("stats.avgScore")} value={avgPercent !== null ? `${avgPercent}%` : "—"} />
-        <StatCard label={t("stats.passRate")} value={passRate !== null ? `${passRate}%` : "—"} />
-        <StatCard label={t("stats.attendanceRate")} value={attendanceRate !== null ? `${attendanceRate}%` : "—"} />
-        <StatCard label={t("stats.students")} value={studentCount} />
+        <StatCard
+          label={t("stats.avgScore")}
+          value={avgPercent !== null ? `${avgPercent}%` : "—"}
+          icon={TrendingUp}
+          tone="primary"
+        />
+        <StatCard
+          label={t("stats.passRate")}
+          value={passRate !== null ? `${passRate}%` : "—"}
+          icon={Award}
+          tone="success"
+        />
+        <StatCard
+          label={t("stats.attendanceRate")}
+          value={attendanceRate !== null ? `${attendanceRate}%` : "—"}
+          icon={CalendarCheck}
+          tone="cta"
+        />
+        <StatCard label={t("stats.students")} value={studentCount} icon={Users} tone="primary" />
       </div>
 
       {graded.length === 0 ? (
-        <div className="rounded-lg border border-border bg-white p-8 text-center text-sm text-muted-foreground">
-          {t("emptyState")}
+        <div className={`${chartCardClass} flex flex-col items-center gap-2 py-14 text-center`}>
+          <ChartNoAxesColumn className="size-8 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">{t("emptyState")}</p>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="rounded-lg border border-border bg-white p-5">
-              <h3 className="mb-4 text-sm font-semibold text-foreground">{t("charts.byExamHeading")}</h3>
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={examChartData} margin={{ left: -20 }}>
+            <div className={chartCardClass}>
+              <ChartHeading icon={BarChart3}>{t("charts.byExamHeading")}</ChartHeading>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={examChartData} margin={{ top: 16, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
                   <XAxis
                     dataKey="title"
-                    tick={{ fontSize: 11 }}
+                    tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
                     interval={0}
                     angle={-20}
                     textAnchor="end"
-                    height={50}
+                    height={55}
                   />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
-                  <Tooltip formatter={(value) => [`${value}%`, t("stats.avgScore")]} />
-                  <Bar dataKey="avg" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} unit="%" />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 12 }}
+                    formatter={(value) => [`${value}%`, t("stats.avgScore")]}
+                  />
+                  <Bar dataKey="avg" fill="var(--color-primary)" radius={[6, 6, 0, 0]} maxBarSize={48}>
+                    <LabelList
+                      dataKey="avg"
+                      position="top"
+                      formatter={(value) => `${value}%`}
+                      style={{ fill: "var(--color-primary)", fontSize: 11, fontWeight: 600 }}
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
-            <div className="rounded-lg border border-border bg-white p-5">
-              <h3 className="mb-4 text-sm font-semibold text-foreground">{t("charts.passFailHeading")}</h3>
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={2}>
-                    {pieData.map((entry) => (
-                      <Cell key={entry.name} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className={chartCardClass}>
+              <ChartHeading icon={PieChartIcon}>{t("charts.passFailHeading")}</ChartHeading>
+              <div className="relative">
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={70}
+                      outerRadius={100}
+                      paddingAngle={3}
+                      strokeWidth={0}
+                    >
+                      {pieData.map((entry) => (
+                        <Cell key={entry.name} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 12 }} />
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      iconType="circle"
+                      formatter={(value) => <span className="text-xs text-foreground/80">{value}</span>}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 top-0 flex flex-col items-center justify-center pb-9">
+                  <span className="font-display text-2xl text-primary">
+                    {passRate !== null ? `${passRate}%` : "—"}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">{t("passLabel")}</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="rounded-lg border border-border bg-white p-5">
-            <h3 className="mb-4 text-sm font-semibold text-foreground">{t("charts.trendHeading")}</h3>
-            <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={examChartData} margin={{ left: -20 }}>
+          <div className={chartCardClass}>
+            <ChartHeading icon={Activity}>{t("charts.trendHeading")}</ChartHeading>
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={examChartData} margin={{ top: 16, left: -20 }}>
+                <defs>
+                  <linearGradient id="analyticsTrendFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.28} />
+                    <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
-                <XAxis dataKey="title" tick={{ fontSize: 11 }} interval={0} angle={-20} textAnchor="end" height={50} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
-                <Tooltip formatter={(value) => [`${value}%`, t("stats.avgScore")]} />
-                <Line type="monotone" dataKey="avg" stroke="var(--color-primary)" strokeWidth={2.5} dot={{ r: 3 }} />
-              </LineChart>
+                <XAxis
+                  dataKey="title"
+                  tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
+                  interval={0}
+                  angle={-20}
+                  textAnchor="end"
+                  height={55}
+                />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} unit="%" />
+                <Tooltip
+                  contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 12 }}
+                  formatter={(value) => [`${value}%`, t("stats.avgScore")]}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="avg"
+                  stroke="var(--color-primary)"
+                  strokeWidth={2.5}
+                  fill="url(#analyticsTrendFill)"
+                  dot={{ r: 3.5, fill: "var(--color-primary)", strokeWidth: 0 }}
+                  activeDot={{ r: 5 }}
+                />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </>
       )}
 
-      <div className="rounded-lg border border-border bg-white p-5">
-        <h3 className="mb-4 text-sm font-semibold text-foreground">{t("table.heading")}</h3>
+      <div className={chartCardClass}>
+        <ChartHeading icon={Users}>{t("table.heading")}</ChartHeading>
         {studentRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("emptyState")}</p>
         ) : (
@@ -334,10 +434,29 @@ export function AnalyticsTab({
               <TableBody>
                 {studentRows.map((row) => (
                   <TableRow key={row.studentId}>
-                    <TableCell className="font-medium text-foreground">{row.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        <Avatar size="sm">
+                          <AvatarFallback className={avatarGradientClass(row.name)}>
+                            {initialsFor(row.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium text-foreground">{row.name}</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-muted-foreground">{row.examsTaken}</TableCell>
-                    <TableCell className={row.avgPercent >= PASS_THRESHOLD ? "text-success" : "text-destructive"}>
-                      {row.avgPercent}%
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className={row.avgPercent >= PASS_THRESHOLD ? "h-full bg-success" : "h-full bg-destructive"}
+                            style={{ width: `${row.avgPercent}%` }}
+                          />
+                        </div>
+                        <StatusBadge variant={row.avgPercent >= PASS_THRESHOLD ? "active" : "suspended"}>
+                          {row.avgPercent}%
+                        </StatusBadge>
+                      </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {row.attendancePercent !== null ? `${row.attendancePercent}%` : "—"}

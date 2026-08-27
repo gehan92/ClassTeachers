@@ -30,15 +30,16 @@ type LookingForFilter = (typeof lookingForFilters)[number];
  * rather than a name-derived initial like ListingCard's — a wanted-ad never
  * identifies who posted it, even to a signed-in teacher/institute, so
  * nothing here should look like a placeholder for a real photo that's just
- * waiting to be "unlocked." There's no per-ad detail page to link to (unlike
- * a listing), so the whole card is a single generic respondHref instead.
+ * waiting to be "unlocked." Links to the ad's own detail page (/requests/[id],
+ * added alongside this) rather than straight to a login/respond href, so a
+ * visitor can actually read the full request before deciding to respond.
  */
-function RequestCard({ ad, respondHref }: { ad: PublicWantedAd; respondHref: string }) {
+function RequestCard({ ad }: { ad: PublicWantedAd }) {
   const t = useTranslations("requestsPage");
 
   return (
     <Link
-      href={respondHref}
+      href={`/requests/${ad.id}`}
       className="flex flex-col overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)] transition-transform hover:-translate-y-0.5"
     >
       <div className="relative flex h-33 items-end bg-gradient-to-br from-primary to-primary-light p-3">
@@ -71,7 +72,7 @@ function RequestCard({ ad, respondHref }: { ad: PublicWantedAd; respondHref: str
   );
 }
 
-export function WantedAdsBoard({ ads, respondHref }: { ads: PublicWantedAd[]; respondHref: string }) {
+export function WantedAdsBoard({ ads }: { ads: PublicWantedAd[] }) {
   const t = useTranslations("requestsPage");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<LookingForFilter>("all");
@@ -143,7 +144,7 @@ export function WantedAdsBoard({ ads, respondHref }: { ads: PublicWantedAd[]; re
         {filteredAds.length > 0 ? (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filteredAds.map((ad) => (
-              <RequestCard key={ad.id} ad={ad} respondHref={respondHref} />
+              <RequestCard key={ad.id} ad={ad} />
             ))}
           </div>
         ) : (

@@ -1412,6 +1412,19 @@ export type Database = {
           created_at: string;
         }[];
       };
+      get_public_wanted_ad: {
+        Args: { p_id: string };
+        Returns: {
+          id: string;
+          looking_for: string;
+          subject: string | null;
+          mode: string | null;
+          grade_level: string | null;
+          title: string;
+          description: string | null;
+          created_at: string;
+        }[];
+      };
       list_wanted_ads_for_responder: {
         Args: Record<string, never>;
         Returns: {

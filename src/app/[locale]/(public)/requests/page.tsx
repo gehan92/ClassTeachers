@@ -11,26 +11,7 @@ export default async function RequestsPage({ params }: PageProps<"/[locale]/requ
   const dateFormatter = createDateFormatter(locale);
 
   const supabase = await createClient();
-  const [{ data: adRows }, { data: userData }] = await Promise.all([
-    supabase.rpc("list_public_wanted_ads"),
-    supabase.auth.getUser(),
-  ]);
-
-  // Sends a teacher/institute straight to where they can actually respond
-  // (their own dashboard's Student Requests tab) instead of a generic
-  // sign-in page when they're already signed in as the right kind of
-  // account — same "don't make someone re-discover the real feature"
-  // reasoning as the /advertise page's CTAs.
-  let respondHref = "/login";
-  if (userData.user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", userData.user.id)
-      .maybeSingle();
-    if (profile?.role === "teacher") respondHref = "/teacher?tab=studentRequests";
-    else if (profile?.role === "class") respondHref = "/institute?tab=studentRequests";
-  }
+  const { data: adRows } = await supabase.rpc("list_public_wanted_ads");
 
   const ads: PublicWantedAd[] = (adRows ?? []).map((row) => ({
     id: row.id,
@@ -46,7 +27,7 @@ export default async function RequestsPage({ params }: PageProps<"/[locale]/requ
   return (
     <>
       <Hero />
-      <WantedAdsBoard ads={ads} respondHref={respondHref} />
+      <WantedAdsBoard ads={ads} />
     </>
   );
 }

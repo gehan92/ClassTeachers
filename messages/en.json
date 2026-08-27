@@ -323,7 +323,15 @@
       "both": "Either"
     },
     "respondCta": "Respond",
-    "empty": "No requests match this filter yet."
+    "empty": "No requests match this filter yet.",
+    "detail": {
+      "breadcrumbHome": "Requests",
+      "aboutHeading": "About this request",
+      "noDescription": "No further details were added.",
+      "postedOn": "Posted {date}",
+      "respondHeading": "Can you help?",
+      "respondHelper": "Reach out and let them know — your message goes straight to the student."
+    }
   },
   "termsPage": {
     "title": "Terms of service",

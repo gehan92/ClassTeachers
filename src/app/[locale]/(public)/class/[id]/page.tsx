@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
-import { MapPin, School, Star } from "lucide-react";
+import { ArrowLeft, MapPin, School, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { GateNote } from "@/components/features/gate-note";
 import { PriceBox } from "@/components/features/price-box";
@@ -169,6 +169,13 @@ function Hero({ classProfile }: { classProfile: ClassProfileDetail }) {
 
   return (
     <div className="mx-auto max-w-[1180px] px-7 pt-10">
+      <Link
+        href="/teachers"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary"
+      >
+        <ArrowLeft className="size-4" />
+        {t("backToSearch")}
+      </Link>
       <div className="rounded-xl bg-gradient-to-br from-primary to-primary-light p-7 text-white sm:p-9">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
           {classProfile.photoUrl ? (

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { FileText, MapPin, Star } from "lucide-react";
+import { ArrowLeft, FileText, MapPin, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { JoinRequestBox } from "@/components/features/join-request-box";
 import { ShareButtons } from "@/components/features/share-buttons";
@@ -79,27 +79,13 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
 
   return (
     <div className="mx-auto max-w-[860px] px-7 py-10">
-      <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-        <Link href="/teachers" className="hover:text-primary">
-          {t("breadcrumbHome")}
-        </Link>
-        {ad.subject && (
-          <>
-            <span>/</span>
-            <Link href={`/teachers?subject=${encodeURIComponent(ad.subject)}`} className="hover:text-primary">
-              {ad.subject}
-            </Link>
-          </>
-        )}
-        {ad.location && (
-          <>
-            <span>/</span>
-            <span>{ad.location}</span>
-          </>
-        )}
-        <span>/</span>
-        <span className="max-w-[220px] truncate text-muted-foreground/70">{ad.ad_title}</span>
-      </nav>
+      <Link
+        href="/teachers"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary"
+      >
+        <ArrowLeft className="size-4" />
+        {t("breadcrumbHome")}
+      </Link>
 
       <div className="mb-6 rounded-xl bg-gradient-to-br from-primary to-primary-light p-7 text-white">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">

@@ -546,6 +546,7 @@
     }
   },
   "profilePage": {
+    "backToSearch": "සෙවුම වෙත ආපසු",
     "save": "සුරකින්න",
     "joinTeacher": "ගුරුවරයාට එකතු වන්න",
     "joinInstitute": "ආයතනයට එකතු වන්න",

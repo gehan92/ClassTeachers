@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { FileText, MapPin, Star } from "lucide-react";
+import { ArrowLeft, FileText, MapPin, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { GateNote } from "@/components/features/gate-note";
 import { PriceBox } from "@/components/features/price-box";
@@ -15,15 +15,18 @@ export function TeacherProfileView({
   teacher,
   showGate,
   isOwnerView = false,
+  backHref,
 }: {
   teacher: TeacherProfileDetail;
   showGate: boolean;
   /** True when the teacher is viewing their own profile from the dashboard — hides visitor-only actions like "Join teacher". */
   isOwnerView?: boolean;
+  /** Only set by the public /teacher/[id] page — the dashboard's inline "view live page" preview has nothing to go "back" to, so it stays hidden there. */
+  backHref?: string;
 }) {
   return (
     <>
-      <Hero teacher={teacher} isOwnerView={isOwnerView} />
+      <Hero teacher={teacher} isOwnerView={isOwnerView} backHref={backHref} />
       <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-8 px-7 py-10 lg:grid-cols-[2fr_1fr]">
         <div className="min-w-0">
           <AboutPanel teacher={teacher} showGate={showGate} />
@@ -77,11 +80,28 @@ function classTypeLabel(
   return t("classTypeBoth");
 }
 
-function Hero({ teacher, isOwnerView }: { teacher: TeacherProfileDetail; isOwnerView: boolean }) {
+function Hero({
+  teacher,
+  isOwnerView,
+  backHref,
+}: {
+  teacher: TeacherProfileDetail;
+  isOwnerView: boolean;
+  backHref?: string;
+}) {
   const t = useTranslations("profilePage");
 
   return (
     <div className="mx-auto max-w-[1180px] px-7 pt-10">
+      {backHref && (
+        <Link
+          href={backHref}
+          className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary"
+        >
+          <ArrowLeft className="size-4" />
+          {t("backToSearch")}
+        </Link>
+      )}
       <div className="rounded-xl bg-gradient-to-br from-primary to-primary-light p-7 text-white sm:p-9">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
           {teacher.photoUrl ? (

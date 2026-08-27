@@ -115,5 +115,5 @@ export default async function TeacherProfilePage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  return <TeacherProfileView teacher={teacher} showGate={!user} />;
+  return <TeacherProfileView teacher={teacher} showGate={!user} backHref="/teachers" />;
 }

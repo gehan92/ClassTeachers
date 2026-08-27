@@ -546,6 +546,7 @@
     }
   },
   "profilePage": {
+    "backToSearch": "தேடலுக்குத் திரும்பு",
     "save": "சேமி",
     "joinTeacher": "ஆசிரியருடன் இணையுங்கள்",
     "joinInstitute": "நிறுவனத்துடன் இணையுங்கள்",

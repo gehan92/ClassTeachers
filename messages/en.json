@@ -546,6 +546,7 @@
     }
   },
   "profilePage": {
+    "backToSearch": "Back to search",
     "save": "Save",
     "joinTeacher": "Join teacher",
     "joinInstitute": "Join institute",

@@ -88,9 +88,12 @@ export default async function StudentDashboardPage({
     supabase.from("notes").select("id, owner_type, owner_id, batch_id, title, page_count"),
     supabase
       .from("exams")
-      .select("id, owner_type, owner_id, title, question_ids, duration_minutes, scheduled_at")
+      .select("id, owner_type, owner_id, title, question_ids, duration_minutes, scheduled_at, reveal_answers")
       .order("scheduled_at", { ascending: true }),
-    supabase.from("exam_submissions").select("exam_id, status, grade, feedback, submitted_at").eq("student_id", userId),
+    supabase
+      .from("exam_submissions")
+      .select("exam_id, status, grade, feedback, submitted_at, mcq_answers, code_answers")
+      .eq("student_id", userId),
     supabase
       .from("batches")
       .select("id, owner_type, owner_id, title, mode, location, schedule_note, course_code")
@@ -225,7 +228,7 @@ export default async function StudentDashboardPage({
       ? supabase
           .from("question_bank_items")
           .select(
-            "id, question_text, type, marks, options, multi_select, code_format, question_image_path",
+            "id, question_text, type, marks, options, multi_select, code_format, correct_option_ids, sample_answer, question_image_path",
           )
           .in("id", allQuestionIds)
       : Promise.resolve({
@@ -237,6 +240,8 @@ export default async function StudentDashboardPage({
             options: unknown;
             multi_select: boolean;
             code_format: boolean;
+            correct_option_ids: string[];
+            sample_answer: string | null;
             question_image_path: string | null;
           }[],
         }),
@@ -248,10 +253,13 @@ export default async function StudentDashboardPage({
   const nextLiveLabel = nextLive ? scheduleFormatter.format(new Date(nextLive.scheduled_at)) : null;
   const liveClassIds = liveClassRows.map((r) => r.id);
 
-  // correct_option_ids is deliberately NOT selected above — this is the
-  // student's own view of the exam, and leaking the correct answer(s) would
-  // defeat the point of not grading it in front of them. multiSelect comes
-  // from the teacher's own explicit multi_select column instead (0077).
+  // correct_option_ids/sample_answer ARE selected above, but must only ever
+  // reach the browser for a specific exam once that exam is both graded and
+  // has reveal_answers on (0079) — see the exams.map below, which is the one
+  // place that decides whether to forward them into StudentExamQuestion.
+  // Leaking them unconditionally would defeat the point of not showing the
+  // answer key during the exam, and would leak reused question-bank items
+  // into exams that never opted in.
   const questionById = new Map(
     (examQuestionRows ?? []).map((q) => [q.id, { ...q, options: (q.options as RawQuestionOption[] | null) ?? null }]),
   );
@@ -369,6 +377,10 @@ export default async function StudentDashboardPage({
 
   const exams: StudentExamRow[] = visibleExamRows.map((e) => {
     const submission = submissionByExamId.get(e.id);
+    // Only forward the answer key into the browser once this exact exam is
+    // both graded and opted in via reveal_answers (0079) — see the comment
+    // above questionById for why this can't just be "always selected".
+    const canReveal = e.reveal_answers && submission?.status === "graded";
     return {
       id: e.id,
       title: e.title,
@@ -393,6 +405,8 @@ export default async function StudentDashboardPage({
             })),
             multiSelect: q.multi_select,
             codeFormat: q.code_format,
+            correctOptionIds: canReveal ? q.correct_option_ids : undefined,
+            sampleAnswer: canReveal ? (q.sample_answer ?? undefined) : undefined,
           };
         })
         .filter((q): q is StudentExamQuestion => q !== null),
@@ -403,6 +417,9 @@ export default async function StudentDashboardPage({
             feedback: submission.feedback,
             submittedLabel: submission.submitted_at ? dateFormatter.format(new Date(submission.submitted_at)) : null,
           }
+        : null,
+      reviewAnswers: canReveal
+        ? { mcqAnswers: submission!.mcq_answers ?? {}, codeAnswers: submission!.code_answers ?? {} }
         : null,
     };
   });

@@ -15,7 +15,7 @@ import { PhotoViewerPanel } from "@/components/dashboard/inline-file-viewer";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { TerminalBlock } from "@/components/dashboard/terminal-block";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
-import { createExam, gradeSubmission, setExamPublished } from "@/lib/dashboard/exams-actions";
+import { createExam, gradeSubmission, setExamPublished, setExamRevealAnswers } from "@/lib/dashboard/exams-actions";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +32,10 @@ export type TeacherExamRow = {
   questionIds: string[];
   batchTitle: string | null;
   published: boolean;
+  /** Whether the correct answers become visible to students once this exam
+   * is graded (0079) — off by default, since question_bank_items are a
+   * reusable bank and revealing an answer leaks it for future reuse. */
+  revealAnswers: boolean;
 };
 
 const PAGE_SIZE = 10;
@@ -87,6 +91,8 @@ export function ExamsTab({
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
   const [batchId, setBatchId] = useState<string>(NO_BATCH);
   const [excludedStudentIds, setExcludedStudentIds] = useState<Set<string>>(new Set());
+  const [revealAnswers, setRevealAnswers] = useState(false);
+  const [togglingRevealId, setTogglingRevealId] = useState<string | null>(null);
   const [created, setCreated] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -166,6 +172,13 @@ export function ExamsTab({
     if (!result.error) refresh();
   }
 
+  async function handleToggleReveal(examId: string, next: boolean) {
+    setTogglingRevealId(examId);
+    const result = await setExamRevealAnswers(examId, next);
+    setTogglingRevealId(null);
+    if (!result.error) refresh();
+  }
+
   function setQuestionChecked(id: string, checked: boolean) {
     setSelectedQuestionIds((ids) => (checked ? [...ids, id] : ids.filter((x) => x !== id)));
   }
@@ -193,6 +206,7 @@ export function ExamsTab({
     setSelectedQuestionIds([]);
     setBatchId(NO_BATCH);
     setExcludedStudentIds(new Set());
+    setRevealAnswers(false);
   }
 
   async function handleCreate() {
@@ -215,6 +229,7 @@ export function ExamsTab({
       scheduledAt: new Date(scheduledAt).toISOString(),
       batchId: batchId !== NO_BATCH ? batchId : undefined,
       participantStudentIds,
+      revealAnswers,
     });
     setSaving(false);
     if (result.error) {
@@ -379,6 +394,14 @@ export function ExamsTab({
             )}
           </div>
 
+          <div className="mt-4">
+            <label className="flex w-fit items-start gap-2.5 text-sm text-foreground">
+              <Checkbox className="mt-0.5" checked={revealAnswers} onCheckedChange={(checked) => setRevealAnswers(checked === true)} />
+              {t("form.revealAnswersToggle")}
+            </label>
+            <p className="mt-1 text-xs text-muted-foreground">{t("form.revealAnswersHint")}</p>
+          </div>
+
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button type="button" onClick={handleCreate} disabled={saving}>
               {tc("add")}
@@ -538,6 +561,7 @@ export function ExamsTab({
                       <TableHead>{t("columns.date")}</TableHead>
                       <TableHead>{t("columns.questions")}</TableHead>
                       <TableHead>{t("columns.status")}</TableHead>
+                      <TableHead>{t("columns.revealAnswers")}</TableHead>
                       <TableHead>{t("columns.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -568,6 +592,18 @@ export function ExamsTab({
                               <StatusBadge variant={exam.published ? "active" : "pending"}>
                                 {exam.published ? t("published") : t("draft")}
                               </StatusBadge>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={exam.revealAnswers}
+                                disabled={togglingRevealId === exam.id}
+                                onCheckedChange={(checked) => handleToggleReveal(exam.id, checked)}
+                              />
+                              <span className="text-xs text-muted-foreground">
+                                {exam.revealAnswers ? t("revealAnswersOn") : t("revealAnswersOff")}
+                              </span>
                             </div>
                           </TableCell>
                           <TableCell>

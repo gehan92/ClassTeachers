@@ -1053,6 +1053,15 @@
       "tableGrade": "ලකුණු",
       "tableFeedback": "ප්‍රතිචාරය",
       "tableDate": "ලකුණු දුන් දිනය",
+      "tableAnswers": "පිළිතුරු",
+      "viewAnswers": "පිළිතුරු බලන්න",
+      "answerReviewHeading": "පිළිතුරු — {title}",
+      "closeAnswers": "වසන්න",
+      "yourAnswerTag": "(ඔබේ පිළිතුර)",
+      "yourAnswerLabel": "ඔබේ පිළිතුර",
+      "referenceAnswerLabel": "යොමු පිළිතුර",
+      "noAnswerGiven": "ඔබ මෙම ප්‍රශ්නයට පිළිතුරු දී නැත.",
+      "essayNoAnswerKey": "ලිඛිත පිළිතුර — අතින් ලකුණු කරන ලදී, පෙන්වීමට පිළිතුරු යතුරක් නැත.",
       "durationLabel": "විනාඩි {minutes}",
       "scheduledLabel": "{date} සඳහා සැලසුම් කර ඇත",
       "notOpenYet": "තවම විවෘත වී නැත",
@@ -1604,6 +1613,8 @@
       "minutes": "විනාඩි {count}",
       "published": "ප්‍රකාශිතයි",
       "draft": "කෙටුම්පත",
+      "revealAnswersOn": "පිළිතුරු පෙන්වා ඇත",
+      "revealAnswersOff": "පිළිතුරු සඟවා ඇත",
       "previewAction": "පෙරදසුන",
       "preview": {
         "heading": "පෙරදසුන — {title}",
@@ -1622,6 +1633,7 @@
         "date": "දිනය",
         "questions": "ප්‍රශ්න",
         "status": "තත්ත්වය",
+        "revealAnswers": "පිළිතුරු යතුර",
         "actions": "ක්‍රියා"
       },
       "status": {
@@ -1669,7 +1681,9 @@
         "datePlaceholder": "උදා: 10 අගෝස්තු 2026",
         "questionsLabel": "බැංකුවෙන් ප්‍රශ්න",
         "noQuestionsForBatch": "මෙම කණ්ඩායම සඳහා බැංකුවේ තවම ප්‍රශ්න නැත — ප්‍රශ්න බැංකුව tab එකෙන් ටිකක් එකතු කරන්න.",
-        "questionMarks": "ලකුණු {marks}"
+        "questionMarks": "ලකුණු {marks}",
+        "revealAnswersToggle": "ලකුණු කළ පසු නිවැරදි පිළිතුරු සිසුන්ට පෙන්වන්න",
+        "revealAnswersHint": "පෙරනිමියෙන් ක්‍රියාවිරහිතයි — ප්‍රශ්න ඔබේ නැවත භාවිත කළ හැකි බැංකුවෙන් පැමිණේ, එබැවින් මෙහි පිළිතුරක් හෙළිදරව් කිරීම එයින් අදහස් වන්නේ අනාගත විභාගයක නැවත භාවිත කිරීමට පෙර සිසුන්ට එය පෙනිය හැකි බවයි. ඔබ මෙම ප්‍රශ්න නැවත භාවිත නොකරන එක්වර පමණක් පවත්වන විභාගයක් සඳහා පමණක් මෙය ක්‍රියාත්මක කරන්න."
       },
       "grading": {
         "heading": "ලකුණු කිරීම — {title}",

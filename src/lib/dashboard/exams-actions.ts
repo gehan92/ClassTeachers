@@ -20,6 +20,10 @@ const createExamSchema = z.object({
   // Must already be a UTC ISO string computed in the browser — see the
   // same note in live-classes-actions.ts's createLiveClassSchema.
   scheduledAt: z.iso.datetime(),
+  // Real boolean from a plain object call (not FormData), so no coerce
+  // pitfall here — see readFlag's comment in question-bank-actions.ts for
+  // why that matters elsewhere.
+  revealAnswers: z.boolean().optional(),
 });
 
 export async function createExam(input: {
@@ -30,6 +34,7 @@ export async function createExam(input: {
   scheduledAt: string;
   batchId?: string;
   participantStudentIds?: string[];
+  revealAnswers?: boolean;
 }): Promise<ActionResult> {
   const parsed = createExamSchema.safeParse({
     ownerType: input.ownerType,
@@ -39,6 +44,7 @@ export async function createExam(input: {
     scheduledAt: input.scheduledAt,
     batchId: input.batchId || undefined,
     participantStudentIds: input.participantStudentIds?.length ? input.participantStudentIds : undefined,
+    revealAnswers: input.revealAnswers,
   });
   if (!parsed.success) {
     return { error: "Please add a title, pick at least one question, and set a schedule." };
@@ -80,6 +86,7 @@ export async function createExam(input: {
       // default stays true so existing exams weren't retroactively hidden;
       // new ones start hidden by this app-level override instead.
       published: false,
+      reveal_answers: parsed.data.revealAnswers ?? false,
     })
     .select("id")
     .single();
@@ -110,6 +117,24 @@ export async function setExamPublished(examId: string, published: boolean): Prom
   }
   const supabase = await createClient();
   const { error } = await supabase.from("exams").update({ published }).eq("id", examId);
+  if (error) {
+    return { error: "Couldn't update this exam. Please try again." };
+  }
+  return {};
+}
+
+/** Teacher opts a specific exam in/out of showing correct answers to
+ * students once it's graded (0079) — same RLS story as setExamPublished.
+ * Off by default since question_bank_items are a reusable bank; flipping
+ * this on doesn't retroactively change anything already shown, it only
+ * changes what the student's results view is allowed to render next time
+ * it loads. */
+export async function setExamRevealAnswers(examId: string, revealAnswers: boolean): Promise<ActionResult> {
+  if (!examId) {
+    return { error: "Invalid exam." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.from("exams").update({ reveal_answers: revealAnswers }).eq("id", examId);
   if (error) {
     return { error: "Couldn't update this exam. Please try again." };
   }

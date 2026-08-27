@@ -158,7 +158,7 @@ export default async function TeacherDashboardPage({
       .order("created_at", { ascending: false }),
     supabase
       .from("exams")
-      .select("id, title, question_ids, duration_minutes, scheduled_at, batch_id, published")
+      .select("id, title, question_ids, duration_minutes, scheduled_at, batch_id, published, reveal_answers")
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
       .order("scheduled_at", { ascending: false }),
@@ -474,6 +474,7 @@ export default async function TeacherDashboardPage({
     questionIds: e.question_ids,
     batchTitle: e.batch_id ? (batchTitleById.get(e.batch_id) ?? null) : null,
     published: e.published,
+    revealAnswers: e.reveal_answers,
   }));
 
   const examSubmissions: ExamSubmissionRow[] = (submissionDetailRows ?? []).map((s) => ({

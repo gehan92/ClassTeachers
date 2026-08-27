@@ -40,6 +40,14 @@ export type StudentExamQuestion = {
   /** Renders the question stem (and, for MCQ, each option) as a dark,
    * monospace terminal block — for IT/programming questions with code. */
   codeFormat?: boolean;
+  /** MCQ only — the correct option id(s). Only ever populated once this
+   * question's exam is graded AND the teacher opted the exam into
+   * reveal_answers (0079) — undefined the rest of the time, same
+   * never-leak-the-answer-key rule as during the exam itself. */
+  correctOptionIds?: string[];
+  /** "code" type only — the teacher's own reference answer, shown alongside
+   * the student's own answer. Same reveal-gated rule as correctOptionIds. */
+  sampleAnswer?: string;
 };
 export type StudentExamRow = {
   id: string;
@@ -55,11 +63,16 @@ export type StudentExamRow = {
     feedback: string | null;
     submittedLabel: string | null;
   } | null;
+  /** The student's own answers, for the answer-review panel — only
+   * populated when this exam is graded and reveal-gated (0079); null
+   * otherwise, which also doubles as "no review available" for the UI. */
+  reviewAnswers: { mcqAnswers: Record<string, string[]>; codeAnswers: Record<string, string> } | null;
 };
 
 export function ExamsTab({ exams }: { exams: StudentExamRow[] }) {
   const t = useTranslations("studentDashboard.exams");
   const [activeExamId, setActiveExamId] = useState<string | null>(null);
+  const [reviewExamId, setReviewExamId] = useState<string | null>(null);
 
   const activeExam = activeExamId ? (exams.find((e) => e.id === activeExamId) ?? null) : null;
   if (activeExam) {
@@ -68,6 +81,7 @@ export function ExamsTab({ exams }: { exams: StudentExamRow[] }) {
 
   const dueExams = exams.filter((exam) => exam.submission?.status !== "graded");
   const pastExams = exams.filter((exam) => exam.submission?.status === "graded");
+  const reviewExam = reviewExamId ? (exams.find((e) => e.id === reviewExamId) ?? null) : null;
 
   return (
     <div>
@@ -104,6 +118,7 @@ export function ExamsTab({ exams }: { exams: StudentExamRow[] }) {
                 <TableHead>{t("tableGrade")}</TableHead>
                 <TableHead>{t("tableFeedback")}</TableHead>
                 <TableHead>{t("tableDate")}</TableHead>
+                <TableHead>{t("tableAnswers")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -118,12 +133,23 @@ export function ExamsTab({ exams }: { exams: StudentExamRow[] }) {
                   <TableCell className="whitespace-normal text-muted-foreground">
                     {exam.submission?.submittedLabel ?? "—"}
                   </TableCell>
+                  <TableCell>
+                    {exam.reviewAnswers ? (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setReviewExamId(exam.id)}>
+                        {t("viewAnswers")}
+                      </Button>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         )}
       </div>
+
+      {reviewExam && <AnswerReviewPanel exam={reviewExam} onClose={() => setReviewExamId(null)} />}
     </div>
   );
 }
@@ -155,6 +181,90 @@ function ExamCard({ exam, onOpen }: { exam: StudentExamRow; onOpen: () => void }
       {exam.isOpen && exam.submission?.status === "pending" && (
         <p className="text-sm text-foreground/80">{t("submittedBody")}</p>
       )}
+    </div>
+  );
+}
+
+/** Read-only per-question breakdown — the student's own answer next to the
+ * correct one, once the teacher has both graded the exam and opted it into
+ * reveal_answers (0079). exam.reviewAnswers is the single gate for this
+ * whole panel; it's null for every exam that hasn't opted in. */
+function AnswerReviewPanel({ exam, onClose }: { exam: StudentExamRow; onClose: () => void }) {
+  const t = useTranslations("studentDashboard.exams");
+  if (!exam.reviewAnswers) return null;
+  const { mcqAnswers, codeAnswers } = exam.reviewAnswers;
+
+  return (
+    <div className="mt-4 rounded-lg border border-border bg-white p-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-lg">{t("answerReviewHeading", { title: exam.title })}</h3>
+        <Button type="button" variant="outline" size="sm" onClick={onClose}>
+          {t("closeAnswers")}
+        </Button>
+      </div>
+      <div className="flex flex-col gap-4">
+        {exam.questions.map((q, index) => {
+          const selectedIds = mcqAnswers[q.id] ?? [];
+          const correctSet = new Set(q.correctOptionIds ?? []);
+          return (
+            <div key={q.id} className="rounded-md border border-border p-3.5">
+              <p className="mb-2 text-sm text-foreground">
+                {t("questionLabel", { number: index + 1 })}.{" "}
+                {!q.codeFormat && q.text}
+              </p>
+              {q.codeFormat && <TerminalBlock className="mb-2">{q.text}</TerminalBlock>}
+              {q.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, not a local/optimizable asset
+                <img src={q.imageUrl} alt="" className="mb-2 max-w-sm rounded-md border border-border" />
+              )}
+              {q.type === "mcq" && q.options && (
+                <ul className="flex flex-col gap-1.5 pl-1">
+                  {q.options.map((option, optionIndex) => {
+                    const isCorrect = correctSet.has(option.id);
+                    const isSelected = selectedIds.includes(option.id);
+                    return (
+                      <li
+                        key={option.id}
+                        className={cn(
+                          "flex flex-wrap items-center gap-2 rounded-sm border px-2.5 py-1.5 text-sm",
+                          isCorrect
+                            ? "border-success bg-success/10 font-medium text-success"
+                            : isSelected
+                              ? "border-destructive bg-destructive/10 text-destructive"
+                              : "border-border text-foreground/80",
+                        )}
+                      >
+                        <span className="font-mono text-xs">{String.fromCharCode(65 + optionIndex)}.</span>
+                        {q.codeFormat ? <TerminalBlock compact>{option.text}</TerminalBlock> : <span>{option.text}</span>}
+                        {isSelected && <span className="text-xs font-medium">{t("yourAnswerTag")}</span>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {q.type === "code" && (
+                <div className="mt-1 flex flex-col gap-3">
+                  <div>
+                    <p className="mb-1.5 text-xs font-medium text-muted-foreground">{t("yourAnswerLabel")}</p>
+                    {codeAnswers[q.id] ? (
+                      <TerminalBlock>{codeAnswers[q.id]}</TerminalBlock>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">{t("noAnswerGiven")}</p>
+                    )}
+                  </div>
+                  {q.sampleAnswer && (
+                    <div>
+                      <p className="mb-1.5 text-xs font-medium text-muted-foreground">{t("referenceAnswerLabel")}</p>
+                      <TerminalBlock>{q.sampleAnswer}</TerminalBlock>
+                    </div>
+                  )}
+                </div>
+              )}
+              {q.type === "essay" && <p className="mt-1 text-xs text-muted-foreground">{t("essayNoAnswerKey")}</p>}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

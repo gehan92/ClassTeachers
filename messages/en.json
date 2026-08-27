@@ -1053,6 +1053,15 @@
       "tableGrade": "Grade",
       "tableFeedback": "Feedback",
       "tableDate": "Date graded",
+      "tableAnswers": "Answers",
+      "viewAnswers": "View answers",
+      "answerReviewHeading": "Answers — {title}",
+      "closeAnswers": "Close",
+      "yourAnswerTag": "(your answer)",
+      "yourAnswerLabel": "Your answer",
+      "referenceAnswerLabel": "Reference answer",
+      "noAnswerGiven": "You didn't answer this question.",
+      "essayNoAnswerKey": "Written answer — graded manually, no answer key to show.",
       "durationLabel": "{minutes} min",
       "scheduledLabel": "Scheduled for {date}",
       "notOpenYet": "Not open yet",
@@ -1604,6 +1613,8 @@
       "minutes": "{count} min",
       "published": "Published",
       "draft": "Draft",
+      "revealAnswersOn": "Answers shown",
+      "revealAnswersOff": "Answers hidden",
       "previewAction": "Preview",
       "preview": {
         "heading": "Preview — {title}",
@@ -1622,6 +1633,7 @@
         "date": "Date",
         "questions": "Questions",
         "status": "Status",
+        "revealAnswers": "Answer key",
         "actions": "Actions"
       },
       "status": {
@@ -1669,7 +1681,9 @@
         "datePlaceholder": "e.g. 10 Aug 2026",
         "questionsLabel": "Questions from the bank",
         "noQuestionsForBatch": "No questions in the bank for this batch yet — add some in the Question bank tab.",
-        "questionMarks": "{marks} marks"
+        "questionMarks": "{marks} marks",
+        "revealAnswersToggle": "Show correct answers to students once graded",
+        "revealAnswersHint": "Off by default — questions come from your reusable bank, so revealing an answer here means students could see it before it's used again in a future exam. Only turn this on for a one-off test you won't reuse these questions in."
       },
       "grading": {
         "heading": "Grading — {title}",

@@ -118,6 +118,9 @@ export function SiteHeader({
           <LocaleSwitcher />
           {user ? (
             <>
+              <Button size="sm" nativeButton={false} render={<Link href={roleDashboardPath[user.role]} />}>
+                {t("dashboard")}
+              </Button>
               {inquiriesCount !== undefined && (
                 <Link
                   href={inquiriesHref}
@@ -144,9 +147,6 @@ export function SiteHeader({
                   {userInitial}
                 </span>
               )}
-              <Button size="sm" nativeButton={false} render={<Link href={roleDashboardPath[user.role]} />}>
-                {t("dashboard")}
-              </Button>
               <form action={logOutAction}>
                 <button
                   type="submit"

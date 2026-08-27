@@ -1,13 +1,12 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { cn } from "@/lib/utils";
 
-export function SiteFooter({ withTopSpacing = true }: { withTopSpacing?: boolean } = {}) {
+export function SiteFooter() {
   const t = useTranslations("footer");
   const year = new Date().getFullYear();
 
   return (
-    <footer className={cn("bg-primary-dark py-12 text-white/70", withTopSpacing && "mt-10")}>
+    <footer className="mt-10 bg-primary-dark py-12 text-white/70">
       <div className="mx-auto max-w-[1180px] px-7">
         <div className="mb-8 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>

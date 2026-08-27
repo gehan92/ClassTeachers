@@ -37,7 +37,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LocaleSwitcher } from "@/components/layout/locale-switcher";
-import { SiteFooter } from "@/components/layout/site-footer";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { logOutAction } from "@/lib/auth/actions";
 import { RealtimeRefresh, type RealtimeWatch } from "@/components/dashboard/realtime-refresh";
@@ -552,7 +551,6 @@ function DashboardShellInner({
         </main>
       </div>
 
-      <SiteFooter withTopSpacing={false} />
     </div>
   );
 }

@@ -125,7 +125,8 @@
   "listing": {
     "signInForContact": "Sign in for contact",
     "viewClass": "View class",
-    "reviewsCount": "{count} reviews"
+    "reviewsCount": "{count} reviews",
+    "institutionVerified": "Institution verified"
   },
   "reviews": {
     "replyPrefix": "Replied:"
@@ -566,6 +567,9 @@
     "qualifications": "Qualifications & experience",
     "degreeLabel": "Qualifications",
     "workExperienceLabel": "Work experience",
+    "publicationsLabel": "Publications & research",
+    "campusLecturer": "Campus Lecturer",
+    "institutionVerified": "Institution verified",
     "experienceLabel": "Experience",
     "subjectsLabel": "Subjects",
     "languagesLabel": "Languages",
@@ -689,8 +693,11 @@
       },
       "actions": {
         "manage": "Suspend",
-        "reactivate": "Reactivate"
+        "reactivate": "Reactivate",
+        "verify": "Verify institution",
+        "unverify": "Unverify"
       },
+      "institutionVerified": "Institution verified",
       "confirmSuspend": "Suspend {name}? They won't be able to sign in until reactivated.",
       "empty": "No users match your search."
     },
@@ -1282,6 +1289,7 @@
       "profile": "Profile",
       "notes": "Notes",
       "classes": "Classes",
+      "classesCampus": "Courses",
       "questionBank": "Question bank",
       "exams": "Exams",
       "assignments": "Assignments",
@@ -1341,6 +1349,13 @@
       "subjectsHint": "Comma-separated. The grade levels shown on your public profile are set automatically from these subjects.",
       "languagesPlaceholder": "e.g. English, Sinhala, Tamil",
       "languagesHint": "Comma-separated. Languages you teach in, shown on your public profile.",
+      "campusCredentialsHeading": "Campus credentials",
+      "campusCredentialsSubtitle": "Shown on your public profile and in search results, distinct from a regular teacher listing.",
+      "publicationPlaceholder": "e.g. \"Machine Learning in Practice\", IEEE Journal (2023)",
+      "addPublication": "Add publication",
+      "removePublication": "Remove publication",
+      "institutionVerifiedNote": "Your institution has been verified by an admin.",
+      "institutionNotVerifiedNote": "Not yet verified by an admin — this doesn't stop your profile from being public.",
       "fields": {
         "headline": "Headline",
         "bio": "About you",
@@ -1354,7 +1369,8 @@
         "hourlyRate": "Hourly rate (Rs.)",
         "monthlyRate": "Monthly rate (Rs.)",
         "email": "Email",
-        "phone": "Phone"
+        "phone": "Phone",
+        "publications": "Publications & research"
       },
       "classTypeOptions": {
         "physical": "Physical",
@@ -1434,6 +1450,7 @@
     },
     "classes": {
       "heading": "Classes",
+      "headingCampus": "Courses",
       "subtitle": "Your own batches and who's registered in each.",
       "addBatch": "+ Add batch",
       "emptyState": "You haven't created a batch yet.",

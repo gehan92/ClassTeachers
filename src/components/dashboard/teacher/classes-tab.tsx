@@ -45,9 +45,12 @@ export type BatchRosterEntry = {
 export function ClassesTab({
   batches,
   rosterByBatch,
+  isCampusLecturer = false,
 }: {
   batches: TeacherBatchRow[];
   rosterByBatch: Record<string, BatchRosterEntry[]>;
+  /** Swaps just the page heading to "Courses" — /roles already promises "course-style" language for this role. The rest of the tab (batch editor, roster) keeps its existing wording rather than a full terminology rewrite. */
+  isCampusLecturer?: boolean;
 }) {
   const t = useTranslations("teacherDashboard.classes");
   const tc = useTranslations("teacherDashboard.common");
@@ -171,7 +174,7 @@ export function ClassesTab({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl text-primary">{t("heading")}</h1>
+          <h1 className="font-display text-2xl text-primary">{isCampusLecturer ? t("headingCampus") : t("heading")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-3">

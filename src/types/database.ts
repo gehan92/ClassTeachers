@@ -150,6 +150,8 @@ export type Database = {
           photo_url: string | null;
           institution: string | null;
           academic_title: string | null;
+          institution_verified: boolean;
+          publications: string[] | null;
           status: ProfileStatus;
           owner_published: boolean;
           contact_mode: "phone" | "messaging_only";
@@ -169,6 +171,8 @@ export type Database = {
           photo_url?: string | null;
           institution?: string | null;
           academic_title?: string | null;
+          institution_verified?: boolean;
+          publications?: string[] | null;
           status?: ProfileStatus;
           owner_published?: boolean;
           contact_mode?: "phone" | "messaging_only";
@@ -188,6 +192,8 @@ export type Database = {
           photo_url?: string | null;
           institution?: string | null;
           academic_title?: string | null;
+          institution_verified?: boolean;
+          publications?: string[] | null;
           status?: ProfileStatus;
           owner_published?: boolean;
           contact_mode?: "phone" | "messaging_only";
@@ -1346,6 +1352,11 @@ export type Database = {
           grade_band: string | null;
           contact_mode: string;
           languages: string[] | null;
+          is_campus_lecturer: boolean;
+          institution: string | null;
+          academic_title: string | null;
+          institution_verified: boolean;
+          publications: string[] | null;
         }[];
       };
       list_public_reviews: {
@@ -1376,6 +1387,10 @@ export type Database = {
           monthly_rate: number | null;
           rating: number;
           review_count: number;
+          is_campus_lecturer: boolean;
+          institution: string | null;
+          academic_title: string | null;
+          institution_verified: boolean;
         }[];
       };
       get_public_ad: {

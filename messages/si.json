@@ -125,7 +125,8 @@
   "listing": {
     "signInForContact": "සම්බන්ධතාවය සඳහා පිවිසෙන්න",
     "viewClass": "පන්තිය බලන්න",
-    "reviewsCount": "සමාලෝචන {count}"
+    "reviewsCount": "සමාලෝචන {count}",
+    "institutionVerified": "ආයතනය තහවුරු කර ඇත"
   },
   "reviews": {
     "replyPrefix": "පිළිතුරු දුන්නා:"
@@ -566,6 +567,9 @@
     "qualifications": "සුදුසුකම් සහ පළපුරුද්ද",
     "degreeLabel": "සුදුසුකම්",
     "workExperienceLabel": "රැකියා පළපුරුද්ද",
+    "publicationsLabel": "ප්‍රකාශන සහ පර්යේෂණ",
+    "campusLecturer": "කැම්පස් කථිකාචාර්ය",
+    "institutionVerified": "ආයතනය තහවුරු කර ඇත",
     "experienceLabel": "පළපුරුද්ද",
     "subjectsLabel": "විෂයයන්",
     "languagesLabel": "භාෂා",
@@ -689,8 +693,11 @@
       },
       "actions": {
         "manage": "අත්හිටුවන්න",
-        "reactivate": "නැවත සක්‍රීය කරන්න"
+        "reactivate": "නැවත සක්‍රීය කරන්න",
+        "verify": "ආයතනය තහවුරු කරන්න",
+        "unverify": "තහවුරු කිරීම ඉවත් කරන්න"
       },
+      "institutionVerified": "ආයතනය තහවුරු කර ඇත",
       "confirmSuspend": "{name} අත්හිටුවනවාද? නැවත සක්‍රීය කරන තෙක් ඔවුන්ට පිවිසිය නොහැක.",
       "empty": "ඔබේ සෙවීමට ගැලපෙන පරිශීලකයන් නොමැත."
     },
@@ -1282,6 +1289,7 @@
       "profile": "පැතිකඩ",
       "notes": "සටහන්",
       "classes": "පන්ති",
+      "classesCampus": "පාඨමාලා",
       "questionBank": "ප්‍රශ්න බැංකුව",
       "exams": "විභාග",
       "live": "සජීවී පන්ති",
@@ -1341,6 +1349,13 @@
       "subjectsHint": "කොමා වලින් වෙන් කරන්න. ඔබගේ පොදු පැතිකඩේ පෙන්වන ශ්‍රේණි මට්ටම් මෙම විෂයයන් අනුව ස්වයංක්‍රීයව සකසේ.",
       "languagesPlaceholder": "උදා. ඉංග්‍රීසි, සිංහල, දෙමළ",
       "languagesHint": "කොමා වලින් වෙන් කරන්න. ඔබ ඉගැන්වීම සඳහා භාවිතා කරන භාෂා, ඔබගේ පොදු පැතිකඩේ පෙන්වයි.",
+      "campusCredentialsHeading": "කැම්පස් අක්තපත්‍ර",
+      "campusCredentialsSubtitle": "ඔබගේ පොදු පැතිකඩේ සහ සෙවුම් ප්‍රතිඵලවල පෙන්වයි, සාමාන්‍ය ගුරු ලැයිස්තුවකට වඩා වෙනස්ව.",
+      "publicationPlaceholder": "උදා: \"Machine Learning in Practice\", IEEE Journal (2023)",
+      "addPublication": "ප්‍රකාශනයක් එක් කරන්න",
+      "removePublication": "ප්‍රකාශනය ඉවත් කරන්න",
+      "institutionVerifiedNote": "ඔබගේ ආයතනය පරිපාලකයෙකු විසින් තහවුරු කර ඇත.",
+      "institutionNotVerifiedNote": "තවම පරිපාලකයෙකු විසින් තහවුරු කර නැත — මෙය ඔබගේ පැතිකඩ පොදු වීම නවත්වන්නේ නැත.",
       "fields": {
         "headline": "ශීර්ෂ පාඨය",
         "bio": "ඔබ ගැන",
@@ -1354,7 +1369,8 @@
         "hourlyRate": "පැයකට ගාස්තුව (Rs.)",
         "monthlyRate": "මාසික ගාස්තුව (Rs.)",
         "email": "විද්‍යුත් තැපෑල",
-        "phone": "දුරකථනය"
+        "phone": "දුරකථනය",
+        "publications": "ප්‍රකාශන සහ පර්යේෂණ"
       },
       "classTypeOptions": {
         "physical": "භෞතික",
@@ -1434,6 +1450,7 @@
     },
     "classes": {
       "heading": "පන්ති",
+      "headingCampus": "පාඨමාලා",
       "subtitle": "ඔබේම කණ්ඩායම් සහ එක් එක් කණ්ඩායමට ලියාපදිංචි වූවන්.",
       "addBatch": "+ කණ්ඩායමක් එකතු කරන්න",
       "emptyState": "ඔබ තවම කණ්ඩායමක් සාදා නැත.",

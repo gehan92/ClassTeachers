@@ -48,6 +48,31 @@ export async function resolveApproval(input: {
 }
 
 /**
+ * Verify/unverify toggle on Admin -> Users, campus-lecturer rows only
+ * (0075). Deliberately its own action rather than folded into
+ * updateTeacherProfile (actions.ts) — that one is owner-driven and never
+ * touches institution_verified, so a teacher can't self-verify even though
+ * teacher_profiles' RLS technically allows a self-update (same discipline
+ * as `status` above).
+ */
+export async function setInstitutionVerified(input: { teacherId: string; verified: boolean }): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  if ("error" in admin) {
+    return { error: admin.error };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("teacher_profiles")
+    .update({ institution_verified: input.verified })
+    .eq("id", input.teacherId);
+  if (error) {
+    return { error: "Couldn't update this. Please try again." };
+  }
+  return {};
+}
+
+/**
  * "Suspend"/"Reactivate" on Admin -> Users. There's no profiles.status
  * column — suspension is enforced at the Supabase Auth layer via
  * ban_duration, which actually blocks the account from signing in, rather

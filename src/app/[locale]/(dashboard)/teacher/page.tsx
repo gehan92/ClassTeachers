@@ -85,7 +85,7 @@ export default async function TeacherDashboardPage({
     { data: assignmentRows },
     { data: liveProfilePhone },
   ] = await Promise.all([
-    supabase.from("profiles").select("full_name, phone, notification_prefs").eq("id", userId).single(),
+    supabase.from("profiles").select("full_name, phone, notification_prefs, role").eq("id", userId).single(),
     supabase.from("teacher_profiles").select("*").eq("id", userId).maybeSingle(),
     supabase.from("prices").select("hourly_rate, monthly_rate").eq("owner_type", "teacher").eq("owner_id", userId).maybeSingle(),
     supabase
@@ -288,6 +288,7 @@ export default async function TeacherDashboardPage({
 
   const fullName = profile?.full_name ?? user!.email ?? "Teacher";
   const userInitial = fullName.charAt(0).toUpperCase();
+  const isCampusLecturer = profile?.role === "campus_lecturer";
 
   const inquiries: InquiryRow[] = (inquiryRows ?? []).map((row) => ({
     id: row.id,
@@ -596,6 +597,11 @@ export default async function TeacherDashboardPage({
     reviews,
     phone: liveProfilePhone,
     contactMode: (teacherProfile?.contact_mode as TeacherProfileDetail["contactMode"]) ?? "phone",
+    isCampusLecturer,
+    institution: teacherProfile?.institution ?? null,
+    academicTitle: teacherProfile?.academic_title ?? null,
+    institutionVerified: teacherProfile?.institution_verified ?? false,
+    publications: teacherProfile?.publications ?? [],
   };
 
   return (
@@ -624,7 +630,11 @@ export default async function TeacherDashboardPage({
           label: t("groupTeaching"),
           items: [
             { key: "profile", label: t("tabs.profile") },
-            { key: "classes", label: t("tabs.classes"), count: batches.length },
+            {
+              key: "classes",
+              label: isCampusLecturer ? t("tabs.classesCampus") : t("tabs.classes"),
+              count: batches.length,
+            },
             { key: "live", label: t("tabs.live") },
           ],
         },
@@ -690,11 +700,16 @@ export default async function TeacherDashboardPage({
             initialOwnerPublished={teacherProfile?.owner_published ?? true}
             initialPhotoUrl={teacherProfile?.photo_url ?? null}
             teacherName={fullName}
+            isCampusLecturer={isCampusLecturer}
+            initialInstitution={teacherProfile?.institution ?? ""}
+            initialAcademicTitle={teacherProfile?.academic_title ?? ""}
+            initialPublications={teacherProfile?.publications ?? []}
+            institutionVerified={teacherProfile?.institution_verified ?? false}
             liveView={<TeacherProfileView teacher={liveProfile} showGate={false} isOwnerView />}
           />
         ),
         notes: <NotesTab notes={notes} batches={batches} />,
-        classes: <ClassesTab batches={batches} rosterByBatch={rosterByBatch} />,
+        classes: <ClassesTab batches={batches} rosterByBatch={rosterByBatch} isCampusLecturer={isCampusLecturer} />,
         questionBank: <QuestionBankTab initialQuestions={questions} batches={batches} />,
         exams: (
           <ExamsTab

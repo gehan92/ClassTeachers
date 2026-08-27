@@ -22,6 +22,8 @@ export type PlatformUser = {
   role: PlatformUserRole;
   joinedAt: string;
   status: PlatformUserStatus;
+  /** Only meaningful for role: "campus_lecturer" — an admin-toggled credential badge (0075), undefined for every other role. */
+  institutionVerified: boolean | undefined;
 };
 
 export type SiteAdPlan = "basic" | "featured" | "homepage_spotlight";

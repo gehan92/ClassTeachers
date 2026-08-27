@@ -37,4 +37,10 @@ export type Listing = {
     fromPrice?: boolean;
   };
   href: string;
+  /** Set for a `kind: "teacher"` listing whose account role is `campus_lecturer` — swaps the card's role label and shows an academic-credential badge instead of the generic "Individual Teacher" one. Undefined for classes, which have no such distinction. */
+  campusCredential?: {
+    institution: string | null;
+    academicTitle: string | null;
+    verified: boolean;
+  };
 };

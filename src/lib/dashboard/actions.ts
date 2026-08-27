@@ -168,6 +168,9 @@ const teacherProfileSchema = z.object({
   hourlyRate: z.coerce.number().min(0).optional(),
   monthlyRate: z.coerce.number().min(0).optional(),
   languages: z.array(z.string().trim().min(1)).optional(),
+  institution: z.string().trim().optional(),
+  academicTitle: z.string().trim().optional(),
+  publications: z.array(z.string().trim().min(1)).optional(),
 });
 
 export async function updateTeacherProfile(input: {
@@ -181,6 +184,9 @@ export async function updateTeacherProfile(input: {
   hourlyRate: string;
   monthlyRate: string;
   languages: string[];
+  institution?: string;
+  academicTitle?: string;
+  publications?: string[];
 }): Promise<ActionResult> {
   const parsed = teacherProfileSchema.safeParse({
     headline: input.headline,
@@ -193,6 +199,9 @@ export async function updateTeacherProfile(input: {
     hourlyRate: input.hourlyRate || undefined,
     monthlyRate: input.monthlyRate || undefined,
     languages: input.languages.map((l) => l.trim()).filter(Boolean),
+    institution: input.institution,
+    academicTitle: input.academicTitle,
+    publications: (input.publications ?? []).map((p) => p.trim()).filter(Boolean),
   });
   if (!parsed.success) {
     return { error: "Please check the highlighted fields and try again." };
@@ -220,6 +229,9 @@ export async function updateTeacherProfile(input: {
       location: parsed.data.location || null,
       class_type: parsed.data.classType,
       languages: parsed.data.languages && parsed.data.languages.length > 0 ? parsed.data.languages : null,
+      institution: parsed.data.institution || null,
+      academic_title: parsed.data.academicTitle || null,
+      publications: parsed.data.publications && parsed.data.publications.length > 0 ? parsed.data.publications : null,
     },
     { onConflict: "id" },
   );

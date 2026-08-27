@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { BadgeCheck } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/features/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { setUserSuspended } from "@/lib/dashboard/admin-actions";
+import { setUserSuspended, setInstitutionVerified } from "@/lib/dashboard/admin-actions";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
@@ -67,6 +68,20 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
     setUsers((prev) =>
       prev.map((u) => (u.id === user.id ? { ...u, status: suspended ? "suspended" : "active" } : u)),
     );
+    refresh();
+  }
+
+  async function toggleInstitutionVerified(user: PlatformUser) {
+    const verified = !user.institutionVerified;
+    setPendingId(user.id);
+    setError(null);
+    const result = await setInstitutionVerified({ teacherId: user.id, verified });
+    setPendingId(null);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, institutionVerified: verified } : u)));
     refresh();
   }
 
@@ -131,6 +146,9 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
                       </AvatarFallback>
                     </Avatar>
                     <span className="font-medium text-foreground">{user.name}</span>
+                    {user.institutionVerified && (
+                      <BadgeCheck className="size-4 shrink-0 text-primary" aria-label={t("institutionVerified")} />
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{roleLabels[user.role]}</TableCell>
@@ -141,7 +159,17 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
                   </StatusBadge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-2">
+                    {user.role === "campus_lecturer" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => toggleInstitutionVerified(user)}
+                        disabled={pendingId === user.id}
+                      >
+                        {user.institutionVerified ? t("actions.unverify") : t("actions.verify")}
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="ghost"

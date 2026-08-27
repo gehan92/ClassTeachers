@@ -96,6 +96,11 @@ async function loadTeacherProfile(
     })),
     phone,
     contactMode: (teacher.contact_mode as TeacherProfileDetail["contactMode"]) ?? "phone",
+    isCampusLecturer: teacher.is_campus_lecturer,
+    institution: teacher.institution,
+    academicTitle: teacher.academic_title,
+    institutionVerified: teacher.institution_verified,
+    publications: teacher.publications ?? [],
   } satisfies TeacherProfileDetail;
 }
 

@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { ArrowLeft, FileText, MapPin, Star } from "lucide-react";
+import { ArrowLeft, BadgeCheck, FileText, MapPin, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { GateNote } from "@/components/features/gate-note";
 import { PriceBox } from "@/components/features/price-box";
@@ -119,10 +119,21 @@ function Hero({
             </div>
           )}
           <div className="min-w-0 flex-1">
-            {teacher.headline && (
-              <div className="mb-1.5 font-mono text-xs uppercase tracking-[0.12em] text-white/70">
-                {teacher.headline}
+            {teacher.isCampusLecturer && (teacher.academicTitle || teacher.institution) ? (
+              <div className="mb-1.5 flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.12em] text-white/70">
+                <span>
+                  {[teacher.academicTitle, teacher.institution].filter(Boolean).join(" · ")}
+                </span>
+                {teacher.institutionVerified && (
+                  <BadgeCheck className="size-3.5 shrink-0 text-white" aria-label={t("institutionVerified")} />
+                )}
               </div>
+            ) : (
+              teacher.headline && (
+                <div className="mb-1.5 font-mono text-xs uppercase tracking-[0.12em] text-white/70">
+                  {teacher.headline}
+                </div>
+              )
             )}
             <h1 className="mb-2 text-[28px] text-white sm:text-[34px]">{teacher.name}</h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-white/85">
@@ -136,6 +147,11 @@ function Hero({
                 <span className="flex items-center gap-1">
                   <MapPin className="size-3.5" />
                   {teacher.location}
+                </span>
+              )}
+              {teacher.isCampusLecturer && (
+                <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs">
+                  {t("campusLecturer")}
                 </span>
               )}
               <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs">
@@ -234,6 +250,17 @@ function QualificationsPanel({ teacher }: { teacher: TeacherProfileDetail }) {
             <ul className="m-0 list-disc space-y-1 pl-4.5 text-foreground">
               {teacher.workExperience.map((w, i) => (
                 <li key={i}>{w}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {teacher.isCampusLecturer && teacher.publications.length > 0 && (
+          <div>
+            <div className="mb-1.5 font-medium text-muted-foreground">{t("publicationsLabel")}</div>
+            <ul className="m-0 list-disc space-y-1 pl-4.5 text-foreground">
+              {teacher.publications.map((pub, i) => (
+                <li key={i}>{pub}</li>
               ))}
             </ul>
           </div>

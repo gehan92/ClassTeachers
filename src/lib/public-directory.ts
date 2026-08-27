@@ -44,9 +44,11 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
 
     const online = row.mode === "online";
     const subjects = row.subject ? [row.subject] : [];
-    const roleLabel = [tPage("roleTeacher"), row.location, online ? tPage("online") : null]
-      .filter(Boolean)
-      .join(" · ");
+    const roleLabel = row.is_campus_lecturer
+      ? [tPage("roleCampusLecturer"), row.institution ?? row.location, online ? tPage("online") : null]
+          .filter(Boolean)
+          .join(" · ")
+      : [tPage("roleTeacher"), row.location, online ? tPage("online") : null].filter(Boolean).join(" · ");
 
     const listing: Listing = {
       id: row.ad_id,
@@ -68,6 +70,9 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
       subjects,
       price,
       href: `/ad/${row.ad_id}`,
+      campusCredential: row.is_campus_lecturer
+        ? { institution: row.institution, academicTitle: row.academic_title, verified: row.institution_verified }
+        : undefined,
     };
     return [listing];
   });

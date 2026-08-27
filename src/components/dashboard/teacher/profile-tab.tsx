@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Eye, Pencil, Plus, X } from "lucide-react";
+import { BadgeCheck, Eye, Pencil, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { uploadAvatar } from "@/lib/dashboard/avatar-actions";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import type { ProfileStatus } from "@/types/database";
+import { academicTitles } from "@/types/academic-title";
 
 const panelClass = "rounded-lg border border-border bg-white p-5";
 const textareaClass =
@@ -36,6 +37,11 @@ export function ProfileTab({
   initialOwnerPublished,
   initialPhotoUrl,
   teacherName,
+  isCampusLecturer,
+  initialInstitution,
+  initialAcademicTitle,
+  initialPublications,
+  institutionVerified,
   liveView,
 }: {
   initialHeadline: string;
@@ -53,10 +59,18 @@ export function ProfileTab({
   initialOwnerPublished: boolean;
   initialPhotoUrl: string | null;
   teacherName: string;
+  /** Campus credentials panel only renders for a `campus_lecturer` account — a regular teacher never sees or writes these fields. */
+  isCampusLecturer: boolean;
+  initialInstitution: string;
+  initialAcademicTitle: string;
+  initialPublications: string[];
+  /** Admin-only toggle (Admin -> Users) — shown here read-only so a lecturer can see their own status, never editable from this form. */
+  institutionVerified: boolean;
   liveView: React.ReactNode;
 }) {
   const t = useTranslations("teacherDashboard.profile");
   const tc = useTranslations("teacherDashboard.common");
+  const tAcademic = useTranslations("signup.lecturerFields");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
 
   const [mode, setMode] = useState<"edit" | "live">("live");
@@ -135,6 +149,22 @@ export function ProfileTab({
     setWorkExperience((ws) => ws.filter((_, i) => i !== index));
   }
 
+  const [institution, setInstitution] = useState(initialInstitution);
+  const [academicTitle, setAcademicTitle] = useState(initialAcademicTitle);
+  const [publications, setPublications] = useState(initialPublications);
+
+  function updatePublication(index: number, value: string) {
+    setPublications((ps) => ps.map((p, i) => (i === index ? value : p)));
+  }
+
+  function addPublication() {
+    setPublications((ps) => [...ps, ""]);
+  }
+
+  function removePublication(index: number) {
+    setPublications((ps) => ps.filter((_, i) => i !== index));
+  }
+
   const [photoUrl, setPhotoUrl] = useState(initialPhotoUrl);
   const [photoSaved, setPhotoSaved] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -193,6 +223,12 @@ export function ProfileTab({
         hourlyRate: form.hourlyRate,
         monthlyRate: form.monthlyRate,
         languages: form.languages.split(","),
+        // Only ever sent for a campus_lecturer account — otherwise every
+        // regular teacher's save would round-trip empty strings into these
+        // (harmless, since they're always null for a teacher, but pointless).
+        institution: isCampusLecturer ? institution : undefined,
+        academicTitle: isCampusLecturer ? academicTitle : undefined,
+        publications: isCampusLecturer ? publications : undefined,
       }),
       updateTeacherSubjects(form.subjects.split(",")),
     ]);
@@ -419,6 +455,81 @@ export function ProfileTab({
           </div>
         </div>
       </div>
+
+      {isCampusLecturer && (
+        <div className={panelClass}>
+          <h3 className="mb-1 text-lg">{t("campusCredentialsHeading")}</h3>
+          <p className="mb-4 text-sm text-muted-foreground">{t("campusCredentialsSubtitle")}</p>
+
+          <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="institution">{tAcademic("institutionLabel")}</Label>
+              <Input
+                id="institution"
+                value={institution}
+                onChange={(e) => setInstitution(e.target.value)}
+                placeholder={tAcademic("institutionPlaceholder")}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="academicTitle">{tAcademic("academicTitleLabel")}</Label>
+              <Select value={academicTitle} onValueChange={(value) => setAcademicTitle(value ?? "")}>
+                <SelectTrigger id="academicTitle" className="w-full">
+                  <SelectValue placeholder={tAcademic("academicTitlePlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {academicTitles.map((title) => (
+                    <SelectItem key={title} value={title}>
+                      {tAcademic(`academicTitles.${title}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>{t("fields.publications")}</Label>
+            {publications.length > 0 && (
+              <div className="flex flex-col gap-2">
+                {publications.map((publication, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={publication}
+                      placeholder={t("publicationPlaceholder")}
+                      onChange={(e) => updatePublication(index, e.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t("removePublication")}
+                      onClick={() => removePublication(index)}
+                    >
+                      <X className="size-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <Button type="button" variant="outline" size="sm" className="mt-1 self-start" onClick={addPublication}>
+              <Plus className="size-4" />
+              {t("addPublication")}
+            </Button>
+          </div>
+
+          <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
+            {institutionVerified ? (
+              <>
+                <BadgeCheck className="size-3.5 shrink-0 text-primary" />
+                {t("institutionVerifiedNote")}
+              </>
+            ) : (
+              t("institutionNotVerifiedNote")
+            )}
+          </p>
+        </div>
+      )}
 
       <div className={panelClass}>
         <h3 className="mb-4 text-lg">{t("pricingHeading")}</h3>

@@ -46,4 +46,10 @@ export type TeacherProfileDetail = {
   phone: string | null;
   /** 'messaging_only' means `phone` is deliberately null even for an enrolled viewer — the teacher opted out of sharing it (0042). Distinguishes that from "not enrolled yet" so the UI can show the right reason. */
   contactMode: "phone" | "messaging_only";
+  /** True for a `profiles.role = 'campus_lecturer'` account — same dashboard as a regular teacher (see DemoRole's comment), but the public profile shows their academic credentials distinctly (0075). */
+  isCampusLecturer: boolean;
+  institution: string | null;
+  academicTitle: string | null;
+  institutionVerified: boolean;
+  publications: string[];
 };

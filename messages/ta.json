@@ -1731,6 +1731,7 @@
       "emptyState": "இந்த வடிகட்டிக்கு இன்னும் மதிப்பிடப்பட்ட தேர்வு முடிவுகள் இல்லை.",
       "passLabel": "தேர்ச்சி",
       "failLabel": "தோல்வி",
+      "noClassLabel": "வகுப்பு இல்லை",
       "stats": {
         "avgScore": "சராசரி மதிப்பெண்",
         "passRate": "தேர்ச்சி விகிதம்",
@@ -1741,6 +1742,7 @@
         "allClassesOption": "அனைத்து வகுப்புகளும்",
         "allCoursesOption": "அனைத்து பாடநெறிகளும்",
         "allExamsOption": "அனைத்து தேர்வுகளும்",
+        "allStudentsOption": "அனைத்து மாணவர்களும்",
         "range": {
           "all": "எல்லா காலமும்",
           "30d": "கடந்த 30 நாட்கள்",
@@ -1750,8 +1752,13 @@
       },
       "charts": {
         "byExamHeading": "தேர்வு அடிப்படையில் சராசரி மதிப்பெண்",
+        "byClassHeading": "வகுப்பு அடிப்படையில் சராசரி மதிப்பெண்",
+        "byClassHeadingCampus": "பாடநெறி அடிப்படையில் சராசரி மதிப்பெண்",
         "passFailHeading": "தேர்ச்சி / தோல்வி பிரிவு",
-        "trendHeading": "காலப்போக்கில் முன்னேற்றம்"
+        "trendHeading": "காலப்போக்கில் முன்னேற்றம்",
+        "studentProgressHeading": "{name} இன் முன்னேற்றம் vs வகுப்பு சராசரி",
+        "studentScoreLabel": "இந்த மாணவர்",
+        "classAvgLabel": "வகுப்பு சராசரி"
       },
       "table": {
         "heading": "மாணவர் செயல்திறன்",

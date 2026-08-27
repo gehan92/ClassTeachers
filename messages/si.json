@@ -1731,6 +1731,7 @@
       "emptyState": "මෙම පෙරහන සඳහා තවම ලකුණු ලබා දුන් විභාග ප්‍රතිඵල නැත.",
       "passLabel": "සමත්",
       "failLabel": "අසමත්",
+      "noClassLabel": "පන්තියක් නැත",
       "stats": {
         "avgScore": "සාමාන්‍ය ලකුණු",
         "passRate": "සමත් අනුපාතය",
@@ -1741,6 +1742,7 @@
         "allClassesOption": "සියලුම පන්ති",
         "allCoursesOption": "සියලුම පාඨමාලා",
         "allExamsOption": "සියලුම විභාග",
+        "allStudentsOption": "සියලුම සිසුන්",
         "range": {
           "all": "සියලු කාලය",
           "30d": "පසුගිය දින 30",
@@ -1750,8 +1752,13 @@
       },
       "charts": {
         "byExamHeading": "විභාගය අනුව සාමාන්‍ය ලකුණු",
+        "byClassHeading": "පන්තිය අනුව සාමාන්‍ය ලකුණු",
+        "byClassHeadingCampus": "පාඨමාලාව අනුව සාමාන්‍ය ලකුණු",
         "passFailHeading": "සමත් / අසමත් බෙදීම",
-        "trendHeading": "කාලයත් සමඟ ප්‍රගතිය"
+        "trendHeading": "කාලයත් සමඟ ප්‍රගතිය",
+        "studentProgressHeading": "{name} ගේ ප්‍රගතිය පන්ති සාමාන්‍යයට සාපේක්ෂව",
+        "studentScoreLabel": "මෙම සිසුවා",
+        "classAvgLabel": "පන්ති සාමාන්‍යය"
       },
       "table": {
         "heading": "සිසුන්ගේ දස්කම්",

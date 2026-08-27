@@ -1731,6 +1731,7 @@
       "emptyState": "No graded exam results yet for this filter.",
       "passLabel": "Pass",
       "failLabel": "Fail",
+      "noClassLabel": "No class",
       "stats": {
         "avgScore": "Average score",
         "passRate": "Pass rate",
@@ -1741,6 +1742,7 @@
         "allClassesOption": "All classes",
         "allCoursesOption": "All courses",
         "allExamsOption": "All exams",
+        "allStudentsOption": "All students",
         "range": {
           "all": "All time",
           "30d": "Last 30 days",
@@ -1750,8 +1752,13 @@
       },
       "charts": {
         "byExamHeading": "Average score by exam",
+        "byClassHeading": "Average score by class",
+        "byClassHeadingCampus": "Average score by course",
         "passFailHeading": "Pass / fail split",
-        "trendHeading": "Progress over time"
+        "trendHeading": "Progress over time",
+        "studentProgressHeading": "{name}'s progress vs. class average",
+        "studentScoreLabel": "This student",
+        "classAvgLabel": "Class average"
       },
       "table": {
         "heading": "Student performance",

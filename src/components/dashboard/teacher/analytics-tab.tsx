@@ -13,23 +13,36 @@ import {
   Legend,
   AreaChart,
   Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
 } from "recharts";
-import { TrendingUp, Award, CalendarCheck, Users, BarChart3, PieChart as PieChartIcon, Activity, ChartNoAxesColumn } from "lucide-react";
+import {
+  TrendingUp,
+  Award,
+  CalendarCheck,
+  Users,
+  BarChart3,
+  PieChart as PieChartIcon,
+  Activity,
+  ChartNoAxesColumn,
+  UserRoundSearch,
+} from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/features/status-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { cn } from "@/lib/utils";
 import { avatarGradientClass } from "@/lib/avatar-color";
 
 export type AnalyticsExamResultRow = {
   examId: string;
   examTitle: string;
-  /** ISO scheduled_at — null for an exam with no scheduled date, excluded from the time-range filter and the trend line. */
+  /** ISO scheduled_at — null for an exam with no scheduled date, excluded from the time-range filter and every chart that's ordered by date. */
   examDateIso: string | null;
   batchId: string | null;
   studentId: string;
@@ -100,20 +113,18 @@ export function AnalyticsTab({
   const t = useTranslations("teacherDashboard.analytics");
   const [batchFilter, setBatchFilter] = useState("all");
   const [examFilter, setExamFilter] = useState("all");
+  const [studentFilter, setStudentFilter] = useState("all");
   const [timeRange, setTimeRange] = useState<TimeRange>("all");
   const [sortKey, setSortKey] = useState<"name" | "exams" | "avg" | "attendance">("avg");
   const [sortDesc, setSortDesc] = useState(true);
 
-  const examOptions = useMemo(() => {
-    const seen = new Map<string, string>();
-    for (const r of examResults) {
-      if (batchFilter !== "all" && r.batchId !== batchFilter) continue;
-      if (!seen.has(r.examId)) seen.set(r.examId, r.examTitle);
-    }
-    return [...seen.entries()];
-  }, [examResults, batchFilter]);
+  const batchTitleById = useMemo(() => new Map(batches.map((b) => [b.id, b.title])), [batches]);
 
-  const filteredResults = useMemo(
+  // Class/exam/time filters only — deliberately NOT student-scoped. This is
+  // the "everyone" baseline every class-average and class-comparison number
+  // is computed from; filteredResults below narrows it further for the
+  // student-facing views (stat cards, pie, table).
+  const scopedResults = useMemo(
     () =>
       examResults.filter((r) => {
         if (batchFilter !== "all" && r.batchId !== batchFilter) return false;
@@ -124,16 +135,38 @@ export function AnalyticsTab({
     [examResults, batchFilter, examFilter, timeRange],
   );
 
+  const examOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const r of scopedResults) if (!seen.has(r.examId)) seen.set(r.examId, r.examTitle);
+    return [...seen.entries()];
+  }, [scopedResults]);
+
+  const studentOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const r of scopedResults) if (!seen.has(r.studentId)) seen.set(r.studentId, r.studentName);
+    return [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [scopedResults]);
+
+  const filteredResults = useMemo(
+    () => (studentFilter === "all" ? scopedResults : scopedResults.filter((r) => r.studentId === studentFilter)),
+    [scopedResults, studentFilter],
+  );
+
   const filteredAttendance = useMemo(
     () =>
       attendance.filter((a) => {
         if (batchFilter !== "all" && a.batchId !== batchFilter) return false;
         if (!withinRange(a.dateIso, timeRange)) return false;
+        if (studentFilter !== "all" && a.studentId !== studentFilter) return false;
         return true;
       }),
-    [attendance, batchFilter, timeRange],
+    [attendance, batchFilter, timeRange, studentFilter],
   );
 
+  const scopedGraded = useMemo(
+    () => scopedResults.filter((r) => r.status === "graded" && r.scorePercent !== null),
+    [scopedResults],
+  );
   const graded = useMemo(
     () => filteredResults.filter((r) => r.status === "graded" && r.scorePercent !== null),
     [filteredResults],
@@ -149,7 +182,12 @@ export function AnalyticsTab({
     ? Math.round((presentCount / filteredAttendance.length) * 100)
     : null;
   const studentCount = new Set(filteredResults.map((r) => r.studentId)).size;
+  const selectedStudentName = studentFilter !== "all" ? studentOptions.find(([id]) => id === studentFilter)?.[1] : undefined;
 
+  // Average % per exam — scoped to whatever's currently filtered, so this
+  // becomes "this student's own score per exam" automatically once a
+  // student is picked (the literal student-wise progress chart), and stays
+  // "class average per exam" otherwise.
   const examChartData = useMemo(() => {
     const byExam = new Map<string, { title: string; total: number; count: number; dateIso: string | null }>();
     for (const r of graded) {
@@ -162,6 +200,49 @@ export function AnalyticsTab({
       .map((e) => ({ title: e.title, avg: Math.round(e.total / e.count), dateIso: e.dateIso }))
       .sort((a, b) => (a.dateIso ?? "").localeCompare(b.dateIso ?? ""));
   }, [graded]);
+
+  // Average % per class/batch — always computed from the full (not
+  // student-scoped) set, since "how do my classes compare" is a
+  // class-owner question independent of any one student.
+  const classChartData = useMemo(() => {
+    const byBatch = new Map<string, { title: string; total: number; count: number }>();
+    for (const r of scopedGraded) {
+      const key = r.batchId ?? "__none";
+      const title = r.batchId ? (batchTitleById.get(r.batchId) ?? t("filters.allClassesOption")) : t("noClassLabel");
+      const entry = byBatch.get(key) ?? { title, total: 0, count: 0 };
+      entry.total += r.scorePercent!;
+      entry.count += 1;
+      byBatch.set(key, entry);
+    }
+    return [...byBatch.values()].map((e) => ({ title: e.title, avg: Math.round(e.total / e.count) }));
+  }, [scopedGraded, batchTitleById, t]);
+
+  // Only built when a student is selected — merges that student's own
+  // per-exam score with the class average for the same exam (from
+  // scopedGraded, i.e. every student, not just this one), so the chart can
+  // plot "this student vs. everyone else" on the same axis.
+  const studentVsClassData = useMemo(() => {
+    if (studentFilter === "all") return [];
+    const classAvgByExam = new Map<string, { title: string; total: number; count: number; dateIso: string | null }>();
+    for (const r of scopedGraded) {
+      const entry = classAvgByExam.get(r.examId) ?? { title: r.examTitle, total: 0, count: 0, dateIso: r.examDateIso };
+      entry.total += r.scorePercent!;
+      entry.count += 1;
+      classAvgByExam.set(r.examId, entry);
+    }
+    const studentByExam = new Map(
+      graded.map((r) => [r.examId, r.scorePercent!] as const),
+    );
+    return [...classAvgByExam.entries()]
+      .filter(([examId]) => studentByExam.has(examId))
+      .map(([examId, e]) => ({
+        title: e.title,
+        dateIso: e.dateIso,
+        student: studentByExam.get(examId)!,
+        classAvg: Math.round(e.total / e.count),
+      }))
+      .sort((a, b) => (a.dateIso ?? "").localeCompare(b.dateIso ?? ""));
+  }, [studentFilter, scopedGraded, graded]);
 
   const pieData = [
     { name: t("passLabel"), value: passCount, fill: "var(--color-success)" },
@@ -213,6 +294,9 @@ export function AnalyticsTab({
     }
   }
 
+  const axisTick = { fontSize: 11, fill: "var(--color-muted-foreground)" };
+  const tooltipStyle = { borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 12 };
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -228,9 +312,10 @@ export function AnalyticsTab({
           onValueChange={(value) => {
             setBatchFilter(value ?? "all");
             setExamFilter("all");
+            setStudentFilter("all");
           }}
         >
-          <SelectTrigger className="w-full sm:w-56">
+          <SelectTrigger className="w-full sm:w-52">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -243,8 +328,14 @@ export function AnalyticsTab({
           </SelectContent>
         </Select>
 
-        <Select value={examFilter} onValueChange={(value) => setExamFilter(value ?? "all")}>
-          <SelectTrigger className="w-full sm:w-56">
+        <Select
+          value={examFilter}
+          onValueChange={(value) => {
+            setExamFilter(value ?? "all");
+            setStudentFilter("all");
+          }}
+        >
+          <SelectTrigger className="w-full sm:w-52">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -257,8 +348,22 @@ export function AnalyticsTab({
           </SelectContent>
         </Select>
 
+        <Select value={studentFilter} onValueChange={(value) => setStudentFilter(value ?? "all")}>
+          <SelectTrigger className="w-full sm:w-52">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t("filters.allStudentsOption")}</SelectItem>
+            {studentOptions.map(([id, name]) => (
+              <SelectItem key={id} value={id}>
+                {name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         <Select value={timeRange} onValueChange={(value) => setTimeRange((value as TimeRange) ?? "all")}>
-          <SelectTrigger className="w-full sm:w-48">
+          <SelectTrigger className="w-full sm:w-44">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -290,7 +395,11 @@ export function AnalyticsTab({
           icon={CalendarCheck}
           tone="cta"
         />
-        <StatCard label={t("stats.students")} value={studentCount} icon={Users} tone="primary" />
+        {studentFilter === "all" ? (
+          <StatCard label={t("stats.students")} value={studentCount} icon={Users} tone="primary" />
+        ) : (
+          <StatCard label={t("table.examsTaken")} value={graded.length} icon={UserRoundSearch} tone="primary" />
+        )}
       </div>
 
       {graded.length === 0 ? (
@@ -302,29 +411,21 @@ export function AnalyticsTab({
         <>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className={chartCardClass}>
-              <ChartHeading icon={BarChart3}>{t("charts.byExamHeading")}</ChartHeading>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={examChartData} margin={{ top: 16, left: -20 }}>
+              <ChartHeading icon={BarChart3}>
+                {isCampusLecturer ? t("charts.byClassHeadingCampus") : t("charts.byClassHeading")}
+              </ChartHeading>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={classChartData} margin={{ top: 16, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
-                  <XAxis
-                    dataKey="title"
-                    tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
-                    interval={0}
-                    angle={-20}
-                    textAnchor="end"
-                    height={55}
-                  />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} unit="%" />
-                  <Tooltip
-                    contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 12 }}
-                    formatter={(value) => [`${value}%`, t("stats.avgScore")]}
-                  />
-                  <Bar dataKey="avg" fill="var(--color-primary)" radius={[6, 6, 0, 0]} maxBarSize={48}>
+                  <XAxis dataKey="title" tick={axisTick} interval={0} angle={-20} textAnchor="end" height={55} />
+                  <YAxis domain={[0, 100]} tick={axisTick} unit="%" />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`${value}%`, t("stats.avgScore")]} />
+                  <Bar dataKey="avg" fill="var(--color-cta)" radius={[6, 6, 0, 0]} maxBarSize={48}>
                     <LabelList
                       dataKey="avg"
                       position="top"
                       formatter={(value) => `${value}%`}
-                      style={{ fill: "var(--color-primary)", fontSize: 11, fontWeight: 600 }}
+                      style={{ fill: "var(--color-accent-deep)", fontSize: 11, fontWeight: 600 }}
                     />
                   </Bar>
                 </BarChart>
@@ -334,14 +435,14 @@ export function AnalyticsTab({
             <div className={chartCardClass}>
               <ChartHeading icon={PieChartIcon}>{t("charts.passFailHeading")}</ChartHeading>
               <div className="relative">
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={260}>
                   <PieChart>
                     <Pie
                       data={pieData}
                       dataKey="value"
                       nameKey="name"
-                      innerRadius={70}
-                      outerRadius={100}
+                      innerRadius={65}
+                      outerRadius={95}
                       paddingAngle={3}
                       strokeWidth={0}
                     >
@@ -349,7 +450,7 @@ export function AnalyticsTab({
                         <Cell key={entry.name} fill={entry.fill} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 12 }} />
+                    <Tooltip contentStyle={tooltipStyle} />
                     <Legend
                       verticalAlign="bottom"
                       height={36}
@@ -369,41 +470,91 @@ export function AnalyticsTab({
           </div>
 
           <div className={chartCardClass}>
-            <ChartHeading icon={Activity}>{t("charts.trendHeading")}</ChartHeading>
+            <ChartHeading icon={BarChart3}>{t("charts.byExamHeading")}</ChartHeading>
             <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={examChartData} margin={{ top: 16, left: -20 }}>
-                <defs>
-                  <linearGradient id="analyticsTrendFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.28} />
-                    <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <BarChart data={examChartData} margin={{ top: 16, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
-                <XAxis
-                  dataKey="title"
-                  tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
-                  interval={0}
-                  angle={-20}
-                  textAnchor="end"
-                  height={55}
-                />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} unit="%" />
-                <Tooltip
-                  contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 12 }}
-                  formatter={(value) => [`${value}%`, t("stats.avgScore")]}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="avg"
-                  stroke="var(--color-primary)"
-                  strokeWidth={2.5}
-                  fill="url(#analyticsTrendFill)"
-                  dot={{ r: 3.5, fill: "var(--color-primary)", strokeWidth: 0 }}
-                  activeDot={{ r: 5 }}
-                />
-              </AreaChart>
+                <XAxis dataKey="title" tick={axisTick} interval={0} angle={-20} textAnchor="end" height={55} />
+                <YAxis domain={[0, 100]} tick={axisTick} unit="%" />
+                <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`${value}%`, t("stats.avgScore")]} />
+                <Bar dataKey="avg" fill="var(--color-primary)" radius={[6, 6, 0, 0]} maxBarSize={48}>
+                  <LabelList
+                    dataKey="avg"
+                    position="top"
+                    formatter={(value) => `${value}%`}
+                    style={{ fill: "var(--color-primary)", fontSize: 11, fontWeight: 600 }}
+                  />
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
+
+          {studentFilter !== "all" ? (
+            <div className={chartCardClass}>
+              <ChartHeading icon={UserRoundSearch}>
+                {t("charts.studentProgressHeading", { name: selectedStudentName ?? "" })}
+              </ChartHeading>
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={studentVsClassData} margin={{ top: 16, left: -20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
+                  <XAxis dataKey="title" tick={axisTick} interval={0} angle={-20} textAnchor="end" height={55} />
+                  <YAxis domain={[0, 100]} tick={axisTick} unit="%" />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Legend
+                    verticalAlign="top"
+                    height={28}
+                    iconType="circle"
+                    formatter={(value) => <span className="text-xs text-foreground/80">{value}</span>}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="student"
+                    name={t("charts.studentScoreLabel")}
+                    stroke="var(--color-primary)"
+                    strokeWidth={2.75}
+                    dot={{ r: 4, fill: "var(--color-primary)", strokeWidth: 0 }}
+                    activeDot={{ r: 6 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="classAvg"
+                    name={t("charts.classAvgLabel")}
+                    stroke="var(--color-muted-foreground)"
+                    strokeWidth={2}
+                    strokeDasharray="5 4"
+                    dot={{ r: 3, fill: "var(--color-muted-foreground)", strokeWidth: 0 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className={chartCardClass}>
+              <ChartHeading icon={Activity}>{t("charts.trendHeading")}</ChartHeading>
+              <ResponsiveContainer width="100%" height={280}>
+                <AreaChart data={examChartData} margin={{ top: 16, left: -20 }}>
+                  <defs>
+                    <linearGradient id="analyticsTrendFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.28} />
+                      <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
+                  <XAxis dataKey="title" tick={axisTick} interval={0} angle={-20} textAnchor="end" height={55} />
+                  <YAxis domain={[0, 100]} tick={axisTick} unit="%" />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`${value}%`, t("stats.avgScore")]} />
+                  <Area
+                    type="monotone"
+                    dataKey="avg"
+                    stroke="var(--color-primary)"
+                    strokeWidth={2.5}
+                    fill="url(#analyticsTrendFill)"
+                    dot={{ r: 3.5, fill: "var(--color-primary)", strokeWidth: 0 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </>
       )}
 
@@ -433,7 +584,11 @@ export function AnalyticsTab({
               </TableHeader>
               <TableBody>
                 {studentRows.map((row) => (
-                  <TableRow key={row.studentId}>
+                  <TableRow
+                    key={row.studentId}
+                    className={cn("cursor-pointer", row.studentId === studentFilter && "bg-secondary/40")}
+                    onClick={() => setStudentFilter(row.studentId === studentFilter ? "all" : row.studentId)}
+                  >
                     <TableCell>
                       <div className="flex items-center gap-2.5">
                         <Avatar size="sm">

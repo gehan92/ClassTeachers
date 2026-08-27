@@ -37,6 +37,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LocaleSwitcher } from "@/components/layout/locale-switcher";
+import { SiteFooter } from "@/components/layout/site-footer";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { logOutAction } from "@/lib/auth/actions";
 import { RealtimeRefresh, type RealtimeWatch } from "@/components/dashboard/realtime-refresh";
@@ -551,13 +552,7 @@ function DashboardShellInner({
         </main>
       </div>
 
-      <footer className="border-t border-border bg-white px-5 py-4">
-        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-muted-foreground">
-          <Link href="/roles" className="hover:text-primary">{t("roles")}</Link>
-          <Link href="/pricing" className="hover:text-primary">{t("pricing")}</Link>
-          <Link href="/help" className="hover:text-primary">{t("help")}</Link>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

@@ -23,6 +23,7 @@ import {
   Star,
   MessageSquare,
   Megaphone,
+  BarChart3,
   Settings as SettingsIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -101,6 +102,7 @@ const TAB_ICONS: Partial<Record<string, LucideIcon>> = {
   exams: ClipboardList,
   assignments: NotebookPen,
   students: Users,
+  analytics: BarChart3,
   attendance: CalendarCheck,
   reviews: Star,
   inquiries: MessageSquare,

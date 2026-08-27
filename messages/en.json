@@ -1300,6 +1300,7 @@
       "assignments": "Assignments",
       "live": "Live classes",
       "students": "Students",
+      "analytics": "Analytics",
       "attendance": "Attendance",
       "inquiries": "Inquiries",
       "studentRequests": "Student Requests",
@@ -1721,6 +1722,44 @@
         "heading": "Join requests",
         "accept": "Accept",
         "decline": "Decline"
+      }
+    },
+    "analytics": {
+      "heading": "Analytics",
+      "subtitle": "Exam results and attendance across your classes.",
+      "subtitleCampus": "Exam results and attendance across your courses.",
+      "emptyState": "No graded exam results yet for this filter.",
+      "passLabel": "Pass",
+      "failLabel": "Fail",
+      "stats": {
+        "avgScore": "Average score",
+        "passRate": "Pass rate",
+        "attendanceRate": "Attendance rate",
+        "students": "Students"
+      },
+      "filters": {
+        "allClassesOption": "All classes",
+        "allCoursesOption": "All courses",
+        "allExamsOption": "All exams",
+        "range": {
+          "all": "All time",
+          "30d": "Last 30 days",
+          "90d": "Last 3 months",
+          "year": "Last 12 months"
+        }
+      },
+      "charts": {
+        "byExamHeading": "Average score by exam",
+        "passFailHeading": "Pass / fail split",
+        "trendHeading": "Progress over time"
+      },
+      "table": {
+        "heading": "Student performance",
+        "student": "Student",
+        "examsTaken": "Exams taken",
+        "avgScore": "Avg. score",
+        "attendance": "Attendance",
+        "lastActivity": "Last activity"
       }
     },
     "attendance": {

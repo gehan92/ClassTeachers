@@ -10,6 +10,12 @@ import { AssignmentsTab } from "@/components/dashboard/teacher/assignments-tab";
 import { LiveClassesTab } from "@/components/dashboard/teacher/live-classes-tab";
 import { StudentsTab } from "@/components/dashboard/teacher/students-tab";
 import { AttendanceTab } from "@/components/dashboard/teacher/attendance-tab";
+import { AnalyticsTab } from "@/components/dashboard/teacher/analytics-tab";
+import type {
+  AnalyticsExamResultRow,
+  AnalyticsAttendanceRow,
+  AnalyticsBatchOption,
+} from "@/components/dashboard/teacher/analytics-tab";
 import { ReviewsTab } from "@/components/dashboard/teacher/reviews-tab";
 import { InquiriesTab } from "@/components/dashboard/inquiries-tab";
 import { WantedAdsBrowseTab } from "@/components/dashboard/wanted-ads-browse-tab";
@@ -477,6 +483,58 @@ export default async function TeacherDashboardPage({
     mcqMaxScore: s.mcq_max_score,
   }));
 
+  // Analytics tab — pure computation over data already fetched above for
+  // Exams/Attendance, no extra queries. A submission's `grade` is a raw,
+  // free-typed number (see gradeSubmission in exams-actions.ts), not a
+  // percentage — comparing raw scores across exams with different total
+  // marks would be misleading, so it's converted to a % of the exam's total
+  // marks (summed from question_bank_items.marks for that exam's
+  // question_ids) here, once, rather than in the client component.
+  const marksByQuestionId = new Map((questionRows ?? []).map((q) => [q.id, q.marks]));
+  const maxMarksByExamId = new Map(
+    (examDetailRows ?? []).map((e) => [
+      e.id,
+      e.question_ids.reduce((sum, qid) => sum + (marksByQuestionId.get(qid) ?? 0), 0),
+    ]),
+  );
+  const examById = new Map((examDetailRows ?? []).map((e) => [e.id, e]));
+
+  const analyticsExamResults: AnalyticsExamResultRow[] = (submissionDetailRows ?? []).map((s) => {
+    const exam = examById.get(s.exam_id);
+    const maxMarks = maxMarksByExamId.get(s.exam_id) ?? 0;
+    const scorePercent =
+      s.status === "graded" && s.grade !== null && maxMarks > 0
+        ? Math.max(0, Math.min(100, Math.round((s.grade / maxMarks) * 100)))
+        : null;
+    return {
+      examId: s.exam_id,
+      examTitle: exam?.title ?? "—",
+      examDateIso: exam?.scheduled_at ?? null,
+      batchId: exam?.batch_id ?? null,
+      studentId: s.student_id,
+      studentName: studentById.get(s.student_id)?.full_name ?? "—",
+      status: s.status,
+      scorePercent,
+    };
+  });
+
+  const liveClassById = new Map((liveClassRows ?? []).map((c) => [c.id, c]));
+  const analyticsAttendance: AnalyticsAttendanceRow[] = (attendanceRows ?? []).flatMap((a) => {
+    const liveClass = liveClassById.get(a.live_class_id);
+    if (!liveClass) return [];
+    return [
+      {
+        batchId: liveClass.batch_id,
+        dateIso: liveClass.scheduled_at,
+        studentId: a.student_id,
+        studentName: studentById.get(a.student_id)?.full_name ?? "—",
+        status: a.status,
+      },
+    ];
+  });
+
+  const analyticsBatchOptions: AnalyticsBatchOption[] = batches.map((b) => ({ id: b.id, title: b.title }));
+
   const joinLinkByClassId = new Map((liveClassLinkRows ?? []).map((l) => [l.live_class_id, l.join_link]));
   const attendanceByKey = new Map((attendanceRows ?? []).map((a) => [`${a.live_class_id}:${a.student_id}`, a.status]));
   const participantIdsByClassId = new Map<string, Set<string>>();
@@ -652,6 +710,7 @@ export default async function TeacherDashboardPage({
           label: t("groupStudents"),
           items: [
             { key: "students", label: t("tabs.students"), count: studentsCount ?? 0 },
+            { key: "analytics", label: t("tabs.analytics") },
             { key: "attendance", label: t("tabs.attendance") },
             { key: "reviews", label: t("tabs.reviews"), count: reviewRows?.length ?? 0 },
             {
@@ -749,6 +808,14 @@ export default async function TeacherDashboardPage({
           />
         ),
         students: <StudentsTab students={students} requests={requests} />,
+        analytics: (
+          <AnalyticsTab
+            examResults={analyticsExamResults}
+            attendance={analyticsAttendance}
+            batches={analyticsBatchOptions}
+            isCampusLecturer={isCampusLecturer}
+          />
+        ),
         attendance: <AttendanceTab sessions={attendanceSessions} />,
         inquiries: <InquiriesTab inquiries={inquiries} />,
         studentRequests: <WantedAdsBrowseTab requests={wantedAdRequests} />,

@@ -1299,6 +1299,7 @@
       "exams": "විභාග",
       "live": "සජීවී පන්ති",
       "students": "සිසුන්",
+      "analytics": "විශ්ලේෂණ",
       "attendance": "පැමිණීම",
       "inquiries": "විමසීම්",
       "studentRequests": "සිසුන්ගේ ඉල්ලීම්",
@@ -1721,6 +1722,44 @@
         "heading": "එකතු වීමේ ඉල්ලීම්",
         "accept": "පිළිගන්න",
         "decline": "ප්‍රතික්ෂේප කරන්න"
+      }
+    },
+    "analytics": {
+      "heading": "විශ්ලේෂණ",
+      "subtitle": "ඔබේ පන්ති පුරා විභාග ප්‍රතිඵල සහ පැමිණීම.",
+      "subtitleCampus": "ඔබේ පාඨමාලා පුරා විභාග ප්‍රතිඵල සහ පැමිණීම.",
+      "emptyState": "මෙම පෙරහන සඳහා තවම ලකුණු ලබා දුන් විභාග ප්‍රතිඵල නැත.",
+      "passLabel": "සමත්",
+      "failLabel": "අසමත්",
+      "stats": {
+        "avgScore": "සාමාන්‍ය ලකුණු",
+        "passRate": "සමත් අනුපාතය",
+        "attendanceRate": "පැමිණීමේ අනුපාතය",
+        "students": "සිසුන්"
+      },
+      "filters": {
+        "allClassesOption": "සියලුම පන්ති",
+        "allCoursesOption": "සියලුම පාඨමාලා",
+        "allExamsOption": "සියලුම විභාග",
+        "range": {
+          "all": "සියලු කාලය",
+          "30d": "පසුගිය දින 30",
+          "90d": "පසුගිය මාස 3",
+          "year": "පසුගිය මාස 12"
+        }
+      },
+      "charts": {
+        "byExamHeading": "විභාගය අනුව සාමාන්‍ය ලකුණු",
+        "passFailHeading": "සමත් / අසමත් බෙදීම",
+        "trendHeading": "කාලයත් සමඟ ප්‍රගතිය"
+      },
+      "table": {
+        "heading": "සිසුන්ගේ දස්කම්",
+        "student": "සිසුවා",
+        "examsTaken": "සම්පූර්ණ කළ විභාග",
+        "avgScore": "සාමාන්‍ය ලකුණු",
+        "attendance": "පැමිණීම",
+        "lastActivity": "අවසාන ක්‍රියාකාරකම"
       }
     },
     "attendance": {

@@ -309,10 +309,16 @@ function DashboardShellInner({
   // "inquiries" for teacher/institute, "wantedAds" for student.
   const bellItem = groups.flatMap((g) => g.items).find((item) => item.key === bellKey);
 
+  // The whole shell is locked to exactly the viewport height (h-dvh, not
+  // min-h-screen) with overflow hidden — header, mobile tab strip, and
+  // sidebar are fixed in place as ordinary flex children, and only <main>
+  // below gets its own scrollbar. dvh (not vh) is what keeps this correct
+  // on iOS/Android, where the browser chrome resizing would otherwise clip
+  // content under a fixed vh value.
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex h-dvh flex-col overflow-hidden bg-background">
       <RealtimeRefresh watch={realtimeWatch ?? []} />
-      <header className="sticky top-0 z-50 flex h-15 shrink-0 items-center justify-between gap-4 border-b border-primary-dark bg-primary-dark px-5 text-white">
+      <header className="z-50 flex h-15 shrink-0 items-center justify-between gap-4 border-b border-primary-dark bg-primary-dark px-5 text-white">
         <Link href="/" className="flex items-center gap-2.5 font-display text-lg font-bold text-white">
           <span className="flex size-7 items-center justify-center rounded-[6px] bg-secondary font-mono text-xs font-bold text-primary-dark">
             CP
@@ -459,7 +465,7 @@ function DashboardShellInner({
           return (
             <div
               className={cn(
-                "sticky top-15 z-40 flex flex-wrap items-center justify-between gap-2.5 border-b-2 bg-white px-5 py-2 shadow-[0_1px_2px_rgba(14,33,29,0.07)]",
+                "z-40 flex shrink-0 flex-wrap items-center justify-between gap-2.5 border-b-2 bg-white px-5 py-2 shadow-[0_1px_2px_rgba(14,33,29,0.07)]",
                 isExposed ? "border-b-destructive" : "border-b-success",
               )}
             >
@@ -505,20 +511,27 @@ function DashboardShellInner({
           );
         })()}
 
-      <div className="border-b border-border bg-white md:hidden">
+      <div className="shrink-0 overflow-x-auto border-b border-border bg-white md:hidden">
         <NavList groups={groups} activeTab={activeTab} onSelect={select} orientation="horizontal" />
       </div>
 
-      {/* Not max-w/mx-auto'd like the header/footer's inner content — the
-         sidebar needs to stay pinned flush against the left edge at every
-         viewport width (including past 1400px, whether from a wide monitor
-         or the browser zoomed out below 100%). Only the page content inside
-         <main> gets capped/centered; the sidebar never should be. */}
-      <div className="flex w-full flex-1">
-        <aside className="hidden w-60 shrink-0 border-r border-border bg-white md:block">
+      {/* Not max-w/mx-auto'd like the header's inner content — the sidebar
+         needs to stay pinned flush against the left edge at every viewport
+         width (including past 1400px, whether from a wide monitor or the
+         browser zoomed out below 100%). Only the page content inside <main>
+         gets capped/centered; the sidebar never should be.
+
+         min-h-0 on this row (and on <aside>/<main> below) is load-bearing:
+         without it, a flex child's default min-height is its content size,
+         which would let this row grow past the parent's fixed h-dvh instead
+         of stopping at it — the exact bug that would silently undo the
+         "only main scrolls" behavior these three overflow-y-auto's exist
+         for. */}
+      <div className="flex min-h-0 w-full flex-1">
+        <aside className="hidden w-60 shrink-0 overflow-y-auto border-r border-border bg-white md:block">
           <NavList groups={groups} activeTab={activeTab} onSelect={select} orientation="vertical" />
         </aside>
-        <main className="min-w-0 flex-1 p-5 sm:p-7">
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-7">
           <div className="mx-auto max-w-[1400px]">
             {/* The call, once started, stays mounted here regardless of
                which tab is active or whether it's minimized — only
@@ -550,7 +563,6 @@ function DashboardShellInner({
           </div>
         </main>
       </div>
-
     </div>
   );
 }

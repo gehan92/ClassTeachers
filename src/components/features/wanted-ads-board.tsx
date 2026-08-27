@@ -23,45 +23,51 @@ const lookingForFilters = ["all", "teacher", "institute"] as const;
 type LookingForFilter = (typeof lookingForFilters)[number];
 
 /**
- * The circle is deliberately generic (a graduation-cap glyph, colored from
- * the ad id for visual variety) rather than a name-derived initial like
- * ListingCard's avatar — a wanted-ad never identifies who posted it, even
- * to a signed-in teacher/institute, so nothing here should look like a
- * placeholder for a real photo/name that's just waiting to be "unlocked."
+ * Deliberately mirrors ListingCard's shape (same banner/avatar/footer-pill
+ * structure as /teachers) so the two searchable pages feel like one design
+ * system, not two — Gehan flagged the mismatch after comparing screenshots.
+ * The avatar stays generic (a graduation-cap glyph, colored from the ad id)
+ * rather than a name-derived initial like ListingCard's — a wanted-ad never
+ * identifies who posted it, even to a signed-in teacher/institute, so
+ * nothing here should look like a placeholder for a real photo that's just
+ * waiting to be "unlocked." There's no per-ad detail page to link to (unlike
+ * a listing), so the whole card is a single generic respondHref instead.
  */
 function RequestCard({ ad, respondHref }: { ad: PublicWantedAd; respondHref: string }) {
   const t = useTranslations("requestsPage");
 
   return (
-    <div className="flex flex-col gap-3.5 rounded-lg border border-border bg-white p-4 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)] transition-transform hover:-translate-y-0.5 sm:flex-row sm:items-center">
-      <div
-        className={`flex size-12 shrink-0 items-center justify-center rounded-full text-white ${avatarGradientClass(ad.id)}`}
-      >
-        <GraduationCap className="size-5" />
+    <Link
+      href={respondHref}
+      className="flex flex-col overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)] transition-transform hover:-translate-y-0.5"
+    >
+      <div className="relative flex h-33 items-end bg-gradient-to-br from-primary to-primary-light p-3">
+        <span className="rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white">
+          {t(`lookingForOptions.${ad.lookingFor}`)}
+        </span>
+        <div
+          className={`absolute -bottom-5.5 right-3.5 flex size-14 items-center justify-center rounded-full border-4 border-white text-white shadow-sm ${avatarGradientClass(ad.id)}`}
+        >
+          <GraduationCap className="size-5.5" />
+        </div>
       </div>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="font-display text-base text-primary">{ad.title}</h3>
-          <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">
-            {t(`lookingForOptions.${ad.lookingFor}`)}
-          </span>
-        </div>
-        <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+      <div className="flex flex-1 flex-col px-4 pb-4 pt-7.5">
+        <div className="mb-1 line-clamp-2 font-display text-[17px] tracking-wide text-primary">{ad.title}</div>
+        <div className="mb-2.5 text-[12.5px] text-muted-foreground">
           {[ad.subject, ad.mode ? t(`modeOptions.${ad.mode}`) : null, ad.gradeLevel, ad.createdLabel]
             .filter(Boolean)
             .join(" · ")}
-        </p>
-        {ad.description && <p className="mt-2 text-sm text-foreground/80">{ad.description}</p>}
-      </div>
+        </div>
+        {ad.description && <p className="mb-3.5 line-clamp-2 text-[12.5px] text-muted-foreground">{ad.description}</p>}
 
-      <Link
-        href={respondHref}
-        className="inline-flex shrink-0 items-center justify-center rounded-sm border border-input px-3.5 py-1.5 text-[13px] font-semibold text-primary hover:bg-secondary"
-      >
-        {t("respondCta")}
-      </Link>
-    </div>
+        <div className="mt-auto flex items-center border-t border-dashed border-border pt-3.5">
+          <span className="rounded-sm border border-input px-3.5 py-1.5 text-[13px] font-semibold text-primary">
+            {t("respondCta")}
+          </span>
+        </div>
+      </div>
+    </Link>
   );
 }
 
@@ -134,15 +140,17 @@ export function WantedAdsBoard({ ads, respondHref }: { ads: PublicWantedAd[]; re
           )}
         </div>
 
-        <div className="space-y-3">
-          {filteredAds.length > 0 ? (
-            filteredAds.map((ad) => <RequestCard key={ad.id} ad={ad} respondHref={respondHref} />)
-          ) : (
-            <div className="rounded-lg border border-dashed border-input bg-white p-10 text-center text-muted-foreground">
-              {t("empty")}
-            </div>
-          )}
-        </div>
+        {filteredAds.length > 0 ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredAds.map((ad) => (
+              <RequestCard key={ad.id} ad={ad} respondHref={respondHref} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-input bg-white p-10 text-center text-muted-foreground">
+            {t("empty")}
+          </div>
+        )}
       </div>
     </section>
   );

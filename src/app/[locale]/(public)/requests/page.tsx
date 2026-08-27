@@ -1,5 +1,4 @@
-import { useTranslations } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { WantedAdsBoard } from "@/components/features/wanted-ads-board";
 import type { PublicWantedAd } from "@/components/features/wanted-ads-board";
 import { createClient } from "@/lib/supabase/server";
@@ -9,6 +8,7 @@ export default async function RequestsPage({ params }: PageProps<"/[locale]/requ
   const { locale } = await params;
   setRequestLocale(locale);
   const dateFormatter = createDateFormatter(locale);
+  const t = await getTranslations("requestsPage");
 
   const supabase = await createClient();
   const { data: adRows } = await supabase.rpc("list_public_wanted_ads");
@@ -25,24 +25,19 @@ export default async function RequestsPage({ params }: PageProps<"/[locale]/requ
   }));
 
   return (
-    <>
-      <Hero />
-      <WantedAdsBoard ads={ads} />
-    </>
-  );
-}
-
-function Hero() {
-  const t = useTranslations("requestsPage");
-
-  return (
-    <section className="border-b border-border bg-primary py-16">
-      <div className="mx-auto max-w-160 px-7 text-center">
-        <div className="mb-2.5 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-white/70 before:inline-block before:h-px before:w-4 before:bg-white/70 before:content-['']">
-          {t("hero.eyebrow")}
+    <section className="py-12">
+      <div className="mx-auto max-w-[1180px] px-7">
+        {/* Same plain-heading shape as /teachers (no colored hero band) —
+         * this is another searchable listing page, not a marketing landing
+         * page, so it should match /teachers rather than /advertise. */}
+        <div className="mb-7">
+          <div className="mb-2.5 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-accent-deep before:inline-block before:h-px before:w-4 before:bg-accent-deep before:content-['']">
+            {t("hero.eyebrow")}
+          </div>
+          <h1 className="text-[32px]">{t("hero.title")}</h1>
+          <p className="text-muted-foreground">{t("hero.subtitle")}</p>
         </div>
-        <h1 className="mb-4.5 text-[32px] leading-[1.1] text-white sm:text-[44px]">{t("hero.title")}</h1>
-        <p className="mx-auto max-w-[46ch] text-[17px] text-white/80">{t("hero.subtitle")}</p>
+        <WantedAdsBoard ads={ads} />
       </div>
     </section>
   );

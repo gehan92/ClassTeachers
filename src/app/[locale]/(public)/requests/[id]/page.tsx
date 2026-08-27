@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { GraduationCap } from "lucide-react";
+import { ArrowLeft, GraduationCap } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
@@ -46,13 +46,13 @@ export default async function RequestDetailPage({ params }: PageProps<"/[locale]
 
   return (
     <div className="mx-auto max-w-[860px] px-7 py-10">
-      <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-        <Link href="/requests" className="hover:text-primary">
-          {td("breadcrumbHome")}
-        </Link>
-        <span>/</span>
-        <span className="max-w-[220px] truncate text-muted-foreground/70">{ad.title}</span>
-      </nav>
+      <Link
+        href="/requests"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary"
+      >
+        <ArrowLeft className="size-4" />
+        {td("backToRequests")}
+      </Link>
 
       <div className="mb-6 rounded-xl bg-gradient-to-br from-primary to-primary-light p-7 text-white">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">

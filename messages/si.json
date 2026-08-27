@@ -325,7 +325,7 @@
     "respondCta": "පිළිතුරු දෙන්න",
     "empty": "මෙම පෙරහන සමඟ ගැළපෙන ඉල්ලීම් නැත.",
     "detail": {
-      "breadcrumbHome": "ඉල්ලීම්",
+      "backToRequests": "ඉල්ලීම් වෙත ආපසු",
       "aboutHeading": "මෙම ඉල්ලීම ගැන",
       "noDescription": "වැඩිදුර විස්තර එක් කර නැත.",
       "postedOn": "පළ කළේ {date}",

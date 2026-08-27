@@ -10,19 +10,22 @@ export default async function PublicLayout({ children }: { children: React.React
 
   let headerUser = null;
   let inquiriesCount: number | undefined = undefined;
+  let userPhotoUrl: string | null = null;
 
   if (authUser) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, role")
+      .select("full_name, role, avatar_url")
       .eq("id", authUser.id)
       .maybeSingle();
     if (profile) {
       headerUser = { name: profile.full_name, role: profile.role };
+      userPhotoUrl = profile.avatar_url;
 
       // Same bell the dashboard header shows (dashboard-shell.tsx) — surfaced
-      // here too so a logged-in teacher/institute browsing the public site
-      // doesn't have to open the dashboard just to notice a new inquiry.
+      // here too so a logged-in teacher/institute/student browsing the
+      // public site doesn't have to open the dashboard just to notice a new
+      // inquiry or wanted-ad response.
       if (profile.role === "teacher" || profile.role === "campus_lecturer") {
         const { count } = await supabase
           .from("inquiries")
@@ -46,13 +49,20 @@ export default async function PublicLayout({ children }: { children: React.React
             .eq("status", "new");
           inquiriesCount = count ?? 0;
         }
+      } else if (profile.role === "student") {
+        // No 'new'/'read' filter at the DB layer here (unlike the inquiries
+        // count above) — list_wanted_ad_responses_for_student (0073) is
+        // already scoped to auth.uid(), so counting client-side matches
+        // exactly what student/page.tsx's own unreadResponsesCount does.
+        const { data: responseRows } = await supabase.rpc("list_wanted_ad_responses_for_student");
+        inquiriesCount = (responseRows ?? []).filter((r) => r.status === "new").length;
       }
     }
   }
 
   return (
     <>
-      <SiteHeader user={headerUser} inquiriesCount={inquiriesCount} />
+      <SiteHeader user={headerUser} inquiriesCount={inquiriesCount} userPhotoUrl={userPhotoUrl} />
       <main className="flex-1">{children}</main>
       <SiteFooter />
     </>

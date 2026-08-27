@@ -15,6 +15,7 @@ import {
 import { LocaleSwitcher } from "./locale-switcher";
 import { logOutAction } from "@/lib/auth/actions";
 import { roleDashboardPath, type UserRole } from "@/lib/auth/routes";
+import { avatarGradientClass } from "@/lib/avatar-color";
 import { cn } from "@/lib/utils";
 
 // Roles/Pricing/Help stay one click away in the footer (see site-footer.tsx)
@@ -36,16 +37,24 @@ const searchItems = [
 export function SiteHeader({
   user,
   inquiriesCount,
+  userPhotoUrl,
 }: {
   user: { name: string; role: UserRole } | null;
   inquiriesCount?: number;
+  userPhotoUrl?: string | null;
 }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const isSearchActive = pathname === "/teachers";
-  const inquiriesHref = user ? `${roleDashboardPath[user.role]}?tab=inquiries` : "/login";
+  // Students have no "inquiries" tab (they submit them, don't receive them)
+  // — their equivalent inbound-message tab is Post an Ad's wanted-ad
+  // responses, same as the dashboard header's bellKey (dashboard-shell.tsx).
+  const bellTab = user?.role === "student" ? "wantedAds" : "inquiries";
+  const inquiriesHref = user ? `${roleDashboardPath[user.role]}?tab=${bellTab}` : "/login";
+  const userInitial = user ? user.name.charAt(0).toUpperCase() : "";
+  const bellLabel = t(bellTab === "wantedAds" ? "myRequests" : "inquiries");
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-sm">
@@ -112,7 +121,7 @@ export function SiteHeader({
               {inquiriesCount !== undefined && (
                 <Link
                   href={inquiriesHref}
-                  aria-label={t("inquiries")}
+                  aria-label={bellLabel}
                   className="relative flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
                 >
                   <Bell className="size-4.5" />
@@ -122,6 +131,18 @@ export function SiteHeader({
                     </span>
                   )}
                 </Link>
+              )}
+              {userPhotoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- public Supabase Storage URL, not a local/optimizable asset
+                <img src={userPhotoUrl} alt="" title={user.name} className="size-8 shrink-0 rounded-full object-cover" />
+              ) : (
+                <span
+                  title={user.name}
+                  aria-label={user.name}
+                  className={`flex size-8 shrink-0 items-center justify-center rounded-full font-display text-xs font-bold text-white ${avatarGradientClass(user.name)}`}
+                >
+                  {userInitial}
+                </span>
               )}
               <Button size="sm" nativeButton={false} render={<Link href={roleDashboardPath[user.role]} />}>
                 {t("dashboard")}
@@ -185,6 +206,19 @@ export function SiteHeader({
                 <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
                   {user ? (
                     <>
+                      <div className="flex items-center gap-2.5 px-3 py-1.5">
+                        {userPhotoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- public Supabase Storage URL, not a local/optimizable asset
+                          <img src={userPhotoUrl} alt="" className="size-8 shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <span
+                            className={`flex size-8 shrink-0 items-center justify-center rounded-full font-display text-xs font-bold text-white ${avatarGradientClass(user.name)}`}
+                          >
+                            {userInitial}
+                          </span>
+                        )}
+                        <span className="truncate text-sm font-medium text-foreground">{user.name}</span>
+                      </div>
                       {inquiriesCount !== undefined && (
                         <Link
                           href={inquiriesHref}
@@ -192,7 +226,7 @@ export function SiteHeader({
                         >
                           <span className="flex items-center gap-2">
                             <Bell className="size-4" />
-                            {t("inquiries")}
+                            {bellLabel}
                           </span>
                           {inquiriesCount > 0 && (
                             <span className="flex size-5 items-center justify-center rounded-full bg-cta font-mono text-[10px] font-bold text-cta-foreground">

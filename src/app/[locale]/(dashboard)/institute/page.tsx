@@ -3,6 +3,7 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { OverviewTab } from "@/components/dashboard/institute/overview-tab";
 import { TeachersTab, type InstituteTeacherRow } from "@/components/dashboard/institute/teachers-tab";
 import { BatchesTab } from "@/components/dashboard/institute/batches-tab";
+import { StudentsTab, type InstituteStudentRow, type InstituteJoinRequestRow } from "@/components/dashboard/institute/students-tab";
 import { AdvertisementTab } from "@/components/dashboard/institute/advertisement-tab";
 import { ReviewsTab } from "@/components/dashboard/institute/reviews-tab";
 import { SettingsTab } from "@/components/dashboard/institute/settings-tab";
@@ -61,17 +62,23 @@ export default async function InstituteDashboardPage({
     { data: wantedAdRows },
     { data: myReviewRows },
     { data: batchRows },
-    { data: batchEnrollmentRows },
   ] = await Promise.all([
     instituteId
       ? supabase.from("class_teachers").select("teacher_id, is_visible, status").eq("class_id", instituteId)
       : Promise.resolve({ data: [] as { teacher_id: string; is_visible: boolean; status: "pending" | "accepted" | "declined" }[] }),
-    // Row count would now overcount — a student can hold more than one
-    // class at this institute (0092), so this needs the distinct student
-    // behind those rows, not the row count itself.
+    // One richer fetch backs studentsCount, batchStudentCounts, AND the new
+    // Students tab (roster + pending requests, step 4b) — used to be two
+    // separate narrower queries (student_id only, batch_id only) before
+    // that tab existed.
     instituteId
-      ? supabase.from("enrollments").select("student_id").eq("owner_type", "class").eq("owner_id", instituteId)
-      : Promise.resolve({ data: [] as { student_id: string }[] }),
+      ? supabase
+          .from("enrollments")
+          .select("id, student_id, batch_id, status, joined_at")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+      : Promise.resolve({
+          data: [] as { id: string; student_id: string; batch_id: string | null; status: "pending" | "accepted" | "declined"; joined_at: string }[],
+        }),
     instituteId
       ? supabase.from("reviews").select("rating").eq("target_type", "class").eq("target_id", instituteId)
       : Promise.resolve({ data: [] as { rating: number }[] }),
@@ -135,9 +142,6 @@ export default async function InstituteDashboardPage({
             taught_by_teacher_id: string | null;
           }[],
         }),
-    instituteId
-      ? supabase.from("enrollments").select("batch_id").eq("owner_type", "class").eq("owner_id", instituteId)
-      : Promise.resolve({ data: [] as { batch_id: string | null }[] }),
   ]);
 
   const teacherIds = (classTeacherRows ?? []).map((row) => row.teacher_id);
@@ -147,7 +151,9 @@ export default async function InstituteDashboardPage({
 
   const isVisibleById = new Map((classTeacherRows ?? []).map((row) => [row.teacher_id, row.is_visible]));
   const rosterStatusById = new Map((classTeacherRows ?? []).map((row) => [row.teacher_id, row.status]));
-  const studentsCount = new Set((instituteEnrollmentRows ?? []).map((row) => row.student_id)).size;
+  const acceptedInstituteEnrollments = (instituteEnrollmentRows ?? []).filter((row) => row.status === "accepted");
+  const pendingInstituteEnrollments = (instituteEnrollmentRows ?? []).filter((row) => row.status === "pending");
+  const studentsCount = new Set(acceptedInstituteEnrollments.map((row) => row.student_id)).size;
 
   const inquiryIds = (inquiryRows ?? []).map((row) => row.id);
   const { data: inquiryMessageRows } = inquiryIds.length
@@ -280,7 +286,7 @@ export default async function InstituteDashboardPage({
   }));
 
   const batchStudentCounts = new Map<string, number>();
-  for (const row of batchEnrollmentRows ?? []) {
+  for (const row of acceptedInstituteEnrollments) {
     if (!row.batch_id) continue;
     batchStudentCounts.set(row.batch_id, (batchStudentCounts.get(row.batch_id) ?? 0) + 1);
   }
@@ -301,6 +307,32 @@ export default async function InstituteDashboardPage({
   const rosterTeacherOptions = acceptedTeacherIds.map((id) => ({
     id,
     name: teacherNameById.get(id) ?? "—",
+  }));
+
+  // Institute Blueprint step 4b — Students tab (roster + pending join
+  // requests). Plain `profiles` select would return zero rows under RLS
+  // (0003, own-row-or-admin); get_roster_student_info (0032/0040) already
+  // opens this up for an owner looking up their own enrolled students.
+  const enrolledStudentIds = [...new Set((instituteEnrollmentRows ?? []).map((row) => row.student_id))];
+  const { data: enrolledStudentRows } = enrolledStudentIds.length
+    ? await supabase.rpc("get_roster_student_info", { p_student_ids: enrolledStudentIds })
+    : { data: [] as { id: string; full_name: string; phone: string | null }[] };
+  const studentInfoById = new Map((enrolledStudentRows ?? []).map((row) => [row.id, row]));
+  const batchTitleById = new Map((batchRows ?? []).map((b) => [b.id, b.title]));
+  const generalBatchLabel = t("students.noBatch");
+
+  const instituteStudents: InstituteStudentRow[] = acceptedInstituteEnrollments.map((row) => ({
+    id: row.id,
+    name: studentInfoById.get(row.student_id)?.full_name ?? "—",
+    phone: studentInfoById.get(row.student_id)?.phone ?? null,
+    batch: row.batch_id ? (batchTitleById.get(row.batch_id) ?? "—") : generalBatchLabel,
+    joinedAt: dateFormatter.format(new Date(row.joined_at)),
+  }));
+  const instituteJoinRequests: InstituteJoinRequestRow[] = pendingInstituteEnrollments.map((row) => ({
+    id: row.id,
+    studentName: studentInfoById.get(row.student_id)?.full_name ?? "—",
+    batch: row.batch_id ? (batchTitleById.get(row.batch_id) ?? "—") : generalBatchLabel,
+    requestedAt: dateFormatter.format(new Date(row.joined_at)),
   }));
 
   const referrals: ReferralRow[] = (myReferralRows ?? []).map((row) => ({
@@ -335,6 +367,7 @@ export default async function InstituteDashboardPage({
             { key: "overview", label: t("tabs.overview") },
             { key: "teachers", label: t("tabs.teachers"), count: teacherIds.length },
             { key: "batches", label: t("tabs.batches"), count: batches.length },
+            { key: "students", label: t("tabs.students"), count: instituteJoinRequests.length },
           ],
         },
         {
@@ -369,6 +402,7 @@ export default async function InstituteDashboardPage({
         ),
         teachers: <TeachersTab teachers={instituteTeachers} />,
         batches: <BatchesTab batches={batches} teacherOptions={rosterTeacherOptions} />,
+        students: <StudentsTab students={instituteStudents} requests={instituteJoinRequests} />,
         inquiries: <InquiriesTab inquiries={inquiries} />,
         studentRequests: <WantedAdsBrowseTab requests={wantedAdRequests} />,
         ads: <AdvertisementTab initialContent={adRow?.content ?? ""} />,

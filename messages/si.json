@@ -897,7 +897,8 @@
       "studentRequests": "සිසුන්ගේ ඉල්ලීම්",
       "ads": "දැන්වීම",
       "reviews": "සමාලෝචන",
-      "settings": "සැකසුම්"
+      "settings": "සැකසුම්",
+      "students": "සිසුන්"
     },
     "overview": {
       "subtitle": "ඔබේ ආයතනය පිළිබඳ දළ විශ්ලේෂණය.",
@@ -1056,6 +1057,23 @@
       "notifications": {
         "enrolments": "නව එකතුවීම්",
         "reviews": "නව සමාලෝචන"
+      }
+    },
+    "students": {
+      "heading": "සිසුන්",
+      "searchPlaceholder": "සිසුන් සොයන්න...",
+      "noBatch": "සාමාන්‍ය ලියාපදිංචිය",
+      "empty": "තවම සිසුන් නැත.",
+      "columns": {
+        "student": "සිසුවා",
+        "batch": "කණ්ඩායම",
+        "joined": "එකතු වූ දිනය",
+        "contact": "සම්බන්ධතාවය"
+      },
+      "requests": {
+        "heading": "එකතු වීමේ ඉල්ලීම්",
+        "accept": "පිළිගන්න",
+        "decline": "ප්‍රතික්ෂේප කරන්න"
       }
     }
   },

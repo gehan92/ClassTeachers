@@ -202,12 +202,10 @@ export async function deleteBatch(batchId: string): Promise<ActionResult> {
 
 /**
  * Used both from the ad-landing page (/ad/[id]) and the student dashboard's
- * batch browser. For a teacher, this is a pending request the teacher must
- * accept before it unlocks anything (0039/0040) — the enrollments insert
- * policy enforces status='pending' for owner_type='teacher', so this can't
- * be bypassed into an instant accept. Institute ('class') joins stay
- * instant/accepted for now — there's no institute-side accept/decline UI
- * yet, so the RLS policy requires 'accepted' there instead; see 0040.
+ * batch browser. Always a pending request the owner (teacher or institute)
+ * must accept before it unlocks anything — the enrollments insert policy
+ * enforces status='pending' regardless of owner_type (0040/0097), so this
+ * can't be bypassed into an instant accept.
  */
 /**
  * Routed through rejoin_after_decline (0066) rather than a plain insert —
@@ -237,7 +235,7 @@ export async function requestToJoin(batchId: string): Promise<ActionResult> {
       return { error: "That class couldn't be found." };
     }
     if (error.message.includes("already_requested")) {
-      return { error: "You've already sent a request (or joined) this teacher." };
+      return { error: "You've already sent a request (or joined) this class." };
     }
     return { error: "Couldn't send your request. Please try again." };
   }

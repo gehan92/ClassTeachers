@@ -897,7 +897,8 @@
       "studentRequests": "மாணவர் கோரிக்கைகள்",
       "ads": "விளம்பரம்",
       "reviews": "மதிப்புரைகள்",
-      "settings": "அமைப்புகள்"
+      "settings": "அமைப்புகள்",
+      "students": "மாணவர்கள்"
     },
     "overview": {
       "subtitle": "உங்கள் நிறுவனத்தின் கண்ணோட்டம்.",
@@ -1056,6 +1057,23 @@
       "notifications": {
         "enrolments": "புதிய இணைவுகள்",
         "reviews": "புதிய மதிப்புரைகள்"
+      }
+    },
+    "students": {
+      "heading": "மாணவர்கள்",
+      "searchPlaceholder": "மாணவர்களைத் தேடுங்கள்...",
+      "noBatch": "பொது பதிவு",
+      "empty": "இதுவரை மாணவர்கள் இல்லை.",
+      "columns": {
+        "student": "மாணவர்",
+        "batch": "தொகுதி",
+        "joined": "இணைந்த தேதி",
+        "contact": "தொடர்பு"
+      },
+      "requests": {
+        "heading": "சேர்க்கை கோரிக்கைகள்",
+        "accept": "ஏற்றுக்கொள்",
+        "decline": "நிராகரி"
       }
     }
   },

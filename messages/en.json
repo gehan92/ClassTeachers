@@ -897,7 +897,8 @@
       "studentRequests": "Student Requests",
       "ads": "Advertisement",
       "reviews": "Reviews",
-      "settings": "Settings"
+      "settings": "Settings",
+      "students": "Students"
     },
     "overview": {
       "subtitle": "Overview across your institute.",
@@ -1056,6 +1057,23 @@
       "notifications": {
         "enrolments": "New enrolments",
         "reviews": "New reviews"
+      }
+    },
+    "students": {
+      "heading": "Students",
+      "searchPlaceholder": "Search students...",
+      "noBatch": "General enrollment",
+      "empty": "No students yet.",
+      "columns": {
+        "student": "Student",
+        "batch": "Batch",
+        "joined": "Joined",
+        "contact": "Contact"
+      },
+      "requests": {
+        "heading": "Join requests",
+        "accept": "Accept",
+        "decline": "Decline"
       }
     }
   },

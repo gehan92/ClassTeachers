@@ -25,6 +25,10 @@ import {
   Megaphone,
   BarChart3,
   Settings as SettingsIcon,
+  GraduationCap,
+  Calendar,
+  Inbox,
+  BellRing,
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -89,8 +93,10 @@ const navKeysByRole: Record<DemoRole, SiteNavKey[]> = {
  * Icons are looked up by tab key here, in the client component, rather than
  * passed in via `groups` — a server page can't hand a component reference
  * (a function) to a client component as a prop, so this must live wherever
- * `groups` is actually rendered. Only the teacher dashboard's tabs are
- * covered for now; an unmatched key just renders without an icon.
+ * `groups` is actually rendered. Covers every role's tabs (teacher +
+ * institute share several keys — students/analytics/reviews/inquiries/
+ * studentRequests/ads/settings/overview — so one entry serves both); an
+ * unmatched key just renders without an icon.
  */
 const TAB_ICONS: Partial<Record<string, LucideIcon>> = {
   overview: LayoutDashboard,
@@ -108,6 +114,13 @@ const TAB_ICONS: Partial<Record<string, LucideIcon>> = {
   inquiries: MessageSquare,
   ads: Megaphone,
   settings: SettingsIcon,
+  // Institute-only tabs (studentRequests is shared with teacher, which had
+  // the same gap).
+  teachers: GraduationCap,
+  batches: BookOpen,
+  calendar: Calendar,
+  studentRequests: Inbox,
+  announcements: BellRing,
 };
 
 function updateTabParam(tab: string) {

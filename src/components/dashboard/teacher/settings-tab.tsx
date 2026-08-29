@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { updateTeacherAccount, updateNotificationPrefs, updateContactMode } from "@/lib/dashboard/actions";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
+import { ReferEarnPanel, type ReferralRow } from "@/components/dashboard/refer-earn-panel";
 
 const panelClass = "rounded-lg border border-border bg-white p-5";
 
@@ -19,12 +20,16 @@ export function SettingsTab({
   initialNotificationPrefs,
   initialContactMode,
   email,
+  referralCode,
+  referrals,
 }: {
   initialFullName: string;
   initialPhone: string;
   initialNotificationPrefs: Record<string, boolean>;
   initialContactMode: "phone" | "messaging_only";
   email: string;
+  referralCode: string;
+  referrals: ReferralRow[];
 }) {
   const t = useTranslations("teacherDashboard.settings");
   const tc = useTranslations("teacherDashboard.common");
@@ -119,6 +124,8 @@ export function SettingsTab({
           <Switch id="contact-messaging-only" checked={messagingOnly} onCheckedChange={handleToggleContactMode} />
         </div>
       </div>
+
+      <ReferEarnPanel referralCode={referralCode} referrals={referrals} />
 
       <div className={panelClass}>
         <h3 className="mb-4 text-lg">{t("notificationsHeading")}</h3>

@@ -36,6 +36,8 @@ function SignupForm() {
     ? (roleParam as SignupRole)
     : "student";
   const [role, setRole] = useState<SignupRole>(initialRole);
+  // A teacher/institute's own Refer & Earn link (referrals, 0089).
+  const referralCode = searchParams.get("ref");
   const [state, formAction, pending] = useActionState(signUpAction, undefined);
 
   if (state?.pendingConfirmationEmail) {
@@ -64,6 +66,7 @@ function SignupForm() {
       <p className="mb-6.5 text-sm text-muted-foreground">{t("subtitle")}</p>
 
       <form action={formAction} className="space-y-4">
+        {referralCode && <input type="hidden" name="referralCode" value={referralCode} />}
         <RoleSelect value={role} onChange={setRole} />
 
         {role === "teacher" && <TeacherFields />}

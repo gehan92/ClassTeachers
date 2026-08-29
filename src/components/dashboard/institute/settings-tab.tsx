@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { updateInstituteProfile, setListingPublished, resubmitListing, updateNotificationPrefs } from "@/lib/dashboard/actions";
 import { uploadAvatar } from "@/lib/dashboard/avatar-actions";
 import { uploadVerificationDocument } from "@/lib/dashboard/verification-actions";
+import { ReferEarnPanel, type ReferralRow } from "@/components/dashboard/refer-earn-panel";
 import type { ProfileStatus } from "@/types/database";
 
 export function SettingsTab({
@@ -25,6 +26,8 @@ export function SettingsTab({
   initialNotificationPrefs,
   initialInstitutionVerified,
   initialHasVerificationDocument,
+  referralCode,
+  referrals,
 }: {
   initialName: string;
   initialLocation: string;
@@ -38,6 +41,8 @@ export function SettingsTab({
   initialNotificationPrefs: Record<string, boolean>;
   initialInstitutionVerified: boolean;
   initialHasVerificationDocument: boolean;
+  referralCode: string;
+  referrals: ReferralRow[];
 }) {
   const t = useTranslations("instituteDashboard.settings");
 
@@ -379,6 +384,8 @@ export function SettingsTab({
           )}
         </p>
       </div>
+
+      <ReferEarnPanel referralCode={referralCode} referrals={referrals} />
 
       <div className="rounded-lg border border-border bg-white p-5">
         <h3 className="mb-4 text-lg">{t("notificationsHeading")}</h3>

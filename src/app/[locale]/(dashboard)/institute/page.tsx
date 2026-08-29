@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter } from "@/lib/format-date";
 import type { TeachersAtGlance } from "@/types/dashboard-institute";
 import type { InstituteBatchRow } from "@/components/dashboard/institute/batches-tab";
+import type { ReferralRow } from "@/components/dashboard/refer-earn-panel";
 
 export default async function InstituteDashboardPage({
   params,
@@ -30,10 +31,15 @@ export default async function InstituteDashboardPage({
   // proxy.ts already gates this route behind an authenticated session.
   const userId = user!.id;
 
-  const [{ data: profile }, { data: classProfile }] = await Promise.all([
-    supabase.from("profiles").select("full_name, phone, notification_prefs").eq("id", userId).single(),
-    supabase.from("class_profiles").select("*").eq("owner_id", userId).maybeSingle(),
-  ]);
+  const [{ data: profile }, { data: classProfile }, { data: referralCodeValue }, { data: myReferralRows }] =
+    await Promise.all([
+      supabase.from("profiles").select("full_name, phone, notification_prefs").eq("id", userId).single(),
+      supabase.from("class_profiles").select("*").eq("owner_id", userId).maybeSingle(),
+      // Refer & Earn panel (Settings tab) — lazily assigns a code the first
+      // time it's asked for (referrals, 0089), nothing to backfill up front.
+      supabase.rpc("ensure_referral_code"),
+      supabase.rpc("list_my_referrals"),
+    ]);
 
   const fullName = profile?.full_name ?? user!.email ?? "Institute";
   const userInitial = fullName.charAt(0).toUpperCase();
@@ -267,6 +273,13 @@ export default async function InstituteDashboardPage({
     studentCount: batchStudentCounts.get(b.id) ?? 0,
   }));
 
+  const referrals: ReferralRow[] = (myReferralRows ?? []).map((row) => ({
+    id: row.id,
+    name: row.referred_name,
+    status: row.reward_status,
+    dateLabel: dateFormatter.format(new Date(row.created_at)),
+  }));
+
   return (
     <DashboardShell
       userLabel={fullName}
@@ -346,6 +359,8 @@ export default async function InstituteDashboardPage({
             initialNotificationPrefs={(profile?.notification_prefs as Record<string, boolean>) ?? {}}
             initialInstitutionVerified={classProfile?.institution_verified ?? false}
             initialHasVerificationDocument={classProfile?.verification_document_path != null}
+            referralCode={referralCodeValue ?? ""}
+            referrals={referrals}
           />
         ),
       }}

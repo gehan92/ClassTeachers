@@ -32,6 +32,9 @@ type SignupMetadata = {
   // the subjects taxonomy
   subject?: string;
   class_type?: "physical" | "online" | "both";
+  // Resolved from ?ref= at signup time (referrals, 0089) — the referrer's
+  // own profile id, already validated to exist before signUp was called.
+  referred_by?: string;
 };
 
 /**
@@ -187,6 +190,20 @@ async function ensureProfile(supabase: SupabaseClient<Database>, user: User): Pr
     await ensureTeacherProfileRow(supabase, user.id, metadata);
   }
 
+  // Tracked regardless of role (referrals, 0089) — grant_referral_reward's
+  // own no-op-for-students logic is what actually restricts the reward,
+  // not this insert. referred_by was already resolved to a real profile id
+  // before signUp ran, and the referrals table itself rejects
+  // referrer_id = referred_id, so this can't record a self-referral.
+  if (metadata.referred_by) {
+    const { error: referralError } = await supabase
+      .from("referrals")
+      .insert({ referrer_id: metadata.referred_by, referred_id: user.id });
+    if (referralError) {
+      console.error("[ensureProfile] referrals insert failed:", referralError.message);
+    }
+  }
+
   return role;
 }
 
@@ -220,6 +237,7 @@ export async function signUpAction(
     instituteName: formData.get("instituteName") || undefined,
     location: formData.get("location") || undefined,
     physical: formData.get("physical") === "on",
+    referralCode: formData.get("referralCode") || undefined,
   });
   if (!parsed.success) {
     console.error(
@@ -247,6 +265,7 @@ export async function signUpAction(
     instituteName,
     location,
     physical,
+    referralCode,
   } = parsed.data;
   // The role picker's "lecturer" option is a campus lecturer under the hood
   // (same dashboard as a teacher, see types/dashboard.ts's DemoRole comment).
@@ -286,10 +305,22 @@ export async function signUpAction(
   }
 
   const supabase = await createClient();
+
+  // Resolved before signUp so a bad/expired code just quietly doesn't
+  // attach a referrer, rather than the referrals insert failing later
+  // inside ensureProfile with nothing useful to do about it by then.
+  let referredBy: string | undefined;
+  if (referralCode) {
+    const { data: referrerId } = await supabase.rpc("resolve_referral_code", { p_code: referralCode });
+    if (referrerId) referredBy = referrerId;
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName, phone: phone ?? null, role: dbRole, ...roleMetadata } },
+    options: {
+      data: { full_name: fullName, phone: phone ?? null, role: dbRole, referred_by: referredBy, ...roleMetadata },
+    },
   });
 
   if (error) {

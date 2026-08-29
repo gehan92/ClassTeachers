@@ -8,11 +8,13 @@ import { SubscriptionsTab } from "@/components/dashboard/admin/subscriptions-tab
 import { SiteAdsTab } from "@/components/dashboard/admin/site-ads-tab";
 import { FlaggedReviewsTab } from "@/components/dashboard/admin/flagged-reviews-tab";
 import { ConnectionsTab } from "@/components/dashboard/admin/connections-tab";
+import { ReferralsTab } from "@/components/dashboard/admin/referrals-tab";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createDateFormatter } from "@/lib/format-date";
 import { roleDashboardPath } from "@/lib/auth/routes";
 import type {
+  AdminReferral,
   ApprovalEntityType,
   ConnectionInquiry,
   ConnectionJoinRequest,
@@ -88,6 +90,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     { data: settingsRows },
     { data: teacherProfileRows },
     { data: classProfileRows },
+    { data: referralRows },
   ] = await Promise.all([
     supabase.from("teacher_profiles").select("id, created_at").eq("status", "pending").order("created_at", { ascending: false }),
     supabase.from("class_profiles").select("id, name, created_at").eq("status", "pending").order("created_at", { ascending: false }),
@@ -126,6 +129,14 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     supabase
       .from("class_profiles")
       .select("id, created_at, owner_id, institution_verified, verification_document_path"),
+    // referrals' own SELECT policy (0089) already covers "referrer_id =
+    // auth.uid() or is_admin()" — this admin session sees every row
+    // directly, no RPC needed, same as the inquiries/enrollments oversight
+    // queries above.
+    supabase
+      .from("referrals")
+      .select("id, referrer_id, referred_id, reward_status, created_at")
+      .order("created_at", { ascending: false }),
   ]);
 
   const pendingTeacherIds = (pendingTeacherRows ?? []).map((row) => row.id);
@@ -280,6 +291,14 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     createdAt: dateFormatter.format(new Date(row.joined_at)),
   }));
 
+  const referrals: AdminReferral[] = (referralRows ?? []).map((row) => ({
+    id: row.id,
+    referrerName: profileNameById.get(row.referrer_id) ?? "—",
+    referredName: profileNameById.get(row.referred_id) ?? "—",
+    rewardStatus: row.reward_status,
+    createdAt: dateFormatter.format(new Date(row.created_at)),
+  }));
+
   const settingValue = (key: string, fallback: string) =>
     settingsRows?.find((s) => s.key === key)?.value ?? fallback;
   const standardPrice = settingValue("standard_price", "2500");
@@ -338,6 +357,11 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
           items: [
             { key: "subscriptions", label: t("tabs.subscriptions") },
             { key: "siteAds", label: t("tabs.siteAds") },
+            {
+              key: "referrals",
+              label: t("tabs.referrals"),
+              count: referrals.filter((r) => r.rewardStatus === "pending").length,
+            },
           ],
         },
         {
@@ -379,6 +403,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
           />
         ),
         siteAds: <SiteAdsTab initialAds={siteAds} />,
+        referrals: <ReferralsTab initialReferrals={referrals} />,
         flagged: <FlaggedReviewsTab initialReviews={flaggedReviews} />,
         connections: <ConnectionsTab inquiries={connectionInquiries} requests={connectionRequests} />,
       }}

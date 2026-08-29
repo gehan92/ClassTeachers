@@ -201,6 +201,20 @@
     "cancel": "Cancel",
     "justNow": "Just now"
   },
+  "referEarnPanel": {
+    "heading": "Refer & Earn",
+    "subtitle": "Invite another teacher or institute — once they sign up, an admin reviews it and you both get a free month of Premium.",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "tableName": "Name",
+    "tableDate": "Date",
+    "tableStatus": "Status",
+    "status": {
+      "pending": "Pending review",
+      "granted": "Reward granted",
+      "declined": "Declined"
+    }
+  },
   "wantedAdsBrowseTab": {
     "heading": "Student Requests",
     "subtitle": "Students looking for a teacher or institute like you.",
@@ -663,6 +677,7 @@
       "users": "Users",
       "subscriptions": "Subscriptions",
       "siteAds": "Site-wide Ads",
+      "referrals": "Referrals",
       "flagged": "Flagged Reviews",
       "connections": "Connections"
     },
@@ -812,6 +827,26 @@
         "expiring": "Expiring soon",
         "live": "Live"
       }
+    },
+    "referrals": {
+      "title": "Referrals",
+      "subtitle": "Every teacher/institute referral, oldest reward requests first.",
+      "columns": {
+        "referrer": "Referred by",
+        "referred": "New signup",
+        "date": "Date",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "pending": "Pending",
+        "granted": "Granted",
+        "declined": "Declined"
+      },
+      "actions": {
+        "grant": "Grant reward"
+      },
+      "empty": "No referrals yet."
     },
     "flagged": {
       "title": "Flagged Reviews",

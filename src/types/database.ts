@@ -75,6 +75,7 @@ export type Database = {
           availability: string | null;
           notification_prefs: Json;
           preferred_locale: string;
+          referral_code: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -102,6 +103,7 @@ export type Database = {
           availability?: string | null;
           notification_prefs?: Json;
           preferred_locale?: string;
+          referral_code?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -129,11 +131,40 @@ export type Database = {
           availability?: string | null;
           notification_prefs?: Json;
           preferred_locale?: string;
+          referral_code?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
         // every table declares no relationships rather than a guessed one.
+        Relationships: [];
+      };
+
+      referrals: {
+        Row: {
+          id: string;
+          referrer_id: string;
+          referred_id: string;
+          reward_status: "pending" | "granted" | "declined";
+          created_at: string;
+          reward_granted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          referrer_id: string;
+          referred_id: string;
+          reward_status?: "pending" | "granted" | "declined";
+          created_at?: string;
+          reward_granted_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          referrer_id?: string;
+          referred_id?: string;
+          reward_status?: "pending" | "granted" | "declined";
+          created_at?: string;
+          reward_granted_at?: string | null;
+        };
         Relationships: [];
       };
 
@@ -1266,6 +1297,27 @@ export type Database = {
     Views: Record<string, never>;
 
     Functions: {
+      resolve_referral_code: {
+        Args: { p_code: string };
+        Returns: string | null;
+      };
+      ensure_referral_code: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
+      grant_referral_reward: {
+        Args: { p_referral_id: string };
+        Returns: undefined;
+      };
+      list_my_referrals: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          referred_name: string;
+          reward_status: "pending" | "granted" | "declined";
+          created_at: string;
+        }[];
+      };
       is_admin: {
         Args: Record<string, never>;
         Returns: boolean;

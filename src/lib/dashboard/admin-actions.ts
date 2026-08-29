@@ -291,3 +291,27 @@ export async function updatePlatformSetting(input: { key: string; value: string 
   });
   return {};
 }
+
+/**
+ * "Grant reward" on Admin -> Referrals. The actual grant (extending both
+ * sides' platform_subscriptions) happens inside grant_referral_reward
+ * (0089), a SECURITY DEFINER RPC that re-checks is_admin() itself rather
+ * than trusting this requireAdmin() call alone — platform_subscriptions'
+ * own RLS only allows admin/service-role writes at all (0017), specifically
+ * so a compromised account can't self-grant Premium; a referral reward has
+ * to go through that same narrow door, not a service-role bypass.
+ */
+export async function grantReferralReward(referralId: string): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  if ("error" in admin) {
+    return { error: admin.error };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("grant_referral_reward", { p_referral_id: referralId });
+  if (error) {
+    return { error: "Couldn't grant this reward. Please try again." };
+  }
+  await logAdminAction(supabase, admin.userId, "referral_reward_granted", "referral", referralId);
+  return {};
+}

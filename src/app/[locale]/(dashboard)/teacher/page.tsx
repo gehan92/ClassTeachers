@@ -26,6 +26,7 @@ import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import type { TeacherProfileDetail } from "@/types/teacher-profile";
+import type { ReferralRow } from "@/components/dashboard/refer-earn-panel";
 import type { TeacherBatchRow, BatchRosterEntry } from "@/components/dashboard/teacher/classes-tab";
 import type { TeacherNoteRow } from "@/components/dashboard/teacher/notes-tab";
 import type { TeacherStudentRow, TeacherJoinRequestRow } from "@/components/dashboard/teacher/students-tab";
@@ -91,6 +92,8 @@ export default async function TeacherDashboardPage({
     { data: liveClassRows },
     { data: assignmentRows },
     { data: liveProfilePhone },
+    { data: referralCodeValue },
+    { data: myReferralRows },
   ] = await Promise.all([
     supabase.from("profiles").select("full_name, phone, notification_prefs, role").eq("id", userId).single(),
     supabase.from("teacher_profiles").select("*").eq("id", userId).maybeSingle(),
@@ -186,6 +189,10 @@ export default async function TeacherDashboardPage({
     // — called here too so the dashboard's inline "view live page" shows
     // the number exactly as this teacher (viewing their own profile) would.
     supabase.rpc("get_teacher_contact", { p_teacher_id: userId }),
+    // Refer & Earn panel (Settings tab) — lazily assigns a code the first
+    // time it's asked for (referrals, 0089), nothing to backfill up front.
+    supabase.rpc("ensure_referral_code"),
+    supabase.rpc("list_my_referrals"),
   ]);
 
   // Stage 2 — everything here needs an id list derived from a stage-1
@@ -705,6 +712,13 @@ export default async function TeacherDashboardPage({
     publications: teacherProfile?.publications ?? [],
   };
 
+  const referrals: ReferralRow[] = (myReferralRows ?? []).map((row) => ({
+    id: row.id,
+    name: row.referred_name,
+    status: row.reward_status,
+    dateLabel: dateFormatter.format(new Date(row.created_at)),
+  }));
+
   return (
     <DashboardShell
       userLabel={fullName}
@@ -878,6 +892,8 @@ export default async function TeacherDashboardPage({
             initialNotificationPrefs={(profile?.notification_prefs as Record<string, boolean>) ?? {}}
             initialContactMode={teacherProfile?.contact_mode ?? "phone"}
             email={user!.email ?? ""}
+            referralCode={referralCodeValue ?? ""}
+            referrals={referrals}
           />
         ),
       }}

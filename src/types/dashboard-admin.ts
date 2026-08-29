@@ -65,3 +65,11 @@ export type ConnectionJoinRequest = {
   status: "pending" | "accepted" | "declined";
   createdAt: string;
 };
+
+export type AdminReferral = {
+  id: string;
+  referrerName: string;
+  referredName: string;
+  rewardStatus: "pending" | "granted" | "declined";
+  createdAt: string;
+};

@@ -44,6 +44,8 @@ export const signupSchema = z
     instituteName: z.string().trim().optional(),
     location: z.string().trim().optional(),
     physical: z.boolean().optional(),
+    // Optional, any role — a referral code from ?ref= (referrals, 0089).
+    referralCode: z.string().trim().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.role === "teacher") {

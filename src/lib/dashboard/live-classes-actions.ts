@@ -2,11 +2,11 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { resolveBatchOwner } from "@/lib/dashboard/resolve-batch-owner";
 
 type ActionResult = { error: string } | { error?: undefined };
 
 const createLiveClassSchema = z.object({
-  ownerType: z.enum(["teacher", "class"]),
   title: z.string().trim().min(2),
   mode: z.enum(["online", "physical"]),
   location: z.string().trim().optional(),
@@ -27,7 +27,6 @@ const createLiveClassSchema = z.object({
 });
 
 export async function createLiveClass(input: {
-  ownerType: "teacher" | "class";
   title: string;
   mode: "online" | "physical";
   location: string;
@@ -37,7 +36,6 @@ export async function createLiveClass(input: {
   participantStudentIds?: string[];
 }): Promise<ActionResult> {
   const parsed = createLiveClassSchema.safeParse({
-    ownerType: input.ownerType,
     title: input.title,
     mode: input.mode,
     location: input.location || undefined,
@@ -58,25 +56,17 @@ export async function createLiveClass(input: {
     return { error: "You need to be signed in." };
   }
 
-  let ownerId = user.id;
-  if (parsed.data.ownerType === "class") {
-    const { data: classProfile } = await supabase
-      .from("class_profiles")
-      .select("id")
-      .eq("owner_id", user.id)
-      .maybeSingle();
-    if (!classProfile) {
-      return { error: "Save your institute details first." };
-    }
-    ownerId = classProfile.id;
+  const target = await resolveBatchOwner(supabase, user.id, parsed.data.batchId);
+  if ("error" in target) {
+    return target;
   }
 
   const { data: liveClass, error: insertError } = await supabase
     .from("live_classes")
     .insert({
-      owner_type: parsed.data.ownerType,
-      owner_id: ownerId,
-      batch_id: parsed.data.batchId ?? null,
+      owner_type: target.ownerType,
+      owner_id: target.ownerId,
+      batch_id: target.batchId,
       title: parsed.data.title,
       mode: parsed.data.mode,
       location: parsed.data.mode === "physical" ? parsed.data.location || null : null,

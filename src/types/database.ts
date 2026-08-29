@@ -1332,6 +1332,22 @@ export type Database = {
         Args: { p_owner_type: string; p_owner_id: string };
         Returns: boolean;
       };
+      can_manage_class_batch: {
+        Args: { p_batch_id: string };
+        Returns: boolean;
+      };
+      can_manage_content: {
+        Args: { p_owner_type: string; p_owner_id: string; p_batch_id: string | null };
+        Returns: boolean;
+      };
+      can_manage_assignment_content: {
+        Args: { p_owner_type: string; p_owner_id: string; p_batch_id: string | null; p_lesson_id: string | null };
+        Returns: boolean;
+      };
+      is_linked_teacher: {
+        Args: { p_class_id: string };
+        Returns: boolean;
+      };
       is_enrolled: {
         Args: { p_owner_type: string; p_owner_id: string };
         Returns: boolean;

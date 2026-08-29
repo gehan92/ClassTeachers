@@ -12,7 +12,7 @@ import { LockPill } from "@/components/features/lock-pill";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { uploadNote, updateNote, deleteNote, toggleNotePublic } from "@/lib/dashboard/notes-actions";
-import type { TeacherBatchRow } from "./classes-tab";
+import type { TeacherBatchOption } from "./classes-tab";
 
 export type TeacherNoteRow = {
   id: string;
@@ -30,7 +30,7 @@ const ALL_BATCHES_FILTER = "all";
 const MAX_PUBLIC_NOTES = 3;
 const PAGE_SIZE = 10;
 
-export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches: TeacherBatchRow[] }) {
+export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches: TeacherBatchOption[] }) {
   const t = useTranslations("teacherDashboard.notes");
   const tc = useTranslations("teacherDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
@@ -102,7 +102,6 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
     setUploading(true);
     setError(null);
     const formData = new FormData();
-    formData.set("ownerType", "teacher");
     formData.set("title", title.trim());
     if (batchId !== GENERAL_BATCH) formData.set("batchId", batchId);
     formData.set("file", file);

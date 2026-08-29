@@ -2,12 +2,12 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { resolveBatchOwner } from "@/lib/dashboard/resolve-batch-owner";
 
 type ActionResult = { error: string } | { error?: undefined };
 type SubmitExamResult = ActionResult & { autoGrade?: { score: number; maxScore: number } };
 
 const createExamSchema = z.object({
-  ownerType: z.enum(["teacher", "class"]),
   title: z.string().trim().min(2),
   questionIds: z.array(z.string().uuid()).min(1),
   durationMinutes: z.coerce.number().int().min(1),
@@ -27,7 +27,6 @@ const createExamSchema = z.object({
 });
 
 export async function createExam(input: {
-  ownerType: "teacher" | "class";
   title: string;
   questionIds: string[];
   durationMinutes: string;
@@ -37,7 +36,6 @@ export async function createExam(input: {
   revealAnswers?: boolean;
 }): Promise<ActionResult> {
   const parsed = createExamSchema.safeParse({
-    ownerType: input.ownerType,
     title: input.title,
     questionIds: input.questionIds,
     durationMinutes: input.durationMinutes || "60",
@@ -58,25 +56,17 @@ export async function createExam(input: {
     return { error: "You need to be signed in." };
   }
 
-  let ownerId = user.id;
-  if (parsed.data.ownerType === "class") {
-    const { data: classProfile } = await supabase
-      .from("class_profiles")
-      .select("id")
-      .eq("owner_id", user.id)
-      .maybeSingle();
-    if (!classProfile) {
-      return { error: "Save your institute details first." };
-    }
-    ownerId = classProfile.id;
+  const target = await resolveBatchOwner(supabase, user.id, parsed.data.batchId);
+  if ("error" in target) {
+    return target;
   }
 
   const { data: exam, error } = await supabase
     .from("exams")
     .insert({
-      owner_type: parsed.data.ownerType,
-      owner_id: ownerId,
-      batch_id: parsed.data.batchId ?? null,
+      owner_type: target.ownerType,
+      owner_id: target.ownerId,
+      batch_id: target.batchId,
       title: parsed.data.title,
       question_ids: parsed.data.questionIds,
       duration_minutes: parsed.data.durationMinutes,
@@ -348,26 +338,22 @@ export async function gradeSubmission(input: {
 
   const { data: exam } = await supabase
     .from("exams")
-    .select("owner_type, owner_id")
+    .select("owner_type, owner_id, batch_id")
     .eq("id", submission.exam_id)
     .maybeSingle();
   if (!exam) {
     return { error: "Exam not found." };
   }
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  const isAdmin = profile?.role === "admin";
-  let isOwner = exam.owner_type === "teacher" && exam.owner_id === user.id;
-  if (!isOwner && exam.owner_type === "class") {
-    const { data: classProfile } = await supabase
-      .from("class_profiles")
-      .select("id")
-      .eq("owner_id", user.id)
-      .eq("id", exam.owner_id)
-      .maybeSingle();
-    isOwner = Boolean(classProfile);
-  }
-  if (!isOwner && !isAdmin) {
+  // Delegates to the same DB-level check RLS itself uses (0093/0094) rather
+  // than re-deriving "owner, or admin, or a linked teacher assigned to this
+  // batch" in JS a second time and risking the two drifting apart.
+  const { data: canManage } = await supabase.rpc("can_manage_content", {
+    p_owner_type: exam.owner_type,
+    p_owner_id: exam.owner_id,
+    p_batch_id: exam.batch_id,
+  });
+  if (!canManage) {
     return { error: "You don't have permission to grade this submission." };
   }
 

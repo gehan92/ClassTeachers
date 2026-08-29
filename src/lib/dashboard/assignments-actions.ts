@@ -2,11 +2,11 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { resolveAssignmentOwner } from "@/lib/dashboard/resolve-batch-owner";
 
 type ActionResult = { error: string } | { error?: undefined };
 
 const createAssignmentSchema = z.object({
-  ownerType: z.enum(["teacher", "class"]),
   title: z.string().trim().min(2),
   batchId: z.string().uuid().optional(),
   lessonId: z.string().uuid().optional(),
@@ -25,7 +25,6 @@ export async function createAssignment(formData: FormData): Promise<ActionResult
   }
 
   const parsed = createAssignmentSchema.safeParse({
-    ownerType: formData.get("ownerType"),
     title: formData.get("title"),
     batchId: formData.get("batchId") || undefined,
     lessonId: formData.get("lessonId") || undefined,
@@ -43,21 +42,13 @@ export async function createAssignment(formData: FormData): Promise<ActionResult
     return { error: "You need to be signed in." };
   }
 
-  let ownerId = user.id;
-  if (parsed.data.ownerType === "class") {
-    const { data: classProfile } = await supabase
-      .from("class_profiles")
-      .select("id")
-      .eq("owner_id", user.id)
-      .maybeSingle();
-    if (!classProfile) {
-      return { error: "No institute profile found for this account." };
-    }
-    ownerId = classProfile.id;
+  const target = await resolveAssignmentOwner(supabase, user.id, parsed.data.batchId, parsed.data.lessonId);
+  if ("error" in target) {
+    return target;
   }
 
   const assignmentId = crypto.randomUUID();
-  const filePath = `${ownerId}/${assignmentId}.pdf`;
+  const filePath = `${target.ownerId}/${assignmentId}.pdf`;
 
   const { error: uploadError } = await supabase.storage.from("assignments").upload(filePath, file, {
     contentType: "application/pdf",
@@ -69,10 +60,10 @@ export async function createAssignment(formData: FormData): Promise<ActionResult
 
   const { error: insertError } = await supabase.from("assignments").insert({
     id: assignmentId,
-    owner_type: parsed.data.ownerType,
-    owner_id: ownerId,
-    batch_id: parsed.data.batchId ?? null,
-    lesson_id: parsed.data.lessonId ?? null,
+    owner_type: target.ownerType,
+    owner_id: target.ownerId,
+    batch_id: target.batchId,
+    lesson_id: target.lessonId,
     title: parsed.data.title,
     file_path: filePath,
     due_at: parsed.data.dueAt ?? null,
@@ -208,26 +199,23 @@ export async function gradeAssignmentSubmission(input: {
 
   const { data: assignment } = await supabase
     .from("assignments")
-    .select("owner_type, owner_id")
+    .select("owner_type, owner_id, batch_id, lesson_id")
     .eq("id", submission.assignment_id)
     .maybeSingle();
   if (!assignment) {
     return { error: "Assignment not found." };
   }
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  const isAdmin = profile?.role === "admin";
-  let isOwner = assignment.owner_type === "teacher" && assignment.owner_id === user.id;
-  if (!isOwner && assignment.owner_type === "class") {
-    const { data: classProfile } = await supabase
-      .from("class_profiles")
-      .select("id")
-      .eq("owner_id", user.id)
-      .eq("id", assignment.owner_id)
-      .maybeSingle();
-    isOwner = Boolean(classProfile);
-  }
-  if (!isOwner && !isAdmin) {
+  // Delegates to the same DB-level check RLS itself uses (0093/0095) rather
+  // than re-deriving "owner, or admin, or a linked teacher assigned to this
+  // batch/lesson" in JS a second time and risking the two drifting apart.
+  const { data: canManage } = await supabase.rpc("can_manage_assignment_content", {
+    p_owner_type: assignment.owner_type,
+    p_owner_id: assignment.owner_id,
+    p_batch_id: assignment.batch_id,
+    p_lesson_id: assignment.lesson_id,
+  });
+  if (!canManage) {
     return { error: "You don't have permission to grade this submission." };
   }
 

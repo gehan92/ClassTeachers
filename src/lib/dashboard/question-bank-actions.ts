@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { resolveBatchOwner } from "@/lib/dashboard/resolve-batch-owner";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -89,7 +90,6 @@ async function uploadQuestionImage(
 }
 
 export async function createQuestion(formData: FormData): Promise<ActionResult> {
-  const ownerType = formData.get("ownerType");
   const parsed = questionFieldsSchema.safeParse({
     text: formData.get("text"),
     topic: formData.get("topic"),
@@ -100,8 +100,8 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
     marks: formData.get("marks") || "1",
     language: formData.get("language") || "en",
   });
-  if (!parsed.success || (ownerType !== "teacher" && ownerType !== "class")) {
-    return { error: parsed.success ? "Invalid owner." : (parsed.error.issues[0]?.message ?? "Please check the question fields.") };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Please check the question fields." };
   }
 
   const multiSelect = readFlag(formData, "multiSelect");
@@ -128,17 +128,9 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
     return { error: "You need to be signed in." };
   }
 
-  let ownerId = user.id;
-  if (ownerType === "class") {
-    const { data: classProfile } = await supabase
-      .from("class_profiles")
-      .select("id")
-      .eq("owner_id", user.id)
-      .maybeSingle();
-    if (!classProfile) {
-      return { error: "Save your institute details first." };
-    }
-    ownerId = classProfile.id;
+  const target = await resolveBatchOwner(supabase, user.id, parsed.data.batchId);
+  if ("error" in target) {
+    return target;
   }
 
   const questionId = crypto.randomUUID();
@@ -147,7 +139,7 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
   let questionImagePath: string | null = null;
   const questionImage = formData.get("questionImage");
   if (questionImage instanceof File && questionImage.size > 0) {
-    const result = await uploadQuestionImage(supabase, ownerId, questionId, "stem", questionImage);
+    const result = await uploadQuestionImage(supabase, target.ownerId, questionId, "stem", questionImage);
     if (result.error) return { error: result.error };
     questionImagePath = result.path!;
     uploadedPaths.push(result.path!);
@@ -158,7 +150,7 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
     const id = `${questionId}-o${i + 1}`;
     let imagePath: string | undefined;
     if (row.image) {
-      const result = await uploadQuestionImage(supabase, ownerId, questionId, `option-${i}`, row.image);
+      const result = await uploadQuestionImage(supabase, target.ownerId, questionId, `option-${i}`, row.image);
       if (result.error) {
         await supabase.storage.from("question-images").remove(uploadedPaths);
         return { error: result.error };
@@ -175,12 +167,12 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
 
   const { error } = await supabase.from("question_bank_items").insert({
     id: questionId,
-    owner_type: ownerType,
-    owner_id: ownerId,
+    owner_type: target.ownerType,
+    owner_id: target.ownerId,
     question_text: parsed.data.text,
     topic: parsed.data.topic,
     grade_band: parsed.data.gradeBand,
-    batch_id: parsed.data.batchId ?? null,
+    batch_id: target.batchId,
     type: parsed.data.type,
     difficulty: parsed.data.difficulty,
     marks: parsed.data.marks,
@@ -245,13 +237,23 @@ export async function updateQuestion(questionId: string, formData: FormData): Pr
 
   const { data: existing } = await supabase
     .from("question_bank_items")
-    .select("owner_id, options, question_image_path")
+    .select("owner_type, owner_id, options, question_image_path")
     .eq("id", questionId)
-    .eq("owner_type", "teacher")
-    .eq("owner_id", user.id)
     .maybeSingle();
   if (!existing) {
     return { error: "Question not found." };
+  }
+
+  let batchId: string | null = null;
+  if (parsed.data.batchId) {
+    const target = await resolveBatchOwner(supabase, user.id, parsed.data.batchId);
+    if ("error" in target) {
+      return target;
+    }
+    if (target.ownerType !== existing.owner_type || target.ownerId !== existing.owner_id) {
+      return { error: "That class doesn't belong to this question's owner." };
+    }
+    batchId = target.batchId;
   }
 
   const existingImagePathByOptionId = new Map(
@@ -311,7 +313,7 @@ export async function updateQuestion(questionId: string, formData: FormData): Pr
       question_text: parsed.data.text,
       topic: parsed.data.topic,
       grade_band: parsed.data.gradeBand,
-      batch_id: parsed.data.batchId ?? null,
+      batch_id: batchId,
       type: parsed.data.type,
       difficulty: parsed.data.difficulty,
       marks: parsed.data.marks,
@@ -324,9 +326,7 @@ export async function updateQuestion(questionId: string, formData: FormData): Pr
       code_format: codeFormat,
       sample_answer: parsed.data.type === "code" ? sampleAnswer : null,
     })
-    .eq("id", questionId)
-    .eq("owner_type", "teacher")
-    .eq("owner_id", user.id);
+    .eq("id", questionId);
   if (error) {
     if (uploadedPaths.length > 0) await supabase.storage.from("question-images").remove(uploadedPaths);
     return { error: "Couldn't update this question. Please try again." };

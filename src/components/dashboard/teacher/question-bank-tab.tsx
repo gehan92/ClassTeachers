@@ -344,7 +344,6 @@ export function QuestionBankTab({
     if (!form.text.trim() || !form.topic.trim()) return;
 
     const fd = new FormData();
-    if (formMode !== "edit") fd.set("ownerType", "teacher");
     fd.set("text", form.text.trim());
     fd.set("topic", form.topic.trim());
     fd.set("gradeBand", form.gradeBand);

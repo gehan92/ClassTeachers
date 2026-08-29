@@ -93,7 +93,6 @@ export function AssignmentsTab({
     setSaving(true);
     setError(null);
     const formData = new FormData();
-    formData.set("ownerType", "teacher");
     formData.set("title", title.trim());
     if (batchId !== NO_BATCH) formData.set("batchId", batchId);
     if (lessonId !== NO_LESSON) formData.set("lessonId", lessonId);

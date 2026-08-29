@@ -220,7 +220,6 @@ export function ExamsTab({
         ? poolForBatch.filter((s) => !excludedStudentIds.has(s.id)).map((s) => s.id)
         : undefined;
     const result = await createExam({
-      ownerType: "teacher",
       title,
       questionIds: selectedQuestionIds,
       durationMinutes: duration,

@@ -38,6 +38,18 @@ export type TeacherBatchRow = {
   hasActiveAd: boolean;
 };
 
+/**
+ * What notes/exams/live-classes/question-bank/assignments actually need
+ * from a batch to offer it as a content target — id + a display label.
+ * Lets the teacher dashboard (Institute Blueprint step 3b) mix the
+ * teacher's own TeacherBatchRow entries with lightweight entries for their
+ * assigned institute batches (labeled "{Institute} — {Batch}") in the same
+ * selector, without those institute batches needing to fake values for
+ * fields (mode/location/gradeBand/...) that only the Classes tab's own
+ * batch-management UI actually uses.
+ */
+export type TeacherBatchOption = { id: string; title: string };
+
 export type BatchRosterEntry = {
   name: string;
   joinedAt: string;

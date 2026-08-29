@@ -122,7 +122,6 @@ export function LiveClassesTab({
         ? poolForNewBatch.filter((s) => !excludedStudentIds.has(s.id)).map((s) => s.id)
         : undefined;
     const result = await createLiveClass({
-      ownerType: "teacher",
       title: newTitle,
       mode: newMode,
       location: newLocation,

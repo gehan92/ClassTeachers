@@ -27,7 +27,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import type { TeacherProfileDetail } from "@/types/teacher-profile";
 import type { ReferralRow } from "@/components/dashboard/refer-earn-panel";
-import type { TeacherBatchRow, BatchRosterEntry } from "@/components/dashboard/teacher/classes-tab";
+import type { TeacherBatchRow, TeacherBatchOption, BatchRosterEntry } from "@/components/dashboard/teacher/classes-tab";
 import type { TeacherNoteRow } from "@/components/dashboard/teacher/notes-tab";
 import type { TeacherStudentRow, TeacherJoinRequestRow } from "@/components/dashboard/teacher/students-tab";
 import type { TeacherLiveClassRow } from "@/components/dashboard/teacher/live-classes-tab";
@@ -95,6 +95,7 @@ export default async function TeacherDashboardPage({
     { data: referralCodeValue },
     { data: myReferralRows },
     { data: instituteInviteRows },
+    { data: assignedInstituteBatchRows },
   ] = await Promise.all([
     supabase.from("profiles").select("full_name, phone, notification_prefs, role").eq("id", userId).single(),
     supabase.from("teacher_profiles").select("*").eq("id", userId).maybeSingle(),
@@ -197,6 +198,11 @@ export default async function TeacherDashboardPage({
     // Institute Blueprint step 1 (0091) — invites this teacher hasn't
     // responded to yet. Surfaced in the Settings tab.
     supabase.from("class_teachers").select("class_id, joined_at").eq("teacher_id", userId).eq("status", "pending"),
+    // Institute Blueprint step 3b — batches this teacher is assigned to
+    // inside an institute (0091's taught_by_teacher_id), offered as a
+    // content target alongside their own batches in notes/exams/live-
+    // classes/question-bank/assignments.
+    supabase.from("batches").select("id, title, owner_id").eq("taught_by_teacher_id", userId),
   ]);
 
   // Stage 2 — everything here needs an id list derived from a stage-1
@@ -738,6 +744,22 @@ export default async function TeacherDashboardPage({
     dateLabel: dateFormatter.format(new Date(row.joined_at)),
   }));
 
+  // Institute Blueprint step 3b — label each assigned batch with its
+  // institute's name so it reads clearly alongside the teacher's own
+  // batches in the same selector, e.g. "Horizon Institute — A/L Maths".
+  const assignedInstituteIds = [...new Set((assignedInstituteBatchRows ?? []).map((row) => row.owner_id))];
+  const { data: assignedInstituteRows } = assignedInstituteIds.length
+    ? await supabase.from("class_profiles").select("id, name").in("id", assignedInstituteIds)
+    : { data: [] as { id: string; name: string }[] };
+  const assignedInstituteNameById = new Map((assignedInstituteRows ?? []).map((row) => [row.id, row.name]));
+  const contentTargetBatches: TeacherBatchOption[] = [
+    ...batches.map((b) => ({ id: b.id, title: b.title })),
+    ...(assignedInstituteBatchRows ?? []).map((b) => ({
+      id: b.id,
+      title: `${assignedInstituteNameById.get(b.owner_id) ?? "—"} — ${b.title}`,
+    })),
+  ];
+
   return (
     <DashboardShell
       userLabel={fullName}
@@ -844,15 +866,15 @@ export default async function TeacherDashboardPage({
             liveView={<TeacherProfileView teacher={liveProfile} showGate={false} isOwnerView />}
           />
         ),
-        notes: <NotesTab notes={notes} batches={batches} />,
+        notes: <NotesTab notes={notes} batches={contentTargetBatches} />,
         classes: <ClassesTab batches={batches} rosterByBatch={rosterByBatch} isCampusLecturer={isCampusLecturer} />,
-        questionBank: <QuestionBankTab initialQuestions={questions} batches={batches} />,
+        questionBank: <QuestionBankTab initialQuestions={questions} batches={contentTargetBatches} />,
         exams: (
           <ExamsTab
             exams={exams}
             submissions={examSubmissions}
             questions={questions}
-            batches={batches.map((b) => ({ id: b.id, title: b.title, studentCount: rosterByBatch[b.id]?.length ?? 0 }))}
+            batches={contentTargetBatches.map((b) => ({ id: b.id, title: b.title, studentCount: rosterByBatch[b.id]?.length ?? 0 }))}
             totalStudentsCount={acceptedEnrollments.length}
             studentPool={acceptedEnrollments.map((e) => ({
               id: e.student_id,
@@ -865,7 +887,7 @@ export default async function TeacherDashboardPage({
           <AssignmentsTab
             assignments={assignments}
             submissions={assignmentSubmissions}
-            batches={batches}
+            batches={contentTargetBatches}
             lessons={lessonOptions}
           />
         ),
@@ -873,7 +895,7 @@ export default async function TeacherDashboardPage({
           <LiveClassesTab
             classes={liveClasses}
             hostName={fullName}
-            batches={batches.map((b) => ({ id: b.id, title: b.title, studentCount: rosterByBatch[b.id]?.length ?? 0 }))}
+            batches={contentTargetBatches.map((b) => ({ id: b.id, title: b.title, studentCount: rosterByBatch[b.id]?.length ?? 0 }))}
             totalStudentsCount={acceptedEnrollments.length}
             studentPool={acceptedEnrollments.map((e) => ({
               id: e.student_id,

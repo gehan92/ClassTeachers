@@ -1026,6 +1026,7 @@
     "groupAccount": "கணக்கு",
     "tabs": {
       "overview": "கண்ணோட்டம்",
+      "progress": "முன்னேற்றம்",
       "classes": "என் வகுப்புகள்",
       "live": "நேரடி வகுப்புகள்",
       "notes": "டியூட்ஸ் மற்றும் குறிப்புகள்",
@@ -1060,6 +1061,34 @@
       "actionNotesEmptyTitle": "இதுவரை குறிப்புகள் இல்லை",
       "actionNotesEmptyBody": "உங்கள் ஆசிரியர்கள் இன்னும் குறிப்புகள் எதையும் பகிரவில்லை.",
       "actionNotesCta": "குறிப்புகளுக்குச் செல்லுங்கள்"
+    },
+    "progress": {
+      "heading": "முன்னேற்றம்",
+      "subtitle": "வருகை, தேர்வு முடிவுகள் மற்றும் பணி மதிப்பெண்கள் ஒரே இடத்தில்.",
+      "statAttendance": "வருகை விகிதம்",
+      "statSessions": "பதிவு செய்யப்பட்ட அமர்வுகள்",
+      "statExamsGraded": "மதிப்பிடப்பட்ட தேர்வுகள்",
+      "statAssignmentsGraded": "மதிப்பிடப்பட்ட பணிகள்",
+      "attendanceHeading": "வருகை",
+      "attendanceEmpty": "இதுவரை வருகை பதிவு செய்யப்படவில்லை — நீங்கள் ஒரு நேரடி வகுப்பில் சேரும்போது இது நிரம்பும்.",
+      "attendanceStatus": {
+        "present": "வந்துள்ளார்",
+        "absent": "வரவில்லை",
+        "late": "தாமதம்"
+      },
+      "examsHeading": "தேர்வு முடிவுகள்",
+      "examsEmpty": "இதுவரை தேர்வுகள் இல்லை.",
+      "assignmentsHeading": "பணி முடிவுகள்",
+      "assignmentsEmpty": "இதுவரை பணிகள் இல்லை.",
+      "tableSession": "அமர்வு",
+      "tableTeacher": "ஆசிரியர்",
+      "tableDate": "தேதி",
+      "tableStatus": "நிலை",
+      "tableExam": "தேர்வு",
+      "tableGrade": "மதிப்பெண்",
+      "tableAssignment": "பணி",
+      "statusGraded": "மதிப்பிடப்பட்டது",
+      "statusPending": "நிலுவையில்"
     },
     "classes": {
       "title": "என் வகுப்புகள்",

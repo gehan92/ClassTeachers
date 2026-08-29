@@ -1026,6 +1026,7 @@
     "groupAccount": "ගිණුම",
     "tabs": {
       "overview": "දළ විශ්ලේෂණය",
+      "progress": "ප්‍රගතිය",
       "classes": "මගේ පන්ති",
       "live": "සජීවී පන්ති",
       "notes": "ටියුට් සහ සටහන්",
@@ -1060,6 +1061,34 @@
       "actionNotesEmptyTitle": "තවම සටහන් නැත",
       "actionNotesEmptyBody": "ඔබේ ගුරුවරුන් තවම සටහන් කිසිවක් බෙදාගෙන නැත.",
       "actionNotesCta": "සටහන් වෙත යන්න"
+    },
+    "progress": {
+      "heading": "ප්‍රගතිය",
+      "subtitle": "පැමිණීම, විභාග ප්‍රතිඵල සහ පැවරුම් ලකුණු එක් තැනකින්.",
+      "statAttendance": "පැමිණීමේ අනුපාතය",
+      "statSessions": "සටහන් කළ සැසි",
+      "statExamsGraded": "ලකුණු දුන් විභාග",
+      "statAssignmentsGraded": "ලකුණු දුන් පැවරුම්",
+      "attendanceHeading": "පැමිණීම",
+      "attendanceEmpty": "තවම පැමිණීමක් වාර්තා වී නැත — ඔබ සජීවී පන්තියකට එකතු වූ පසු මෙය පිරී යනු ඇත.",
+      "attendanceStatus": {
+        "present": "පැමිණියා",
+        "absent": "නොපැමිණියා",
+        "late": "ප්‍රමාද වී"
+      },
+      "examsHeading": "විභාග ප්‍රතිඵල",
+      "examsEmpty": "තවම විභාග නැත.",
+      "assignmentsHeading": "පැවරුම් ප්‍රතිඵල",
+      "assignmentsEmpty": "තවම පැවරුම් නැත.",
+      "tableSession": "සැසිය",
+      "tableTeacher": "ගුරුවරයා",
+      "tableDate": "දිනය",
+      "tableStatus": "තත්ත්වය",
+      "tableExam": "විභාගය",
+      "tableGrade": "ලකුණු",
+      "tableAssignment": "පැවරුම",
+      "statusGraded": "ලකුණු දී ඇත",
+      "statusPending": "පොරොත්තුවෙන්"
     },
     "classes": {
       "title": "මගේ පන්ති",

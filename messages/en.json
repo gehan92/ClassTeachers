@@ -1026,6 +1026,7 @@
     "groupAccount": "Account",
     "tabs": {
       "overview": "Overview",
+      "progress": "Progress",
       "classes": "My Classes",
       "live": "Live Classes",
       "notes": "Tutes & Notes",
@@ -1060,6 +1061,34 @@
       "actionNotesEmptyTitle": "No notes yet",
       "actionNotesEmptyBody": "Your teachers haven't shared any notes yet.",
       "actionNotesCta": "Go to Notes"
+    },
+    "progress": {
+      "heading": "Progress",
+      "subtitle": "Attendance, exam results and assignment grades in one place.",
+      "statAttendance": "Attendance rate",
+      "statSessions": "Sessions tracked",
+      "statExamsGraded": "Exams graded",
+      "statAssignmentsGraded": "Assignments graded",
+      "attendanceHeading": "Attendance",
+      "attendanceEmpty": "No attendance recorded yet — it fills in once you join a live class.",
+      "attendanceStatus": {
+        "present": "Present",
+        "absent": "Absent",
+        "late": "Late"
+      },
+      "examsHeading": "Exam results",
+      "examsEmpty": "No exams yet.",
+      "assignmentsHeading": "Assignment results",
+      "assignmentsEmpty": "No assignments yet.",
+      "tableSession": "Session",
+      "tableTeacher": "Teacher",
+      "tableDate": "Date",
+      "tableStatus": "Status",
+      "tableExam": "Exam",
+      "tableGrade": "Grade",
+      "tableAssignment": "Assignment",
+      "statusGraded": "Graded",
+      "statusPending": "Pending"
     },
     "classes": {
       "title": "My Classes",

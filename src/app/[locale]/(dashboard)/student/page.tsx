@@ -12,6 +12,8 @@ import { SettingsTab } from "@/components/dashboard/student/settings-tab";
 import { WantedAdsTab } from "@/components/dashboard/student/wanted-ads-tab";
 import { SentInquiriesTab } from "@/components/dashboard/student/sent-inquiries-tab";
 import type { SentInquiryRow, SentInquiryMessage } from "@/components/dashboard/student/sent-inquiries-tab";
+import { ProgressTab } from "@/components/dashboard/student/progress-tab";
+import type { ProgressAttendanceRow } from "@/components/dashboard/student/progress-tab";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import type { MyClassRow, AvailableBatchRow } from "@/components/dashboard/student/classes-tab";
@@ -79,6 +81,7 @@ export default async function StudentDashboardPage({
     { data: wantedAdResponseRows },
     { data: publicWantedAdRows },
     { data: myInquiryRows },
+    { data: attendanceRows },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -139,6 +142,15 @@ export default async function StudentDashboardPage({
       .select("id, owner_type, owner_id, message, created_at")
       .eq("inquirer_id", userId)
       .order("created_at", { ascending: false }),
+    // Progress tab (Growth Plan item 4) — attendance was never surfaced to
+    // the student at all before this, only ever shown on the teacher side.
+    // RLS (0033) already lets a student read their own rows directly, no
+    // RPC needed.
+    supabase
+      .from("attendance_records")
+      .select("id, live_class_id, status, marked_at")
+      .eq("student_id", userId)
+      .order("marked_at", { ascending: false }),
   ]);
 
   const fullName = profile?.full_name ?? user!.email ?? "Student";
@@ -366,6 +378,28 @@ export default async function StudentDashboardPage({
   function ownerName(ownerType: "teacher" | "class", ownerId: string) {
     return (ownerType === "teacher" ? teacherNameById.get(ownerId) : classNameById.get(ownerId)) ?? "—";
   }
+
+  // Deliberately built from allLiveClassRows (every live class ever held by
+  // an enrolled teacher/class), not the visibility-filtered liveClassRows
+  // below — attendance is a historical record, a past session shouldn't
+  // disappear from it just because it's no longer "upcoming".
+  const liveClassInfoById = new Map(allLiveClassRows.map((r) => [r.id, r]));
+  const attendanceHistory: ProgressAttendanceRow[] = (attendanceRows ?? []).flatMap((row) => {
+    const session = liveClassInfoById.get(row.live_class_id);
+    if (!session) return [];
+    return [
+      {
+        id: row.id,
+        sessionTitle: session.title,
+        teacherName: ownerName(session.ownerType, session.owner_id),
+        dateLabel: dateFormatter.format(new Date(session.scheduled_at)),
+        status: row.status,
+      },
+    ];
+  });
+  const presentCount = attendanceHistory.filter((a) => a.status !== "absent").length;
+  const attendanceRatePercent =
+    attendanceHistory.length > 0 ? Math.round((presentCount / attendanceHistory.length) * 100) : null;
 
   const liveClasses: StudentLiveClassRow[] = liveClassRows.map((row) => ({
     id: row.id,
@@ -647,7 +681,10 @@ export default async function StudentDashboardPage({
       realtimeWatch={[{ table: "live_class_reminders", filter: `student_id=eq.${userId}` }]}
       groups={[
         {
-          items: [{ key: "overview", label: t("tabs.overview") }],
+          items: [
+            { key: "overview", label: t("tabs.overview") },
+            { key: "progress", label: t("tabs.progress") },
+          ],
         },
         {
           label: t("groupClasses"),
@@ -686,6 +723,14 @@ export default async function StudentDashboardPage({
             examsDueCount={examsDueCount}
             dueExamTitles={dueExamTitles}
             notesCount={studentNotes.length}
+          />
+        ),
+        progress: (
+          <ProgressTab
+            attendance={attendanceHistory}
+            attendanceRatePercent={attendanceRatePercent}
+            exams={exams}
+            assignments={assignments}
           />
         ),
         classes: <ClassesTab myClasses={myClasses} availableBatches={availableBatches} />,

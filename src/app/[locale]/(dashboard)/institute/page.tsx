@@ -53,7 +53,7 @@ export default async function InstituteDashboardPage({
   // wait, since they need teacherIds out of classTeacherRows first.
   const [
     { data: classTeacherRows },
-    { count: studentsCount },
+    { data: instituteEnrollmentRows },
     { data: reviewRows },
     { data: priceRow },
     { data: adRow },
@@ -66,13 +66,12 @@ export default async function InstituteDashboardPage({
     instituteId
       ? supabase.from("class_teachers").select("teacher_id, is_visible, status").eq("class_id", instituteId)
       : Promise.resolve({ data: [] as { teacher_id: string; is_visible: boolean; status: "pending" | "accepted" | "declined" }[] }),
+    // Row count would now overcount — a student can hold more than one
+    // class at this institute (0092), so this needs the distinct student
+    // behind those rows, not the row count itself.
     instituteId
-      ? supabase
-          .from("enrollments")
-          .select("id", { count: "exact", head: true })
-          .eq("owner_type", "class")
-          .eq("owner_id", instituteId)
-      : Promise.resolve({ count: 0 }),
+      ? supabase.from("enrollments").select("student_id").eq("owner_type", "class").eq("owner_id", instituteId)
+      : Promise.resolve({ data: [] as { student_id: string }[] }),
     instituteId
       ? supabase.from("reviews").select("rating").eq("target_type", "class").eq("target_id", instituteId)
       : Promise.resolve({ data: [] as { rating: number }[] }),
@@ -148,6 +147,7 @@ export default async function InstituteDashboardPage({
 
   const isVisibleById = new Map((classTeacherRows ?? []).map((row) => [row.teacher_id, row.is_visible]));
   const rosterStatusById = new Map((classTeacherRows ?? []).map((row) => [row.teacher_id, row.status]));
+  const studentsCount = new Set((instituteEnrollmentRows ?? []).map((row) => row.student_id)).size;
 
   const inquiryIds = (inquiryRows ?? []).map((row) => row.id);
   const { data: inquiryMessageRows } = inquiryIds.length
@@ -361,7 +361,7 @@ export default async function InstituteDashboardPage({
           <OverviewTab
             instituteName={fullName}
             teachersCount={acceptedTeacherIds.length}
-            studentsCount={studentsCount ?? 0}
+            studentsCount={studentsCount}
             averageRating={averageRating}
             batchesCount={batches.length}
             teachersAtGlance={teachersAtGlance}

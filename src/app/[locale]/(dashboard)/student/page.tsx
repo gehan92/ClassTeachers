@@ -423,6 +423,23 @@ export default async function StudentDashboardPage({
   const joinedOwnerKeys = new Set(
     (enrollments ?? []).filter((e) => e.status !== "declined").map((e) => `${e.owner_type}:${e.owner_id}`),
   );
+  // A student can now hold more than one batch at the same institute
+  // (0091/0092), so "already joined" for a class-owned batch has to be
+  // scoped to that specific batch — otherwise joining one class at an
+  // institute would wrongly hide every other class it offers. Teacher-
+  // owned batches keep the old owner-level behavior (joinedOwnerKeys
+  // above): a student still only ever has one relationship with a given
+  // teacher, whichever of their batches it's through.
+  const joinedClassBatchIds = new Set(
+    (enrollments ?? [])
+      .filter((e) => e.status !== "declined" && e.owner_type === "class" && e.batch_id)
+      .map((e) => e.batch_id as string),
+  );
+  const joinedClassOwnerKeysWithNoBatch = new Set(
+    (enrollments ?? [])
+      .filter((e) => e.status !== "declined" && e.owner_type === "class" && !e.batch_id)
+      .map((e) => e.owner_id),
+  );
   const enrolledBatchIds = new Set(
     (enrollments ?? [])
       .filter((e) => e.status === "accepted")
@@ -448,7 +465,11 @@ export default async function StudentDashboardPage({
     });
 
   const availableBatches: AvailableBatchRow[] = (allBatches ?? [])
-    .filter((b) => !joinedOwnerKeys.has(`${b.owner_type}:${b.owner_id}`))
+    .filter((b) =>
+      b.owner_type === "teacher"
+        ? !joinedOwnerKeys.has(`teacher:${b.owner_id}`)
+        : !joinedClassBatchIds.has(b.id) && !joinedClassOwnerKeysWithNoBatch.has(b.owner_id),
+    )
     .map((b) => ({
       id: b.id,
       title: b.title,

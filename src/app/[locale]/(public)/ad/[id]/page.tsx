@@ -52,12 +52,16 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
   if (user) {
     const [{ data: profile }, { data: existing }] = await Promise.all([
       supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+      // Scoped to this ad's specific batch, not just the teacher overall —
+      // a student already enrolled in one of this teacher's other batches
+      // (0091/0092) can still request to join this one.
       supabase
         .from("enrollments")
         .select("status")
         .eq("student_id", user.id)
         .eq("owner_type", "teacher")
         .eq("owner_id", ad.teacher_id)
+        .eq("batch_id", ad.batch_id)
         .maybeSingle(),
     ]);
     viewerRole = profile?.role ?? null;

@@ -2,8 +2,10 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Json } from "@/types/database";
 
 type ActionResult = { error: string } | { error?: undefined };
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
 async function requireAdmin(): Promise<{ userId: string } | { error: string }> {
   const supabase = await createClient();
@@ -18,6 +20,22 @@ async function requireAdmin(): Promise<{ userId: string } | { error: string }> {
     return { error: "You don't have permission to do that." };
   }
   return { userId: user.id };
+}
+
+/** Best-effort trail for Admin -> everything below — audit_log (0018) was
+ * always correctly RLS-locked but nothing ever wrote to it, so there was no
+ * actual record of admin actions. Never blocks the action it's logging on
+ * its own failure; the underlying change already happened by the time this
+ * is called. */
+async function logAdminAction(
+  supabase: SupabaseClient,
+  actorId: string,
+  action: string,
+  targetType: string | null,
+  targetId: string | null,
+  metadata: Record<string, Json> = {},
+): Promise<void> {
+  await supabase.from("audit_log").insert({ actor_id: actorId, action, target_type: targetType, target_id: targetId, metadata });
 }
 
 /**
@@ -44,6 +62,9 @@ export async function resolveApproval(input: {
   if (error) {
     return { error: "Couldn't update this listing. Please try again." };
   }
+  await logAdminAction(supabase, admin.userId, "listing_approval_decision", input.kind, input.id, {
+    decision: input.decision,
+  });
   return {};
 }
 
@@ -84,6 +105,9 @@ export async function setInstitutionVerified(input: { teacherId: string; verifie
   if (error) {
     return { error: "Couldn't update this. Please try again." };
   }
+  await logAdminAction(supabase, admin.userId, "institution_verified_change", "teacher", input.teacherId, {
+    verified: input.verified,
+  });
   return {};
 }
 
@@ -144,6 +168,12 @@ export async function setUserSuspended(input: { userId: string; suspended: boole
   if (error) {
     return { error: "Couldn't update this user. Please try again." };
   }
+  // Service-role client above bypasses RLS entirely, so the log write goes
+  // through the caller's own RLS-bound client instead — audit_log's insert
+  // policy requires actor_id = auth.uid(), which only that session has.
+  await logAdminAction(await createClient(), admin.userId, "user_suspension_change", "profile", input.userId, {
+    suspended: input.suspended,
+  });
   return {};
 }
 
@@ -169,26 +199,33 @@ export async function createSiteAd(input: {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("advertisements").insert({
-    owner_type: "site",
-    owner_id: null,
-    title: input.sponsor.trim(),
-    plan: input.plan,
-    placement: input.placement,
-    expires_at: input.expiresAt,
-  });
+  const { data: ad, error } = await supabase
+    .from("advertisements")
+    .insert({
+      owner_type: "site",
+      owner_id: null,
+      title: input.sponsor.trim(),
+      plan: input.plan,
+      placement: input.placement,
+      expires_at: input.expiresAt,
+    })
+    .select("id")
+    .single();
   if (error) {
     return { error: "Couldn't create this ad. Please try again." };
   }
+  await logAdminAction(supabase, admin.userId, "site_ad_created", "advertisement", ad?.id ?? null, {
+    sponsor: input.sponsor.trim(),
+    plan: input.plan,
+    placement: input.placement,
+  });
   return {};
 }
 
 /**
  * Keep/Remove on Admin -> Flagged Reviews. `reviews.is_flagged` (0015) is
- * the queue source; nothing sets it to true yet (the student/teacher/
- * institute review tabs are still mock data, not wired), so this queue will
- * be empty until those are fixed too — that's correct behavior, not a bug
- * in this action.
+ * the queue source, set by the reviewed teacher/institute's own flagReview
+ * action (reviews-actions.ts).
  */
 export async function resolveFlaggedReview(input: { id: string; decision: "keep" | "remove" }): Promise<ActionResult> {
   const admin = await requireAdmin();
@@ -202,6 +239,7 @@ export async function resolveFlaggedReview(input: { id: string; decision: "keep"
     if (error) {
       return { error: "Couldn't remove this review. Please try again." };
     }
+    await logAdminAction(supabase, admin.userId, "review_removed", "review", input.id);
     return {};
   }
 
@@ -209,6 +247,7 @@ export async function resolveFlaggedReview(input: { id: string; decision: "keep"
   if (error) {
     return { error: "Couldn't update this review. Please try again." };
   }
+  await logAdminAction(supabase, admin.userId, "review_kept", "review", input.id);
   return {};
 }
 
@@ -232,5 +271,9 @@ export async function updatePlatformSetting(input: { key: string; value: string 
   if (error) {
     return { error: "Couldn't save this setting. Please try again." };
   }
+  await logAdminAction(supabase, admin.userId, "platform_setting_updated", "platform_setting", null, {
+    key: input.key,
+    value: input.value,
+  });
   return {};
 }

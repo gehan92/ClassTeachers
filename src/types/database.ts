@@ -1493,6 +1493,18 @@ export type Database = {
           created_at: string;
         }[];
       };
+      get_my_question_answers: {
+        Args: Record<string, never>;
+        Returns: { id: string; correct_option_id: string | null; correct_option_ids: string[]; sample_answer: string | null }[];
+      };
+      grade_mcq_answers: {
+        Args: { p_question_ids: string[]; p_answers: Json };
+        Returns: { question_id: string; is_correct: boolean }[];
+      };
+      get_revealed_question_answers: {
+        Args: { p_exam_ids: string[] };
+        Returns: { exam_id: string; question_id: string; correct_option_ids: string[]; sample_answer: string | null }[];
+      };
     };
 
     Enums: Record<string, never>;

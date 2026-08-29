@@ -86,6 +86,7 @@ export default async function TeacherDashboardPage({
     { data: subjectLinkRows },
     { data: batchAdRows },
     { data: questionRows },
+    { data: questionAnswerRows },
     { data: examDetailRows },
     { data: liveClassRows },
     { data: assignmentRows },
@@ -151,11 +152,17 @@ export default async function TeacherDashboardPage({
     supabase
       .from("question_bank_items")
       .select(
-        "id, question_text, topic, grade_band, batch_id, type, difficulty, marks, language, options, correct_option_ids, multi_select, code_format, sample_answer, question_image_path",
+        "id, question_text, topic, grade_band, batch_id, type, difficulty, marks, language, options, multi_select, code_format, question_image_path",
       )
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
       .order("created_at", { ascending: false }),
+    // correct_option_id/correct_option_ids/sample_answer are revoke()d from
+    // ordinary SELECT on question_bank_items (0085) — even for the owning
+    // teacher — precisely so a direct table query can never read the answer
+    // key. This RPC is the one legitimate path back to it, scoped to
+    // exactly the questions this caller owns (or all of them, if admin).
+    supabase.rpc("get_my_question_answers"),
     supabase
       .from("exams")
       .select("id, title, question_ids, duration_minutes, scheduled_at, batch_id, published, reveal_answers")
@@ -437,27 +444,32 @@ export default async function TeacherDashboardPage({
     if (entry.path && entry.signedUrl) questionImageUrlByPath.set(entry.path, entry.signedUrl);
   }
 
-  const questions: QuestionBankItem[] = (questionRows ?? []).map((q) => ({
-    id: q.id,
-    text: q.question_text,
-    topic: q.topic ?? "",
-    gradeBand: (q.grade_band ?? "12-13") as QuestionBankItem["gradeBand"],
-    batchId: q.batch_id ?? undefined,
-    type: q.type,
-    difficulty: q.difficulty,
-    marks: q.marks,
-    language: (q.language ?? "en") as QuestionBankItem["language"],
-    imageUrl: q.question_image_path ? questionImageUrlByPath.get(q.question_image_path) : undefined,
-    options: ((q.options as RawQuestionOption[] | null) ?? undefined)?.map((o) => ({
-      id: o.id,
-      text: o.text,
-      imageUrl: o.imagePath ? questionImageUrlByPath.get(o.imagePath) : undefined,
-    })),
-    correctOptionIds: q.correct_option_ids.length > 0 ? q.correct_option_ids : undefined,
-    multiSelect: q.multi_select,
-    codeFormat: q.code_format,
-    sampleAnswer: q.sample_answer ?? undefined,
-  }));
+  const answersByQuestionId = new Map((questionAnswerRows ?? []).map((a) => [a.id, a]));
+
+  const questions: QuestionBankItem[] = (questionRows ?? []).map((q) => {
+    const answers = answersByQuestionId.get(q.id);
+    return {
+      id: q.id,
+      text: q.question_text,
+      topic: q.topic ?? "",
+      gradeBand: (q.grade_band ?? "12-13") as QuestionBankItem["gradeBand"],
+      batchId: q.batch_id ?? undefined,
+      type: q.type,
+      difficulty: q.difficulty,
+      marks: q.marks,
+      language: (q.language ?? "en") as QuestionBankItem["language"],
+      imageUrl: q.question_image_path ? questionImageUrlByPath.get(q.question_image_path) : undefined,
+      options: ((q.options as RawQuestionOption[] | null) ?? undefined)?.map((o) => ({
+        id: o.id,
+        text: o.text,
+        imageUrl: o.imagePath ? questionImageUrlByPath.get(o.imagePath) : undefined,
+      })),
+      correctOptionIds: answers && answers.correct_option_ids.length > 0 ? answers.correct_option_ids : undefined,
+      multiSelect: q.multi_select,
+      codeFormat: q.code_format,
+      sampleAnswer: answers?.sample_answer ?? undefined,
+    };
+  });
 
   const signedUrlByPath = new Map<string, string>();
   for (const entry of signedUrls ?? []) {

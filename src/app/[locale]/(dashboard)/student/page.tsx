@@ -137,6 +137,15 @@ export default async function StudentDashboardPage({
   const classesCount = acceptedEnrollments.length;
   const submissionByExamId = new Map((submissionRows ?? []).map((s) => [s.exam_id, s]));
   const allExamIds = (examRows ?? []).map((e) => e.id);
+  // Exactly the exams this student is allowed to see the answer key for —
+  // graded AND the teacher opted the exam into reveal_answers (0079). Passed
+  // to get_revealed_question_answers below rather than fetching for every
+  // exam and filtering client-side, since the RPC itself re-checks both
+  // conditions server-side regardless (see 0085's comment on why that
+  // recheck can't be skipped).
+  const revealedExamIds = (examRows ?? [])
+    .filter((e) => e.reveal_answers && submissionByExamId.get(e.id)?.status === "graded")
+    .map((e) => e.id);
   const teacherIds = acceptedEnrollments.filter((e) => e.owner_type === "teacher").map((e) => e.owner_id);
   const classIds = acceptedEnrollments.filter((e) => e.owner_type === "class").map((e) => e.owner_id);
   const teacherOwnerIds = new Set<string>();
@@ -157,6 +166,7 @@ export default async function StudentDashboardPage({
     { data: classOwners },
     { data: signedSubmissionUrls },
     { data: signedAssignmentUrls },
+    { data: revealedAnswerRows },
   ] = await Promise.all([
     // An exam can be narrowed by batch and/or an explicit hand-picked
     // student list (0060/0061) — is_enrolled_in_exam() is the one place
@@ -200,6 +210,15 @@ export default async function StudentDashboardPage({
     assignmentFilePaths.length > 0
       ? supabase.storage.from("assignments").createSignedUrls(assignmentFilePaths, 3600)
       : Promise.resolve({ data: [] as { path: string | null; signedUrl: string }[] }),
+    // correct_option_ids/sample_answer are revoke()d from ordinary SELECT on
+    // question_bank_items (0085) — this RPC is the only path back to them,
+    // and it only returns a row for an exam already confirmed graded +
+    // revealed above, re-checked server-side.
+    revealedExamIds.length
+      ? supabase.rpc("get_revealed_question_answers", { p_exam_ids: revealedExamIds })
+      : Promise.resolve({
+          data: [] as { exam_id: string; question_id: string; correct_option_ids: string[]; sample_answer: string | null }[],
+        }),
   ]);
 
   const visibleExamIdSet = new Set(visibleExamIds ?? []);
@@ -227,9 +246,7 @@ export default async function StudentDashboardPage({
     allQuestionIds.length
       ? supabase
           .from("question_bank_items")
-          .select(
-            "id, question_text, type, marks, options, multi_select, code_format, correct_option_ids, sample_answer, question_image_path",
-          )
+          .select("id, question_text, type, marks, options, multi_select, code_format, question_image_path")
           .in("id", allQuestionIds)
       : Promise.resolve({
           data: [] as {
@@ -240,12 +257,14 @@ export default async function StudentDashboardPage({
             options: unknown;
             multi_select: boolean;
             code_format: boolean;
-            correct_option_ids: string[];
-            sample_answer: string | null;
             question_image_path: string | null;
           }[],
         }),
   ]);
+
+  const revealedAnswersByKey = new Map(
+    (revealedAnswerRows ?? []).map((r) => [`${r.exam_id}:${r.question_id}`, r]),
+  );
 
   const visibleIdSet = new Set(visibleLiveClassIds ?? []);
   const liveClassRows = allLiveClassRows.filter((r) => visibleIdSet.has(r.id));
@@ -253,13 +272,12 @@ export default async function StudentDashboardPage({
   const nextLiveLabel = nextLive ? scheduleFormatter.format(new Date(nextLive.scheduled_at)) : null;
   const liveClassIds = liveClassRows.map((r) => r.id);
 
-  // correct_option_ids/sample_answer ARE selected above, but must only ever
-  // reach the browser for a specific exam once that exam is both graded and
-  // has reveal_answers on (0079) — see the exams.map below, which is the one
-  // place that decides whether to forward them into StudentExamQuestion.
-  // Leaking them unconditionally would defeat the point of not showing the
-  // answer key during the exam, and would leak reused question-bank items
-  // into exams that never opted in.
+  // correct_option_ids/sample_answer are no longer selected above at all —
+  // they're revoke()d at the database (0085) — so questionById never carries
+  // them. revealedAnswersByKey (built above from get_revealed_question_
+  // answers, keyed by exam+question) is the only source for them, and it
+  // only ever contains entries for an exam already confirmed graded +
+  // revealed, so the exams.map below can look them up unconditionally.
   const questionById = new Map(
     (examQuestionRows ?? []).map((q) => [q.id, { ...q, options: (q.options as RawQuestionOption[] | null) ?? null }]),
   );
@@ -392,6 +410,7 @@ export default async function StudentDashboardPage({
         .map((qid): StudentExamQuestion | null => {
           const q = questionById.get(qid);
           if (!q) return null;
+          const revealed = revealedAnswersByKey.get(`${e.id}:${qid}`);
           return {
             id: q.id,
             text: q.question_text,
@@ -405,8 +424,8 @@ export default async function StudentDashboardPage({
             })),
             multiSelect: q.multi_select,
             codeFormat: q.code_format,
-            correctOptionIds: canReveal ? q.correct_option_ids : undefined,
-            sampleAnswer: canReveal ? (q.sample_answer ?? undefined) : undefined,
+            correctOptionIds: revealed?.correct_option_ids,
+            sampleAnswer: revealed?.sample_answer ?? undefined,
           };
         })
         .filter((q): q is StudentExamQuestion => q !== null),

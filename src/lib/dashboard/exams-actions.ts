@@ -241,11 +241,8 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
   }
 
   const { data: questionRows } = exam.question_ids.length
-    ? await supabase
-        .from("question_bank_items")
-        .select("id, type, marks, correct_option_ids")
-        .in("id", exam.question_ids)
-    : { data: [] as { id: string; type: "mcq" | "essay" | "code"; marks: number; correct_option_ids: string[] }[] };
+    ? await supabase.from("question_bank_items").select("id, type, marks").in("id", exam.question_ids)
+    : { data: [] as { id: string; type: "mcq" | "essay" | "code"; marks: number }[] };
 
   const mcqQuestions = (questionRows ?? []).filter((q) => q.type === "mcq");
   const codeQuestions = (questionRows ?? []).filter((q) => q.type === "code");
@@ -262,15 +259,24 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
     return { error: "Please answer the code questions before submitting." };
   }
 
+  // Grading goes through a SECURITY DEFINER RPC rather than reading
+  // correct_option_ids directly — that column is revoke()d from ordinary
+  // SELECT (0085) precisely so a student's own RLS-bound session, which is
+  // what this action runs as, can never read the answer key itself, only a
+  // per-question correct/incorrect verdict.
+  const { data: mcqResults } = mcqQuestions.length
+    ? await supabase.rpc("grade_mcq_answers", {
+        p_question_ids: mcqQuestions.map((q) => q.id),
+        p_answers: mcqAnswers,
+      })
+    : { data: [] as { question_id: string; is_correct: boolean }[] };
+  const correctByQuestionId = new Map((mcqResults ?? []).map((r) => [r.question_id, r.is_correct]));
+
   let mcqScore = 0;
   let mcqMaxScore = 0;
   for (const q of mcqQuestions) {
     mcqMaxScore += q.marks;
-    const correctSet = new Set(q.correct_option_ids);
-    const selectedSet = new Set(mcqAnswers[q.id] ?? []);
-    const isCorrect =
-      correctSet.size > 0 && correctSet.size === selectedSet.size && [...correctSet].every((id) => selectedSet.has(id));
-    if (isCorrect) {
+    if (correctByQuestionId.get(q.id)) {
       mcqScore += q.marks;
     }
   }

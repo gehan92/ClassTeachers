@@ -476,7 +476,11 @@
       "label": "Choose your role",
       "student": {
         "tag": "Learner",
-        "label": "Student / Parent"
+        "label": "Student"
+      },
+      "parent": {
+        "tag": "Guardian",
+        "label": "Parent"
       },
       "teacher": {
         "tag": "Individual",

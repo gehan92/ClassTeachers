@@ -5,5 +5,5 @@
  * "use client", and a plain value export from a client-boundary module isn't
  * reliably carried into the server bundle a Server Action runs in.
  */
-export const signupRoles = ["student", "teacher", "class", "lecturer"] as const;
+export const signupRoles = ["student", "parent", "teacher", "class", "lecturer"] as const;
 export type SignupRole = (typeof signupRoles)[number];

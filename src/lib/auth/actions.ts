@@ -250,7 +250,11 @@ export async function signUpAction(
   } = parsed.data;
   // The role picker's "lecturer" option is a campus lecturer under the hood
   // (same dashboard as a teacher, see types/dashboard.ts's DemoRole comment).
-  const dbRole: UserRole = role === "lecturer" ? "campus_lecturer" : role;
+  // "parent" is the same account as "student" under the hood too — a parent
+  // managing a young child's learning needs exactly the same dashboard
+  // (browse, enroll, track progress, message teachers), just a different
+  // front door at signup than a university student registering themselves.
+  const dbRole: UserRole = role === "lecturer" ? "campus_lecturer" : role === "parent" ? "student" : role;
 
   // Stashed on auth user_metadata rather than written straight to
   // teacher_profiles here: signUp doesn't always return a session (email

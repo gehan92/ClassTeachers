@@ -38,7 +38,7 @@ import type {
   AssignmentSubmissionRow,
   TeacherLessonOption,
 } from "@/components/dashboard/teacher/assignments-tab";
-import type { InquiryRow } from "@/components/dashboard/inquiries-tab";
+import type { InquiryRow, InquiryMessageRow } from "@/components/dashboard/inquiries-tab";
 import type { WantedAdBrowseRow } from "@/components/dashboard/wanted-ads-browse-tab";
 
 type RawQuestionOption = { id: string; text: string; imagePath?: string };
@@ -113,7 +113,7 @@ export default async function TeacherDashboardPage({
     supabase.from("exam_submissions").select("id, exam_id").eq("status", "pending"),
     supabase
       .from("inquiries")
-      .select("id, sender_name, sender_contact, message, status, reply, created_at")
+      .select("id, sender_name, sender_contact, message, status, created_at")
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
       .order("created_at", { ascending: false }),
@@ -204,6 +204,7 @@ export default async function TeacherDashboardPage({
   const liveClassIds = (liveClassRows ?? []).map((c) => c.id);
   const assignmentFilePaths = (assignmentRows ?? []).map((a) => a.file_path);
   const assignmentIds = (assignmentRows ?? []).map((a) => a.id);
+  const inquiryIds = (inquiryRows ?? []).map((i) => i.id);
 
   const [
     { data: subjectRows },
@@ -215,6 +216,7 @@ export default async function TeacherDashboardPage({
     { data: participantRows },
     { data: signedAssignmentUrls },
     { data: assignmentSubmissionRows },
+    { data: inquiryMessageRows },
   ] = await Promise.all([
     subjectIds.length
       ? supabase.from("subjects").select("id, translations, grade_band").in("id", subjectIds)
@@ -282,6 +284,15 @@ export default async function TeacherDashboardPage({
             submitted_at: string;
           }[],
         }),
+    inquiryIds.length
+      ? supabase
+          .from("inquiry_messages")
+          .select("id, inquiry_id, sender_role, body, created_at")
+          .in("inquiry_id", inquiryIds)
+          .order("created_at", { ascending: true })
+      : Promise.resolve({
+          data: [] as { id: string; inquiry_id: string; sender_role: "owner" | "inquirer"; body: string; created_at: string }[],
+        }),
   ]);
 
   // Stage 3 — signed URLs for submission photos, only knowable once stage 2
@@ -306,13 +317,24 @@ export default async function TeacherDashboardPage({
   const userInitial = fullName.charAt(0).toUpperCase();
   const isCampusLecturer = profile?.role === "campus_lecturer";
 
+  const inquiryMessagesByInquiryId = new Map<string, InquiryMessageRow[]>();
+  for (const row of inquiryMessageRows ?? []) {
+    const list = inquiryMessagesByInquiryId.get(row.inquiry_id) ?? [];
+    list.push({
+      id: row.id,
+      senderRole: row.sender_role,
+      body: row.body,
+      createdLabel: dateFormatter.format(new Date(row.created_at)),
+    });
+    inquiryMessagesByInquiryId.set(row.inquiry_id, list);
+  }
   const inquiries: InquiryRow[] = (inquiryRows ?? []).map((row) => ({
     id: row.id,
     senderName: row.sender_name,
     senderContact: row.sender_contact,
     message: row.message,
     status: row.status,
-    reply: row.reply,
+    messages: inquiryMessagesByInquiryId.get(row.id) ?? [],
     createdLabel: dateFormatter.format(new Date(row.created_at)),
   }));
 

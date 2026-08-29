@@ -182,10 +182,24 @@
     "delete": "මකන්න",
     "confirmDelete": "මෙම පණිවිඩය මකන්නද?",
     "reply": "පිළිතුරු දෙන්න",
+    "replyAgain": "තවත් පණිවිඩයක් යවන්න",
     "replyPlaceholder": "ඔබේ පිළිතුර ලියන්න...",
     "sendReply": "පිළිතුර යවන්න",
     "cancelReply": "අවලංගු කරන්න",
-    "yourReply": "ඔබේ පිළිතුර"
+    "yourReply": "ඔබේ පිළිතුර",
+    "justNow": "දැන්"
+  },
+  "sentInquiriesTab": {
+    "heading": "මගේ පණිවිඩ",
+    "subtitle": "එකතු වීමට පෙර ඔබ ගුරුවරුන් සහ ආයතන සමඟ ආරම්භ කළ සංවාද.",
+    "empty": "ඔබ තවම කිසිවෙකුට පණිවිඩයක් යවා නැත — ගුරුවරයෙකුගේ හෝ ආයතනයක පැතිකඩකින් සම්බන්ධ වන්න.",
+    "you": "ඔබ",
+    "reply": "පිළිතුරු දෙන්න",
+    "replyAgain": "තවත් පණිවිඩයක් යවන්න",
+    "messagePlaceholder": "ඔබේ පණිවිඩය ලියන්න...",
+    "send": "යවන්න",
+    "cancel": "අවලංගු කරන්න",
+    "justNow": "දැන්"
   },
   "wantedAdsBrowseTab": {
     "heading": "සිසුන්ගේ ඉල්ලීම්",
@@ -1020,7 +1034,8 @@
       "profile": "පැතිකඩ",
       "assignments": "පැවරුම්",
       "settings": "සැකසුම්",
-      "wantedAds": "දැන්වීමක් පළ කරන්න"
+      "wantedAds": "දැන්වීමක් පළ කරන්න",
+      "inquiries": "මගේ පණිවිඩ"
     },
     "overview": {
       "greeting": "සුබ සන්ධ්‍යාවක්, {name}",

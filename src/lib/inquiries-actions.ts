@@ -65,21 +65,22 @@ export async function markInquiryRead(id: string): Promise<ActionResult> {
   return {};
 }
 
-const replySchema = z.object({
+const messageSchema = z.object({
   id: z.string().uuid(),
-  reply: z.string().trim().min(1),
+  body: z.string().trim().min(1),
 });
 
 /**
- * A single reply, not a thread — the sender may not even have an account
- * (anonymous inquiries are allowed, 0037), so there's nowhere for a
- * back-and-forth to live on their side. This just closes the loop on the
- * teacher's end of the original one-way contact form.
+ * The owner's (teacher/institute) side of a real thread (0088) — was a
+ * single reply column, now one message among many. Still just closes the
+ * loop for a guest sender with no account (inquirer_id null): they have no
+ * way to ever see this, same limitation as before 0088, just now living in
+ * a table instead of a column.
  */
-export async function replyToInquiry(id: string, reply: string): Promise<ActionResult> {
-  const parsed = replySchema.safeParse({ id, reply });
+export async function replyToInquiry(id: string, body: string): Promise<ActionResult> {
+  const parsed = messageSchema.safeParse({ id, body });
   if (!parsed.success) {
-    return { error: "Please write a reply first." };
+    return { error: "Please write a message first." };
   }
 
   const supabase = await createClient();
@@ -90,12 +91,51 @@ export async function replyToInquiry(id: string, reply: string): Promise<ActionR
     return { error: "You need to be signed in." };
   }
 
-  const { error } = await supabase
-    .from("inquiries")
-    .update({ reply: parsed.data.reply, replied_at: new Date().toISOString(), status: "read" })
-    .eq("id", parsed.data.id);
+  const { error: insertError } = await supabase
+    .from("inquiry_messages")
+    .insert({ inquiry_id: parsed.data.id, sender_role: "owner", body: parsed.data.body });
+  if (insertError) {
+    return { error: "Couldn't send your reply. Please try again." };
+  }
+  const { error } = await supabase.from("inquiries").update({ status: "read" }).eq("id", parsed.data.id);
   if (error) {
     return { error: "Couldn't send your reply. Please try again." };
+  }
+  return {};
+}
+
+/**
+ * The inquirer's (student) side of the same thread — only reachable when
+ * they were signed in at the moment they submitted the inquiry (0037's
+ * submit_inquiry stashes auth.uid() as inquirer_id); RLS on inquiry_messages
+ * enforces that sender_role: 'inquirer' can only be inserted by that exact
+ * account.
+ */
+export async function sendInquirerMessage(id: string, body: string): Promise<ActionResult> {
+  const parsed = messageSchema.safeParse({ id, body });
+  if (!parsed.success) {
+    return { error: "Please write a message first." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error: insertError } = await supabase
+    .from("inquiry_messages")
+    .insert({ inquiry_id: parsed.data.id, sender_role: "inquirer", body: parsed.data.body });
+  if (insertError) {
+    return { error: "Couldn't send your message. Please try again." };
+  }
+  // Flips the owner's badge/bell back on — otherwise it stays "read" forever
+  // after their first reply and they'd never notice a follow-up arrived.
+  const { error } = await supabase.from("inquiries").update({ status: "new" }).eq("id", parsed.data.id);
+  if (error) {
+    return { error: "Couldn't send your message. Please try again." };
   }
   return {};
 }

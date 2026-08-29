@@ -182,10 +182,24 @@
     "delete": "Delete",
     "confirmDelete": "Delete this message?",
     "reply": "Reply",
+    "replyAgain": "Send another message",
     "replyPlaceholder": "Write your reply...",
     "sendReply": "Send reply",
     "cancelReply": "Cancel",
-    "yourReply": "Your reply"
+    "yourReply": "Your reply",
+    "justNow": "Just now"
+  },
+  "sentInquiriesTab": {
+    "heading": "My Messages",
+    "subtitle": "Conversations you've started with teachers and institutes before joining.",
+    "empty": "You haven't messaged anyone yet — reach out from a teacher or institute's profile.",
+    "you": "You",
+    "reply": "Reply",
+    "replyAgain": "Send another message",
+    "messagePlaceholder": "Write your message...",
+    "send": "Send",
+    "cancel": "Cancel",
+    "justNow": "Just now"
   },
   "wantedAdsBrowseTab": {
     "heading": "Student Requests",
@@ -1020,7 +1034,8 @@
       "reviews": "My Reviews",
       "profile": "Profile",
       "settings": "Settings",
-      "wantedAds": "Post an Ad"
+      "wantedAds": "Post an Ad",
+      "inquiries": "My Messages"
     },
     "overview": {
       "greeting": "Good evening, {name}",

@@ -6,7 +6,7 @@ import { BatchesTab } from "@/components/dashboard/institute/batches-tab";
 import { AdvertisementTab } from "@/components/dashboard/institute/advertisement-tab";
 import { ReviewsTab } from "@/components/dashboard/institute/reviews-tab";
 import { SettingsTab } from "@/components/dashboard/institute/settings-tab";
-import { InquiriesTab, type InquiryRow } from "@/components/dashboard/inquiries-tab";
+import { InquiriesTab, type InquiryRow, type InquiryMessageRow } from "@/components/dashboard/inquiries-tab";
 import { WantedAdsBrowseTab, type WantedAdBrowseRow } from "@/components/dashboard/wanted-ads-browse-tab";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter } from "@/lib/format-date";
@@ -90,7 +90,7 @@ export default async function InstituteDashboardPage({
     instituteId
       ? supabase
           .from("inquiries")
-          .select("id, sender_name, sender_contact, message, status, reply, created_at")
+          .select("id, sender_name, sender_contact, message, status, created_at")
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
           .order("created_at", { ascending: false })
@@ -101,7 +101,6 @@ export default async function InstituteDashboardPage({
             sender_contact: string;
             message: string;
             status: "new" | "read";
-            reply: string | null;
             created_at: string;
           }[],
         }),
@@ -129,6 +128,15 @@ export default async function InstituteDashboardPage({
   const teacherIds = (classTeacherRows ?? []).map((row) => row.teacher_id);
 
   const isVisibleById = new Map((classTeacherRows ?? []).map((row) => [row.teacher_id, row.is_visible]));
+
+  const inquiryIds = (inquiryRows ?? []).map((row) => row.id);
+  const { data: inquiryMessageRows } = inquiryIds.length
+    ? await supabase
+        .from("inquiry_messages")
+        .select("id, inquiry_id, sender_role, body, created_at")
+        .in("inquiry_id", inquiryIds)
+        .order("created_at", { ascending: true })
+    : { data: [] as { id: string; inquiry_id: string; sender_role: "owner" | "inquirer"; body: string; created_at: string }[] };
 
   let teachersAtGlance: TeachersAtGlance[] = [];
   let instituteTeachers: InstituteTeacherRow[] = [];
@@ -204,13 +212,24 @@ export default async function InstituteDashboardPage({
     : null;
 
   const dateFormatter = createDateFormatter(locale);
+  const inquiryMessagesByInquiryId = new Map<string, InquiryMessageRow[]>();
+  for (const row of inquiryMessageRows ?? []) {
+    const list = inquiryMessagesByInquiryId.get(row.inquiry_id) ?? [];
+    list.push({
+      id: row.id,
+      senderRole: row.sender_role,
+      body: row.body,
+      createdLabel: dateFormatter.format(new Date(row.created_at)),
+    });
+    inquiryMessagesByInquiryId.set(row.inquiry_id, list);
+  }
   const inquiries: InquiryRow[] = (inquiryRows ?? []).map((row) => ({
     id: row.id,
     senderName: row.sender_name,
     senderContact: row.sender_contact,
     message: row.message,
     status: row.status,
-    reply: row.reply,
+    messages: inquiryMessagesByInquiryId.get(row.id) ?? [],
     createdLabel: dateFormatter.format(new Date(row.created_at)),
   }));
   const wantedAdRequests: WantedAdBrowseRow[] = (wantedAdRows ?? []).map((row) => ({

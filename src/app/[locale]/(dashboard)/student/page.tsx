@@ -10,6 +10,8 @@ import { ReviewsTab } from "@/components/dashboard/student/reviews-tab";
 import { ProfileTab } from "@/components/dashboard/student/profile-tab";
 import { SettingsTab } from "@/components/dashboard/student/settings-tab";
 import { WantedAdsTab } from "@/components/dashboard/student/wanted-ads-tab";
+import { SentInquiriesTab } from "@/components/dashboard/student/sent-inquiries-tab";
+import type { SentInquiryRow, SentInquiryMessage } from "@/components/dashboard/student/sent-inquiries-tab";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import type { MyClassRow, AvailableBatchRow } from "@/components/dashboard/student/classes-tab";
@@ -76,6 +78,7 @@ export default async function StudentDashboardPage({
     { data: subjectRows },
     { data: wantedAdResponseRows },
     { data: publicWantedAdRows },
+    { data: myInquiryRows },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -128,6 +131,14 @@ export default async function StudentDashboardPage({
     // show a few real, other-students' requests as posting inspiration
     // (never fake sample text), filtered down to a handful below.
     supabase.rpc("list_public_wanted_ads"),
+    // Inquiries this student sent (0037) — only reachable at all because
+    // they were signed in when they submitted one, which stashed their
+    // auth.uid() as inquirer_id (0088 opened read access to that).
+    supabase
+      .from("inquiries")
+      .select("id, owner_type, owner_id, message, created_at")
+      .eq("inquirer_id", userId)
+      .order("created_at", { ascending: false }),
   ]);
 
   const fullName = profile?.full_name ?? user!.email ?? "Student";
@@ -156,6 +167,20 @@ export default async function StudentDashboardPage({
   const submissionPhotoPaths = (assignmentSubmissionRows ?? []).flatMap((s) => s.photo_urls ?? []);
   const assignmentFilePaths = (assignmentRows ?? []).map((a) => a.file_path);
 
+  // An inquiry target isn't necessarily someone the student has joined —
+  // that's the whole point of inquiries — so it can't reuse
+  // get_enrolled_teacher_names below (relationship-gated). class_profiles'
+  // own SELECT policy is already public for any approved+published row
+  // (0036), so class targets fold straight into the existing lookup;
+  // teacher targets not already covered by an enrollment get resolved
+  // separately via get_public_teacher_profile (masked name, same as what
+  // the student already saw when they sent the inquiry).
+  const inquiryOnlyTeacherIds = new Set<string>();
+  for (const inq of myInquiryRows ?? []) {
+    if (inq.owner_type === "class") classOwnerIds.add(inq.owner_id);
+    else if (!teacherOwnerIds.has(inq.owner_id)) inquiryOnlyTeacherIds.add(inq.owner_id);
+  }
+
   // Stage 2 — everything here needs a stage-1 result, but nothing here
   // depends on anything else in this stage.
   const [
@@ -167,6 +192,8 @@ export default async function StudentDashboardPage({
     { data: signedSubmissionUrls },
     { data: signedAssignmentUrls },
     { data: revealedAnswerRows },
+    inquiryOnlyTeacherProfiles,
+    { data: myInquiryMessageRows },
   ] = await Promise.all([
     // An exam can be narrowed by batch and/or an explicit hand-picked
     // student list (0060/0061) — is_enrolled_in_exam() is the one place
@@ -218,6 +245,24 @@ export default async function StudentDashboardPage({
       ? supabase.rpc("get_revealed_question_answers", { p_exam_ids: revealedExamIds })
       : Promise.resolve({
           data: [] as { exam_id: string; question_id: string; correct_option_ids: string[]; sample_answer: string | null }[],
+        }),
+    // No batch equivalent of get_public_teacher_profile exists — one call
+    // per distinct id, but this is bounded by how many different teachers
+    // this student has ever inquired about (typically a handful).
+    Promise.all(
+      [...inquiryOnlyTeacherIds].map((id) => supabase.rpc("get_public_teacher_profile", { p_teacher_id: id })),
+    ),
+    myInquiryRows?.length
+      ? supabase
+          .from("inquiry_messages")
+          .select("id, inquiry_id, sender_role, body, created_at")
+          .in(
+            "inquiry_id",
+            myInquiryRows.map((i) => i.id),
+          )
+          .order("created_at", { ascending: true })
+      : Promise.resolve({
+          data: [] as { id: string; inquiry_id: string; sender_role: "owner" | "inquirer"; body: string; created_at: string }[],
         }),
   ]);
 
@@ -313,6 +358,10 @@ export default async function StudentDashboardPage({
   const campusLecturerTeacherIds = new Set(
     (teacherOwners ?? []).filter((p) => p.is_campus_lecturer).map((p) => p.id),
   );
+  for (const { data: rows } of inquiryOnlyTeacherProfiles) {
+    const teacher = rows?.[0];
+    if (teacher?.display_name) teacherNameById.set(teacher.id, teacher.display_name);
+  }
   const classNameById = new Map((classOwners ?? []).map((c) => [c.id, c.name]));
   function ownerName(ownerType: "teacher" | "class", ownerId: string) {
     return (ownerType === "teacher" ? teacherNameById.get(ownerId) : classNameById.get(ownerId)) ?? "—";
@@ -567,6 +616,26 @@ export default async function StudentDashboardPage({
     date: dateFormatter.format(new Date(r.created_at)),
   }));
 
+  const inquiryMessagesByInquiryId = new Map<string, SentInquiryMessage[]>();
+  for (const row of myInquiryMessageRows ?? []) {
+    const list = inquiryMessagesByInquiryId.get(row.inquiry_id) ?? [];
+    list.push({
+      id: row.id,
+      senderRole: row.sender_role,
+      body: row.body,
+      createdLabel: dateFormatter.format(new Date(row.created_at)),
+    });
+    inquiryMessagesByInquiryId.set(row.inquiry_id, list);
+  }
+  const myInquiries: SentInquiryRow[] = (myInquiryRows ?? []).map((row) => ({
+    id: row.id,
+    ownerType: row.owner_type as "teacher" | "class",
+    targetName: ownerName(row.owner_type as "teacher" | "class", row.owner_id),
+    message: row.message,
+    messages: inquiryMessagesByInquiryId.get(row.id) ?? [],
+    createdLabel: dateFormatter.format(new Date(row.created_at)),
+  }));
+
   return (
     <DashboardShell
       userLabel={fullName}
@@ -586,6 +655,7 @@ export default async function StudentDashboardPage({
             { key: "classes", label: t("tabs.classes") },
             { key: "live", label: t("tabs.live") },
             { key: "wantedAds", label: t("tabs.wantedAds"), count: unreadResponsesCount },
+            { key: "inquiries", label: t("tabs.inquiries") },
           ],
         },
         {
@@ -628,6 +698,7 @@ export default async function StudentDashboardPage({
             sampleAds={sampleWantedAds}
           />
         ),
+        inquiries: <SentInquiriesTab inquiries={myInquiries} />,
         notes: <NotesTab notes={studentNotes} studentName={fullName} />,
         exams: <ExamsTab exams={exams} />,
         assignments: <AssignmentsTab assignments={assignments} />,

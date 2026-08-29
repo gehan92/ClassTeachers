@@ -1082,8 +1082,6 @@ export type Database = {
           sender_contact: string;
           message: string;
           status: "new" | "read";
-          reply: string | null;
-          replied_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -1095,8 +1093,6 @@ export type Database = {
           sender_contact: string;
           message: string;
           status?: "new" | "read";
-          reply?: string | null;
-          replied_at?: string | null;
           created_at?: string;
         };
         Update: {
@@ -1108,12 +1104,35 @@ export type Database = {
           sender_contact?: string;
           message?: string;
           status?: "new" | "read";
-          reply?: string | null;
-          replied_at?: string | null;
           created_at?: string;
         };
         // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
         // every table declares no relationships rather than a guessed one.
+        Relationships: [];
+      };
+
+      inquiry_messages: {
+        Row: {
+          id: string;
+          inquiry_id: string;
+          sender_role: "owner" | "inquirer";
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          inquiry_id: string;
+          sender_role: "owner" | "inquirer";
+          body: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          inquiry_id?: string;
+          sender_role?: "owner" | "inquirer";
+          body?: string;
+          created_at?: string;
+        };
         Relationships: [];
       };
 

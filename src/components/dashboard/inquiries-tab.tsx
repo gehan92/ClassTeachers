@@ -6,13 +6,20 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/features/status-badge";
 import { markInquiryRead, deleteInquiry, replyToInquiry } from "@/lib/inquiries-actions";
 
+export type InquiryMessageRow = {
+  id: string;
+  senderRole: "owner" | "inquirer";
+  body: string;
+  createdLabel: string;
+};
+
 export type InquiryRow = {
   id: string;
   senderName: string;
   senderContact: string;
   message: string;
   status: "new" | "read";
-  reply: string | null;
+  messages: InquiryMessageRow[];
   createdLabel: string;
 };
 
@@ -39,9 +46,11 @@ export function InquiriesTab({ inquiries: initialInquiries }: { inquiries: Inqui
     setInquiries((list) => list.filter((inquiry) => inquiry.id !== id));
   }
 
-  function handleReplied(id: string, reply: string) {
+  function handleSent(id: string, message: InquiryMessageRow) {
     setInquiries((list) =>
-      list.map((inquiry) => (inquiry.id === id ? { ...inquiry, reply, status: "read" } : inquiry)),
+      list.map((inquiry) =>
+        inquiry.id === id ? { ...inquiry, messages: [...inquiry.messages, message], status: "read" } : inquiry,
+      ),
     );
   }
 
@@ -65,7 +74,7 @@ export function InquiriesTab({ inquiries: initialInquiries }: { inquiries: Inqui
                 inquiry={inquiry}
                 onMarkRead={handleMarkRead}
                 onDelete={handleDelete}
-                onReplied={handleReplied}
+                onSent={handleSent}
               />
             ))}
           </div>
@@ -79,15 +88,15 @@ function InquiryItem({
   inquiry,
   onMarkRead,
   onDelete,
-  onReplied,
+  onSent,
 }: {
   inquiry: InquiryRow;
   onMarkRead: (id: string) => void;
   onDelete: (id: string) => void;
-  onReplied: (id: string, reply: string) => void;
+  onSent: (id: string, message: InquiryMessageRow) => void;
 }) {
   const t = useTranslations("inquiriesTab");
-  const [replying, setReplying] = useState(false);
+  const [composing, setComposing] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
   const [replyError, setReplyError] = useState<string | null>(null);
@@ -102,8 +111,13 @@ function InquiryItem({
       setReplyError(result.error);
       return;
     }
-    onReplied(inquiry.id, replyText);
-    setReplying(false);
+    onSent(inquiry.id, {
+      id: `local-${Date.now()}`,
+      senderRole: "owner",
+      body: replyText,
+      createdLabel: t("justNow"),
+    });
+    setComposing(false);
     setReplyText("");
   }
 
@@ -121,37 +135,51 @@ function InquiryItem({
         {t("contactLabel")}: {inquiry.senderContact}
       </p>
 
-      {inquiry.reply ? (
-        <div className="mt-1 rounded-md bg-secondary/60 px-3 py-2">
-          <p className="mb-0.5 text-xs font-semibold text-muted-foreground">{t("yourReply")}</p>
-          <p className="text-sm text-foreground/85">{inquiry.reply}</p>
-        </div>
-      ) : (
-        replying && (
-          <div className="mt-1 flex flex-col gap-2">
-            <textarea
-              className="min-h-20 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              placeholder={t("replyPlaceholder")}
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-            />
-            <div className="flex items-center gap-2">
-              <Button type="button" size="sm" onClick={handleSendReply} disabled={sending || !replyText.trim()}>
-                {t("sendReply")}
-              </Button>
-              <Button type="button" size="sm" variant="ghost" onClick={() => setReplying(false)}>
-                {t("cancelReply")}
-              </Button>
-              {replyError && <span className="text-sm font-medium text-destructive">{replyError}</span>}
+      {inquiry.messages.length > 0 && (
+        <div className="mt-1 flex flex-col gap-2">
+          {inquiry.messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={
+                msg.senderRole === "owner"
+                  ? "rounded-md bg-secondary/60 px-3 py-2"
+                  : "rounded-md border border-dashed border-border px-3 py-2"
+              }
+            >
+              <p className="mb-0.5 text-xs font-semibold text-muted-foreground">
+                {msg.senderRole === "owner" ? t("yourReply") : inquiry.senderName}
+              </p>
+              <p className="text-sm text-foreground/85">{msg.body}</p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">{msg.createdLabel}</p>
             </div>
+          ))}
+        </div>
+      )}
+
+      {composing && (
+        <div className="mt-1 flex flex-col gap-2">
+          <textarea
+            className="min-h-20 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            placeholder={t("replyPlaceholder")}
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+          />
+          <div className="flex items-center gap-2">
+            <Button type="button" size="sm" onClick={handleSendReply} disabled={sending || !replyText.trim()}>
+              {t("sendReply")}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setComposing(false)}>
+              {t("cancelReply")}
+            </Button>
+            {replyError && <span className="text-sm font-medium text-destructive">{replyError}</span>}
           </div>
-        )
+        </div>
       )}
 
       <div className="flex justify-end gap-2">
-        {!inquiry.reply && !replying && (
-          <Button type="button" variant="ghost" size="sm" onClick={() => setReplying(true)}>
-            {t("reply")}
+        {!composing && (
+          <Button type="button" variant="ghost" size="sm" onClick={() => setComposing(true)}>
+            {inquiry.messages.length > 0 ? t("replyAgain") : t("reply")}
           </Button>
         )}
         {inquiry.status === "new" && (

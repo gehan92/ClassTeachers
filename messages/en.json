@@ -663,7 +663,8 @@
     "classesWithinInstitute": "Classes within this institute",
     "instituteReviewsTitle": "{count} institute reviews · {rating} average",
     "instituteDetailsTitle": "Institute details",
-    "generalRateHelper": "Applies when a student joins the institute generally, rather than a specific teacher."
+    "generalRateHelper": "Applies when a student joins the institute generally, rather than a specific teacher.",
+    "teachersAtInstitute": "Teachers at this institute"
   },
   "adminDashboard": {
     "logout": "Log out",

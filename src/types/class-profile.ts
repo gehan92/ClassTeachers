@@ -1,6 +1,21 @@
 import type { ReviewDisplay } from "./review";
 import type { ClassBatch } from "./class-batch";
 
+/** One roster card on the institute's public page (Institute Blueprint step
+ * 4a) — from list_institute_teachers(), accepted+visible+approved only. */
+export type InstituteTeacherCard = {
+  id: string;
+  displayName: string;
+  photoUrl: string | null;
+  headline: string | null;
+  subjects: string[];
+  hourlyRate?: number;
+  monthlyRate?: number;
+  rating: number;
+  reviewCount: number;
+  isCampusLecturer: boolean;
+};
+
 /**
  * Full detail shape for a public institute/class profile page. Mirrors
  * class_profiles (0005) + prices (owner_type 'class') + reviews (0015) +
@@ -28,4 +43,5 @@ export type ClassProfileDetail = {
   batches: ClassBatch[];
   reviews: ReviewDisplay[];
   phone: string | null;
+  teachers: InstituteTeacherCard[];
 };

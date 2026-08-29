@@ -1453,6 +1453,21 @@ export type Database = {
           institution_verified: boolean;
         }[];
       };
+      list_institute_teachers: {
+        Args: { p_class_id: string };
+        Returns: {
+          teacher_id: string;
+          display_name: string | null;
+          photo_url: string | null;
+          headline: string | null;
+          subjects: string[];
+          hourly_rate: number | null;
+          monthly_rate: number | null;
+          rating: number;
+          review_count: number;
+          is_campus_lecturer: boolean;
+        }[];
+      };
       resolve_subject: {
         Args: { subject_name: string };
         Returns: string;

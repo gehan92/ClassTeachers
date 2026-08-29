@@ -663,7 +663,8 @@
     "classesWithinInstitute": "මෙම ආයතනය තුළ පන්ති",
     "instituteReviewsTitle": "ආයතන සමාලෝචන {count} · සාමාන්‍යය {rating}",
     "instituteDetailsTitle": "ආයතන විස්තර",
-    "generalRateHelper": "සිසුවෙකු නිශ්චිත ගුරුවරයෙකුට වඩා සාමාන්‍යයෙන් ආයතනයට එකතු වන විට අදාළ වේ."
+    "generalRateHelper": "සිසුවෙකු නිශ්චිත ගුරුවරයෙකුට වඩා සාමාන්‍යයෙන් ආයතනයට එකතු වන විට අදාළ වේ.",
+    "teachersAtInstitute": "මෙම ආයතනයේ ගුරුවරුන්"
   },
   "adminDashboard": {
     "logout": "පිටවන්න",

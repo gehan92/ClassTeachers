@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ArrowLeft, BadgeCheck, MapPin, School, Star } from "lucide-react";
+import { ArrowLeft, BadgeCheck, MapPin, School, Star, GraduationCap } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { GateNote } from "@/components/features/gate-note";
 import { PriceBox } from "@/components/features/price-box";
@@ -32,7 +32,7 @@ async function loadClassProfile(id: string, locale: string): Promise<ClassProfil
     { data: reviewRows },
     { data: batchRows },
     { data: adRow },
-    { count: teacherCount },
+    { data: teacherRows },
     { data: phone },
   ] = await Promise.all([
     supabase.from("prices").select("hourly_rate, monthly_rate").eq("owner_type", "class").eq("owner_id", id).maybeSingle(),
@@ -51,7 +51,9 @@ async function loadClassProfile(id: string, locale: string): Promise<ClassProfil
       .eq("owner_id", id)
       .eq("placement", "own_profile")
       .maybeSingle(),
-    supabase.from("class_teachers").select("teacher_id", { count: "exact", head: true }).eq("class_id", id).eq("is_visible", true),
+    // Institute Blueprint step 4a (0096) — the real roster, not just a
+    // count; accepted+visible+approved only, same gate the count uses.
+    supabase.rpc("list_institute_teachers", { p_class_id: id }),
     supabase.rpc("get_class_contact", { p_class_id: id }),
   ]);
 
@@ -69,7 +71,7 @@ async function loadClassProfile(id: string, locale: string): Promise<ClassProfil
     establishedText: classProfile.established,
     photoUrl: classProfile.photo_url,
     verified: classProfile.institution_verified,
-    teacherCount: teacherCount ?? 0,
+    teacherCount: teacherRows?.length ?? 0,
     rating,
     reviewCount,
     hourlyRate: priceRow?.hourly_rate ?? undefined,
@@ -94,6 +96,18 @@ async function loadClassProfile(id: string, locale: string): Promise<ClassProfil
       reply: r.reply ?? undefined,
     })),
     phone,
+    teachers: (teacherRows ?? []).map((t) => ({
+      id: t.teacher_id,
+      displayName: t.display_name ?? "—",
+      photoUrl: t.photo_url,
+      headline: t.headline,
+      subjects: t.subjects ?? [],
+      hourlyRate: t.hourly_rate ?? undefined,
+      monthlyRate: t.monthly_rate ?? undefined,
+      rating: t.rating,
+      reviewCount: t.review_count,
+      isCampusLecturer: t.is_campus_lecturer,
+    })),
   } satisfies ClassProfileDetail;
 }
 
@@ -135,6 +149,11 @@ export default async function ClassProfilePage({
       <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-8 px-7 py-10 lg:grid-cols-[2fr_1fr]">
         <div className="min-w-0">
           <AboutPanel classProfile={classProfile} showGate={!user} />
+          {classProfile.teachers.length > 0 && (
+            <div className="mt-5">
+              <TeachersPanel classProfile={classProfile} />
+            </div>
+          )}
           {classProfile.adText && (
             <AdSlot eyebrow={classProfile.adHeadline ?? classProfile.name} text={classProfile.adText} />
           )}
@@ -270,6 +289,55 @@ function AboutPanel({ classProfile, showGate }: { classProfile: ClassProfileDeta
     <Panel title={t("about")}>
       {showGate && <GateNote />}
       <p className="m-0 text-sm text-foreground/85">{classProfile.description || t("noDescription")}</p>
+    </Panel>
+  );
+}
+
+function TeachersPanel({ classProfile }: { classProfile: ClassProfileDetail }) {
+  const t = useTranslations("profilePage");
+
+  return (
+    <Panel title={t("teachersAtInstitute")}>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {classProfile.teachers.map((teacher) => (
+          <Link
+            key={teacher.id}
+            href={`/teacher/${teacher.id}`}
+            className="flex items-start gap-3 rounded-lg border border-border p-3.5 transition-colors hover:border-primary/40 hover:bg-background"
+          >
+            {teacher.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={teacher.photoUrl} alt="" className="size-11 shrink-0 rounded-full object-cover" />
+            ) : (
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-secondary">
+                <GraduationCap className="size-5 text-secondary-foreground" />
+              </div>
+            )}
+            <div className="min-w-0">
+              <div className="truncate font-medium text-foreground">{teacher.displayName}</div>
+              {teacher.headline && (
+                <div className="mt-0.5 truncate text-[13px] text-muted-foreground">{teacher.headline}</div>
+              )}
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                {teacher.reviewCount > 0 && (
+                  <span className="flex items-center gap-1 text-xs text-foreground/80">
+                    <Star className="size-3 fill-cta text-cta" />
+                    {teacher.rating.toFixed(1)} ({teacher.reviewCount})
+                  </span>
+                )}
+                {teacher.subjects.slice(0, 2).map((subject) => (
+                  <span
+                    key={subject}
+                    className="rounded-sm border border-border bg-background px-1.5 py-0.5 font-mono text-[10.5px] text-foreground/70"
+                  >
+                    {subject}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
     </Panel>
   );
 }

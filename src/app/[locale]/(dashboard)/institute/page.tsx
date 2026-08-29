@@ -64,8 +64,8 @@ export default async function InstituteDashboardPage({
     { data: batchEnrollmentRows },
   ] = await Promise.all([
     instituteId
-      ? supabase.from("class_teachers").select("teacher_id, is_visible").eq("class_id", instituteId)
-      : Promise.resolve({ data: [] as { teacher_id: string; is_visible: boolean }[] }),
+      ? supabase.from("class_teachers").select("teacher_id, is_visible, status").eq("class_id", instituteId)
+      : Promise.resolve({ data: [] as { teacher_id: string; is_visible: boolean; status: "pending" | "accepted" | "declined" }[] }),
     instituteId
       ? supabase
           .from("enrollments")
@@ -121,19 +121,33 @@ export default async function InstituteDashboardPage({
     instituteId
       ? supabase
           .from("batches")
-          .select("id, title, mode, location, schedule_note, teacher_label")
+          .select("id, title, mode, location, schedule_note, teacher_label, taught_by_teacher_id")
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
           .order("created_at", { ascending: false })
-      : Promise.resolve({ data: [] as { id: string; title: string; mode: "online" | "physical"; location: string | null; schedule_note: string | null; teacher_label: string | null }[] }),
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            title: string;
+            mode: "online" | "physical";
+            location: string | null;
+            schedule_note: string | null;
+            teacher_label: string | null;
+            taught_by_teacher_id: string | null;
+          }[],
+        }),
     instituteId
       ? supabase.from("enrollments").select("batch_id").eq("owner_type", "class").eq("owner_id", instituteId)
       : Promise.resolve({ data: [] as { batch_id: string | null }[] }),
   ]);
 
   const teacherIds = (classTeacherRows ?? []).map((row) => row.teacher_id);
+  const acceptedTeacherIds = (classTeacherRows ?? [])
+    .filter((row) => row.status === "accepted")
+    .map((row) => row.teacher_id);
 
   const isVisibleById = new Map((classTeacherRows ?? []).map((row) => [row.teacher_id, row.is_visible]));
+  const rosterStatusById = new Map((classTeacherRows ?? []).map((row) => [row.teacher_id, row.status]));
 
   const inquiryIds = (inquiryRows ?? []).map((row) => row.id);
   const { data: inquiryMessageRows } = inquiryIds.length
@@ -146,6 +160,9 @@ export default async function InstituteDashboardPage({
 
   let teachersAtGlance: TeachersAtGlance[] = [];
   let instituteTeachers: InstituteTeacherRow[] = [];
+  // Hoisted out of the block below so the batches mapping further down can
+  // resolve taught_by_teacher_id to a display name too.
+  let teacherNameById = new Map<string, string>();
   if (teacherIds.length > 0) {
     const [
       { data: teacherProfiles },
@@ -165,6 +182,7 @@ export default async function InstituteDashboardPage({
     ]);
 
     const nameById = new Map((teacherPersonProfiles ?? []).map((p) => [p.id, p.full_name]));
+    teacherNameById = nameById;
     const headlineById = new Map((teacherProfiles ?? []).map((p) => [p.id, p.headline]));
     const statusById = new Map((teacherProfiles ?? []).map((p) => [p.id, p.status]));
     const priceById = new Map((teacherPrices ?? []).map((p) => [p.owner_id, p]));
@@ -181,7 +199,9 @@ export default async function InstituteDashboardPage({
       ratingsById.set(row.target_id, list);
     }
 
-    teachersAtGlance = teacherIds.map((teacherId) => {
+    // A pending invite isn't "your teacher" yet, so the overview snapshot
+    // only counts accepted links — the full roster below still lists both.
+    teachersAtGlance = acceptedTeacherIds.map((teacherId) => {
       const ratings = ratingsById.get(teacherId) ?? [];
       const status = statusById.get(teacherId);
       return {
@@ -202,6 +222,7 @@ export default async function InstituteDashboardPage({
             ? `Rs. ${Number(price.monthly_rate).toLocaleString()}/mo`
             : "—";
       return {
+        rosterStatus: rosterStatusById.get(teacherId) === "pending" ? "pending" : "accepted",
         id: teacherId,
         name: nameById.get(teacherId) ?? "—",
         subject: headlineById.get(teacherId) ?? "",
@@ -269,8 +290,17 @@ export default async function InstituteDashboardPage({
     mode: b.mode,
     location: b.location,
     scheduleNote: b.schedule_note,
-    teacherLabel: b.teacher_label,
+    // Real roster link wins when set; falls back to the old free-text label
+    // for batches created before 0091 that haven't been re-saved since.
+    teacherLabel: (b.taught_by_teacher_id && teacherNameById.get(b.taught_by_teacher_id)) || b.teacher_label,
     studentCount: batchStudentCounts.get(b.id) ?? 0,
+  }));
+
+  // Only an accepted roster teacher can be assigned to a class — a pending
+  // invite hasn't agreed to anything yet.
+  const rosterTeacherOptions = acceptedTeacherIds.map((id) => ({
+    id,
+    name: teacherNameById.get(id) ?? "—",
   }));
 
   const referrals: ReferralRow[] = (myReferralRows ?? []).map((row) => ({
@@ -330,7 +360,7 @@ export default async function InstituteDashboardPage({
         overview: (
           <OverviewTab
             instituteName={fullName}
-            teachersCount={teacherIds.length}
+            teachersCount={acceptedTeacherIds.length}
             studentsCount={studentsCount ?? 0}
             averageRating={averageRating}
             batchesCount={batches.length}
@@ -338,7 +368,7 @@ export default async function InstituteDashboardPage({
           />
         ),
         teachers: <TeachersTab teachers={instituteTeachers} />,
-        batches: <BatchesTab batches={batches} />,
+        batches: <BatchesTab batches={batches} teacherOptions={rosterTeacherOptions} />,
         inquiries: <InquiriesTab inquiries={inquiries} />,
         studentRequests: <WantedAdsBrowseTab requests={wantedAdRequests} />,
         ads: <AdvertisementTab initialContent={adRow?.content ?? ""} />,

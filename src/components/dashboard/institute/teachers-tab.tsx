@@ -12,7 +12,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
-import { addTeacherToRoster, removeTeacherFromRoster, setTeacherVisibility } from "@/lib/dashboard/institute-actions";
+import { inviteTeacherToRoster, removeTeacherFromRoster, setTeacherVisibility } from "@/lib/dashboard/institute-actions";
 
 export type InstituteTeacherRow = {
   id: string;
@@ -22,6 +22,7 @@ export type InstituteTeacherRow = {
   studentCount: number;
   visible: boolean;
   teacherHref: string;
+  rosterStatus: "pending" | "accepted";
 };
 
 function initialsFor(name: string) {
@@ -51,7 +52,7 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
     if (!trimmed) return;
     setSaving(true);
     setError(null);
-    const result = await addTeacherToRoster(trimmed);
+    const result = await inviteTeacherToRoster(trimmed);
     setSaving(false);
     if (result.error) {
       setError(result.error);
@@ -105,7 +106,7 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          <p className="mt-3 text-sm text-muted-foreground">{t("addForm.helper")}</p>
+          <p className="mt-3 text-sm text-muted-foreground">{t("addForm.helperInvite")}</p>
           {error && <p className="mt-2 text-sm font-medium text-destructive">{error}</p>}
           <div className="mt-4 flex gap-3">
             <Button onClick={handleAdd} disabled={saving || !email.trim()}>
@@ -150,17 +151,28 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
                           {initialsFor(teacher.name)}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="font-medium text-foreground">{teacher.name}</span>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-foreground">{teacher.name}</span>
+                        {teacher.rosterStatus === "pending" && (
+                          <span className="w-fit rounded-full bg-background px-2 py-0.5 font-mono text-[10.5px] text-muted-foreground">
+                            {t("table.invitePending")}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{teacher.subject || "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{teacher.rateDisplay}</TableCell>
                   <TableCell>{teacher.studentCount}</TableCell>
                   <TableCell>
-                    <Switch
-                      checked={visibility[teacher.id] ?? teacher.visible}
-                      onCheckedChange={(checked) => handleVisibilityChange(teacher.id, checked)}
-                    />
+                    {teacher.rosterStatus === "accepted" ? (
+                      <Switch
+                        checked={visibility[teacher.id] ?? teacher.visible}
+                        onCheckedChange={(checked) => handleVisibilityChange(teacher.id, checked)}
+                      />
+                    ) : (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-3">
@@ -172,7 +184,7 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
                         className="text-sm font-medium text-lock hover:underline"
                         onClick={() => handleRemove(teacher)}
                       >
-                        {t("table.remove")}
+                        {teacher.rosterStatus === "pending" ? t("table.cancelInvite") : t("table.remove")}
                       </button>
                     </div>
                   </TableCell>

@@ -21,7 +21,7 @@ import { InquiriesTab } from "@/components/dashboard/inquiries-tab";
 import { WantedAdsBrowseTab } from "@/components/dashboard/wanted-ads-browse-tab";
 import { AdvertisementTab } from "@/components/dashboard/teacher/advertisement-tab";
 import type { TeacherAdBatchRow } from "@/components/dashboard/teacher/advertisement-tab";
-import { SettingsTab } from "@/components/dashboard/teacher/settings-tab";
+import { SettingsTab, type InstituteInviteRow } from "@/components/dashboard/teacher/settings-tab";
 import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
@@ -94,6 +94,7 @@ export default async function TeacherDashboardPage({
     { data: liveProfilePhone },
     { data: referralCodeValue },
     { data: myReferralRows },
+    { data: instituteInviteRows },
   ] = await Promise.all([
     supabase.from("profiles").select("full_name, phone, notification_prefs, role").eq("id", userId).single(),
     supabase.from("teacher_profiles").select("*").eq("id", userId).maybeSingle(),
@@ -193,6 +194,9 @@ export default async function TeacherDashboardPage({
     // time it's asked for (referrals, 0089), nothing to backfill up front.
     supabase.rpc("ensure_referral_code"),
     supabase.rpc("list_my_referrals"),
+    // Institute Blueprint step 1 (0091) — invites this teacher hasn't
+    // responded to yet. Surfaced in the Settings tab.
+    supabase.from("class_teachers").select("class_id, joined_at").eq("teacher_id", userId).eq("status", "pending"),
   ]);
 
   // Stage 2 — everything here needs an id list derived from a stage-1
@@ -719,6 +723,21 @@ export default async function TeacherDashboardPage({
     dateLabel: dateFormatter.format(new Date(row.created_at)),
   }));
 
+  // Institute Blueprint step 1 (0091) — resolve the inviting institute's
+  // name for each pending roster invite. Usually zero or one row, so a
+  // second small query beats widening Stage 1 with an embedded join this
+  // codebase's types don't support (see database.ts's own note on that).
+  const instituteInviteClassIds = (instituteInviteRows ?? []).map((row) => row.class_id);
+  const { data: inviteInstituteRows } = instituteInviteClassIds.length
+    ? await supabase.from("class_profiles").select("id, name").in("id", instituteInviteClassIds)
+    : { data: [] as { id: string; name: string }[] };
+  const instituteNameById = new Map((inviteInstituteRows ?? []).map((row) => [row.id, row.name]));
+  const instituteInvites: InstituteInviteRow[] = (instituteInviteRows ?? []).map((row) => ({
+    classId: row.class_id,
+    instituteName: instituteNameById.get(row.class_id) ?? "—",
+    dateLabel: dateFormatter.format(new Date(row.joined_at)),
+  }));
+
   return (
     <DashboardShell
       userLabel={fullName}
@@ -894,6 +913,7 @@ export default async function TeacherDashboardPage({
             email={user!.email ?? ""}
             referralCode={referralCodeValue ?? ""}
             referrals={referrals}
+            instituteInvites={instituteInvites}
           />
         ),
       }}

@@ -926,16 +926,17 @@
     "teachers": {
       "title": "Teachers",
       "subtitle": "Manage the teachers linked to your institute.",
-      "addTeacher": "+ Add a teacher",
+      "addTeacher": "+ Invite a teacher",
       "confirmRemove": "Remove {name} from your institute?",
       "empty": "No teachers linked yet. Add one by their email below.",
       "addForm": {
-        "title": "Add a teacher",
+        "title": "Invite a teacher",
         "emailLabel": "Teacher's email",
         "emailPlaceholder": "e.g. teacher@email.com",
         "helper": "They'll be added immediately if this email belongs to an existing ClassPortals teacher account.",
-        "submit": "Add teacher",
-        "cancel": "Cancel"
+        "submit": "Send invite",
+        "cancel": "Cancel",
+        "helperInvite": "They'll get an invite to accept before they show up on your roster — nothing is instant."
       },
       "table": {
         "teacher": "Teacher",
@@ -945,7 +946,9 @@
         "visible": "Visible on institute page",
         "actions": "Actions",
         "view": "View",
-        "remove": "Remove"
+        "remove": "Remove",
+        "invitePending": "Invite pending",
+        "cancelInvite": "Cancel invite"
       }
     },
     "batches": {
@@ -960,8 +963,8 @@
         "title": "Add a batch",
         "titleLabel": "Batch title",
         "titlePlaceholder": "e.g. A/L Chemistry — Batch C",
-        "teacherLabel": "Teacher name",
-        "teacherPlaceholder": "e.g. Kasun Perera",
+        "teacherLabel": "Teacher",
+        "teacherPlaceholder": "Choose a teacher",
         "scheduleLabel": "Schedule",
         "schedulePlaceholder": "e.g. Mon, Wed, 5:00 PM",
         "modeLabel": "Mode",
@@ -971,7 +974,8 @@
         "intervalLabel": "Billing interval",
         "intervalHour": "Per hour",
         "intervalMonth": "Per month",
-        "submit": "Add batch"
+        "submit": "Add batch",
+        "teacherSelectEmpty": "No teachers on your roster yet — invite one in the Teachers tab first."
       }
     },
     "ads": {
@@ -2034,6 +2038,12 @@
         "enrolments": "New enrolments",
         "reviews": "New reviews",
         "submissions": "Exam submissions"
+      },
+      "instituteInvites": {
+        "heading": "Institute invites",
+        "subtitle": "Institutes that want to add you to their roster.",
+        "accept": "Accept",
+        "decline": "Decline"
       }
     },
     "assignments": {

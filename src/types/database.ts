@@ -308,18 +308,21 @@ export type Database = {
           class_id: string;
           teacher_id: string;
           is_visible: boolean;
+          status: "pending" | "accepted" | "declined";
           joined_at: string;
         };
         Insert: {
           class_id: string;
           teacher_id: string;
           is_visible?: boolean;
+          status?: "pending" | "accepted" | "declined";
           joined_at?: string;
         };
         Update: {
           class_id?: string;
           teacher_id?: string;
           is_visible?: boolean;
+          status?: "pending" | "accepted" | "declined";
           joined_at?: string;
         };
         // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
@@ -438,6 +441,7 @@ export type Database = {
           location: string | null;
           schedule_note: string | null;
           teacher_label: string | null;
+          taught_by_teacher_id: string | null;
           grade_band: GradeBand | null;
           status: "active" | "upcoming" | "closed";
           hourly_rate: number | null;
@@ -457,6 +461,7 @@ export type Database = {
           location?: string | null;
           schedule_note?: string | null;
           teacher_label?: string | null;
+          taught_by_teacher_id?: string | null;
           grade_band?: GradeBand | null;
           status?: "active" | "upcoming" | "closed";
           hourly_rate?: number | null;
@@ -476,6 +481,7 @@ export type Database = {
           location?: string | null;
           schedule_note?: string | null;
           teacher_label?: string | null;
+          taught_by_teacher_id?: string | null;
           grade_band?: GradeBand | null;
           status?: "active" | "upcoming" | "closed";
           hourly_rate?: number | null;

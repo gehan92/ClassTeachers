@@ -13,12 +13,13 @@ async function resolveInstituteId(supabase: Awaited<ReturnType<typeof createClie
 const addTeacherSchema = z.object({ email: z.string().trim().email() });
 
 /**
- * "Add by email" instead of a real invite flow — see 0035's comment. Only
- * succeeds if the email belongs to an existing teacher account (teacher_id
- * FKs teacher_profiles, not just profiles), so there's nothing to send and
- * nothing pending — either it's linked immediately, or it errors.
+ * Still "find by email" rather than a search picker (see 0035's comment) —
+ * but no longer an instant link. This inserts a pending row; the teacher
+ * has to accept it themselves (respondToRosterInvite) before they're
+ * actually on the roster. 0091 added the status column and the trigger
+ * that stops this from being anything other than a proposal until then.
  */
-export async function addTeacherToRoster(email: string): Promise<ActionResult> {
+export async function inviteTeacherToRoster(email: string): Promise<ActionResult> {
   const parsed = addTeacherSchema.safeParse({ email });
   if (!parsed.success) {
     return { error: "Please enter a valid email address." };
@@ -45,12 +46,38 @@ export async function addTeacherToRoster(email: string): Promise<ActionResult> {
 
   const { error } = await supabase
     .from("class_teachers")
-    .insert({ class_id: instituteId, teacher_id: teacher.id });
+    .insert({ class_id: instituteId, teacher_id: teacher.id, status: "pending" });
   if (error) {
     if (error.code === "23505") {
-      return { error: "This teacher is already linked to your institute." };
+      return { error: "This teacher is already linked to your institute (or already invited)." };
     }
-    return { error: "Couldn't add this teacher. Please try again." };
+    return { error: "Couldn't send the invite. Please try again." };
+  }
+  return {};
+}
+
+/**
+ * Teacher-side response to an institute's roster invite. RLS (0091) already
+ * confines this to the caller's own row and to a pending -> accepted/
+ * declined transition — the ownership check here is just for a clean error
+ * message, not the actual security boundary.
+ */
+export async function respondToRosterInvite(classId: string, accept: boolean): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error } = await supabase
+    .from("class_teachers")
+    .update({ status: accept ? "accepted" : "declined" })
+    .eq("class_id", classId)
+    .eq("teacher_id", user.id);
+  if (error) {
+    return { error: "Couldn't respond to this invite. Please try again." };
   }
   return {};
 }

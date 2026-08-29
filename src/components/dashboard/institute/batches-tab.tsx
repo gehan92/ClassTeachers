@@ -20,13 +20,24 @@ export type InstituteBatchRow = {
   studentCount: number;
 };
 
-export function BatchesTab({ batches }: { batches: InstituteBatchRow[] }) {
+export type InstituteRosterTeacherOption = {
+  id: string;
+  name: string;
+};
+
+export function BatchesTab({
+  batches,
+  teacherOptions,
+}: {
+  batches: InstituteBatchRow[];
+  teacherOptions: InstituteRosterTeacherOption[];
+}) {
   const t = useTranslations("instituteDashboard.batches");
   const tc = useTranslations("instituteDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
-  const [teacherName, setTeacherName] = useState("");
+  const [teacherId, setTeacherId] = useState("");
   const [mode, setMode] = useState<"online" | "physical">("physical");
   const [schedule, setSchedule] = useState("");
   const [added, setAdded] = useState(false);
@@ -35,7 +46,7 @@ export function BatchesTab({ batches }: { batches: InstituteBatchRow[] }) {
 
   function resetForm() {
     setTitle("");
-    setTeacherName("");
+    setTeacherId("");
     setMode("physical");
     setSchedule("");
   }
@@ -50,7 +61,7 @@ export function BatchesTab({ batches }: { batches: InstituteBatchRow[] }) {
       mode,
       location: "",
       scheduleNote: schedule,
-      teacherLabel: teacherName,
+      taughtByTeacherId: teacherId || undefined,
       gradeBand: "",
     });
     setCreating(false);
@@ -101,12 +112,22 @@ export function BatchesTab({ batches }: { batches: InstituteBatchRow[] }) {
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="batch-teacher">{t("form.teacherLabel")}</Label>
-              <Input
-                id="batch-teacher"
-                placeholder={t("form.teacherPlaceholder")}
-                value={teacherName}
-                onChange={(e) => setTeacherName(e.target.value)}
-              />
+              {teacherOptions.length > 0 ? (
+                <Select value={teacherId} onValueChange={(value) => setTeacherId(value ?? "")}>
+                  <SelectTrigger id="batch-teacher" className="w-full">
+                    <SelectValue placeholder={t("form.teacherPlaceholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teacherOptions.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        {option.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-sm text-muted-foreground">{t("form.teacherSelectEmpty")}</p>
+              )}
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="batch-schedule">{t("form.scheduleLabel")}</Label>

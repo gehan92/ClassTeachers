@@ -11,8 +11,15 @@ import { updateTeacherAccount, updateNotificationPrefs, updateContactMode } from
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { ReferEarnPanel, type ReferralRow } from "@/components/dashboard/refer-earn-panel";
+import { respondToRosterInvite } from "@/lib/dashboard/institute-actions";
 
 const panelClass = "rounded-lg border border-border bg-white p-5";
+
+export type InstituteInviteRow = {
+  classId: string;
+  instituteName: string;
+  dateLabel: string;
+};
 
 export function SettingsTab({
   initialFullName,
@@ -22,6 +29,7 @@ export function SettingsTab({
   email,
   referralCode,
   referrals,
+  instituteInvites: initialInstituteInvites,
 }: {
   initialFullName: string;
   initialPhone: string;
@@ -30,10 +38,29 @@ export function SettingsTab({
   email: string;
   referralCode: string;
   referrals: ReferralRow[];
+  instituteInvites: InstituteInviteRow[];
 }) {
   const t = useTranslations("teacherDashboard.settings");
   const tc = useTranslations("teacherDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
+
+  const [handledInviteIds, setHandledInviteIds] = useState<Set<string>>(new Set());
+  const instituteInvites = initialInstituteInvites.filter((invite) => !handledInviteIds.has(invite.classId));
+  const [respondingClassId, setRespondingClassId] = useState<string | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+
+  async function handleInviteResponse(classId: string, accept: boolean) {
+    setRespondingClassId(classId);
+    setInviteError(null);
+    const result = await respondToRosterInvite(classId, accept);
+    setRespondingClassId(null);
+    if (result.error) {
+      setInviteError(result.error);
+      return;
+    }
+    setHandledInviteIds((prev) => new Set(prev).add(classId));
+    refresh();
+  }
 
   const [messagingOnly, setMessagingOnly] = useState(initialContactMode === "messaging_only");
 
@@ -124,6 +151,46 @@ export function SettingsTab({
           <Switch id="contact-messaging-only" checked={messagingOnly} onCheckedChange={handleToggleContactMode} />
         </div>
       </div>
+
+      {instituteInvites.length > 0 && (
+        <div className={panelClass}>
+          <h3 className="mb-1 text-lg">{t("instituteInvites.heading")}</h3>
+          <p className="mb-3 text-sm text-muted-foreground">{t("instituteInvites.subtitle")}</p>
+          {inviteError && <p className="mb-3 text-sm font-medium text-destructive">{inviteError}</p>}
+          <div className="flex flex-col divide-y divide-border">
+            {instituteInvites.map((invite) => (
+              <div
+                key={invite.classId}
+                className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+              >
+                <div>
+                  <p className="font-medium text-foreground">{invite.instituteName}</p>
+                  <p className="text-sm text-muted-foreground">{invite.dateLabel}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => handleInviteResponse(invite.classId, true)}
+                    disabled={respondingClassId === invite.classId}
+                  >
+                    {t("instituteInvites.accept")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleInviteResponse(invite.classId, false)}
+                    disabled={respondingClassId === invite.classId}
+                  >
+                    {t("instituteInvites.decline")}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <ReferEarnPanel referralCode={referralCode} referrals={referrals} />
 

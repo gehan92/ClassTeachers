@@ -16,6 +16,7 @@ const createBatchSchema = z.object({
   location: z.string().trim().optional(),
   scheduleNote: z.string().trim().optional(),
   teacherLabel: z.string().trim().optional(),
+  taughtByTeacherId: z.string().uuid().optional(),
   gradeBand: z.enum(gradeBands).optional(),
   courseCode: z.string().trim().max(30).optional(),
 });
@@ -28,6 +29,7 @@ export async function createBatch(input: {
   location: string;
   scheduleNote: string;
   teacherLabel?: string;
+  taughtByTeacherId?: string;
   gradeBand: string;
   courseCode?: string;
 }): Promise<ActionResult> {
@@ -39,6 +41,7 @@ export async function createBatch(input: {
     location: input.location || undefined,
     scheduleNote: input.scheduleNote || undefined,
     teacherLabel: input.teacherLabel || undefined,
+    taughtByTeacherId: input.taughtByTeacherId || undefined,
     gradeBand: input.gradeBand || undefined,
     courseCode: input.courseCode || undefined,
   });
@@ -76,6 +79,7 @@ export async function createBatch(input: {
     location: parsed.data.location || null,
     schedule_note: parsed.data.scheduleNote || null,
     teacher_label: parsed.data.ownerType === "class" ? parsed.data.teacherLabel || null : null,
+    taught_by_teacher_id: parsed.data.ownerType === "class" ? parsed.data.taughtByTeacherId ?? null : null,
     grade_band: parsed.data.gradeBand ?? null,
     course_code: parsed.data.courseCode ?? null,
   });

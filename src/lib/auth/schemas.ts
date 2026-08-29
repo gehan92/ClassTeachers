@@ -7,6 +7,20 @@ export const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+export const requestPasswordResetSchema = z.object({
+  email: z.email(),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    password: z.string().min(8),
+    confirmPassword: z.string().min(8),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords don't match",
+  });
+
 export const signupSchema = z
   .object({
     fullName: z.string().trim().min(2),

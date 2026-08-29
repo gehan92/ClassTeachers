@@ -351,7 +351,8 @@
     "emailTaken": "An account with this email already exists. Try logging in instead.",
     "invalidCredentials": "Incorrect email or password.",
     "agreeRequired": "You must agree to the Terms and Privacy Policy to continue.",
-    "generic": "Something went wrong. Please try again."
+    "generic": "Something went wrong. Please try again.",
+    "resetLinkExpired": "Your reset link has expired. Please request a new one."
   },
   "login": {
     "eyebrow": "Account access",
@@ -514,6 +515,7 @@
       "emailLabel": "Email",
       "emailPlaceholder": "you@example.com",
       "submit": "Send reset link",
+      "submitting": "Sending...",
       "footerPrompt": "Remembered it?",
       "footerLink": "Log in"
     },
@@ -523,8 +525,7 @@
       "body": "If an account matches that email, a reset link is on its way. It expires in 30 minutes.",
       "resend": "Resend link",
       "resendSent": "Sent again ✓",
-      "footerPrompt": "Didn't get it?",
-      "preview": "I clicked the link (preview)"
+      "footerPrompt": "Didn't get it?"
     }
   },
   "resetPassword": {
@@ -538,13 +539,23 @@
       "confirmPasswordLabel": "Confirm new password",
       "confirmPasswordPlaceholder": "Re-enter password",
       "mismatchError": "Passwords don't match",
-      "submit": "Update password"
+      "submit": "Update password",
+      "submitting": "Updating..."
     },
     "done": {
       "eyebrow": "Password updated",
       "title": "You're all set",
       "body": "Your password has been changed. Log in with your new password.",
       "cta": "Go to log in"
+    },
+    "checking": {
+      "title": "One moment",
+      "body": "Checking your reset link..."
+    },
+    "invalidLink": {
+      "title": "This link isn't valid",
+      "body": "It may have expired or already been used. Request a new one instead.",
+      "cta": "Request a new link"
     }
   },
   "profilePage": {

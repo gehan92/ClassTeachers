@@ -1,10 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { loginSchema, signupSchema } from "./schemas";
+import { loginSchema, signupSchema, requestPasswordResetSchema, resetPasswordSchema } from "./schemas";
 import { roleDashboardPath, type UserRole } from "./routes";
 import type { Database } from "@/types/database";
 
@@ -348,4 +349,88 @@ export async function logOutAction(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect(`/${locale}/login`);
+}
+
+export type RequestPasswordResetState = { sent: boolean; error?: string } | undefined;
+
+/**
+ * The forgot-password form was a UI mockup for a while — this is the real
+ * thing. Deliberately reports { sent: true } whether or not the email
+ * actually matches an account, same anti-enumeration reasoning as
+ * logInAction's single generic error message; Supabase's own
+ * resetPasswordForEmail already behaves this way (no error for an unknown
+ * email), this just makes sure a validation failure doesn't accidentally
+ * leak that distinction either.
+ */
+export async function requestPasswordResetAction(
+  _prevState: RequestPasswordResetState,
+  formData: FormData,
+): Promise<RequestPasswordResetState> {
+  const locale = await getLocale();
+  const t = await getTranslations({ locale, namespace: "authErrors" });
+
+  const parsed = requestPasswordResetSchema.safeParse({ email: formData.get("email") });
+  if (!parsed.success) {
+    return { sent: false, error: t("generic") };
+  }
+
+  const supabase = await createClient();
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? "https";
+  const origin = `${protocol}://${host}`;
+
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+    redirectTo: `${origin}/api/auth/confirm?next=${encodeURIComponent(`/${locale}/reset-password`)}`,
+  });
+  if (error) {
+    console.error("[requestPasswordResetAction] resetPasswordForEmail failed:", error.message);
+    return { sent: false, error: t("generic") };
+  }
+  return { sent: true };
+}
+
+export type ResetPasswordState = { done: boolean; error?: string } | undefined;
+
+/**
+ * Runs with whatever session the /api/auth/confirm redirect just
+ * established from the emailed recovery link's code — no token is passed
+ * here directly, `auth.updateUser` just needs a signed-in request, which
+ * the exchanged recovery session already provides via cookies. Signs the
+ * user out afterward so that recovery session can't be reused; the "done"
+ * screen sends them to a normal login instead of straight into a dashboard.
+ */
+export async function resetPasswordAction(
+  _prevState: ResetPasswordState,
+  formData: FormData,
+): Promise<ResetPasswordState> {
+  const locale = await getLocale();
+  const t = await getTranslations({ locale, namespace: "authErrors" });
+  const tForm = await getTranslations({ locale, namespace: "resetPassword.form" });
+
+  const parsed = resetPasswordSchema.safeParse({
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+  if (!parsed.success) {
+    const mismatch = parsed.error.issues.some((issue) => issue.path.includes("confirmPassword"));
+    return { done: false, error: mismatch ? tForm("mismatchError") : t("generic") };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { done: false, error: t("resetLinkExpired") };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+  if (error) {
+    console.error("[resetPasswordAction] updateUser failed:", error.message);
+    return { done: false, error: t("generic") };
+  }
+
+  await supabase.auth.signOut();
+  return { done: true };
 }

@@ -231,7 +231,7 @@ export function ProfileTab({
     setDocError(null);
     const formData = new FormData();
     formData.set("file", file);
-    const result = await uploadVerificationDocument(formData);
+    const result = await uploadVerificationDocument("teacher", formData);
     setDocUploading(false);
     if (result.error) {
       setDocError(result.error);
@@ -554,41 +554,44 @@ export function ProfileTab({
               {t("addPublication")}
             </Button>
           </div>
-
-          <div className="mt-5 border-t border-border pt-4">
-            <Label className="mb-1.5 block">{t("verificationDocumentLabel")}</Label>
-            <p className="mb-2.5 text-xs text-muted-foreground">{t("verificationDocumentHint")}</p>
-            <input
-              ref={docInputRef}
-              type="file"
-              accept="application/pdf,image/jpeg,image/png,image/webp"
-              className="hidden"
-              onChange={handleDocumentSelected}
-            />
-            <div className="flex flex-wrap items-center gap-2.5">
-              <Button type="button" variant="outline" size="sm" onClick={handleUploadDocument} disabled={docUploading}>
-                <Upload className="size-4" />
-                {hasDocument ? t("replaceDocument") : t("uploadDocument")}
-              </Button>
-              {docSaved && <span className="text-sm font-medium text-success">{tc("saved")}</span>}
-              {docError && <span className="text-sm font-medium text-destructive">{docError}</span>}
-            </div>
-          </div>
-
-          <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
-            {institutionVerified ? (
-              <>
-                <BadgeCheck className="size-3.5 shrink-0 text-primary" />
-                {t("institutionVerifiedNote")}
-              </>
-            ) : hasDocument ? (
-              t("institutionPendingReviewNote")
-            ) : (
-              t("institutionNotVerifiedNote")
-            )}
-          </p>
         </div>
       )}
+
+      <div className={panelClass}>
+        <h3 className="mb-1 text-lg">{t("verifiedTierHeading")}</h3>
+        <p className="mb-4 text-sm text-muted-foreground">{t("verifiedTierSubtitle")}</p>
+
+        <Label className="mb-1.5 block">{t("verificationDocumentLabel")}</Label>
+        <p className="mb-2.5 text-xs text-muted-foreground">{t("verifiedTierDocumentHint")}</p>
+        <input
+          ref={docInputRef}
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handleDocumentSelected}
+        />
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button type="button" variant="outline" size="sm" onClick={handleUploadDocument} disabled={docUploading}>
+            <Upload className="size-4" />
+            {hasDocument ? t("replaceDocument") : t("uploadDocument")}
+          </Button>
+          {docSaved && <span className="text-sm font-medium text-success">{tc("saved")}</span>}
+          {docError && <span className="text-sm font-medium text-destructive">{docError}</span>}
+        </div>
+
+        <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
+          {institutionVerified ? (
+            <>
+              <BadgeCheck className="size-3.5 shrink-0 text-primary" />
+              {t("verifiedTierVerifiedNote")}
+            </>
+          ) : hasDocument ? (
+            t("verifiedTierPendingNote")
+          ) : (
+            t("verifiedTierNotVerifiedNote")
+          )}
+        </p>
+      </div>
 
       <div className={panelClass}>
         <h3 className="mb-4 text-lg">{t("pricingHeading")}</h3>

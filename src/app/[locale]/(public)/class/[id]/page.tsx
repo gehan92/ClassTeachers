@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ArrowLeft, MapPin, School, Star } from "lucide-react";
+import { ArrowLeft, BadgeCheck, MapPin, School, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { GateNote } from "@/components/features/gate-note";
 import { PriceBox } from "@/components/features/price-box";
@@ -19,7 +19,7 @@ async function loadClassProfile(id: string, locale: string): Promise<ClassProfil
 
   const { data: classProfile, error } = await supabase
     .from("class_profiles")
-    .select("id, name, description, location, class_type, established, photo_url")
+    .select("id, name, description, location, class_type, established, photo_url, institution_verified")
     .eq("id", id)
     .maybeSingle();
 
@@ -68,6 +68,7 @@ async function loadClassProfile(id: string, locale: string): Promise<ClassProfil
     classType: (classProfile.class_type as ClassProfileDetail["classType"]) ?? "physical",
     establishedText: classProfile.established,
     photoUrl: classProfile.photo_url,
+    verified: classProfile.institution_verified,
     teacherCount: teacherCount ?? 0,
     rating,
     reviewCount,
@@ -183,6 +184,7 @@ function classTypeLabel(
 
 function Hero({ classProfile }: { classProfile: ClassProfileDetail }) {
   const t = useTranslations("profilePage");
+  const tl = useTranslations("listing");
 
   return (
     <div className="mx-auto max-w-[1180px] px-7 pt-10">
@@ -213,7 +215,15 @@ function Hero({ classProfile }: { classProfile: ClassProfileDetail }) {
                 {classProfile.location}
               </div>
             )}
-            <h1 className="mb-2 text-[28px] text-white sm:text-[34px]">{classProfile.name}</h1>
+            <h1 className="mb-2 flex items-center gap-1.5 text-[28px] text-white sm:text-[34px]">
+              {classProfile.name}
+              <span title={classProfile.verified ? tl("institutionVerified") : tl("reviewed")}>
+                <BadgeCheck
+                  className="size-4 shrink-0 sm:size-5"
+                  aria-label={classProfile.verified ? tl("institutionVerified") : tl("reviewed")}
+                />
+              </span>
+            </h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-white/85">
               {classProfile.reviewCount > 0 && (
                 <span className="flex items-center gap-1.5">

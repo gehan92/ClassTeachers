@@ -1,7 +1,4 @@
-/**
- * Display shapes for the Student Dashboard. Placeholder data for Phase 1
- * (no Supabase project connected yet) — see src/lib/mock-data/dashboard-student.ts.
- */
+/** Display shapes for the Student Dashboard. */
 
 /** A teacher or class the student has actually joined — see 01-Project-Overview.md §9. */
 export type Enrollment = {

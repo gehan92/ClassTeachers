@@ -123,7 +123,9 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     supabase.from("platform_subscriptions").select("plan, status, updated_at"),
     supabase.from("platform_settings").select("key, value").in("key", ["standard_price", "premium_price"]),
     supabase.from("teacher_profiles").select("id, created_at, institution_verified, verification_document_path"),
-    supabase.from("class_profiles").select("id, created_at"),
+    supabase
+      .from("class_profiles")
+      .select("id, created_at, owner_id, institution_verified, verification_document_path"),
   ]);
 
   const pendingTeacherIds = (pendingTeacherRows ?? []).map((row) => row.id);
@@ -192,9 +194,17 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
   };
 
   const bannedUntilById = new Map(authUsersPage?.users.map((u) => [u.id, u.banned_until]) ?? []);
+  // Verification (0075/0076, extended to every teacher/institute by 0087) —
+  // teacher_profiles.id already equals the owner's profiles.id, but
+  // class_profiles has its own primary key, so the institute lookup goes
+  // through owner_id instead.
   const institutionVerifiedById = new Map((teacherProfileRows ?? []).map((tp) => [tp.id, tp.institution_verified]));
   const hasVerificationDocumentById = new Map(
     (teacherProfileRows ?? []).map((tp) => [tp.id, tp.verification_document_path !== null]),
+  );
+  const classVerifiedByOwnerId = new Map((classProfileRows ?? []).map((cp) => [cp.owner_id, cp.institution_verified]));
+  const classHasDocumentByOwnerId = new Map(
+    (classProfileRows ?? []).map((cp) => [cp.owner_id, cp.verification_document_path !== null]),
   );
 
   const platformUsers: PlatformUser[] = (allProfiles ?? [])
@@ -202,15 +212,21 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
       const platformRole = platformRoleByDbRole[p.role];
       if (!platformRole) return null;
       const suspended = isCurrentlyBanned(bannedUntilById.get(p.id));
+      const isInstitute = platformRole === "institute";
       return {
         id: p.id,
         name: p.full_name,
         role: platformRole,
         joinedAt: dateFormatter.format(new Date(p.created_at)),
         status: suspended ? "suspended" : "active",
-        institutionVerified: platformRole === "campus_lecturer" ? (institutionVerifiedById.get(p.id) ?? false) : undefined,
+        institutionVerified:
+          platformRole === "student"
+            ? undefined
+            : ((isInstitute ? classVerifiedByOwnerId.get(p.id) : institutionVerifiedById.get(p.id)) ?? false),
         hasVerificationDocument:
-          platformRole === "campus_lecturer" ? (hasVerificationDocumentById.get(p.id) ?? false) : undefined,
+          platformRole === "student"
+            ? undefined
+            : ((isInstitute ? classHasDocumentByOwnerId.get(p.id) : hasVerificationDocumentById.get(p.id)) ?? false),
       } satisfies PlatformUser;
     })
     .filter((u): u is PlatformUser => u !== null);

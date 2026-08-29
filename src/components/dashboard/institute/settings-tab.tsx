@@ -2,13 +2,14 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { School } from "lucide-react";
+import { BadgeCheck, School, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { updateInstituteProfile, setListingPublished, resubmitListing, updateNotificationPrefs } from "@/lib/dashboard/actions";
 import { uploadAvatar } from "@/lib/dashboard/avatar-actions";
+import { uploadVerificationDocument } from "@/lib/dashboard/verification-actions";
 import type { ProfileStatus } from "@/types/database";
 
 export function SettingsTab({
@@ -22,6 +23,8 @@ export function SettingsTab({
   initialOwnerPublished,
   initialPhotoUrl,
   initialNotificationPrefs,
+  initialInstitutionVerified,
+  initialHasVerificationDocument,
 }: {
   initialName: string;
   initialLocation: string;
@@ -33,6 +36,8 @@ export function SettingsTab({
   initialOwnerPublished: boolean;
   initialPhotoUrl: string | null;
   initialNotificationPrefs: Record<string, boolean>;
+  initialInstitutionVerified: boolean;
+  initialHasVerificationDocument: boolean;
 }) {
   const t = useTranslations("instituteDashboard.settings");
 
@@ -65,6 +70,38 @@ export function SettingsTab({
     setLogoUrl(result.url);
     setLogoSaved(true);
     setTimeout(() => setLogoSaved(false), 2500);
+  }
+
+  const [hasDocument, setHasDocument] = useState(initialHasVerificationDocument);
+  const [verified, setVerified] = useState(initialInstitutionVerified);
+  const [docUploading, setDocUploading] = useState(false);
+  const [docSaved, setDocSaved] = useState(false);
+  const [docError, setDocError] = useState<string | null>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
+
+  function handleUploadDocument() {
+    docInputRef.current?.click();
+  }
+
+  async function handleDocumentSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setDocUploading(true);
+    setDocError(null);
+    const formData = new FormData();
+    formData.set("file", file);
+    const result = await uploadVerificationDocument("class", formData);
+    setDocUploading(false);
+    if (result.error) {
+      setDocError(result.error);
+      return;
+    }
+    setHasDocument(true);
+    setVerified(false);
+    setDocSaved(true);
+    setTimeout(() => setDocSaved(false), 2500);
   }
 
   const [status, setStatus] = useState(initialStatus);
@@ -305,6 +342,42 @@ export function SettingsTab({
         )}
 
         {publishError && <p className="mt-2 text-sm font-medium text-destructive">{publishError}</p>}
+      </div>
+
+      <div className="rounded-lg border border-border bg-white p-5">
+        <h3 className="mb-1 text-lg">{t("verifiedTier.heading")}</h3>
+        <p className="mb-4 text-sm text-muted-foreground">{t("verifiedTier.subtitle")}</p>
+
+        <Label className="mb-1.5 block">{t("verifiedTier.documentLabel")}</Label>
+        <p className="mb-2.5 text-xs text-muted-foreground">{t("verifiedTier.documentHint")}</p>
+        <input
+          ref={docInputRef}
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handleDocumentSelected}
+        />
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button type="button" variant="outline" size="sm" onClick={handleUploadDocument} disabled={docUploading}>
+            <Upload className="size-4" />
+            {hasDocument ? t("verifiedTier.replaceDocument") : t("verifiedTier.uploadDocument")}
+          </Button>
+          {docSaved && <span className="text-sm font-medium text-success">{t("saved")}</span>}
+          {docError && <span className="text-sm font-medium text-destructive">{docError}</span>}
+        </div>
+
+        <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
+          {verified ? (
+            <>
+              <BadgeCheck className="size-3.5 shrink-0 text-primary" />
+              {t("verifiedTier.verifiedNote")}
+            </>
+          ) : hasDocument ? (
+            t("verifiedTier.pendingNote")
+          ) : (
+            t("verifiedTier.notVerifiedNote")
+          )}
+        </p>
       </div>
 
       <div className="rounded-lg border border-border bg-white p-5">

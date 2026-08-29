@@ -325,6 +325,8 @@ export default async function InstituteDashboardPage({
             initialStatus={classProfile?.status ?? "pending"}
             initialOwnerPublished={classProfile?.owner_published ?? true}
             initialNotificationPrefs={(profile?.notification_prefs as Record<string, boolean>) ?? {}}
+            initialInstitutionVerified={classProfile?.institution_verified ?? false}
+            initialHasVerificationDocument={classProfile?.verification_document_path != null}
           />
         ),
       }}

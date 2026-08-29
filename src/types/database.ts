@@ -225,6 +225,9 @@ export type Database = {
           class_type: "physical" | "online" | "both" | null;
           status: ProfileStatus;
           owner_published: boolean;
+          institution_verified: boolean;
+          verification_document_path: string | null;
+          verification_submitted_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -240,6 +243,9 @@ export type Database = {
           class_type?: "physical" | "online" | "both" | null;
           status?: ProfileStatus;
           owner_published?: boolean;
+          institution_verified?: boolean;
+          verification_document_path?: string | null;
+          verification_submitted_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -255,6 +261,9 @@ export type Database = {
           class_type?: "physical" | "online" | "both" | null;
           status?: ProfileStatus;
           owner_published?: boolean;
+          institution_verified?: boolean;
+          verification_document_path?: string | null;
+          verification_submitted_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1348,6 +1357,7 @@ export type Database = {
           grade_bands: string[];
           online: boolean;
           teacher_count: number;
+          institution_verified: boolean;
         }[];
       };
       resolve_subject: {
@@ -1439,6 +1449,7 @@ export type Database = {
           review_count: number;
           is_campus_lecturer: boolean;
           course_code: string | null;
+          institution_verified: boolean;
         }[];
       };
       list_public_wanted_ads: {

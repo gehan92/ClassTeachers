@@ -90,6 +90,7 @@ function Hero({
   backHref?: string;
 }) {
   const t = useTranslations("profilePage");
+  const tl = useTranslations("listing");
 
   return (
     <div className="mx-auto max-w-[1180px] px-7 pt-10">
@@ -120,13 +121,8 @@ function Hero({
           )}
           <div className="min-w-0 flex-1">
             {teacher.isCampusLecturer && (teacher.academicTitle || teacher.institution) ? (
-              <div className="mb-1.5 flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.12em] text-white/70">
-                <span>
-                  {[teacher.academicTitle, teacher.institution].filter(Boolean).join(" · ")}
-                </span>
-                {teacher.institutionVerified && (
-                  <BadgeCheck className="size-3.5 shrink-0 text-white" aria-label={t("institutionVerified")} />
-                )}
+              <div className="mb-1.5 font-mono text-xs uppercase tracking-[0.12em] text-white/70">
+                {[teacher.academicTitle, teacher.institution].filter(Boolean).join(" · ")}
               </div>
             ) : (
               teacher.headline && (
@@ -135,7 +131,15 @@ function Hero({
                 </div>
               )
             )}
-            <h1 className="mb-2 text-[28px] text-white sm:text-[34px]">{teacher.name}</h1>
+            <h1 className="mb-2 flex items-center gap-1.5 text-[28px] text-white sm:text-[34px]">
+              {teacher.name}
+              <span title={teacher.institutionVerified ? tl("institutionVerified") : tl("reviewed")}>
+                <BadgeCheck
+                  className="size-4 shrink-0 sm:size-5"
+                  aria-label={teacher.institutionVerified ? tl("institutionVerified") : tl("reviewed")}
+                />
+              </span>
+            </h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-white/85">
               {teacher.reviewCount > 0 && (
                 <span className="flex items-center gap-1.5">

@@ -69,43 +69,52 @@ export async function resolveApproval(input: {
 }
 
 /**
- * Verify/unverify toggle on Admin -> Users, campus-lecturer rows only
- * (0075). Deliberately its own action rather than folded into
- * updateTeacherProfile (actions.ts) — that one is owner-driven and never
- * touches institution_verified, so a teacher can't self-verify even though
- * teacher_profiles' RLS technically allows a self-update (same discipline
- * as `status` above).
+ * Verify/unverify toggle on Admin -> Users. Originally campus-lecturer rows
+ * only (0075); 0087 extended verification_document_path/institution_verified
+ * to class_profiles too, so this now covers any teacher, campus lecturer, or
+ * institute. `ownerId` is always the row's own id in `profiles` terms — for
+ * ownerType "class" that's the institute's *owner*, not class_profiles' own
+ * primary key, so it's resolved via owner_id rather than id. Deliberately
+ * its own action rather than folded into updateTeacherProfile/institute
+ * settings actions — those are owner-driven and never touch
+ * institution_verified, so an owner can't self-verify even though RLS
+ * technically allows a self-update (same discipline as `status` above).
  *
  * Verifying without evidence (0076) is refused outright — a badge with
  * nothing behind it is worse than no badge. Unverifying never needs a
  * document check, an admin can always revoke.
  */
-export async function setInstitutionVerified(input: { teacherId: string; verified: boolean }): Promise<ActionResult> {
+export async function setInstitutionVerified(input: {
+  ownerType: "teacher" | "class";
+  ownerId: string;
+  verified: boolean;
+}): Promise<ActionResult> {
   const admin = await requireAdmin();
   if ("error" in admin) {
     return { error: admin.error };
   }
 
   const supabase = await createClient();
-  if (input.verified) {
-    const { data: teacher } = await supabase
-      .from("teacher_profiles")
-      .select("verification_document_path")
-      .eq("id", input.teacherId)
-      .maybeSingle();
-    if (!teacher?.verification_document_path) {
-      return { error: "This lecturer hasn't submitted a verification document yet." };
-    }
+  // .eq()'s column argument won't narrow correctly against a table picked at
+  // runtime, so the owner-column lookup (id vs owner_id) needs its own
+  // literal-typed branch rather than a shared variable.
+  const { data: row } =
+    input.ownerType === "teacher"
+      ? await supabase.from("teacher_profiles").select("id, verification_document_path").eq("id", input.ownerId).maybeSingle()
+      : await supabase.from("class_profiles").select("id, verification_document_path").eq("owner_id", input.ownerId).maybeSingle();
+  if (!row) {
+    return { error: "Couldn't find this account. Please try again." };
+  }
+  if (input.verified && !row.verification_document_path) {
+    return { error: "No verification document has been submitted yet." };
   }
 
-  const { error } = await supabase
-    .from("teacher_profiles")
-    .update({ institution_verified: input.verified })
-    .eq("id", input.teacherId);
+  const table = input.ownerType === "teacher" ? "teacher_profiles" : "class_profiles";
+  const { error } = await supabase.from(table).update({ institution_verified: input.verified }).eq("id", row.id);
   if (error) {
     return { error: "Couldn't update this. Please try again." };
   }
-  await logAdminAction(supabase, admin.userId, "institution_verified_change", "teacher", input.teacherId, {
+  await logAdminAction(supabase, admin.userId, "institution_verified_change", input.ownerType, row.id, {
     verified: input.verified,
   });
   return {};
@@ -116,27 +125,30 @@ export async function setInstitutionVerified(input: { teacherId: string; verifie
  * private, so the admin needs a short-lived signed URL rather than a plain
  * public one — same hand-off shape as the notes file route, just as a
  * server action instead of a redirect route since it's opened from a button
- * click, not a link a student might bookmark.
+ * click, not a link a student might bookmark. Same ownerId/ownerColumn
+ * resolution as setInstitutionVerified above.
  */
-export async function getVerificationDocumentUrl(teacherId: string): Promise<ActionResult & { url?: string }> {
+export async function getVerificationDocumentUrl(
+  ownerType: "teacher" | "class",
+  ownerId: string,
+): Promise<ActionResult & { url?: string }> {
   const admin = await requireAdmin();
   if ("error" in admin) {
     return { error: admin.error };
   }
 
   const supabase = await createClient();
-  const { data: teacher } = await supabase
-    .from("teacher_profiles")
-    .select("verification_document_path")
-    .eq("id", teacherId)
-    .maybeSingle();
-  if (!teacher?.verification_document_path) {
+  const { data: row } =
+    ownerType === "teacher"
+      ? await supabase.from("teacher_profiles").select("verification_document_path").eq("id", ownerId).maybeSingle()
+      : await supabase.from("class_profiles").select("verification_document_path").eq("owner_id", ownerId).maybeSingle();
+  if (!row?.verification_document_path) {
     return { error: "No document has been submitted." };
   }
 
   const { data: signed, error } = await supabase.storage
     .from("verification-docs")
-    .createSignedUrl(teacher.verification_document_path, 60);
+    .createSignedUrl(row.verification_document_path, 60);
   if (error || !signed) {
     return { error: "Couldn't open this document. Please try again." };
   }

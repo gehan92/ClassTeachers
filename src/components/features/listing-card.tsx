@@ -36,10 +36,10 @@ export function ListingCard({ listing }: { listing: Listing }) {
       <div className="flex flex-1 flex-col px-4 pb-4 pt-7.5">
         <div className="flex items-center gap-1.5 font-display text-[17px] tracking-wide text-primary">
           {listing.name}
-          <span title={listing.campusCredential?.verified ? t("institutionVerified") : t("reviewed")}>
+          <span title={listing.verified ? t("institutionVerified") : t("reviewed")}>
             <BadgeCheck
               className="size-4 shrink-0"
-              aria-label={listing.campusCredential?.verified ? t("institutionVerified") : t("reviewed")}
+              aria-label={listing.verified ? t("institutionVerified") : t("reviewed")}
             />
           </span>
         </div>

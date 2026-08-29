@@ -1,8 +1,4 @@
-/**
- * Domain types for the Admin dashboard. Placeholder shapes for Phase 1
- * (no Supabase project connected yet) — see src/lib/mock-data/dashboard-admin.ts
- * for the mock arrays shaped to match these.
- */
+/** Domain types for the Admin dashboard. */
 
 export type ApprovalEntityType = "teacher" | "institute" | "campus_lecturer";
 
@@ -22,9 +18,9 @@ export type PlatformUser = {
   role: PlatformUserRole;
   joinedAt: string;
   status: PlatformUserStatus;
-  /** Only meaningful for role: "campus_lecturer" — an admin-toggled credential badge (0075), undefined for every other role. */
+  /** Undefined only for role: "student" — every other role can opt into verification (0075, extended to teacher/institute by 0087). An admin-toggled credential badge. */
   institutionVerified: boolean | undefined;
-  /** Only meaningful for role: "campus_lecturer" — whether a verification document has been submitted (0076); gates whether the Verify button can be used at all. */
+  /** Undefined only for role: "student" — whether a verification document has been submitted (0076/0087); gates whether the Verify button can be used at all. */
   hasVerificationDocument: boolean | undefined;
 };
 

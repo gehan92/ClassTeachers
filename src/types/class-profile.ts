@@ -16,6 +16,8 @@ export type ClassProfileDetail = {
   classType: "physical" | "online" | "both";
   establishedText: string | null;
   photoUrl: string | null;
+  /** Admin-reviewed document verification (0087) — same badge concept as a teacher listing's. */
+  verified: boolean;
   teacherCount: number;
   rating: number;
   reviewCount: number;

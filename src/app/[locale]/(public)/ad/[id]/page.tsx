@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ArrowLeft, FileText, MapPin, Star } from "lucide-react";
+import { ArrowLeft, BadgeCheck, FileText, MapPin, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { JoinRequestBox } from "@/components/features/join-request-box";
 import { ShareButtons } from "@/components/features/share-buttons";
@@ -78,6 +78,7 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
 
   const t = await getTranslations("adPage");
   const tg = await getTranslations("search");
+  const tl = await getTranslations("listing");
 
   // Ad content is free text — teachers write it as one point per line
   // (e.g. "Program Highlights:", "Interactive lessons...", ...). Rendered
@@ -118,7 +119,12 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
             {ad.subject && (
               <div className="mb-1 font-mono text-xs uppercase tracking-[0.12em] text-white/70">{ad.subject}</div>
             )}
-            <h1 className="mb-1.5 text-2xl text-white">{ad.display_name ?? t("teacherFallback")}</h1>
+            <h1 className="mb-1.5 flex items-center gap-1.5 text-2xl text-white">
+              {ad.display_name ?? t("teacherFallback")}
+              <span title={ad.institution_verified ? tl("institutionVerified") : tl("reviewed")}>
+                <BadgeCheck className="size-4 shrink-0" aria-label={ad.institution_verified ? tl("institutionVerified") : tl("reviewed")} />
+              </span>
+            </h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-white/85">
               {ad.review_count > 0 && (
                 <span className="flex items-center gap-1.5">

@@ -1,10 +1,8 @@
 /**
  * Attendance for a class/batch session (a live class occurrence or an exam
  * sitting). Records are created automatically when a student joins a live
- * class or starts/submits an exam for that batch — see
- * src/lib/mock-data/attendance.ts for the seed data and the teacher
- * dashboard's Attendance tab for the report view. No Supabase project
- * connected yet (Phase 1).
+ * class or starts/submits an exam for that batch — see the teacher
+ * dashboard's Attendance tab for the report view.
  */
 export type AttendanceRecord = {
   id: string;

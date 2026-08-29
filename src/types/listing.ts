@@ -1,12 +1,6 @@
 import type { GradeBand } from "./grade-band";
 
-/**
- * Shape of a homepage/search-result card. Deliberately mirrors what the
- * eventual Supabase query (teacher_profiles / class_profiles joined with
- * subjects, prices, and review aggregates) will return, so swapping the
- * mock data in src/lib/mock-data.ts for a real `supabase.from(...)` query
- * is a one-line change per call site, not a component rewrite.
- */
+/** Shape of a homepage/search-result card — see src/lib/public-directory.ts for the real query behind it. */
 export type Listing = {
   id: string;
   kind: "teacher" | "class";
@@ -27,6 +21,8 @@ export type Listing = {
   gradeBands: GradeBand[];
   avatarInitials: string;
   photoUrl?: string;
+  /** Admin-reviewed document verification (0075/0076, extended to every teacher/institute by 0087) — orthogonal to campusCredential below, which is purely about the campus-lecturer academic fields. */
+  verified: boolean;
   rating: number;
   reviewCount: number;
   subjects: string[];
@@ -37,11 +33,10 @@ export type Listing = {
     fromPrice?: boolean;
   };
   href: string;
-  /** Set for a `kind: "teacher"` listing whose account role is `campus_lecturer` — swaps the card's role label and shows an academic-credential badge instead of the generic "Individual Teacher" one. Undefined for classes, which have no such distinction. */
+  /** Set for a `kind: "teacher"` listing whose account role is `campus_lecturer` — swaps the card's role label to the academic institution/title instead of the generic "Individual Teacher" one. Undefined for classes, which have no such distinction. Verification status lives on the top-level `verified` field above, not here — it applies the same way regardless of campus-lecturer status. */
   campusCredential?: {
     institution: string | null;
     academicTitle: string | null;
-    verified: boolean;
     courseCode: string | null;
   };
 };

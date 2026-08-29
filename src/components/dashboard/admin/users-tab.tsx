@@ -71,11 +71,15 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
     refresh();
   }
 
+  function ownerTypeFor(user: PlatformUser): "teacher" | "class" {
+    return user.role === "institute" ? "class" : "teacher";
+  }
+
   async function toggleInstitutionVerified(user: PlatformUser) {
     const verified = !user.institutionVerified;
     setPendingId(user.id);
     setError(null);
-    const result = await setInstitutionVerified({ teacherId: user.id, verified });
+    const result = await setInstitutionVerified({ ownerType: ownerTypeFor(user), ownerId: user.id, verified });
     setPendingId(null);
     if (result.error) {
       setError(result.error);
@@ -88,7 +92,7 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
   async function viewDocument(user: PlatformUser) {
     setPendingId(user.id);
     setError(null);
-    const result = await getVerificationDocumentUrl(user.id);
+    const result = await getVerificationDocumentUrl(ownerTypeFor(user), user.id);
     setPendingId(null);
     if (result.error || !result.url) {
       setError(result.error ?? t("documentUnavailable"));
@@ -172,7 +176,7 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-end gap-2">
-                    {user.role === "campus_lecturer" && user.hasVerificationDocument && (
+                    {user.role !== "student" && user.hasVerificationDocument && (
                       <Button
                         size="sm"
                         variant="ghost"
@@ -182,7 +186,7 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
                         {t("actions.viewDocument")}
                       </Button>
                     )}
-                    {user.role === "campus_lecturer" && (
+                    {user.role !== "student" && (
                       <Button
                         size="sm"
                         variant="outline"

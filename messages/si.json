@@ -611,7 +611,6 @@
     "workExperienceLabel": "රැකියා පළපුරුද්ද",
     "publicationsLabel": "ප්‍රකාශන සහ පර්යේෂණ",
     "campusLecturer": "කැම්පස් කථිකාචාර්ය",
-    "institutionVerified": "ආයතනය තහවුරු කර ඇත",
     "experienceLabel": "පළපුරුද්ද",
     "subjectsLabel": "විෂයයන්",
     "languagesLabel": "භාෂා",
@@ -736,10 +735,10 @@
       "actions": {
         "manage": "අත්හිටුවන්න",
         "reactivate": "නැවත සක්‍රීය කරන්න",
-        "verify": "ආයතනය තහවුරු කරන්න",
+        "verify": "තහවුරු කරන්න",
         "unverify": "තහවුරු කිරීම ඉවත් කරන්න",
         "viewDocument": "ලේඛනය බලන්න",
-        "verifyDisabledHint": "මෙම කථිකාචාර්යවරයා තවම තහවුරු කිරීමේ ලේඛනයක් ඉදිරිපත් කර නැත."
+        "verifyDisabledHint": "මෙම ගිණුම තවම තහවුරු කිරීමේ ලේඛනයක් ඉදිරිපත් කර නැත."
       },
       "documentUnavailable": "මෙම ලේඛනය විවෘත කළ නොහැකි විය.",
       "institutionVerified": "ආයතනය තහවුරු කර ඇත",
@@ -987,6 +986,17 @@
         "helper": "ඔබේ ආයතනය අනුමත කර ඇත. \"පන්ති සොයන්න\" සෙවුම් ප්‍රතිඵලවල පෙන්වීමට එය ප්‍රකාශයට පත් කරන්න, නැතහොත් සංස්කරණය කරන අතරතුර එය සඟවන්න.",
         "live": "සජීවී — සෙවුමේ දිස්වේ",
         "hidden": "සෙවුමෙන් සඟවා ඇත"
+      },
+      "verifiedTier": {
+        "heading": "තහවුරු කරගන්න",
+        "subtitle": "ඔබගේ පොදු ලැයිස්තුවට ශක්තිමත් විශ්වාස ලාංඡනයක් එක් කිරීමට ව්‍යාපාර ලියාපදිංචි කිරීමේ ලේඛනයක් හෝ ඒ හා සමාන ලේඛනයක් පරිපාලක සමාලෝචනය සඳහා ඉදිරිපත් කරන්න.",
+        "documentLabel": "තහවුරු කිරීමේ ලේඛනය",
+        "documentHint": "ව්‍යාපාර ලියාපදිංචි සහතිකයක් හෝ ඒ හා සමාන ලේඛනයක් උඩුගත කරන්න. PDF, JPG, PNG, හෝ WEBP.",
+        "uploadDocument": "ලේඛනය උඩුගත කරන්න",
+        "replaceDocument": "ලේඛනය ප්‍රතිස්ථාපනය කරන්න",
+        "verifiedNote": "ඔබ තහවුරු කර ඇත — මෙය ඔබගේ පොදු ලැයිස්තුවේ ලාංඡනයක් ලෙස පෙන්වයි.",
+        "pendingNote": "ලේඛනය ඉදිරිපත් කර ඇත — පරිපාලක සමාලෝචනය සඳහා රැඳී සිටී.",
+        "notVerifiedNote": "තවම තහවුරු කර නැත — මෙය ඔබගේ ලැයිස්තුව පොදු වීම නවත්වන්නේ නැත."
       },
       "notificationsHeading": "දැනුම්දීම්",
       "notifications": {
@@ -1415,11 +1425,13 @@
       "publicationPlaceholder": "උදා: \"Machine Learning in Practice\", IEEE Journal (2023)",
       "addPublication": "ප්‍රකාශනයක් එක් කරන්න",
       "removePublication": "ප්‍රකාශනය ඉවත් කරන්න",
-      "institutionVerifiedNote": "ඔබගේ ආයතනය පරිපාලකයෙකු විසින් තහවුරු කර ඇත.",
-      "institutionNotVerifiedNote": "තවම පරිපාලකයෙකු විසින් තහවුරු කර නැත — මෙය ඔබගේ පැතිකඩ පොදු වීම නවත්වන්නේ නැත.",
-      "institutionPendingReviewNote": "ලේඛනය ඉදිරිපත් කර ඇත — පරිපාලක සමාලෝචනය සඳහා රැඳී සිටී.",
+      "verifiedTierHeading": "තහවුරු කරගන්න",
+      "verifiedTierSubtitle": "ඔබගේ පොදු ලැයිස්තුවට ශක්තිමත් විශ්වාස ලාංඡනයක් එක් කිරීමට හැඳුනුම්පතක් හෝ ගුරු සුදුසුකමක් පරිපාලක සමාලෝචනය සඳහා ඉදිරිපත් කරන්න.",
+      "verifiedTierDocumentHint": "ජාතික හැඳුනුම්පතක්, ගුරු සහතිකයක් හෝ ඒ හා සමාන ලේඛනයක් උඩුගත කරන්න. PDF, JPG, PNG, හෝ WEBP.",
+      "verifiedTierVerifiedNote": "ඔබ තහවුරු කර ඇත — මෙය ඔබගේ පොදු ලැයිස්තුවේ ලාංඡනයක් ලෙස පෙන්වයි.",
+      "verifiedTierPendingNote": "ලේඛනය ඉදිරිපත් කර ඇත — පරිපාලක සමාලෝචනය සඳහා රැඳී සිටී.",
+      "verifiedTierNotVerifiedNote": "තවම තහවුරු කර නැත — මෙය ඔබගේ පැතිකඩ පොදු වීම නවත්වන්නේ නැත.",
       "verificationDocumentLabel": "තහවුරු කිරීමේ ලේඛනය",
-      "verificationDocumentHint": "පරිපාලකයෙකුට ඔබගේ ආයතනය තහවුරු කළ හැකි වන පරිදි කාර්ය මණ්ඩල හැඳුනුම්පතක් හෝ පත්වීම් ලිපියක් උඩුගත කරන්න. PDF, JPG, PNG, හෝ WEBP.",
       "uploadDocument": "ලේඛනය උඩුගත කරන්න",
       "replaceDocument": "ලේඛනය ප්‍රතිස්ථාපනය කරන්න",
       "fields": {

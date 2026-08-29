@@ -22,8 +22,7 @@ function priceFrom(hourlyRate: number | null, monthlyRate: number | null): Listi
 }
 
 /**
- * Real replacement for src/lib/mock-data/listings.ts. Class listings still
- * read from list_public_classes() (supabase/migrations/0021) — teacher
+ * Class listings read from list_public_classes() (supabase/migrations/0021) — teacher
  * listings instead read from list_teacher_ads() (0040): "Find teachers" now
  * lists active, batch-scoped ads rather than every approved profile, so a
  * teacher with no ad simply isn't discoverable here (list_public_teachers
@@ -65,6 +64,7 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
       gradeBands: row.grade_band ? [row.grade_band as GradeBand] : [],
       avatarInitials: row.display_name.split(" ")[0] ?? row.display_name,
       photoUrl: row.photo_url ?? undefined,
+      verified: row.institution_verified,
       rating: Number(row.rating),
       reviewCount: Number(row.review_count),
       subjects,
@@ -74,7 +74,6 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
         ? {
             institution: row.institution,
             academicTitle: row.academic_title,
-            verified: row.institution_verified,
             courseCode: row.course_code,
           }
         : undefined,
@@ -107,6 +106,7 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
       gradeBand: (row.grade_band as GradeBand | null) ?? null,
       gradeBands: (row.grade_bands as GradeBand[] | null) ?? [],
       avatarInitials: "🏫",
+      verified: row.institution_verified,
       rating: Number(row.rating),
       reviewCount: Number(row.review_count),
       subjects: row.subjects,

@@ -1173,6 +1173,34 @@ export type Database = {
         Relationships: [];
       };
 
+      announcements: {
+        Row: {
+          id: string;
+          owner_type: "teacher" | "class";
+          owner_id: string;
+          title: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_type: "teacher" | "class";
+          owner_id: string;
+          title: string;
+          body: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_type?: "teacher" | "class";
+          owner_id?: string;
+          title?: string;
+          body?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+
       prices: {
         Row: {
           id: string;

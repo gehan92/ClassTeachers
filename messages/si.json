@@ -897,9 +897,37 @@
       "inquiries": "විමසීම්",
       "studentRequests": "සිසුන්ගේ ඉල්ලීම්",
       "ads": "දැන්වීම",
+      "analytics": "විශ්ලේෂණ",
       "reviews": "සමාලෝචන",
       "settings": "සැකසුම්",
-      "students": "සිසුන්"
+      "students": "සිසුන්",
+      "calendar": "දින දර්ශනය",
+      "announcements": "නිවේදන"
+    },
+    "calendar": {
+      "title": "දින දර්ශනය",
+      "subtitle": "සම්බන්ධිත සෑම ගුරුවරයෙකුගේම සජීවී පන්ති, එක් ආයතන-ව්‍යාප්ත දසුනකින්.",
+      "empty": "තවම සජීවී පන්ති කිසිවක් සැලසුම් කර නැත.",
+      "noUpcoming": "දැනට ඉදිරියට එන දෙයක් නැත.",
+      "recentlyEnded": "මෑතක අවසන් වූ",
+      "online": "මාර්ගගත",
+      "stateLive": "දැන් සජීවී",
+      "stateEnded": "අවසන් විය"
+    },
+    "announcements": {
+      "title": "නිවේදන",
+      "subtitle": "ඔබේ ආයතනයේ සෑම පන්තියක්ම හරහා සියලුම සිසුන් වෙත ළඟා වන නිවේදනයක් පළ කරන්න.",
+      "form": {
+        "title": "නව නිවේදනය",
+        "titleLabel": "මාතෘකාව",
+        "titlePlaceholder": "උදා: O/L 2027 කාණ්ඩය සඳහා ලියාපදිංචිය දැන් විවෘතයි",
+        "bodyLabel": "පණිවිඩය",
+        "bodyPlaceholder": "ඔබේ නිවේදනය ලියන්න...",
+        "submit": "නිවේදනය පළ කරන්න"
+      },
+      "posted": "පළ කරන ලදී",
+      "empty": "තවම නිවේදන පළ කර නැත.",
+      "delete": "මකන්න"
     },
     "overview": {
       "subtitle": "ඔබේ ආයතනය පිළිබඳ දළ විශ්ලේෂණය.",
@@ -1099,6 +1127,9 @@
       "settings": "සැකසුම්",
       "wantedAds": "දැන්වීමක් පළ කරන්න",
       "inquiries": "මගේ පණිවිඩ"
+    },
+    "announcements": {
+      "heading": "නිවේදන"
     },
     "overview": {
       "greeting": "සුබ සන්ධ්‍යාවක්, {name}",

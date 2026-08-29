@@ -9,6 +9,14 @@ import { ReviewsTab } from "@/components/dashboard/institute/reviews-tab";
 import { SettingsTab } from "@/components/dashboard/institute/settings-tab";
 import { InquiriesTab, type InquiryRow, type InquiryMessageRow } from "@/components/dashboard/inquiries-tab";
 import { WantedAdsBrowseTab, type WantedAdBrowseRow } from "@/components/dashboard/wanted-ads-browse-tab";
+import { AnalyticsTab } from "@/components/dashboard/teacher/analytics-tab";
+import type {
+  AnalyticsExamResultRow,
+  AnalyticsAttendanceRow,
+  AnalyticsBatchOption,
+} from "@/components/dashboard/teacher/analytics-tab";
+import { CalendarTab, type InstituteCalendarSession } from "@/components/dashboard/institute/calendar-tab";
+import { AnnouncementsTab, type InstituteAnnouncementRow } from "@/components/dashboard/institute/announcements-tab";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter } from "@/lib/format-date";
 import type { TeachersAtGlance } from "@/types/dashboard-institute";
@@ -154,6 +162,114 @@ export default async function InstituteDashboardPage({
     (batchSubjectRows ?? []).map((s) => [s.id, (s.translations as Record<string, string> | null)?.en ?? null]),
   );
 
+  // Institute Blueprint step 6 — Analytics tab. Mirrors the teacher
+  // dashboard's own analytics query (teacher/page.tsx) exactly, just scoped
+  // to owner_type='class' instead of 'teacher': content created against an
+  // institute batch is already server-derived to owner_id=instituteId
+  // (resolveBatchOwner, step 3), so this rolls up every linked teacher's
+  // exams/attendance for free — no per-teacher join needed.
+  const [{ data: instituteExamRows }, { data: instituteQuestionMarkRows }, { data: instituteLiveClassRows }, { data: announcementRows }] =
+    await Promise.all([
+    instituteId
+      ? supabase.from("exams").select("id, title, question_ids, scheduled_at, batch_id").eq("owner_type", "class").eq("owner_id", instituteId)
+      : Promise.resolve({ data: [] as { id: string; title: string; question_ids: string[]; scheduled_at: string | null; batch_id: string | null }[] }),
+    instituteId
+      ? supabase.from("question_bank_items").select("id, marks").eq("owner_type", "class").eq("owner_id", instituteId)
+      : Promise.resolve({ data: [] as { id: string; marks: number }[] }),
+    instituteId
+      ? supabase
+          .from("live_classes")
+          .select("id, title, batch_id, scheduled_at, duration_minutes, mode, location")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+          .neq("status", "cancelled")
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            title: string;
+            batch_id: string | null;
+            scheduled_at: string;
+            duration_minutes: number;
+            mode: "online" | "physical";
+            location: string | null;
+          }[],
+        }),
+    // Institute Blueprint step 6 — announcements.
+    instituteId
+      ? supabase
+          .from("announcements")
+          .select("id, title, body, created_at")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] as { id: string; title: string; body: string; created_at: string }[] }),
+  ]);
+
+  const instituteExamIds = (instituteExamRows ?? []).map((e) => e.id);
+  const instituteLiveClassIds = (instituteLiveClassRows ?? []).map((c) => c.id);
+
+  const [{ data: instituteSubmissionRows }, { data: instituteAttendanceRows }] = await Promise.all([
+    instituteExamIds.length
+      ? supabase.from("exam_submissions").select("id, exam_id, student_id, status, grade").in("exam_id", instituteExamIds)
+      : Promise.resolve({
+          data: [] as { id: string; exam_id: string; student_id: string; status: "pending" | "graded"; grade: number | null }[],
+        }),
+    instituteLiveClassIds.length
+      ? supabase.from("attendance_records").select("live_class_id, student_id, status").in("live_class_id", instituteLiveClassIds)
+      : Promise.resolve({ data: [] as { live_class_id: string; student_id: string; status: "present" | "absent" | "late" }[] }),
+  ]);
+
+  const instituteAnalyticsStudentIds = [
+    ...new Set([
+      ...(instituteSubmissionRows ?? []).map((s) => s.student_id),
+      ...(instituteAttendanceRows ?? []).map((a) => a.student_id),
+    ]),
+  ];
+  const { data: instituteAnalyticsStudentRows } = instituteAnalyticsStudentIds.length
+    ? await supabase.rpc("get_roster_student_info", { p_student_ids: instituteAnalyticsStudentIds })
+    : { data: [] as { id: string; full_name: string; phone: string | null }[] };
+
+  const analyticsStudentById = new Map((instituteAnalyticsStudentRows ?? []).map((p) => [p.id, p]));
+  const analyticsMarksByQuestionId = new Map((instituteQuestionMarkRows ?? []).map((q) => [q.id, q.marks]));
+  const analyticsMaxMarksByExamId = new Map(
+    (instituteExamRows ?? []).map((e) => [e.id, e.question_ids.reduce((sum, qid) => sum + (analyticsMarksByQuestionId.get(qid) ?? 0), 0)]),
+  );
+  const analyticsExamById = new Map((instituteExamRows ?? []).map((e) => [e.id, e]));
+
+  const analyticsExamResults: AnalyticsExamResultRow[] = (instituteSubmissionRows ?? []).map((s) => {
+    const exam = analyticsExamById.get(s.exam_id);
+    const maxMarks = analyticsMaxMarksByExamId.get(s.exam_id) ?? 0;
+    const scorePercent =
+      s.status === "graded" && s.grade !== null && maxMarks > 0
+        ? Math.max(0, Math.min(100, Math.round((s.grade / maxMarks) * 100)))
+        : null;
+    return {
+      examId: s.exam_id,
+      examTitle: exam?.title ?? "—",
+      examDateIso: exam?.scheduled_at ?? null,
+      batchId: exam?.batch_id ?? null,
+      studentId: s.student_id,
+      studentName: analyticsStudentById.get(s.student_id)?.full_name ?? "—",
+      status: s.status,
+      scorePercent,
+    };
+  });
+
+  const analyticsLiveClassById = new Map((instituteLiveClassRows ?? []).map((c) => [c.id, c]));
+  const analyticsAttendance: AnalyticsAttendanceRow[] = (instituteAttendanceRows ?? []).flatMap((a) => {
+    const liveClass = analyticsLiveClassById.get(a.live_class_id);
+    if (!liveClass) return [];
+    return [
+      {
+        batchId: liveClass.batch_id,
+        dateIso: liveClass.scheduled_at,
+        studentId: a.student_id,
+        studentName: analyticsStudentById.get(a.student_id)?.full_name ?? "—",
+        status: a.status,
+      },
+    ];
+  });
+
   const teacherIds = (classTeacherRows ?? []).map((row) => row.teacher_id);
   const acceptedTeacherIds = (classTeacherRows ?? [])
     .filter((row) => row.status === "accepted")
@@ -255,6 +371,12 @@ export default async function InstituteDashboardPage({
     : null;
 
   const dateFormatter = createDateFormatter(locale);
+  const announcements: InstituteAnnouncementRow[] = (announcementRows ?? []).map((a) => ({
+    id: a.id,
+    title: a.title,
+    body: a.body,
+    createdLabel: dateFormatter.format(new Date(a.created_at)),
+  }));
   const inquiryMessagesByInquiryId = new Map<string, InquiryMessageRow[]>();
   for (const row of inquiryMessageRows ?? []) {
     const list = inquiryMessagesByInquiryId.get(row.inquiry_id) ?? [];
@@ -313,6 +435,26 @@ export default async function InstituteDashboardPage({
     gradeBand: b.grade_band as InstituteBatchRow["gradeBand"],
     studentCount: batchStudentCounts.get(b.id) ?? 0,
   }));
+
+  // Institute Blueprint step 6 — cross-class calendar. Reuses the same
+  // live_classes rows the Analytics tab already fetched above (no new
+  // query) — every linked teacher's sessions roll up here for free since
+  // they're all owner_id=instituteId, same reasoning as the analytics
+  // block's own comment.
+  const batchById = new Map(batches.map((b) => [b.id, b]));
+  const calendarSessions: InstituteCalendarSession[] = (instituteLiveClassRows ?? []).map((c) => {
+    const batch = c.batch_id ? batchById.get(c.batch_id) : undefined;
+    return {
+      id: c.id,
+      title: c.title,
+      scheduledAtIso: c.scheduled_at,
+      durationMinutes: c.duration_minutes,
+      mode: c.mode,
+      location: c.location,
+      batchTitle: batch?.title ?? null,
+      teacherName: batch?.teacherLabel ?? null,
+    };
+  });
 
   // Only an accepted roster teacher can be assigned to a class — a pending
   // invite hasn't agreed to anything yet.
@@ -380,6 +522,7 @@ export default async function InstituteDashboardPage({
             { key: "teachers", label: t("tabs.teachers"), count: teacherIds.length },
             { key: "batches", label: t("tabs.batches"), count: batches.length },
             { key: "students", label: t("tabs.students"), count: instituteJoinRequests.length },
+            { key: "calendar", label: t("tabs.calendar") },
           ],
         },
         {
@@ -396,6 +539,8 @@ export default async function InstituteDashboardPage({
               count: wantedAdRequests.filter((r) => !r.myResponse).length,
             },
             { key: "ads", label: t("tabs.ads") },
+            { key: "announcements", label: t("tabs.announcements") },
+            { key: "analytics", label: t("tabs.analytics") },
             { key: "reviews", label: t("tabs.reviews"), count: reviewRows?.length ?? 0 },
             { key: "settings", label: t("tabs.settings") },
           ],
@@ -415,9 +560,18 @@ export default async function InstituteDashboardPage({
         teachers: <TeachersTab teachers={instituteTeachers} />,
         batches: <BatchesTab batches={batches} teacherOptions={rosterTeacherOptions} />,
         students: <StudentsTab students={instituteStudents} requests={instituteJoinRequests} />,
+        calendar: <CalendarTab sessions={calendarSessions} />,
         inquiries: <InquiriesTab inquiries={inquiries} />,
         studentRequests: <WantedAdsBrowseTab requests={wantedAdRequests} />,
         ads: <AdvertisementTab initialContent={adRow?.content ?? ""} />,
+        announcements: <AnnouncementsTab announcements={announcements} />,
+        analytics: (
+          <AnalyticsTab
+            examResults={analyticsExamResults}
+            attendance={analyticsAttendance}
+            batches={batches.map((b): AnalyticsBatchOption => ({ id: b.id, title: b.title }))}
+          />
+        ),
         reviews: (
           <ReviewsTab initialReviews={reviews} averageRating={averageRating ?? "0.0"} reviewCount={reviewRows?.length ?? 0} />
         ),

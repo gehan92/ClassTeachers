@@ -897,9 +897,37 @@
       "inquiries": "Inquiries",
       "studentRequests": "Student Requests",
       "ads": "Advertisement",
+      "analytics": "Analytics",
       "reviews": "Reviews",
       "settings": "Settings",
-      "students": "Students"
+      "students": "Students",
+      "calendar": "Calendar",
+      "announcements": "Announcements"
+    },
+    "calendar": {
+      "title": "Calendar",
+      "subtitle": "Every linked teacher's live sessions, in one institute-wide view.",
+      "empty": "No live sessions scheduled yet.",
+      "noUpcoming": "Nothing upcoming right now.",
+      "recentlyEnded": "Recently ended",
+      "online": "Online",
+      "stateLive": "Live now",
+      "stateEnded": "Ended"
+    },
+    "announcements": {
+      "title": "Announcements",
+      "subtitle": "Post a notice that reaches every student across every class at your institute.",
+      "form": {
+        "title": "New announcement",
+        "titleLabel": "Title",
+        "titlePlaceholder": "e.g. Enrollment for the O/L 2027 group is now open",
+        "bodyLabel": "Message",
+        "bodyPlaceholder": "Write your announcement...",
+        "submit": "Post announcement"
+      },
+      "posted": "Posted",
+      "empty": "No announcements posted yet.",
+      "delete": "Delete"
     },
     "overview": {
       "subtitle": "Overview across your institute.",
@@ -1099,6 +1127,9 @@
       "settings": "Settings",
       "wantedAds": "Post an Ad",
       "inquiries": "My Messages"
+    },
+    "announcements": {
+      "heading": "Announcements"
     },
     "overview": {
       "greeting": "Good evening, {name}",

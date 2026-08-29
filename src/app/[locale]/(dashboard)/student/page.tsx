@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { OverviewTab } from "@/components/dashboard/student/overview-tab";
+import { AnnouncementsPanel, type AnnouncementRow } from "@/components/dashboard/student/announcements-panel";
 import { ClassesTab } from "@/components/dashboard/student/classes-tab";
 import { LiveClassesTab } from "@/components/dashboard/student/live-classes-tab";
 import { NotesTab } from "@/components/dashboard/student/notes-tab";
@@ -206,6 +207,7 @@ export default async function StudentDashboardPage({
     { data: revealedAnswerRows },
     inquiryOnlyTeacherProfiles,
     { data: myInquiryMessageRows },
+    { data: announcementRows },
   ] = await Promise.all([
     // An exam can be narrowed by batch and/or an explicit hand-picked
     // student list (0060/0061) — is_enrolled_in_exam() is the one place
@@ -276,6 +278,19 @@ export default async function StudentDashboardPage({
       : Promise.resolve({
           data: [] as { id: string; inquiry_id: string; sender_role: "owner" | "inquirer"; body: string; created_at: string }[],
         }),
+    // Institute Blueprint step 6 — "one announcement reaching students
+    // across every class." Only institutes the student is actually
+    // accepted into (classIds, not classOwnerIds — a pending/declined
+    // request shouldn't surface an institute's internal notices).
+    classIds.length
+      ? supabase
+          .from("announcements")
+          .select("id, owner_id, title, body, created_at")
+          .eq("owner_type", "class")
+          .in("owner_id", classIds)
+          .order("created_at", { ascending: false })
+          .limit(5)
+      : Promise.resolve({ data: [] as { id: string; owner_id: string; title: string; body: string; created_at: string }[] }),
   ]);
 
   const visibleExamIdSet = new Set(visibleExamIds ?? []);
@@ -378,6 +393,14 @@ export default async function StudentDashboardPage({
   function ownerName(ownerType: "teacher" | "class", ownerId: string) {
     return (ownerType === "teacher" ? teacherNameById.get(ownerId) : classNameById.get(ownerId)) ?? "—";
   }
+
+  const announcements: AnnouncementRow[] = (announcementRows ?? []).map((a) => ({
+    id: a.id,
+    instituteName: classNameById.get(a.owner_id) ?? "—",
+    title: a.title,
+    body: a.body,
+    createdLabel: dateFormatter.format(new Date(a.created_at)),
+  }));
 
   // Deliberately built from allLiveClassRows (every live class ever held by
   // an enrolled teacher/class), not the visibility-filtered liveClassRows
@@ -735,16 +758,19 @@ export default async function StudentDashboardPage({
       ]}
       panels={{
         overview: (
-          <OverviewTab
-            studentName={fullName}
-            classesCount={classesCount}
-            nextLiveTitle={nextLive?.title ?? null}
-            nextLiveTeacherName={nextLiveTeacherName}
-            nextLiveLabel={nextLiveLabel}
-            examsDueCount={examsDueCount}
-            dueExamTitles={dueExamTitles}
-            notesCount={studentNotes.length}
-          />
+          <>
+            <AnnouncementsPanel announcements={announcements} />
+            <OverviewTab
+              studentName={fullName}
+              classesCount={classesCount}
+              nextLiveTitle={nextLive?.title ?? null}
+              nextLiveTeacherName={nextLiveTeacherName}
+              nextLiveLabel={nextLiveLabel}
+              examsDueCount={examsDueCount}
+              dueExamTitles={dueExamTitles}
+              notesCount={studentNotes.length}
+            />
+          </>
         ),
         progress: (
           <ProgressTab

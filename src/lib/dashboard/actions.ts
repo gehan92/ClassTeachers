@@ -398,6 +398,7 @@ const instituteSettingsSchema = z.object({
   location: z.string().trim().optional(),
   phone: z.string().trim().optional(),
   established: z.string().trim().optional(),
+  description: z.string().trim().optional(),
   hourlyRate: z.coerce.number().min(0).optional(),
   monthlyRate: z.coerce.number().min(0).optional(),
 });
@@ -407,6 +408,7 @@ export async function updateInstituteProfile(input: {
   location: string;
   phone: string;
   established: string;
+  description: string;
   hourlyRate: string;
   monthlyRate: string;
 }): Promise<ActionResult> {
@@ -415,6 +417,7 @@ export async function updateInstituteProfile(input: {
     location: input.location,
     phone: input.phone,
     established: input.established,
+    description: input.description || undefined,
     hourlyRate: input.hourlyRate || undefined,
     monthlyRate: input.monthlyRate || undefined,
   });
@@ -448,6 +451,7 @@ export async function updateInstituteProfile(input: {
         name: parsed.data.name,
         location: parsed.data.location || null,
         established: parsed.data.established || null,
+        description: parsed.data.description || null,
       })
       .eq("id", instituteId);
     if (classError) {
@@ -461,6 +465,7 @@ export async function updateInstituteProfile(input: {
         name: parsed.data.name,
         location: parsed.data.location || null,
         established: parsed.data.established || null,
+        description: parsed.data.description || null,
       })
       .select("id")
       .single();

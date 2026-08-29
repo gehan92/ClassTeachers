@@ -580,6 +580,7 @@ export default async function InstituteDashboardPage({
             initialName={classProfile?.name ?? fullName}
             initialLocation={classProfile?.location ?? ""}
             initialEstablished={classProfile?.established ?? ""}
+            initialDescription={classProfile?.description ?? ""}
             initialPhotoUrl={classProfile?.photo_url ?? null}
             initialPhone={profile?.phone ?? ""}
             initialHourlyRate={priceRow?.hourly_rate?.toString() ?? ""}

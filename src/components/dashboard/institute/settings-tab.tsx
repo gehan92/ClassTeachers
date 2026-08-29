@@ -13,10 +13,14 @@ import { uploadVerificationDocument } from "@/lib/dashboard/verification-actions
 import { ReferEarnPanel, type ReferralRow } from "@/components/dashboard/refer-earn-panel";
 import type { ProfileStatus } from "@/types/database";
 
+const textareaClass =
+  "min-h-28 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 md:text-sm";
+
 export function SettingsTab({
   initialName,
   initialLocation,
   initialEstablished,
+  initialDescription,
   initialPhone,
   initialHourlyRate,
   initialMonthlyRate,
@@ -32,6 +36,7 @@ export function SettingsTab({
   initialName: string;
   initialLocation: string;
   initialEstablished: string;
+  initialDescription: string;
   initialPhone: string;
   initialHourlyRate: string;
   initialMonthlyRate: string;
@@ -143,6 +148,7 @@ export function SettingsTab({
     established: initialEstablished,
     location: initialLocation,
     phone: initialPhone,
+    description: initialDescription,
   });
   const [detailsSaved, setDetailsSaved] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
@@ -172,6 +178,7 @@ export function SettingsTab({
       name: details.name,
       location: details.location,
       established: details.established,
+      description: details.description,
       phone: details.phone,
       hourlyRate: rate.hourly,
       monthlyRate: rate.monthly,
@@ -192,6 +199,7 @@ export function SettingsTab({
       name: details.name,
       location: details.location,
       established: details.established,
+      description: details.description,
       phone: details.phone,
       hourlyRate: rate.hourly,
       monthlyRate: rate.monthly,
@@ -272,6 +280,16 @@ export function SettingsTab({
               type="tel"
               value={details.phone}
               onChange={(e) => setDetails((prev) => ({ ...prev, phone: e.target.value }))}
+            />
+          </div>
+          <div className="grid gap-1.5 sm:col-span-2">
+            <Label htmlFor="institute-description">{t("details.descriptionLabel")}</Label>
+            <textarea
+              id="institute-description"
+              className={textareaClass}
+              placeholder={t("details.descriptionPlaceholder")}
+              value={details.description}
+              onChange={(e) => setDetails((prev) => ({ ...prev, description: e.target.value }))}
             />
           </div>
         </div>

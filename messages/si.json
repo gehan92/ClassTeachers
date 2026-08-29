@@ -1056,7 +1056,9 @@
         "nameLabel": "ආයතනයේ නම",
         "establishedLabel": "ආරම්භ කළ වර්ෂය",
         "locationLabel": "ස්ථානය",
-        "phoneLabel": "දුරකථනය"
+        "phoneLabel": "දුරකථනය",
+        "descriptionLabel": "ඔබේ ආයතනය ගැන",
+        "descriptionPlaceholder": "ඔබේ ආයතනයට එකතු වීම වටින්නේ ඇයිද යන්න අපේක්ෂිත සිසුන්ට කියන්න — ඔබේ ඉගැන්වීමේ ක්‍රමය, ප්‍රතිඵල, පහසුකම්..."
       },
       "rate": {
         "title": "ආයතන-ව්‍යාප්ත ගාස්තුව",

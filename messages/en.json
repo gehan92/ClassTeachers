@@ -1056,7 +1056,9 @@
         "nameLabel": "Institute name",
         "establishedLabel": "Established",
         "locationLabel": "Location",
-        "phoneLabel": "Phone"
+        "phoneLabel": "Phone",
+        "descriptionLabel": "About your institute",
+        "descriptionPlaceholder": "Tell prospective students what makes your institute worth joining — your teaching approach, results, facilities..."
       },
       "rate": {
         "title": "Institute-wide rate",

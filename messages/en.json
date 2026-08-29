@@ -1,7 +1,32 @@
 {
   "meta": {
     "homeTitle": "ClassPortals — Find teachers, classes & campus lecturers, Grade 1 to University",
-    "homeDescription": "Search verified teachers, tuition classes and campus lecturers across Sri Lanka. Compare qualifications, rates and reviews before you ever pick up the phone."
+    "homeDescription": "Search verified teachers, tuition classes and campus lecturers across Sri Lanka. Compare qualifications, rates and reviews before you ever pick up the phone.",
+    "teachersTitle": "Find Teachers, Classes & Campus Lecturers | ClassPortals",
+    "teachersDescription": "Filter by subject, location and grade to compare verified teachers, tuition classes and campus lecturers across Sri Lanka.",
+    "rolesTitle": "How ClassPortals Works | ClassPortals",
+    "rolesDescription": "Whether you teach one student or run an institute, ClassPortals gives every role the same tools to be found, compared and contacted.",
+    "pricingTitle": "Pricing | ClassPortals",
+    "pricingDescription": "ClassPortals' Free, Standard and Premium subscription plans for teachers and classes.",
+    "helpTitle": "Help Centre | ClassPortals",
+    "helpDescription": "Common questions about joining ClassPortals, pricing, and how contact details unlock.",
+    "advertiseTitle": "Advertise on ClassPortals",
+    "advertiseDescription": "Put your class or ad in front of active parents and students searching for teachers across Sri Lanka.",
+    "termsTitle": "Terms of Service | ClassPortals",
+    "termsDescription": "The terms that govern how teachers, classes and students use ClassPortals.",
+    "privacyTitle": "Privacy Policy | ClassPortals",
+    "privacyDescription": "How ClassPortals stores your data, and the contact-gating rules that keep teacher and class names masked and phone numbers locked until a student enrolls.",
+    "requestsTitle": "Student Requests | ClassPortals",
+    "requestsDescription": "Real requests from students searching for a teacher or institute — respond if you can help.",
+    "teacherRoleFallback": "Teacher",
+    "teacherProfileTitle": "{name} — {subject} | ClassPortals",
+    "teacherProfileDescription": "View {name}'s profile on ClassPortals: qualifications, rates and reviews.",
+    "classProfileTitle": "{name} — Tuition Institute | ClassPortals",
+    "classProfileDescription": "View {name} on ClassPortals: classes, teachers, rates and reviews.",
+    "adTitle": "{adTitle} — {name} | ClassPortals",
+    "adDescription": "{name}'s class on ClassPortals — view schedule, pricing and how to join.",
+    "requestDetailTitle": "{title} | ClassPortals",
+    "requestDetailDescription": "A student is looking for help on ClassPortals — see the details and respond if you can help."
   },
   "nav": {
     "findTeachers": "Find teachers",

@@ -1,7 +1,14 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { TeachersSearch } from "@/components/features/teachers-search";
 import { getPublicListings } from "@/lib/public-directory";
+
+export async function generateMetadata({ params }: PageProps<"/[locale]/teachers">): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "meta" });
+  return { title: t("teachersTitle"), description: t("teachersDescription") };
+}
 
 const headingKeyByCategory = {
   teacher: { title: "titleTeacher", subtitle: "subtitleTeacher" },

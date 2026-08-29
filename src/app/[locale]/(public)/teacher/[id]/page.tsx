@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import type { Metadata } from "next";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter } from "@/lib/format-date";
@@ -102,6 +103,24 @@ async function loadTeacherProfile(
     institutionVerified: teacher.institution_verified,
     publications: teacher.publications ?? [],
   } satisfies TeacherProfileDetail;
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/[locale]/teacher/[id]">): Promise<Metadata> {
+  const { locale, id } = await params;
+  const supabase = await createClient();
+  const [{ data: rows }, t] = await Promise.all([
+    supabase.rpc("get_public_teacher_profile", { p_teacher_id: id }),
+    getTranslations({ locale, namespace: "meta" }),
+  ]);
+  const teacher = rows?.[0];
+  if (!teacher || !teacher.display_name) return {};
+  const subject = teacher.subjects?.[0] ?? t("teacherRoleFallback");
+  return {
+    title: t("teacherProfileTitle", { name: teacher.display_name, subject }),
+    description: t("teacherProfileDescription", { name: teacher.display_name }),
+  };
 }
 
 export default async function TeacherProfilePage({

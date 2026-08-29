@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+
+export async function generateMetadata({ params }: PageProps<"/[locale]/help">): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "meta" });
+  return { title: t("helpTitle"), description: t("helpDescription") };
+}
 
 export default async function HelpPage({ params }: PageProps<"/[locale]/help">) {
   const { locale } = await params;

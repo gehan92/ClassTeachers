@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { WantedAdsBoard } from "@/components/features/wanted-ads-board";
 import type { PublicWantedAd } from "@/components/features/wanted-ads-board";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter } from "@/lib/format-date";
+
+export async function generateMetadata({ params }: PageProps<"/[locale]/requests">): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "meta" });
+  return { title: t("requestsTitle"), description: t("requestsDescription") };
+}
 
 export default async function RequestsPage({ params }: PageProps<"/[locale]/requests">) {
   const { locale } = await params;

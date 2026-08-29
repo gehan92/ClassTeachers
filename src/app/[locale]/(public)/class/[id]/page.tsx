@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ArrowLeft, MapPin, School, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { GateNote } from "@/components/features/gate-note";
@@ -93,6 +94,22 @@ async function loadClassProfile(id: string, locale: string): Promise<ClassProfil
     })),
     phone,
   } satisfies ClassProfileDetail;
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/[locale]/class/[id]">): Promise<Metadata> {
+  const { locale, id } = await params;
+  const supabase = await createClient();
+  const [{ data: classProfile }, t] = await Promise.all([
+    supabase.from("class_profiles").select("name").eq("id", id).maybeSingle(),
+    getTranslations({ locale, namespace: "meta" }),
+  ]);
+  if (!classProfile) return {};
+  return {
+    title: t("classProfileTitle", { name: classProfile.name }),
+    description: t("classProfileDescription", { name: classProfile.name }),
+  };
 }
 
 export default async function ClassProfilePage({

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ArrowLeft, GraduationCap } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -15,6 +16,16 @@ async function loadAd(id: string) {
     return null;
   }
   return rows[0];
+}
+
+export async function generateMetadata({ params }: PageProps<"/[locale]/requests/[id]">): Promise<Metadata> {
+  const { locale, id } = await params;
+  const [ad, t] = await Promise.all([loadAd(id), getTranslations({ locale, namespace: "meta" })]);
+  if (!ad) return {};
+  return {
+    title: t("requestDetailTitle", { title: ad.title }),
+    description: t("requestDetailDescription"),
+  };
 }
 
 /**

@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { RoleCard } from "@/components/features/role-card";
+
+export async function generateMetadata({ params }: PageProps<"/[locale]/roles">): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "meta" });
+  return { title: t("rolesTitle"), description: t("rolesDescription") };
+}
 
 export default async function RolesPage({ params }: PageProps<"/[locale]/roles">) {
   const { locale } = await params;

@@ -1,7 +1,32 @@
 {
   "meta": {
     "homeTitle": "ClassPortals — ගුරුවරුන්, පන්ති සහ කැම්පස් කථිකාචාර්යවරුන් සොයන්න, 1 ශ්‍රේණියේ සිට විශ්වවිද්‍යාලය දක්වා",
-    "homeDescription": "ශ්‍රී ලංකාව පුරා සත්‍යාපිත ගුරුවරුන්, උපකාරක පන්ති සහ කැම්පස් කථිකාචාර්යවරුන් සොයන්න. දුරකථනයෙන් අමතන්නට පෙර සුදුසුකම්, මිල ගණන් සහ සමාලෝචන සසඳන්න."
+    "homeDescription": "ශ්‍රී ලංකාව පුරා සත්‍යාපිත ගුරුවරුන්, උපකාරක පන්ති සහ කැම්පස් කථිකාචාර්යවරුන් සොයන්න. දුරකථනයෙන් අමතන්නට පෙර සුදුසුකම්, මිල ගණන් සහ සමාලෝචන සසඳන්න.",
+    "teachersTitle": "ගුරුවරුන්, පන්ති සහ කැම්පස් කථිකාචාර්යවරුන් සොයන්න | ClassPortals",
+    "teachersDescription": "විෂය, ස්ථානය සහ ශ්‍රේණිය අනුව පෙරා ශ්‍රී ලංකාව පුරා සත්‍යාපිත ගුරුවරුන්, උපකාරක පන්ති සහ කැම්පස් කථිකාචාර්යවරුන් සසඳන්න.",
+    "rolesTitle": "ClassPortals ක්‍රියා කරන ආකාරය | ClassPortals",
+    "rolesDescription": "ඔබ එක් සිසුවෙකුට උගන්වන්නේ වුවත් ආයතනයක් පවත්වාගෙන යන්නේ වුවත්, සොයාගැනීමට, සැසඳීමට සහ සම්බන්ධ වීමට සෑම භූමිකාවකටම එකම මෙවලම් ClassPortals විසින් ලබා දේ.",
+    "pricingTitle": "මිල ගණන් | ClassPortals",
+    "pricingDescription": "ගුරුවරුන් සහ පන්ති සඳහා ClassPortals හි නොමිලේ, සම්මත සහ වාරික දායකත්ව සැලසුම්.",
+    "helpTitle": "උදවු මධ්‍යස්ථානය | ClassPortals",
+    "helpDescription": "ClassPortals වෙත සම්බන්ධ වීම, මිල ගණන් සහ සම්බන්ධතා විස්තර අගුළු ඇරෙන ආකාරය පිළිබඳ පොදු ප්‍රශ්න.",
+    "advertiseTitle": "ClassPortals හි දැන්වීම් කරන්න",
+    "advertiseDescription": "ශ්‍රී ලංකාව පුරා ගුරුවරුන් සොයන ක්‍රියාශීලී දෙමාපියන් සහ සිසුන් ඉදිරියේ ඔබේ පන්තිය හෝ දැන්වීම තබන්න.",
+    "termsTitle": "සේවා නියම | ClassPortals",
+    "termsDescription": "ගුරුවරුන්, පන්ති සහ සිසුන් ClassPortals භාවිතා කරන ආකාරය පාලනය කරන නියම.",
+    "privacyTitle": "පෞද්ගලිකත්ව ප්‍රතිපත්තිය | ClassPortals",
+    "privacyDescription": "ClassPortals ඔබේ දත්ත ගබඩා කරන ආකාරය, සහ සිසුවෙකු ඇතුළත් වන තෙක් ගුරු/පන්ති නම් සඟවා දුරකථන අංක අගුළු දමා තබන සම්බන්ධතා නීති.",
+    "requestsTitle": "සිසු ඉල්ලීම් | ClassPortals",
+    "requestsDescription": "ගුරුවරයෙකු හෝ ආයතනයක් සොයන සිසුන්ගේ සැබෑ ඉල්ලීම් — ඔබට උදව් කළ හැකි නම් පිළිතුරු දෙන්න.",
+    "teacherRoleFallback": "ගුරුවරයා",
+    "teacherProfileTitle": "{name} — {subject} | ClassPortals",
+    "teacherProfileDescription": "ClassPortals හි {name} ගේ පැතිකඩ බලන්න: සුදුසුකම්, මිල ගණන් සහ සමාලෝචන.",
+    "classProfileTitle": "{name} — උපකාරක ආයතනය | ClassPortals",
+    "classProfileDescription": "ClassPortals හි {name} බලන්න: පන්ති, ගුරුවරුන්, මිල ගණන් සහ සමාලෝචන.",
+    "adTitle": "{adTitle} — {name} | ClassPortals",
+    "adDescription": "ClassPortals හි {name} ගේ පන්තිය — කාලසටහන, මිල ගණන් සහ එකතු වන ආකාරය බලන්න.",
+    "requestDetailTitle": "{title} | ClassPortals",
+    "requestDetailDescription": "ClassPortals හි සිසුවෙකු උදව් සොයමින් සිටී — විස්තර බලා ඔබට හැකි නම් පිළිතුරු දෙන්න."
   },
   "nav": {
     "findTeachers": "ගුරුවරුන් සොයන්න",

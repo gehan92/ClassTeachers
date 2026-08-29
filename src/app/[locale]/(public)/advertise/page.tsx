@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Check } from "lucide-react";
@@ -5,6 +6,12 @@ import { RoleCard } from "@/components/features/role-card";
 import { AdBoard } from "@/components/features/ad-board";
 import { getPublicListings } from "@/lib/public-directory";
 import { cn } from "@/lib/utils";
+
+export async function generateMetadata({ params }: PageProps<"/[locale]/advertise">): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "meta" });
+  return { title: t("advertiseTitle"), description: t("advertiseDescription") };
+}
 
 export default async function AdvertisePage({ params }: PageProps<"/[locale]/advertise">) {
   const { locale } = await params;

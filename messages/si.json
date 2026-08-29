@@ -126,7 +126,8 @@
     "signInForContact": "සම්බන්ධතාවය සඳහා පිවිසෙන්න",
     "viewClass": "පන්තිය බලන්න",
     "reviewsCount": "සමාලෝචන {count}",
-    "institutionVerified": "ආයතනය තහවුරු කර ඇත"
+    "institutionVerified": "ආයතනය තහවුරු කර ඇත",
+    "reviewed": "ClassPortals විසින් සමාලෝචනය කර ඇත"
   },
   "reviews": {
     "replyPrefix": "පිළිතුරු දුන්නා:"
@@ -193,7 +194,8 @@
   "adSlot": {
     "eyebrow": "වේදිකා-ව්‍යාප්ත දැන්වීම",
     "text": "මෙම ස්ථානය අනුග්‍රාහකයන්ට විකුණා ඇත — ආයතන, ප්‍රකාශකයන් හෝ පොත්පත් සන්නාම.",
-    "cta": "මෙහි දැන්වීම් කරන්න"
+    "cta": "මෙහි දැන්වීම් කරන්න",
+    "sponsoredLabel": "අනුග්‍රාහක දැන්වීම"
   },
   "teachCta": {
     "eyebrow": "ClassPortals හි උගන්වන්න",
@@ -752,6 +754,8 @@
         "planLabel": "සැලසුම",
         "placementLabel": "ස්ථානගත කිරීම",
         "expiresLabel": "කල් ඉකුත් වේ",
+        "contentLabel": "දැන්වීම් පණිවිඩය (විකල්ප)",
+        "contentPlaceholder": "මෙම ස්ථානයේ නරඹන්නන්ට පෙනිය යුත්තේ කුමක්ද?",
         "add": "එකතු කරන්න",
         "cancel": "අවලංගු කරන්න"
       },

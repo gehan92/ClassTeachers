@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/features/status-badge";
@@ -22,6 +23,7 @@ export function SiteAdsTab({ initialAds }: { initialAds: SiteAd[] }) {
   const [plan, setPlan] = useState<SiteAdPlan>("basic");
   const [placement, setPlacement] = useState<SiteAdPlacement>("search_results");
   const [expiresAt, setExpiresAt] = useState("");
+  const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,6 +44,7 @@ export function SiteAdsTab({ initialAds }: { initialAds: SiteAd[] }) {
     setPlan("basic");
     setPlacement("search_results");
     setExpiresAt("");
+    setContent("");
     setShowForm(false);
   }
 
@@ -54,6 +57,7 @@ export function SiteAdsTab({ initialAds }: { initialAds: SiteAd[] }) {
       plan,
       placement,
       expiresAt: expiresAt || null,
+      content: content.trim() || undefined,
     });
     setSaving(false);
     if (result.error) {
@@ -140,6 +144,18 @@ export function SiteAdsTab({ initialAds }: { initialAds: SiteAd[] }) {
                 onChange={(e) => setExpiresAt(e.target.value)}
               />
             </div>
+          </div>
+          <div className="mt-4">
+            <Label htmlFor="new-ad-content" className="mb-1.5 block text-sm text-muted-foreground">
+              {t("newAdForm.contentLabel")}
+            </Label>
+            <Textarea
+              id="new-ad-content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder={t("newAdForm.contentPlaceholder")}
+              rows={2}
+            />
           </div>
           <div className="mt-4 flex gap-2">
             <Button size="sm" onClick={handleAdd} disabled={saving}>

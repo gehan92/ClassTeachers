@@ -118,3 +118,34 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
 
   return [...teacherListings, ...classListings];
 }
+
+export type ActiveSiteAd = { title: string; content: string | null };
+
+/**
+ * The homepage's ad slot (FeaturedSection) — an admin-booked sponsor
+ * placement (createSiteAd, admin-actions.ts) with owner_type='site',
+ * placement='homepage_banner'. Falls back to null (the "sell this slot"
+ * placeholder) when nothing is booked, same table/RLS path already used
+ * for teacher/class ads (see teacher/[id]/page.tsx's own_profile query).
+ * Filters expiry in JS rather than in the query, matching admin/page.tsx's
+ * existing isWithinDays approach — RLS only guarantees this for anon/plain
+ * visitors, not for an admin or the ad's own purchaser browsing while
+ * signed in, who'd otherwise see rows RLS still permits past that point.
+ */
+export async function getActiveSiteAd(): Promise<ActiveSiteAd | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("advertisements")
+    .select("title, content, expires_at")
+    .eq("owner_type", "site")
+    .eq("placement", "homepage_banner")
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data) return null;
+  if (data.expires_at && new Date(data.expires_at) <= new Date()) return null;
+
+  return { title: data.title, content: data.content };
+}

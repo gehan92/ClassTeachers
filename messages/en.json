@@ -126,7 +126,8 @@
     "signInForContact": "Sign in for contact",
     "viewClass": "View class",
     "reviewsCount": "{count} reviews",
-    "institutionVerified": "Institution verified"
+    "institutionVerified": "Institution verified",
+    "reviewed": "Reviewed by ClassPortals"
   },
   "reviews": {
     "replyPrefix": "Replied:"
@@ -193,7 +194,8 @@
   "adSlot": {
     "eyebrow": "Site-wide advertisement",
     "text": "This slot is sold to sponsors — institutes, publishers, or stationery brands.",
-    "cta": "Advertise here"
+    "cta": "Advertise here",
+    "sponsoredLabel": "Sponsored"
   },
   "teachCta": {
     "eyebrow": "Teach on ClassPortals",
@@ -752,6 +754,8 @@
         "planLabel": "Plan",
         "placementLabel": "Placement",
         "expiresLabel": "Expires",
+        "contentLabel": "Ad message (optional)",
+        "contentPlaceholder": "What should visitors see in this slot?",
         "add": "Add",
         "cancel": "Cancel"
       },

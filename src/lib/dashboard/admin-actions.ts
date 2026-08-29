@@ -189,6 +189,7 @@ export async function createSiteAd(input: {
   plan: "basic" | "featured" | "homepage_spotlight";
   placement: "search_results" | "homepage_banner" | "homepage_spotlight";
   expiresAt: string | null;
+  content?: string;
 }): Promise<ActionResult> {
   const admin = await requireAdmin();
   if ("error" in admin) {
@@ -205,6 +206,7 @@ export async function createSiteAd(input: {
       owner_type: "site",
       owner_id: null,
       title: input.sponsor.trim(),
+      content: input.content?.trim() || null,
       plan: input.plan,
       placement: input.placement,
       expires_at: input.expiresAt,

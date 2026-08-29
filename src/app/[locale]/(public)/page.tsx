@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { SearchCard } from "@/components/features/search-card";
 import { RoleCard } from "@/components/features/role-card";
 import { ListingCard } from "@/components/features/listing-card";
-import { getPublicListings } from "@/lib/public-directory";
+import { getPublicListings, getActiveSiteAd, type ActiveSiteAd } from "@/lib/public-directory";
 import type { Listing } from "@/types/listing";
 
 export default async function HomePage({ params }: PageProps<"/[locale]">) {
@@ -15,13 +15,14 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
     getTranslations({ locale, namespace: "teachersPage" }),
     getTranslations({ locale, namespace: "search" }),
   ]);
-  const listings = (await getPublicListings(tPage, tSearch)).slice(0, 6);
+  const [allListings, siteAd] = await Promise.all([getPublicListings(tPage, tSearch), getActiveSiteAd()]);
+  const listings = allListings.slice(0, 6);
 
   return (
     <>
       <Hero />
       <RolesSection />
-      <FeaturedSection listings={listings} />
+      <FeaturedSection listings={listings} siteAd={siteAd} />
       <TeachCtaSection />
     </>
   );
@@ -99,7 +100,7 @@ function RolesSection() {
   );
 }
 
-function FeaturedSection({ listings }: { listings: Listing[] }) {
+function FeaturedSection({ listings, siteAd }: { listings: Listing[]; siteAd: ActiveSiteAd | null }) {
   const t = useTranslations("featured");
   const adT = useTranslations("adSlot");
 
@@ -130,20 +131,30 @@ function FeaturedSection({ listings }: { listings: Listing[] }) {
           </div>
         )}
 
-        <div className="mt-10 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-dashed border-input bg-[repeating-linear-gradient(135deg,#fff,#fff_10px,#fafbfd_10px,#fafbfd_20px)] p-4.5">
-          <div>
+        {siteAd ? (
+          <div className="mt-10 rounded-lg border border-border bg-white p-4.5">
             <div className="mb-1 font-mono text-xs uppercase tracking-[0.12em] text-accent-deep">
-              {adT("eyebrow")}
+              {adT("sponsoredLabel")}
             </div>
-            <p className="m-0 font-semibold text-foreground">{adT("text")}</p>
+            <p className="m-0 font-semibold text-foreground">{siteAd.title}</p>
+            {siteAd.content && <p className="mt-1 text-sm text-muted-foreground">{siteAd.content}</p>}
           </div>
-          <Link
-            href="/advertise"
-            className="rounded-sm border border-input px-3.5 py-1.75 text-[13px] font-semibold text-primary"
-          >
-            {adT("cta")}
-          </Link>
-        </div>
+        ) : (
+          <div className="mt-10 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-dashed border-input bg-[repeating-linear-gradient(135deg,#fff,#fff_10px,#fafbfd_10px,#fafbfd_20px)] p-4.5">
+            <div>
+              <div className="mb-1 font-mono text-xs uppercase tracking-[0.12em] text-accent-deep">
+                {adT("eyebrow")}
+              </div>
+              <p className="m-0 font-semibold text-foreground">{adT("text")}</p>
+            </div>
+            <Link
+              href="/advertise"
+              className="rounded-sm border border-input px-3.5 py-1.75 text-[13px] font-semibold text-primary"
+            >
+              {adT("cta")}
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

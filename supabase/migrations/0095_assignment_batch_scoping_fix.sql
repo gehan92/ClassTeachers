@@ -8,7 +8,17 @@
 -- directly to their batch (no specific lesson picked) would have been
 -- silently rejected by RLS despite 0093's own intent. Changes the
 -- function's parameter list, so it needs drop+create rather than
--- create-or-replace (same reason 0026/0074/0075/0076/0087 all needed it).
+-- create-or-replace (same reason 0026/0074/0075/0076/0087 all needed it) —
+-- and every policy still referencing the old signature has to be dropped
+-- BEFORE the function itself, or Postgres refuses the drop (2BP01:
+-- dependent objects still exist) — the ordering this file got wrong the
+-- first time.
+
+drop policy if exists "assignments visible to owner, enrolled students, or admin" on assignments;
+drop policy if exists "owner manages their own assignments" on assignments;
+drop policy if exists "owner or admin updates an assignment" on assignments;
+drop policy if exists "owner or admin deletes an assignment" on assignments;
+drop policy if exists "assignment worksheet readable by anyone who can see its row" on storage.objects;
 
 drop function if exists public.can_manage_assignment_content(text, uuid, uuid);
 
@@ -32,23 +42,19 @@ as $$
     );
 $$;
 
-drop policy if exists "assignments visible to owner, enrolled students, or admin" on assignments;
 create policy "assignments visible to owner, enrolled students, or admin"
   on assignments for select
   using (can_manage_assignment_content(owner_type, owner_id, batch_id, lesson_id) or is_enrolled(owner_type, owner_id));
 
-drop policy if exists "owner manages their own assignments" on assignments;
 create policy "owner manages their own assignments"
   on assignments for insert
   with check (can_manage_assignment_content(owner_type, owner_id, batch_id, lesson_id));
 
-drop policy if exists "owner or admin updates an assignment" on assignments;
 create policy "owner or admin updates an assignment"
   on assignments for update
   using (can_manage_assignment_content(owner_type, owner_id, batch_id, lesson_id))
   with check (can_manage_assignment_content(owner_type, owner_id, batch_id, lesson_id));
 
-drop policy if exists "owner or admin deletes an assignment" on assignments;
 create policy "owner or admin deletes an assignment"
   on assignments for delete
   using (can_manage_assignment_content(owner_type, owner_id, batch_id, lesson_id));
@@ -63,7 +69,6 @@ as $$
   where a.id = p_assignment_id;
 $$;
 
-drop policy if exists "assignment worksheet readable by anyone who can see its row" on storage.objects;
 create policy "assignment worksheet readable by anyone who can see its row"
   on storage.objects for select
   using (

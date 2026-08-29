@@ -203,7 +203,7 @@ const gradeBands = ["1-5", "6-9", "10-11", "12-13", "campus"] as const;
 const createIndividualAdSchema = z.object({
   subjectId: z.string().uuid(),
   mode: z.enum(["online", "physical"]),
-  gradeBand: z.enum(gradeBands),
+  gradeBand: z.enum(gradeBands).optional(),
   title: z.string().trim().min(2),
   content: z.string().trim().min(1),
   hourlyRate: z.number().positive().optional(),
@@ -223,15 +223,18 @@ const createIndividualAdSchema = z.object({
 export async function createIndividualAd(input: {
   subjectId: string;
   mode: "online" | "physical";
-  gradeBand: string;
+  gradeBand?: string;
   title: string;
   content: string;
   hourlyRate?: number;
   monthlyRate?: number;
 }): Promise<ActionResult> {
-  const parsed = createIndividualAdSchema.safeParse(input);
+  const parsed = createIndividualAdSchema.safeParse({
+    ...input,
+    gradeBand: input.gradeBand || undefined,
+  });
   if (!parsed.success) {
-    return { error: "Please fill in the subject, mode, grade level, title and details." };
+    return { error: "Please fill in the subject, mode, and title and details." };
   }
 
   const supabase = await createClient();
@@ -267,7 +270,7 @@ export async function createIndividualAd(input: {
       owner_id: user.id,
       title: `${subjectName} — Individual tutoring`,
       mode: parsed.data.mode,
-      grade_band: parsed.data.gradeBand,
+      grade_band: parsed.data.gradeBand ?? null,
       subject_id: parsed.data.subjectId,
       hourly_rate: parsed.data.hourlyRate ?? null,
       monthly_rate: parsed.data.monthlyRate ?? null,

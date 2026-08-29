@@ -12,11 +12,10 @@ import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { updateOwnProfileAd, upsertBatchAd, setBatchAdActive, createIndividualAd } from "@/lib/dashboard/ads-actions";
 import type { GradeBand } from "@/types/grade-band";
+import { GRADE_BAND_SELECT_VALUES, OPEN_GRADE_VALUE } from "@/lib/grade-band-options";
 
 const textareaClass =
   "min-h-28 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40";
-
-const GRADE_BANDS: GradeBand[] = ["1-5", "6-9", "10-11", "12-13", "campus"];
 
 export type TeacherAdBatchRow = {
   id: string;
@@ -334,7 +333,7 @@ function IndividualAdCreator({
   const [open, setOpen] = useState(false);
   const [subjectId, setSubjectId] = useState(subjectOptions[0]?.id ?? "");
   const [mode, setMode] = useState<"online" | "physical">("online");
-  const [gradeBand, setGradeBand] = useState<GradeBand>("12-13");
+  const [gradeBand, setGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>("12-13");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
@@ -349,7 +348,7 @@ function IndividualAdCreator({
     const result = await createIndividualAd({
       subjectId,
       mode,
-      gradeBand,
+      gradeBand: gradeBand === OPEN_GRADE_VALUE ? undefined : gradeBand,
       title,
       content,
       hourlyRate: hourlyRate.trim() ? Number(hourlyRate) : undefined,
@@ -425,14 +424,17 @@ function IndividualAdCreator({
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="individual-grade">{t("gradeLabel")}</Label>
-              <Select value={gradeBand} onValueChange={(value) => setGradeBand((value as GradeBand) ?? "12-13")}>
+              <Select
+                value={gradeBand}
+                onValueChange={(value) => setGradeBand((value as GradeBand | typeof OPEN_GRADE_VALUE) ?? "12-13")}
+              >
                 <SelectTrigger id="individual-grade" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {GRADE_BANDS.map((band) => (
+                  {GRADE_BAND_SELECT_VALUES.map((band) => (
                     <SelectItem key={band} value={band}>
-                      {tg(`grades.${band}`)}
+                      {band === OPEN_GRADE_VALUE ? tg("grades.open") : tg(`grades.${band}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>

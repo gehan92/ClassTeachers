@@ -92,7 +92,8 @@
       "6-9": "6–9",
       "10-11": "10–11 O/L",
       "12-13": "12–13 A/L",
-      "campus": "කැම්පස් සහ වෘත්තීය"
+      "campus": "කැම්පස් සහ වෘත්තීය",
+      "open": "විවෘත (නිශ්චිත ශ්‍රේණියක් නැත)"
     },
     "subjectPlaceholderCampus": "විෂය / පාඨමාලා ක්ෂේත්‍රය — උදා: දත්ත ව්‍යුහ සහ ඇල්ගොරිතම"
   },
@@ -969,6 +970,9 @@
         "teacherPlaceholder": "ගුරුවරයෙකු තෝරන්න",
         "scheduleLabel": "කාල සටහන",
         "schedulePlaceholder": "උදා: සඳුදා, බදාදා, ප.ව. 5:00",
+        "subjectLabel": "විෂය",
+        "subjectPlaceholder": "උදා: සංයුක්ත ගණිතය, කථන ඉංග්‍රීසි",
+        "gradeLabel": "ශ්‍රේණිය",
         "modeLabel": "ආකාරය",
         "modeOnline": "මාර්ගගත",
         "modePhysical": "භෞතික",

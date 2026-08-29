@@ -93,7 +93,8 @@
       "6-9": "6–9",
       "10-11": "10–11 O/L",
       "12-13": "12–13 A/L",
-      "campus": "Campus & Professional"
+      "campus": "Campus & Professional",
+      "open": "Open (no specific grade)"
     }
   },
   "roles": {
@@ -969,6 +970,9 @@
         "teacherPlaceholder": "Choose a teacher",
         "scheduleLabel": "Schedule",
         "schedulePlaceholder": "e.g. Mon, Wed, 5:00 PM",
+        "subjectLabel": "Subject",
+        "subjectPlaceholder": "e.g. Combined Maths, Spoken English",
+        "gradeLabel": "Grade",
         "modeLabel": "Mode",
         "modeOnline": "Online",
         "modePhysical": "Physical",

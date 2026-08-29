@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createBatch } from "@/lib/dashboard/batches-actions";
+import { GRADE_BAND_SELECT_VALUES, OPEN_GRADE_VALUE } from "@/lib/grade-band-options";
+import type { GradeBand } from "@/types/grade-band";
 
 export type InstituteBatchRow = {
   id: string;
@@ -17,6 +19,8 @@ export type InstituteBatchRow = {
   location: string | null;
   scheduleNote: string | null;
   teacherLabel: string | null;
+  subjectName: string | null;
+  gradeBand: GradeBand | null;
   studentCount: number;
 };
 
@@ -34,10 +38,13 @@ export function BatchesTab({
 }) {
   const t = useTranslations("instituteDashboard.batches");
   const tc = useTranslations("instituteDashboard.common");
+  const tg = useTranslations("search");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [teacherId, setTeacherId] = useState("");
+  const [subject, setSubject] = useState("");
+  const [gradeBand, setGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>(OPEN_GRADE_VALUE);
   const [mode, setMode] = useState<"online" | "physical">("physical");
   const [schedule, setSchedule] = useState("");
   const [added, setAdded] = useState(false);
@@ -47,6 +54,8 @@ export function BatchesTab({
   function resetForm() {
     setTitle("");
     setTeacherId("");
+    setSubject("");
+    setGradeBand(OPEN_GRADE_VALUE);
     setMode("physical");
     setSchedule("");
   }
@@ -62,7 +71,8 @@ export function BatchesTab({
       location: "",
       scheduleNote: schedule,
       taughtByTeacherId: teacherId || undefined,
-      gradeBand: "",
+      gradeBand: gradeBand === OPEN_GRADE_VALUE ? "" : gradeBand,
+      subjectName: subject.trim() || undefined,
     });
     setCreating(false);
     if (result.error) {
@@ -139,6 +149,30 @@ export function BatchesTab({
               />
             </div>
             <div className="grid gap-1.5">
+              <Label htmlFor="batch-subject">{t("form.subjectLabel")}</Label>
+              <Input
+                id="batch-subject"
+                placeholder={t("form.subjectPlaceholder")}
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="batch-grade">{t("form.gradeLabel")}</Label>
+              <Select value={gradeBand} onValueChange={(value) => setGradeBand((value as GradeBand | typeof OPEN_GRADE_VALUE) ?? OPEN_GRADE_VALUE)}>
+                <SelectTrigger id="batch-grade" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {GRADE_BAND_SELECT_VALUES.map((band) => (
+                    <SelectItem key={band} value={band}>
+                      {band === OPEN_GRADE_VALUE ? tg("grades.open") : tg(`grades.${band}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
               <Label htmlFor="batch-mode">{t("form.modeLabel")}</Label>
               <Select value={mode} onValueChange={(value) => setMode(value as "online" | "physical")}>
                 <SelectTrigger id="batch-mode" className="w-full">
@@ -189,6 +223,14 @@ export function BatchesTab({
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
+                {batch.subjectName && (
+                  <span className="rounded-sm border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground/80">
+                    {batch.subjectName}
+                  </span>
+                )}
+                <span className="rounded-sm border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground/80">
+                  {batch.gradeBand ? tg(`grades.${batch.gradeBand}`) : tg("grades.open")}
+                </span>
                 <span className="rounded-sm border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground/80">
                   {batch.mode === "online" ? t("form.modeOnline") : t("form.modePhysical")}
                 </span>

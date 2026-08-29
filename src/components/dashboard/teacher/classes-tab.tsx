@@ -19,8 +19,7 @@ import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createBatch, updateBatch, deleteBatch } from "@/lib/dashboard/batches-actions";
 import type { GradeBand } from "@/types/grade-band";
-
-const GRADE_BANDS: GradeBand[] = ["1-5", "6-9", "10-11", "12-13", "campus"];
+import { GRADE_BAND_SELECT_VALUES, OPEN_GRADE_VALUE } from "@/lib/grade-band-options";
 
 export type TeacherBatchRow = {
   id: string;
@@ -77,7 +76,7 @@ export function ClassesTab({
   const [classSizeType, setClassSizeType] = useState<"group" | "individual">("group");
   const [location, setLocation] = useState("");
   const [scheduleNote, setScheduleNote] = useState("");
-  const [gradeBand, setGradeBand] = useState<GradeBand>("12-13");
+  const [gradeBand, setGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>("12-13");
   const [courseCode, setCourseCode] = useState("");
   const [added, setAdded] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,7 +88,7 @@ export function ClassesTab({
   const [editClassSizeType, setEditClassSizeType] = useState<"group" | "individual">("group");
   const [editLocation, setEditLocation] = useState("");
   const [editScheduleNote, setEditScheduleNote] = useState("");
-  const [editGradeBand, setEditGradeBand] = useState<GradeBand>("12-13");
+  const [editGradeBand, setEditGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>("12-13");
   const [editCourseCode, setEditCourseCode] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
@@ -119,7 +118,7 @@ export function ClassesTab({
       classSizeType,
       location,
       scheduleNote,
-      gradeBand,
+      gradeBand: gradeBand === OPEN_GRADE_VALUE ? "" : gradeBand,
       courseCode: isCampusLecturer ? courseCode : undefined,
     });
     setCreating(false);
@@ -141,7 +140,7 @@ export function ClassesTab({
     setEditClassSizeType(batch.classSizeType);
     setEditLocation(batch.location ?? "");
     setEditScheduleNote(batch.scheduleNote ?? "");
-    setEditGradeBand(batch.gradeBand ?? "12-13");
+    setEditGradeBand(batch.gradeBand ?? OPEN_GRADE_VALUE);
     setEditCourseCode(batch.courseCode ?? "");
     setEditError(null);
   }
@@ -161,7 +160,7 @@ export function ClassesTab({
       classSizeType: editClassSizeType,
       location: editLocation,
       scheduleNote: editScheduleNote,
-      gradeBand: editGradeBand,
+      gradeBand: editGradeBand === OPEN_GRADE_VALUE ? "" : editGradeBand,
       courseCode: isCampusLecturer ? editCourseCode : undefined,
     });
     setEditSaving(false);
@@ -251,14 +250,17 @@ export function ClassesTab({
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="batch-grade">{t("form.gradeLabel")}</Label>
-              <Select value={gradeBand} onValueChange={(value) => setGradeBand(value as GradeBand)}>
+              <Select
+                value={gradeBand}
+                onValueChange={(value) => setGradeBand((value as GradeBand | typeof OPEN_GRADE_VALUE) ?? OPEN_GRADE_VALUE)}
+              >
                 <SelectTrigger id="batch-grade" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {GRADE_BANDS.map((band) => (
+                  {GRADE_BAND_SELECT_VALUES.map((band) => (
                     <SelectItem key={band} value={band}>
-                      {tg(`grades.${band}`)}
+                      {band === OPEN_GRADE_VALUE ? tg("grades.open") : tg(`grades.${band}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -380,14 +382,17 @@ export function ClassesTab({
                       </div>
                       <div className="grid gap-1.5">
                         <Label>{t("form.gradeLabel")}</Label>
-                        <Select value={editGradeBand} onValueChange={(value) => setEditGradeBand(value as GradeBand)}>
+                        <Select
+                          value={editGradeBand}
+                          onValueChange={(value) => setEditGradeBand((value as GradeBand | typeof OPEN_GRADE_VALUE) ?? OPEN_GRADE_VALUE)}
+                        >
                           <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {GRADE_BANDS.map((band) => (
+                            {GRADE_BAND_SELECT_VALUES.map((band) => (
                               <SelectItem key={band} value={band}>
-                                {tg(`grades.${band}`)}
+                                {band === OPEN_GRADE_VALUE ? tg("grades.open") : tg(`grades.${band}`)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -428,7 +433,7 @@ export function ClassesTab({
                         {batch.title}
                       </h3>
                       <p className="mt-0.5 text-sm text-muted-foreground">
-                        {batch.gradeBand ? `${tg(`grades.${batch.gradeBand}`)} · ` : ""}
+                        {batch.gradeBand ? `${tg(`grades.${batch.gradeBand}`)} · ` : `${tg("grades.open")} · `}
                         {batch.mode === "online" ? t("form.modeOnline") : t("form.modePhysical")}
                         {" · "}
                         {batch.classSizeType === "individual" ? t("form.classSizeIndividual") : t("form.classSizeGroup")}

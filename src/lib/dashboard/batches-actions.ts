@@ -19,6 +19,7 @@ const createBatchSchema = z.object({
   taughtByTeacherId: z.string().uuid().optional(),
   gradeBand: z.enum(gradeBands).optional(),
   courseCode: z.string().trim().max(30).optional(),
+  subjectName: z.string().trim().min(1).max(80).optional(),
 });
 
 export async function createBatch(input: {
@@ -32,6 +33,13 @@ export async function createBatch(input: {
   taughtByTeacherId?: string;
   gradeBand: string;
   courseCode?: string;
+  /** Institute class-builder only (Institute Blueprint step 5) — the
+   * teacher's own batch builder deliberately has no subject field, since
+   * upsertBatchAd/createIndividualAd is already the one place a teacher
+   * assigns a batch's subject (see that file's own comment). Resolved via
+   * resolve_subject() so an institute admin can type either a real
+   * syllabus subject or an ad-hoc/open-course name. */
+  subjectName?: string;
 }): Promise<ActionResult> {
   const parsed = createBatchSchema.safeParse({
     ownerType: input.ownerType,
@@ -44,6 +52,7 @@ export async function createBatch(input: {
     taughtByTeacherId: input.taughtByTeacherId || undefined,
     gradeBand: input.gradeBand || undefined,
     courseCode: input.courseCode || undefined,
+    subjectName: input.ownerType === "class" ? input.subjectName || undefined : undefined,
   });
   if (!parsed.success) {
     return { error: "Please check the highlighted fields and try again." };
@@ -70,6 +79,17 @@ export async function createBatch(input: {
     ownerId = classProfile.id;
   }
 
+  let subjectId: string | null = null;
+  if (parsed.data.subjectName) {
+    const { data: resolvedSubjectId, error: subjectError } = await supabase.rpc("resolve_subject", {
+      subject_name: parsed.data.subjectName,
+    });
+    if (subjectError || !resolvedSubjectId) {
+      return { error: "Couldn't resolve that subject. Please try again." };
+    }
+    subjectId = resolvedSubjectId;
+  }
+
   const { error } = await supabase.from("batches").insert({
     owner_type: parsed.data.ownerType,
     owner_id: ownerId,
@@ -82,6 +102,7 @@ export async function createBatch(input: {
     taught_by_teacher_id: parsed.data.ownerType === "class" ? parsed.data.taughtByTeacherId ?? null : null,
     grade_band: parsed.data.gradeBand ?? null,
     course_code: parsed.data.courseCode ?? null,
+    subject_id: subjectId,
   });
   if (error) {
     return { error: "Couldn't create the batch. Please try again." };

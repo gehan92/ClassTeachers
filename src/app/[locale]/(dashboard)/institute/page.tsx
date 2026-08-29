@@ -127,7 +127,7 @@ export default async function InstituteDashboardPage({
     instituteId
       ? supabase
           .from("batches")
-          .select("id, title, mode, location, schedule_note, teacher_label, taught_by_teacher_id")
+          .select("id, title, mode, location, schedule_note, teacher_label, taught_by_teacher_id, subject_id, grade_band")
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
           .order("created_at", { ascending: false })
@@ -140,9 +140,19 @@ export default async function InstituteDashboardPage({
             schedule_note: string | null;
             teacher_label: string | null;
             taught_by_teacher_id: string | null;
+            subject_id: string | null;
+            grade_band: string | null;
           }[],
         }),
   ]);
+
+  const batchSubjectIds = [...new Set((batchRows ?? []).map((b) => b.subject_id).filter((id): id is string => !!id))];
+  const { data: batchSubjectRows } = batchSubjectIds.length
+    ? await supabase.from("subjects").select("id, translations").in("id", batchSubjectIds)
+    : { data: [] as { id: string; translations: Record<string, string> | null }[] };
+  const subjectNameById = new Map(
+    (batchSubjectRows ?? []).map((s) => [s.id, (s.translations as Record<string, string> | null)?.en ?? null]),
+  );
 
   const teacherIds = (classTeacherRows ?? []).map((row) => row.teacher_id);
   const acceptedTeacherIds = (classTeacherRows ?? [])
@@ -299,6 +309,8 @@ export default async function InstituteDashboardPage({
     // Real roster link wins when set; falls back to the old free-text label
     // for batches created before 0091 that haven't been re-saved since.
     teacherLabel: (b.taught_by_teacher_id && teacherNameById.get(b.taught_by_teacher_id)) || b.teacher_label,
+    subjectName: b.subject_id ? (subjectNameById.get(b.subject_id) ?? null) : null,
+    gradeBand: b.grade_band as InstituteBatchRow["gradeBand"],
     studentCount: batchStudentCounts.get(b.id) ?? 0,
   }));
 

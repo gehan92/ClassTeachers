@@ -86,7 +86,13 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-0.5 p-4", className)}
+      className={cn(
+        // shrink-0: never let the header lose height to the scrollable body
+        // below it. pr-10: keeps content clear of the absolute close button
+        // (top-3 right-3, size-7) regardless of how long the title runs.
+        "flex shrink-0 flex-col gap-0.5 p-4 pr-10",
+        className
+      )}
       {...props}
     />
   )

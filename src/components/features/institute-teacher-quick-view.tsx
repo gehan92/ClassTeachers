@@ -118,7 +118,7 @@ function TeacherQuickProfile({ teacher }: { teacher: InstituteTeacherCard }) {
               <GraduationCap className="size-6 text-secondary-foreground" />
             </div>
           )}
-          <div className="min-w-0 pt-0.5">
+          <div className="min-w-0 flex-1 pt-0.5">
             <DialogTitle>{teacher.displayName}</DialogTitle>
             {subtitle && <DialogDescription className="truncate">{subtitle}</DialogDescription>}
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -138,7 +138,7 @@ function TeacherQuickProfile({ teacher }: { teacher: InstituteTeacherCard }) {
         </div>
       </DialogHeader>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
         <div className="mb-5">
           <div className="mb-1.5 font-medium text-muted-foreground">{t("about")}</div>
           <p className="m-0 text-sm text-foreground/85">{teacher.bio || t("noBio")}</p>

@@ -17,6 +17,8 @@ import type {
 } from "@/components/dashboard/teacher/analytics-tab";
 import { CalendarTab, type InstituteCalendarSession } from "@/components/dashboard/institute/calendar-tab";
 import { AnnouncementsTab, type InstituteAnnouncementRow } from "@/components/dashboard/institute/announcements-tab";
+import { ClassProfileView } from "@/components/features/class-profile-view";
+import { loadClassProfile } from "@/lib/load-class-profile";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter } from "@/lib/format-date";
 import type { TeachersAtGlance } from "@/types/dashboard-institute";
@@ -53,6 +55,15 @@ export default async function InstituteDashboardPage({
   const fullName = profile?.full_name ?? user!.email ?? "Institute";
   const userInitial = fullName.charAt(0).toUpperCase();
   const instituteId = classProfile?.id;
+
+  // Fired now, awaited later (right before it's needed for the Settings
+  // tab's "view live" preview) so it runs concurrently with everything else
+  // below rather than adding a sequential round trip. loadClassProfile is
+  // the exact same function the public /class/[id] page calls — reusing it
+  // rather than reshaping data already fetched below guarantees the
+  // preview can never drift from what's actually public (see its own
+  // comment), at the cost of one small redundant class_profiles read.
+  const liveClassProfilePromise = instituteId ? loadClassProfile(instituteId, locale) : Promise.resolve(null);
 
   // Every query below only needs instituteId (or nothing at all), not each
   // other's results — including the two that used to be their own separate
@@ -496,6 +507,9 @@ export default async function InstituteDashboardPage({
     dateLabel: dateFormatter.format(new Date(row.created_at)),
   }));
 
+  const liveClassProfile = await liveClassProfilePromise;
+  const liveView = liveClassProfile ? <ClassProfileView classProfile={liveClassProfile} showGate={false} isOwnerView /> : null;
+
   return (
     <DashboardShell
       userLabel={fullName}
@@ -582,6 +596,7 @@ export default async function InstituteDashboardPage({
             initialEstablished={classProfile?.established ?? ""}
             initialDescription={classProfile?.description ?? ""}
             initialPhotoUrl={classProfile?.photo_url ?? null}
+            liveView={liveView}
             initialPhone={profile?.phone ?? ""}
             initialHourlyRate={priceRow?.hourly_rate?.toString() ?? ""}
             initialMonthlyRate={priceRow?.monthly_rate?.toString() ?? ""}

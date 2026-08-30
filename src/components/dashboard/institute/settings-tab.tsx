@@ -2,11 +2,13 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { BadgeCheck, School, Upload } from "lucide-react";
+import { BadgeCheck, School, Upload, Pencil, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { updateInstituteProfile, setListingPublished, resubmitListing, updateNotificationPrefs } from "@/lib/dashboard/actions";
 import { uploadAvatar } from "@/lib/dashboard/avatar-actions";
 import { uploadVerificationDocument } from "@/lib/dashboard/verification-actions";
@@ -32,6 +34,7 @@ export function SettingsTab({
   initialHasVerificationDocument,
   referralCode,
   referrals,
+  liveView,
 }: {
   initialName: string;
   initialLocation: string;
@@ -48,8 +51,14 @@ export function SettingsTab({
   initialHasVerificationDocument: boolean;
   referralCode: string;
   referrals: ReferralRow[];
+  /** Same public-page preview the institute's own /class/[id] shows, embedded here — null until the institute has saved a profile at least once (no signup-time class_profiles row). Server-rendered snapshot, so a mutation below needs `refresh()` to pick it up, same as the teacher dashboard's Profile tab. */
+  liveView: React.ReactNode;
 }) {
   const t = useTranslations("instituteDashboard.settings");
+  const tc = useTranslations("instituteDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
+
+  const [mode, setMode] = useState<"edit" | "live">("live");
 
   const [logoUrl, setLogoUrl] = useState(initialPhotoUrl);
   const [logoSaved, setLogoSaved] = useState(false);
@@ -80,6 +89,7 @@ export function SettingsTab({
     setLogoUrl(result.url);
     setLogoSaved(true);
     setTimeout(() => setLogoSaved(false), 2500);
+    refresh();
   }
 
   const [hasDocument, setHasDocument] = useState(initialHasVerificationDocument);
@@ -190,6 +200,7 @@ export function SettingsTab({
     }
     setDetailsSaved(true);
     setTimeout(() => setDetailsSaved(false), 2500);
+    refresh();
   }
 
   async function handleSaveRate() {
@@ -211,13 +222,166 @@ export function SettingsTab({
     }
     setRateSaved(true);
     setTimeout(() => setRateSaved(false), 2500);
+    refresh();
+  }
+
+  // Publish status / verification tier / referrals / notifications aren't
+  // part of the public-facing "profile" the live/edit toggle previews below
+  // — they're account management the institute may want regardless of which
+  // mode they're in, so they render identically in both branches rather
+  // than being hidden behind the toggle too.
+  const accountSections = (
+    <>
+      <div className="rounded-lg border border-border bg-white p-5">
+        <h3 className="mb-1 text-lg">{t("publish.title")}</h3>
+
+        {status === "pending" && <p className="text-sm text-muted-foreground">{t("publish.pending")}</p>}
+
+        {status === "rejected" && (
+          <div>
+            <p className="mb-3 text-sm text-destructive">{t("publish.rejected")}</p>
+            <Button type="button" size="sm" variant="outline" onClick={handleResubmit} disabled={publishSaving}>
+              {t("publish.resubmit")}
+            </Button>
+          </div>
+        )}
+
+        {status === "suspended" && <p className="text-sm text-destructive">{t("publish.suspended")}</p>}
+
+        {status === "approved" && (
+          <>
+            <p className="mb-3 text-sm text-muted-foreground">{t("publish.helper")}</p>
+            <div className="flex items-center justify-between gap-4">
+              <p className={`text-sm font-medium ${published ? "text-success" : "text-muted-foreground"}`}>
+                {published ? t("publish.live") : t("publish.hidden")}
+              </p>
+              <Switch checked={published} onCheckedChange={handleTogglePublished} disabled={publishSaving} />
+            </div>
+          </>
+        )}
+
+        {publishError && <p className="mt-2 text-sm font-medium text-destructive">{publishError}</p>}
+      </div>
+
+      <div className="rounded-lg border border-border bg-white p-5">
+        <h3 className="mb-1 text-lg">{t("verifiedTier.heading")}</h3>
+        <p className="mb-4 text-sm text-muted-foreground">{t("verifiedTier.subtitle")}</p>
+
+        <Label className="mb-1.5 block">{t("verifiedTier.documentLabel")}</Label>
+        <p className="mb-2.5 text-xs text-muted-foreground">{t("verifiedTier.documentHint")}</p>
+        <input
+          ref={docInputRef}
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handleDocumentSelected}
+        />
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button type="button" variant="outline" size="sm" onClick={handleUploadDocument} disabled={docUploading}>
+            <Upload className="size-4" />
+            {hasDocument ? t("verifiedTier.replaceDocument") : t("verifiedTier.uploadDocument")}
+          </Button>
+          {docSaved && <span className="text-sm font-medium text-success">{t("saved")}</span>}
+          {docError && <span className="text-sm font-medium text-destructive">{docError}</span>}
+        </div>
+
+        <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
+          {verified ? (
+            <>
+              <BadgeCheck className="size-3.5 shrink-0 text-primary" />
+              {t("verifiedTier.verifiedNote")}
+            </>
+          ) : hasDocument ? (
+            t("verifiedTier.pendingNote")
+          ) : (
+            t("verifiedTier.notVerifiedNote")
+          )}
+        </p>
+      </div>
+
+      <ReferEarnPanel referralCode={referralCode} referrals={referrals} />
+
+      <div className="rounded-lg border border-border bg-white p-5">
+        <h3 className="mb-4 text-lg">{t("notificationsHeading")}</h3>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="notif-enrolments">{t("notifications.enrolments")}</Label>
+            <Switch
+              id="notif-enrolments"
+              checked={notifications.enrolments}
+              onCheckedChange={handleToggleNotification("enrolments")}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="notif-reviews">{t("notifications.reviews")}</Label>
+            <Switch
+              id="notif-reviews"
+              checked={notifications.reviews}
+              onCheckedChange={handleToggleNotification("reviews")}
+            />
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  if (mode === "live") {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl text-primary">{t("title")}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+          </div>
+          <Button type="button" onClick={() => setMode("edit")}>
+            <Pencil className="size-4" />
+            {t("preview.editProfile")}
+          </Button>
+        </div>
+
+        {status !== "approved" && (
+          <p className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+            {t("preview.notLiveYet")}
+          </p>
+        )}
+        {status === "approved" && !published && (
+          <p className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+            {t("preview.hiddenNote")}
+          </p>
+        )}
+
+        <RefreshStatus
+          pending={isRefreshing}
+          stuck={refreshStuck}
+          pendingLabel={tc("updatingList")}
+          stuckLabel={tc("updateStuck")}
+          reloadLabel={tc("reloadPage")}
+        />
+
+        {liveView ? (
+          <div className="overflow-hidden rounded-xl border border-border bg-muted/30">{liveView}</div>
+        ) : (
+          <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
+            {t("preview.notSavedYet")}
+          </div>
+        )}
+
+        {accountSections}
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-display text-2xl text-primary">{t("title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl text-primary">{t("title")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+        </div>
+        <Button type="button" variant="outline" onClick={() => setMode("live")}>
+          <Eye className="size-4" />
+          {t("preview.viewLive")}
+        </Button>
       </div>
 
       <div className="rounded-lg border border-border bg-white p-5">
@@ -336,96 +500,7 @@ export function SettingsTab({
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-white p-5">
-        <h3 className="mb-1 text-lg">{t("publish.title")}</h3>
-
-        {status === "pending" && <p className="text-sm text-muted-foreground">{t("publish.pending")}</p>}
-
-        {status === "rejected" && (
-          <div>
-            <p className="mb-3 text-sm text-destructive">{t("publish.rejected")}</p>
-            <Button type="button" size="sm" variant="outline" onClick={handleResubmit} disabled={publishSaving}>
-              {t("publish.resubmit")}
-            </Button>
-          </div>
-        )}
-
-        {status === "suspended" && <p className="text-sm text-destructive">{t("publish.suspended")}</p>}
-
-        {status === "approved" && (
-          <>
-            <p className="mb-3 text-sm text-muted-foreground">{t("publish.helper")}</p>
-            <div className="flex items-center justify-between gap-4">
-              <p className={`text-sm font-medium ${published ? "text-success" : "text-muted-foreground"}`}>
-                {published ? t("publish.live") : t("publish.hidden")}
-              </p>
-              <Switch checked={published} onCheckedChange={handleTogglePublished} disabled={publishSaving} />
-            </div>
-          </>
-        )}
-
-        {publishError && <p className="mt-2 text-sm font-medium text-destructive">{publishError}</p>}
-      </div>
-
-      <div className="rounded-lg border border-border bg-white p-5">
-        <h3 className="mb-1 text-lg">{t("verifiedTier.heading")}</h3>
-        <p className="mb-4 text-sm text-muted-foreground">{t("verifiedTier.subtitle")}</p>
-
-        <Label className="mb-1.5 block">{t("verifiedTier.documentLabel")}</Label>
-        <p className="mb-2.5 text-xs text-muted-foreground">{t("verifiedTier.documentHint")}</p>
-        <input
-          ref={docInputRef}
-          type="file"
-          accept="application/pdf,image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={handleDocumentSelected}
-        />
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Button type="button" variant="outline" size="sm" onClick={handleUploadDocument} disabled={docUploading}>
-            <Upload className="size-4" />
-            {hasDocument ? t("verifiedTier.replaceDocument") : t("verifiedTier.uploadDocument")}
-          </Button>
-          {docSaved && <span className="text-sm font-medium text-success">{t("saved")}</span>}
-          {docError && <span className="text-sm font-medium text-destructive">{docError}</span>}
-        </div>
-
-        <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
-          {verified ? (
-            <>
-              <BadgeCheck className="size-3.5 shrink-0 text-primary" />
-              {t("verifiedTier.verifiedNote")}
-            </>
-          ) : hasDocument ? (
-            t("verifiedTier.pendingNote")
-          ) : (
-            t("verifiedTier.notVerifiedNote")
-          )}
-        </p>
-      </div>
-
-      <ReferEarnPanel referralCode={referralCode} referrals={referrals} />
-
-      <div className="rounded-lg border border-border bg-white p-5">
-        <h3 className="mb-4 text-lg">{t("notificationsHeading")}</h3>
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="notif-enrolments">{t("notifications.enrolments")}</Label>
-            <Switch
-              id="notif-enrolments"
-              checked={notifications.enrolments}
-              onCheckedChange={handleToggleNotification("enrolments")}
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="notif-reviews">{t("notifications.reviews")}</Label>
-            <Switch
-              id="notif-reviews"
-              checked={notifications.reviews}
-              onCheckedChange={handleToggleNotification("reviews")}
-            />
-          </div>
-        </div>
-      </div>
+      {accountSections}
     </div>
   );
 }

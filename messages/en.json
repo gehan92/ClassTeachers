@@ -1047,6 +1047,13 @@
       "subtitle": "Manage your institute's profile and default rates.",
       "save": "Save",
       "saved": "Saved",
+      "preview": {
+        "editProfile": "Edit profile",
+        "viewLive": "View live page",
+        "notLiveYet": "This is a preview — your institute isn't public yet. It'll appear here once an admin approves it.",
+        "hiddenNote": "This is a preview — your institute is currently hidden from search. Edit your profile to turn it back on.",
+        "notSavedYet": "Save your institute details below to see your live profile preview here."
+      },
       "logo": {
         "title": "Institute logo",
         "upload": "Upload new logo"

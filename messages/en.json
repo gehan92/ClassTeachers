@@ -892,6 +892,7 @@
     "groupManage": "Manage",
     "tabs": {
       "overview": "Overview",
+      "profile": "Profile",
       "teachers": "Teachers",
       "batches": "Classes & Batches",
       "inquiries": "Inquiries",
@@ -1043,8 +1044,8 @@
       "updateStuck": "Still not updated — your change was saved.",
       "reloadPage": "Reload page"
     },
-    "settings": {
-      "title": "Institute Settings",
+    "profile": {
+      "title": "Profile",
       "subtitle": "Manage your institute's profile and default rates.",
       "save": "Save",
       "saved": "Saved",
@@ -1094,7 +1095,11 @@
         "verifiedNote": "You're verified — this shows as a badge on your public listing.",
         "pendingNote": "Document submitted — waiting for admin review.",
         "notVerifiedNote": "Not yet verified — this doesn't stop your listing from being public."
-      },
+      }
+    },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Notifications and your referral program.",
       "notificationsHeading": "Notifications",
       "notifications": {
         "enrolments": "New enrolments",

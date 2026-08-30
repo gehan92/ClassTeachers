@@ -6,6 +6,7 @@ import { BatchesTab } from "@/components/dashboard/institute/batches-tab";
 import { StudentsTab, type InstituteStudentRow, type InstituteJoinRequestRow } from "@/components/dashboard/institute/students-tab";
 import { AdvertisementTab } from "@/components/dashboard/institute/advertisement-tab";
 import { ReviewsTab } from "@/components/dashboard/institute/reviews-tab";
+import { ProfileTab } from "@/components/dashboard/institute/profile-tab";
 import { SettingsTab } from "@/components/dashboard/institute/settings-tab";
 import { InquiriesTab, type InquiryRow, type InquiryMessageRow } from "@/components/dashboard/inquiries-tab";
 import { WantedAdsBrowseTab, type WantedAdBrowseRow } from "@/components/dashboard/wanted-ads-browse-tab";
@@ -537,6 +538,7 @@ export default async function InstituteDashboardPage({
           label: t("groupInstitute"),
           items: [
             { key: "overview", label: t("tabs.overview") },
+            { key: "profile", label: t("tabs.profile") },
             { key: "teachers", label: t("tabs.teachers"), count: teacherIds.length },
             { key: "batches", label: t("tabs.batches"), count: batches.length },
             { key: "students", label: t("tabs.students"), count: instituteJoinRequests.length },
@@ -575,6 +577,23 @@ export default async function InstituteDashboardPage({
             teachersAtGlance={teachersAtGlance}
           />
         ),
+        profile: (
+          <ProfileTab
+            initialName={classProfile?.name ?? fullName}
+            initialLocation={classProfile?.location ?? ""}
+            initialEstablished={classProfile?.established ?? ""}
+            initialDescription={classProfile?.description ?? ""}
+            initialPhotoUrl={classProfile?.photo_url ?? null}
+            liveView={liveView}
+            initialPhone={profile?.phone ?? ""}
+            initialHourlyRate={priceRow?.hourly_rate?.toString() ?? ""}
+            initialMonthlyRate={priceRow?.monthly_rate?.toString() ?? ""}
+            initialStatus={classProfile?.status ?? "pending"}
+            initialOwnerPublished={classProfile?.owner_published ?? true}
+            initialInstitutionVerified={classProfile?.institution_verified ?? false}
+            initialHasVerificationDocument={classProfile?.verification_document_path != null}
+          />
+        ),
         teachers: <TeachersTab teachers={instituteTeachers} />,
         batches: <BatchesTab batches={batches} teacherOptions={rosterTeacherOptions} />,
         students: <StudentsTab students={instituteStudents} requests={instituteJoinRequests} />,
@@ -595,20 +614,7 @@ export default async function InstituteDashboardPage({
         ),
         settings: (
           <SettingsTab
-            initialName={classProfile?.name ?? fullName}
-            initialLocation={classProfile?.location ?? ""}
-            initialEstablished={classProfile?.established ?? ""}
-            initialDescription={classProfile?.description ?? ""}
-            initialPhotoUrl={classProfile?.photo_url ?? null}
-            liveView={liveView}
-            initialPhone={profile?.phone ?? ""}
-            initialHourlyRate={priceRow?.hourly_rate?.toString() ?? ""}
-            initialMonthlyRate={priceRow?.monthly_rate?.toString() ?? ""}
-            initialStatus={classProfile?.status ?? "pending"}
-            initialOwnerPublished={classProfile?.owner_published ?? true}
             initialNotificationPrefs={(profile?.notification_prefs as Record<string, boolean>) ?? {}}
-            initialInstitutionVerified={classProfile?.institution_verified ?? false}
-            initialHasVerificationDocument={classProfile?.verification_document_path != null}
             referralCode={referralCodeValue ?? ""}
             referrals={referrals}
           />

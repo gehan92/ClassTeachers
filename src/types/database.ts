@@ -1453,6 +1453,55 @@ export type Database = {
         Args: { p_batch_id: string };
         Returns: undefined;
       };
+      request_to_join_class: {
+        Args: { p_class_id: string };
+        Returns: undefined;
+      };
+      list_class_batch_ads: {
+        Args: Record<string, never>;
+        Returns: {
+          ad_id: string;
+          class_id: string;
+          batch_id: string;
+          name: string;
+          photo_url: string | null;
+          ad_title: string;
+          ad_content: string | null;
+          subject: string | null;
+          grade_band: string | null;
+          location: string | null;
+          mode: string;
+          batch_title: string;
+          hourly_rate: number | null;
+          monthly_rate: number | null;
+          rating: number;
+          review_count: number;
+          institution_verified: boolean;
+        }[];
+      };
+      get_public_class_ad: {
+        Args: { p_ad_id: string };
+        Returns: {
+          ad_id: string;
+          class_id: string;
+          batch_id: string;
+          name: string;
+          photo_url: string | null;
+          ad_title: string;
+          ad_content: string | null;
+          subject: string | null;
+          grade_band: string | null;
+          location: string | null;
+          mode: string;
+          schedule_note: string | null;
+          batch_title: string;
+          hourly_rate: number | null;
+          monthly_rate: number | null;
+          rating: number;
+          review_count: number;
+          institution_verified: boolean;
+        }[];
+      };
       owns_exam: {
         Args: { p_exam_id: string };
         Returns: boolean;

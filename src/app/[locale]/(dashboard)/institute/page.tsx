@@ -4,7 +4,7 @@ import { OverviewTab } from "@/components/dashboard/institute/overview-tab";
 import { TeachersTab, type InstituteTeacherRow } from "@/components/dashboard/institute/teachers-tab";
 import { BatchesTab } from "@/components/dashboard/institute/batches-tab";
 import { StudentsTab, type InstituteStudentRow, type InstituteJoinRequestRow } from "@/components/dashboard/institute/students-tab";
-import { AdvertisementTab } from "@/components/dashboard/institute/advertisement-tab";
+import { AdvertisementTab, type InstituteAdBatchRow } from "@/components/dashboard/institute/advertisement-tab";
 import { ReviewsTab } from "@/components/dashboard/institute/reviews-tab";
 import { ProfileTab } from "@/components/dashboard/institute/profile-tab";
 import { SettingsTab } from "@/components/dashboard/institute/settings-tab";
@@ -82,6 +82,7 @@ export default async function InstituteDashboardPage({
     { data: wantedAdRows },
     { data: myReviewRows },
     { data: batchRows },
+    { data: classAdRows },
   ] = await Promise.all([
     instituteId
       ? supabase.from("class_teachers").select("teacher_id, is_visible, status").eq("class_id", instituteId)
@@ -147,7 +148,9 @@ export default async function InstituteDashboardPage({
     instituteId
       ? supabase
           .from("batches")
-          .select("id, title, mode, location, schedule_note, teacher_label, taught_by_teacher_id, subject_id, grade_band")
+          .select(
+            "id, title, mode, location, schedule_note, teacher_label, taught_by_teacher_id, subject_id, grade_band, hourly_rate, monthly_rate",
+          )
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
           .order("created_at", { ascending: false })
@@ -162,7 +165,21 @@ export default async function InstituteDashboardPage({
             taught_by_teacher_id: string | null;
             subject_id: string | null;
             grade_band: string | null;
+            hourly_rate: number | null;
+            monthly_rate: number | null;
           }[],
+        }),
+    // Class-wise ads (0103) — one row per batch that already has a
+    // search_results ad; batches with none just render "no ad yet" below.
+    instituteId
+      ? supabase
+          .from("advertisements")
+          .select("id, batch_id, title, content, status")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+          .eq("placement", "search_results")
+      : Promise.resolve({
+          data: [] as { id: string; batch_id: string | null; title: string; content: string | null; status: "active" | "expired" | "removed" }[],
         }),
   ]);
 
@@ -452,6 +469,23 @@ export default async function InstituteDashboardPage({
     studentCount: batchStudentCounts.get(b.id) ?? 0,
   }));
 
+  // Class-wise ads (0103) — mirrors the teacher dashboard's Advertisement
+  // tab shape (TeacherAdBatchRow), minus a subject picker: an institute
+  // batch's subject is already resolved at creation (createBatch's
+  // resolve_subject step), so there's nothing to set here.
+  const classAdByBatchId = new Map((classAdRows ?? []).map((a) => [a.batch_id, a]));
+  const instituteAdBatches: InstituteAdBatchRow[] = (batchRows ?? []).map((b) => {
+    const ad = classAdByBatchId.get(b.id);
+    return {
+      id: b.id,
+      title: b.title,
+      subjectName: b.subject_id ? (subjectNameById.get(b.subject_id) ?? null) : null,
+      hourlyRate: b.hourly_rate,
+      monthlyRate: b.monthly_rate,
+      ad: ad ? { id: ad.id, title: ad.title, content: ad.content ?? "", status: ad.status } : null,
+    };
+  });
+
   // Institute Blueprint step 6 — cross-class calendar. Reuses the same
   // live_classes rows the Analytics tab already fetched above (no new
   // query) — every linked teacher's sessions roll up here for free since
@@ -502,6 +536,7 @@ export default async function InstituteDashboardPage({
     id: row.id,
     studentName: studentInfoById.get(row.student_id)?.full_name ?? "—",
     batch: row.batch_id ? (batchTitleById.get(row.batch_id) ?? "—") : generalBatchLabel,
+    batchId: row.batch_id,
     requestedAt: dateFormatter.format(new Date(row.joined_at)),
   }));
 
@@ -596,11 +631,17 @@ export default async function InstituteDashboardPage({
         ),
         teachers: <TeachersTab teachers={instituteTeachers} />,
         batches: <BatchesTab batches={batches} teacherOptions={rosterTeacherOptions} />,
-        students: <StudentsTab students={instituteStudents} requests={instituteJoinRequests} />,
+        students: (
+          <StudentsTab
+            students={instituteStudents}
+            requests={instituteJoinRequests}
+            batchOptions={batches.map((b) => ({ id: b.id, title: b.title }))}
+          />
+        ),
         calendar: <CalendarTab sessions={calendarSessions} />,
         inquiries: <InquiriesTab inquiries={inquiries} />,
         studentRequests: <WantedAdsBrowseTab requests={wantedAdRequests} />,
-        ads: <AdvertisementTab initialContent={adRow?.content ?? ""} />,
+        ads: <AdvertisementTab initialContent={adRow?.content ?? ""} batches={instituteAdBatches} />,
         announcements: <AnnouncementsTab announcements={announcements} />,
         analytics: (
           <AnalyticsTab

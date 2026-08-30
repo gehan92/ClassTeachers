@@ -263,9 +263,18 @@ export async function requestToJoin(batchId: string): Promise<ActionResult> {
   return {};
 }
 
+/**
+ * batchId is only meaningful when accepting a general (batch_id IS NULL)
+ * institute request — it lets the institute place the student into a
+ * specific class as part of approval, since a general "Join this institute"
+ * request (requestToJoinClass) never had one chosen at apply time, unlike a
+ * batch-scoped request (requestToJoin) which already picked its batch. Left
+ * undefined, approval just flips status, same as before.
+ */
 export async function respondToJoinRequest(
   enrollmentId: string,
   accept: boolean,
+  batchId?: string,
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const {
@@ -277,10 +286,48 @@ export async function respondToJoinRequest(
 
   const { error } = await supabase
     .from("enrollments")
-    .update({ status: accept ? "accepted" : "declined" })
+    .update({
+      status: accept ? "accepted" : "declined",
+      ...(accept && batchId ? { batch_id: batchId } : {}),
+    })
     .eq("id", enrollmentId);
   if (error) {
+    if (error.message.includes("duplicate key") || error.code === "23505") {
+      return { error: "This student already has a request for that class." };
+    }
     return { error: "Couldn't update this request. Please try again." };
+  }
+  return {};
+}
+
+/**
+ * General "Join this institute" apply — no batch chosen yet (see
+ * request_to_join_class, 0103). Distinct from requestToJoin(batchId) above,
+ * which is always batch-scoped. The institute assigns a batch later, if it
+ * wants to, when accepting (see respondToJoinRequest's batchId param).
+ */
+export async function requestToJoinClass(classId: string): Promise<ActionResult> {
+  if (!classId) {
+    return { error: "Invalid institute." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error } = await supabase.rpc("request_to_join_class", { p_class_id: classId });
+  if (error) {
+    if (error.message.includes("class_not_found")) {
+      return { error: "That institute couldn't be found." };
+    }
+    if (error.message.includes("already_requested")) {
+      return { error: "You've already sent a request (or joined) this institute." };
+    }
+    return { error: "Couldn't send your request. Please try again." };
   }
   return {};
 }

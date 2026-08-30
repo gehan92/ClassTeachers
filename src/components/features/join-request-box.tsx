@@ -13,7 +13,8 @@ const fieldClass =
 
 export function JoinRequestBox({
   batchId,
-  teacherId,
+  ownerType,
+  ownerId,
   hourlyRate,
   monthlyRate,
   loggedIn,
@@ -22,7 +23,8 @@ export function JoinRequestBox({
   isCampusLecturer = false,
 }: {
   batchId: string;
-  teacherId: string;
+  ownerType: "teacher" | "class";
+  ownerId: string;
   hourlyRate?: number;
   monthlyRate?: number;
   loggedIn: boolean;
@@ -74,12 +76,14 @@ export function JoinRequestBox({
         {existingStatus === "accepted" ? (
           <div>
             <p className="mb-3 text-sm font-medium text-success">{t("accepted")}</p>
-            <Link
-              href={`/teacher/${teacherId}`}
-              className="flex w-full items-center justify-center rounded-md bg-cta px-5 py-2.75 text-sm font-semibold text-cta-foreground transition-all hover:-translate-y-px hover:bg-cta-hover"
-            >
-              {t("viewProfile")}
-            </Link>
+            {ownerType === "teacher" && (
+              <Link
+                href={`/teacher/${ownerId}`}
+                className="flex w-full items-center justify-center rounded-md bg-cta px-5 py-2.75 text-sm font-semibold text-cta-foreground transition-all hover:-translate-y-px hover:bg-cta-hover"
+              >
+                {t("viewProfile")}
+              </Link>
+            )}
           </div>
         ) : existingStatus === "pending" ? (
           <p className="text-sm font-medium text-muted-foreground">{t("pending")}</p>
@@ -90,7 +94,7 @@ export function JoinRequestBox({
         ) : loggedIn ? (
           <p className="text-sm text-muted-foreground">{isCampusLecturer ? t("notStudentCampus") : t("notStudent")}</p>
         ) : (
-          <AnonymousRequestForm teacherId={teacherId} isCampusLecturer={isCampusLecturer} />
+          <AnonymousRequestForm ownerType={ownerType} ownerId={ownerId} isCampusLecturer={isCampusLecturer} />
         )}
       </div>
     </div>
@@ -139,7 +143,15 @@ function StudentRequestForm({ batchId, isCampusLecturer }: { batchId: string; is
   );
 }
 
-function AnonymousRequestForm({ teacherId, isCampusLecturer }: { teacherId: string; isCampusLecturer: boolean }) {
+function AnonymousRequestForm({
+  ownerType,
+  ownerId,
+  isCampusLecturer,
+}: {
+  ownerType: "teacher" | "class";
+  ownerId: string;
+  isCampusLecturer: boolean;
+}) {
   const t = useTranslations("adPage.join");
   const [form, setForm] = useState({ name: "", contact: "", message: "" });
   const [sending, setSending] = useState(false);
@@ -149,7 +161,7 @@ function AnonymousRequestForm({ teacherId, isCampusLecturer }: { teacherId: stri
   async function handleSend() {
     setSending(true);
     setError(null);
-    const result = await submitInquiry({ ownerType: "teacher", ownerId: teacherId, ...form });
+    const result = await submitInquiry({ ownerType, ownerId, ...form });
     setSending(false);
     if (result.error) {
       setError(result.error);

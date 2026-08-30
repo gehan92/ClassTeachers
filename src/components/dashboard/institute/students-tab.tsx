@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
@@ -23,6 +24,12 @@ export type InstituteJoinRequestRow = {
   id: string;
   studentName: string;
   batch: string;
+  /** Null for a general "Join this institute" request (requestToJoinClass,
+   * 0103) — the request came in with no class picked yet, so the institute
+   * can optionally choose one below before accepting. Already-set for a
+   * batch-scoped request (requestToJoin), which picked its class at apply
+   * time — no picker needed there. */
+  batchId: string | null;
   requestedAt: string;
 };
 
@@ -39,9 +46,12 @@ function initialsFor(name: string) {
 export function StudentsTab({
   students,
   requests: initialRequests,
+  batchOptions = [],
 }: {
   students: InstituteStudentRow[];
   requests: InstituteJoinRequestRow[];
+  /** For the batch picker on a general (batchId === null) request. */
+  batchOptions?: { id: string; title: string }[];
 }) {
   const t = useTranslations("instituteDashboard.students");
   const tc = useTranslations("instituteDashboard.common");
@@ -51,6 +61,7 @@ export function StudentsTab({
   const requests = initialRequests.filter((r) => !handledRequestIds.has(r.id));
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedBatchByRequestId, setSelectedBatchByRequestId] = useState<Record<string, string>>({});
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -61,7 +72,7 @@ export function StudentsTab({
   async function handleRespond(id: string, accept: boolean) {
     setRespondingId(id);
     setError(null);
-    const result = await respondToJoinRequest(id, accept);
+    const result = await respondToJoinRequest(id, accept, accept ? selectedBatchByRequestId[id] : undefined);
     setRespondingId(null);
     if (result.error) {
       setError(result.error);
@@ -104,7 +115,26 @@ export function StudentsTab({
                     {request.batch} · {request.requestedAt}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {request.batchId === null && batchOptions.length > 0 && (
+                    <Select
+                      value={selectedBatchByRequestId[request.id] ?? ""}
+                      onValueChange={(value) =>
+                        setSelectedBatchByRequestId((prev) => ({ ...prev, [request.id]: value ?? "" }))
+                      }
+                    >
+                      <SelectTrigger className="h-8 w-44 text-xs">
+                        <SelectValue placeholder={t("requests.assignBatchPlaceholder")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {batchOptions.map((batch) => (
+                          <SelectItem key={batch.id} value={batch.id}>
+                            {batch.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                   <Button
                     type="button"
                     size="sm"

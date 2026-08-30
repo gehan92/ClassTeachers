@@ -37,5 +37,35 @@ export default async function ClassProfilePage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  return <ClassProfileView classProfile={classProfile} showGate={!user} backHref="/teachers" />;
+  let isStudent = false;
+  let generalStatus: "pending" | "accepted" | "declined" | null = null;
+  const batchStatusById: Record<string, "pending" | "accepted" | "declined" | null> = {};
+  if (user) {
+    const [{ data: profile }, { data: enrollmentRows }] = await Promise.all([
+      supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+      supabase
+        .from("enrollments")
+        .select("status, batch_id")
+        .eq("student_id", user.id)
+        .eq("owner_type", "class")
+        .eq("owner_id", classProfile.id),
+    ]);
+    isStudent = profile?.role === "student";
+    for (const row of enrollmentRows ?? []) {
+      if (row.batch_id === null) {
+        generalStatus = row.status;
+      } else {
+        batchStatusById[row.batch_id] = row.status;
+      }
+    }
+  }
+
+  return (
+    <ClassProfileView
+      classProfile={classProfile}
+      showGate={!user}
+      backHref="/teachers"
+      viewerJoin={{ loggedIn: Boolean(user), isStudent, generalStatus, batchStatusById }}
+    />
+  );
 }

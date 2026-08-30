@@ -19,6 +19,7 @@
     "requestsTitle": "Student Requests | ClassPortals",
     "requestsDescription": "Real requests from students searching for a teacher or institute — respond if you can help.",
     "teacherRoleFallback": "Teacher",
+    "classRoleFallback": "Institute",
     "teacherProfileTitle": "{name} — {subject} | ClassPortals",
     "teacherProfileDescription": "View {name}'s profile on ClassPortals: qualifications, rates and reviews.",
     "classProfileTitle": "{name} — Tuition Institute | ClassPortals",
@@ -243,7 +244,12 @@
     "started": "Started",
     "upcoming": "Not started yet",
     "modeOnline": "Online",
-    "modePhysical": "Physical"
+    "modePhysical": "Physical",
+    "join": "Request to join",
+    "joinNotStudent": "Only student accounts can request to join.",
+    "joinPending": "Request sent",
+    "joinAccepted": "Joined",
+    "joinDeclined": "Declined"
   },
   "adSlot": {
     "eyebrow": "Site-wide advertisement",
@@ -623,6 +629,10 @@
     "save": "Save",
     "joinTeacher": "Join teacher",
     "joinInstitute": "Join institute",
+    "joinNotStudent": "Only student accounts can request to join.",
+    "joinPending": "Request sent — waiting for the institute to respond.",
+    "joinAccepted": "You're already connected with this institute.",
+    "joinDeclined": "Your request was declined.",
     "yearsExperience": "{years} years experience",
     "teachersCount": "{count} teachers",
     "about": "About",
@@ -1017,6 +1027,27 @@
     "ads": {
       "title": "Advertisement",
       "subtitle": "Promote your institute and manage your ad copy.",
+      "classAds": {
+        "heading": "Class advertisements",
+        "subtitle": "Advertise one of your classes in search results, tied to the subject it teaches, so students looking for that subject can find it and request to join.",
+        "noBatches": "No classes yet — add one in the Classes & Batches tab, then come back here to advertise it.",
+        "noSubjectYet": "No subject set yet",
+        "batchSubject": "Subject: {subject}",
+        "noAdYet": "No ad yet — not shown in search results.",
+        "createAd": "Create ad",
+        "editAd": "Edit ad",
+        "active": "Active — visible in search",
+        "paused": "Paused — hidden from search",
+        "titleLabel": "Ad title",
+        "titlePlaceholder": "e.g. Combined Maths — Grade 12/13, weekday evenings",
+        "contentLabel": "Ad details",
+        "contentPlaceholder": "What makes this class worth joining?",
+        "hourlyRateLabel": "Hourly rate (optional)",
+        "monthlyRateLabel": "Monthly rate (optional)",
+        "ratePlaceholderNone": "Rs.",
+        "rateHelper": "Leave blank to use your institute-wide default rate from Profile. Set one here to charge differently for this class.",
+        "save": "Save ad"
+      },
       "panelTitle": "Your promotion",
       "promotionLabel": "Promotion text",
       "promotionPlaceholder": "e.g. Enrollment for the O/L 2027 group is now open — early-bird pricing until end of month.",
@@ -1119,6 +1150,7 @@
       },
       "requests": {
         "heading": "Join requests",
+        "assignBatchPlaceholder": "Assign a class (optional)",
         "accept": "Accept",
         "decline": "Decline"
       }
@@ -2214,6 +2246,7 @@
   },
   "adPage": {
     "teacherFallback": "Teacher",
+    "classFallback": "Institute",
     "breadcrumbHome": "Find teachers",
     "aboutHeading": "About this class",
     "aboutHeadingCampus": "About this course",
@@ -2222,6 +2255,7 @@
     "schedule": "Schedule",
     "limitedNote": "This is a limited preview. Full profile details unlock once the teacher accepts your request to join.",
     "limitedNoteCampus": "This is a limited preview. Full profile details unlock once the lecturer accepts your request to enroll.",
+    "limitedNoteClass": "This is a limited preview. Full profile details unlock once the institute accepts your request to join.",
     "levelHeading": "Level of the lessons",
     "resourcesHeading": "Free notes from {name}",
     "share": {

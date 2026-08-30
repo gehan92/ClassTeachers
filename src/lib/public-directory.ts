@@ -32,9 +32,10 @@ function priceFrom(hourlyRate: number | null, monthlyRate: number | null): Listi
  */
 export async function getPublicListings(tPage: Translator, tSearch: Translator): Promise<Listing[]> {
   const supabase = await createClient();
-  const [{ data: adRows }, { data: classRows }] = await Promise.all([
+  const [{ data: adRows }, { data: classRows }, { data: classAdRows }] = await Promise.all([
     supabase.rpc("list_teacher_ads"),
     supabase.rpc("list_public_classes"),
+    supabase.rpc("list_class_batch_ads"),
   ]);
 
   const teacherListings: Listing[] = (adRows ?? []).flatMap((row) => {
@@ -116,7 +117,44 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
     return [listing];
   });
 
-  return [...teacherListings, ...classListings];
+  // Class-wise ads (0103, additive alongside the always-visible whole-
+  // institute cards above) — one card per active batch ad, same "ads-only"
+  // shape a teacher ad card has: headline/excerpt from the ad copy, price
+  // from the batch (falling back to the institute's default rate).
+  const classAdListings: Listing[] = (classAdRows ?? []).flatMap((row) => {
+    const price = priceFrom(row.hourly_rate, row.monthly_rate);
+    if (!price) return [];
+
+    const online = row.mode === "online";
+    const subjects = row.subject ? [row.subject] : [];
+    const roleLabel = [tPage("roleClass"), row.location, online ? tPage("online") : null].filter(Boolean).join(" · ");
+
+    const listing: Listing = {
+      id: row.ad_id,
+      kind: "class",
+      name: row.name,
+      masked: false,
+      roleLabel,
+      headline: row.ad_title,
+      excerpt: row.ad_content ?? undefined,
+      gradeChip: gradeChip(row.grade_band, subjects, tPage, tSearch),
+      location: row.location ?? "",
+      online,
+      gradeBand: (row.grade_band as GradeBand | null) ?? null,
+      gradeBands: row.grade_band ? [row.grade_band as GradeBand] : [],
+      avatarInitials: "🏫",
+      photoUrl: row.photo_url ?? undefined,
+      verified: row.institution_verified,
+      rating: Number(row.rating),
+      reviewCount: Number(row.review_count),
+      subjects,
+      price,
+      href: `/ad/${row.ad_id}`,
+    };
+    return [listing];
+  });
+
+  return [...teacherListings, ...classListings, ...classAdListings];
 }
 
 export type ActiveSiteAd = { title: string; content: string | null };

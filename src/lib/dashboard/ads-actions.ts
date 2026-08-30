@@ -177,6 +177,124 @@ export async function upsertBatchAd(input: {
   return {};
 }
 
+const upsertClassBatchAdSchema = z.object({
+  batchId: z.string().uuid(),
+  title: z.string().trim().min(2),
+  content: z.string().trim().min(1),
+  hourlyRate: z.number().positive().optional(),
+  monthlyRate: z.number().positive().optional(),
+});
+
+/**
+ * Institute equivalent of upsertBatchAd() above, kept as its own function
+ * rather than a shared one with an ownerType branch — an institute batch
+ * already has its subject resolved at creation time (createBatch's
+ * resolve_subject step), unlike a teacher's batch, so there's no subject
+ * picker here and nothing to stamp onto the batch row.
+ */
+export async function upsertClassBatchAd(input: {
+  batchId: string;
+  title: string;
+  content: string;
+  hourlyRate?: number;
+  monthlyRate?: number;
+}): Promise<ActionResult> {
+  const parsed = upsertClassBatchAdSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: "Please fill in the title and details, then try again." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { data: classProfile } = await supabase.from("class_profiles").select("id").eq("owner_id", user.id).maybeSingle();
+  if (!classProfile) {
+    return { error: "No institute profile found for this account." };
+  }
+
+  const { data: batch } = await supabase
+    .from("batches")
+    .select("id, subject_id")
+    .eq("id", parsed.data.batchId)
+    .eq("owner_type", "class")
+    .eq("owner_id", classProfile.id)
+    .maybeSingle();
+  if (!batch) {
+    return { error: "That class couldn't be found." };
+  }
+
+  const { error: batchError } = await supabase
+    .from("batches")
+    .update({
+      hourly_rate: parsed.data.hourlyRate ?? null,
+      monthly_rate: parsed.data.monthlyRate ?? null,
+    })
+    .eq("id", batch.id);
+  if (batchError) {
+    return { error: "Couldn't save this ad. Please try again." };
+  }
+
+  const { data: existing } = await supabase
+    .from("advertisements")
+    .select("id")
+    .eq("owner_type", "class")
+    .eq("owner_id", classProfile.id)
+    .eq("batch_id", batch.id)
+    .eq("placement", "search_results")
+    .maybeSingle();
+
+  const { error } = existing
+    ? await supabase
+        .from("advertisements")
+        .update({ title: parsed.data.title, content: parsed.data.content, status: "active" })
+        .eq("id", existing.id)
+    : await supabase.from("advertisements").insert({
+        owner_type: "class",
+        owner_id: classProfile.id,
+        batch_id: batch.id,
+        subject_id: batch.subject_id,
+        title: parsed.data.title,
+        content: parsed.data.content,
+        placement: "search_results",
+        plan: "basic",
+      });
+  if (error) {
+    return { error: "Couldn't save this ad. Please try again." };
+  }
+  return {};
+}
+
+export async function setClassBatchAdActive(adId: string, active: boolean): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { data: classProfile } = await supabase.from("class_profiles").select("id").eq("owner_id", user.id).maybeSingle();
+  if (!classProfile) {
+    return { error: "No institute profile found for this account." };
+  }
+
+  const { error } = await supabase
+    .from("advertisements")
+    .update({ status: active ? "active" : "removed" })
+    .eq("id", adId)
+    .eq("owner_type", "class")
+    .eq("owner_id", classProfile.id);
+  if (error) {
+    return { error: "Couldn't update this ad. Please try again." };
+  }
+  return {};
+}
+
 export async function setBatchAdActive(adId: string, active: boolean): Promise<ActionResult> {
   const supabase = await createClient();
   const {

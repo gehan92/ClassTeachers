@@ -9,7 +9,17 @@ import { ReviewsPanel } from "@/components/features/reviews-panel";
 import { ClassBatchCard } from "@/components/features/class-batch-card";
 import { Panel } from "@/components/features/teacher-profile-view";
 import { InstituteTeachersPanel } from "@/components/features/institute-teacher-quick-view";
+import { InstituteJoinButton } from "@/components/features/institute-join-button";
 import type { ClassProfileDetail } from "@/types/class-profile";
+
+/** The signed-in viewer's join state — undefined on the institute's own
+ * "preview my page" view, where no join UI renders at all. */
+export type ClassProfileViewerJoin = {
+  loggedIn: boolean;
+  isStudent: boolean;
+  generalStatus: "pending" | "accepted" | "declined" | null;
+  batchStatusById: Record<string, "pending" | "accepted" | "declined" | null>;
+};
 
 /**
  * Shared between the public /class/[id] page and the institute dashboard's
@@ -21,6 +31,7 @@ export function ClassProfileView({
   showGate,
   isOwnerView = false,
   backHref,
+  viewerJoin,
 }: {
   classProfile: ClassProfileDetail;
   showGate: boolean;
@@ -28,10 +39,12 @@ export function ClassProfileView({
   isOwnerView?: boolean;
   /** Only set by the public /class/[id] page — the dashboard's inline preview has nothing to go "back" to, so it stays hidden there. */
   backHref?: string;
+  /** Only set by the public /class/[id] page — omitted (along with !isOwnerView's join UI) on the dashboard's own preview. */
+  viewerJoin?: ClassProfileViewerJoin;
 }) {
   return (
     <>
-      <Hero classProfile={classProfile} isOwnerView={isOwnerView} backHref={backHref} />
+      <Hero classProfile={classProfile} isOwnerView={isOwnerView} backHref={backHref} viewerJoin={viewerJoin} />
       <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-8 px-7 py-10 lg:grid-cols-[2fr_1fr]">
         <div className="min-w-0">
           <AboutPanel classProfile={classProfile} showGate={showGate} />
@@ -45,7 +58,7 @@ export function ClassProfileView({
           )}
           {classProfile.batches.length > 0 && (
             <div className="mt-5">
-              <BatchesPanel classProfile={classProfile} />
+              <BatchesPanel classProfile={classProfile} viewerJoin={!isOwnerView ? viewerJoin : undefined} />
             </div>
           )}
           <ReviewsPanel reviews={classProfile.reviews} reviewCount={classProfile.reviewCount} rating={classProfile.rating} />
@@ -81,10 +94,12 @@ function Hero({
   classProfile,
   isOwnerView,
   backHref,
+  viewerJoin,
 }: {
   classProfile: ClassProfileDetail;
   isOwnerView: boolean;
   backHref?: string;
+  viewerJoin?: ClassProfileViewerJoin;
 }) {
   const t = useTranslations("profilePage");
   const tl = useTranslations("listing");
@@ -156,12 +171,12 @@ function Hero({
               >
                 {t("save")}
               </button>
-              <Link
-                href="/signup"
-                className="inline-flex items-center justify-center rounded-sm bg-cta px-4 py-2 text-sm font-semibold text-cta-foreground transition-all hover:-translate-y-px hover:bg-cta-hover"
-              >
-                {t("joinInstitute")}
-              </Link>
+              <InstituteJoinButton
+                classId={classProfile.id}
+                loggedIn={viewerJoin?.loggedIn ?? false}
+                isStudent={viewerJoin?.isStudent ?? false}
+                initialStatus={viewerJoin?.generalStatus ?? null}
+              />
             </div>
           )}
         </div>
@@ -181,14 +196,32 @@ function AboutPanel({ classProfile, showGate }: { classProfile: ClassProfileDeta
   );
 }
 
-function BatchesPanel({ classProfile }: { classProfile: ClassProfileDetail }) {
+function BatchesPanel({
+  classProfile,
+  viewerJoin,
+}: {
+  classProfile: ClassProfileDetail;
+  viewerJoin?: ClassProfileViewerJoin;
+}) {
   const t = useTranslations("profilePage");
 
   return (
     <Panel title={t("classesWithinInstitute")}>
       <div className="flex flex-col gap-4">
         {classProfile.batches.map((batch) => (
-          <ClassBatchCard key={batch.id} batch={batch} />
+          <ClassBatchCard
+            key={batch.id}
+            batch={batch}
+            join={
+              viewerJoin
+                ? {
+                    loggedIn: viewerJoin.loggedIn,
+                    isStudent: viewerJoin.isStudent,
+                    status: viewerJoin.batchStatusById[batch.id] ?? null,
+                  }
+                : undefined
+            }
+          />
         ))}
       </div>
     </Panel>

@@ -8,7 +8,7 @@ export type Listing = {
   name: string;
   masked: boolean;
   roleLabel: string;
-  /** Ad title/excerpt — only populated for ad-driven teacher listings (0040); undefined for classes, which have no ad system yet. */
+  /** Ad title/excerpt — populated for ad-driven listings (teacher ads, 0040; institute class-wise ads, 0103); undefined for a whole-institute profile card, which has no single ad behind it. */
   headline?: string;
   excerpt?: string;
   gradeChip: string;

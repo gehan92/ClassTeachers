@@ -31,6 +31,8 @@ function messageFor(t: Translator, n: NotificationRow): string {
       return data.batchTitle
         ? t("types.join_request_received", { studentName: str(data.studentName), batchTitle: str(data.batchTitle) })
         : t("types.join_request_received_general", { studentName: str(data.studentName) });
+    case "open_batch_joined":
+      return t("types.open_batch_joined", { studentName: str(data.studentName), batchTitle: str(data.batchTitle) });
     case "join_request_accepted":
       return t("types.join_request_accepted", { ownerName: str(data.ownerName) });
     case "join_request_declined":

@@ -53,6 +53,11 @@ export type InstituteBatchRow = {
    * guard the teacher dashboard's Classes tab already uses, so Delete is
    * disabled with an explanation instead of failing after the click. */
   hasActiveAd: boolean;
+  /** Open-enrollment (0106) — any student self-joins instantly via the
+   * public class profile page, no request/accept step. capacity is the
+   * optional cap; null means unlimited. */
+  isOpenEnrollment: boolean;
+  capacity: number | null;
 };
 
 export type InstituteRosterTeacherOption = {
@@ -85,6 +90,8 @@ export function BatchesTab({
   const [gradeBand, setGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>(OPEN_GRADE_VALUE);
   const [mode, setMode] = useState<"online" | "physical">("physical");
   const [schedule, setSchedule] = useState("");
+  const [isOpenEnrollment, setIsOpenEnrollment] = useState(false);
+  const [capacity, setCapacity] = useState("");
   const [added, setAdded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -97,6 +104,8 @@ export function BatchesTab({
   const [editMode, setEditMode] = useState<"online" | "physical">("physical");
   const [editLocation, setEditLocation] = useState("");
   const [editSchedule, setEditSchedule] = useState("");
+  const [editIsOpenEnrollment, setEditIsOpenEnrollment] = useState(false);
+  const [editCapacity, setEditCapacity] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -118,6 +127,8 @@ export function BatchesTab({
     setGradeBand(OPEN_GRADE_VALUE);
     setMode("physical");
     setSchedule("");
+    setIsOpenEnrollment(false);
+    setCapacity("");
   }
 
   async function handleAdd() {
@@ -133,6 +144,8 @@ export function BatchesTab({
       taughtByTeacherId: teacherId || undefined,
       gradeBand: gradeBand === OPEN_GRADE_VALUE ? "" : gradeBand,
       subjectName: subject.trim() || undefined,
+      isOpenEnrollment,
+      capacity: isOpenEnrollment && capacity.trim() ? Number(capacity) : undefined,
     });
     setCreating(false);
     if (result.error) {
@@ -155,6 +168,8 @@ export function BatchesTab({
     setEditMode(batch.mode);
     setEditLocation(batch.location ?? "");
     setEditSchedule(batch.scheduleNote ?? "");
+    setEditIsOpenEnrollment(batch.isOpenEnrollment);
+    setEditCapacity(batch.capacity !== null ? String(batch.capacity) : "");
     setEditError(null);
   }
 
@@ -176,6 +191,8 @@ export function BatchesTab({
       taughtByTeacherId: editTeacherId || undefined,
       gradeBand: editGradeBand === OPEN_GRADE_VALUE ? "" : editGradeBand,
       subjectName: editSubject.trim() || undefined,
+      isOpenEnrollment: editIsOpenEnrollment,
+      capacity: editIsOpenEnrollment && editCapacity.trim() ? Number(editCapacity) : undefined,
     });
     setEditSaving(false);
     if (result.error) {
@@ -350,6 +367,28 @@ export function BatchesTab({
                   <SelectItem value="online">{t("form.modeOnline")}</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex flex-col gap-2 rounded-md border border-border p-3 sm:col-span-2">
+              <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <input
+                  type="checkbox"
+                  className="size-3.5 accent-primary"
+                  checked={isOpenEnrollment}
+                  onChange={(e) => setIsOpenEnrollment(e.target.checked)}
+                />
+                {t("form.openEnrollmentLabel")}
+              </label>
+              <p className="text-xs text-muted-foreground">{t("form.openEnrollmentHint")}</p>
+              {isOpenEnrollment && (
+                <Input
+                  type="number"
+                  min={1}
+                  className="max-w-40"
+                  placeholder={t("form.capacityPlaceholder")}
+                  value={capacity}
+                  onChange={(e) => setCapacity(e.target.value)}
+                />
+              )}
             </div>
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -535,6 +574,28 @@ export function BatchesTab({
                                 onChange={(e) => setEditSchedule(e.target.value)}
                               />
                             </div>
+                            <div className="flex flex-col gap-2 rounded-md border border-border p-3 sm:col-span-2">
+                              <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                <input
+                                  type="checkbox"
+                                  className="size-3.5 accent-primary"
+                                  checked={editIsOpenEnrollment}
+                                  onChange={(e) => setEditIsOpenEnrollment(e.target.checked)}
+                                />
+                                {t("form.openEnrollmentLabel")}
+                              </label>
+                              <p className="text-xs text-muted-foreground">{t("form.openEnrollmentHint")}</p>
+                              {editIsOpenEnrollment && (
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  className="max-w-40"
+                                  placeholder={t("form.capacityPlaceholder")}
+                                  value={editCapacity}
+                                  onChange={(e) => setEditCapacity(e.target.value)}
+                                />
+                              )}
+                            </div>
                           </div>
                           <div className="mt-3 flex flex-wrap items-center gap-2.5">
                             <Button size="sm" onClick={() => handleSaveEdit(batch.id)} disabled={editSaving}>
@@ -556,6 +617,13 @@ export function BatchesTab({
                               )}
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
+                              {batch.isOpenEnrollment && (
+                                <span className="rounded-full bg-success/10 px-2.5 py-1 font-mono text-[11px] font-medium text-success">
+                                  {batch.capacity
+                                    ? t("openEnrollmentBadgeCapped", { count: batch.studentCount, capacity: batch.capacity })
+                                    : t("openEnrollmentBadge")}
+                                </span>
+                              )}
                               <span className="rounded-full bg-background px-2.5 py-1 font-mono text-[11px] text-muted-foreground">
                                 {t("studentCount", { count: batch.studentCount })}
                               </span>

@@ -39,6 +39,9 @@ type NormalizedAd = {
   institutionVerified: boolean;
   isCampusLecturer: boolean;
   courseCode: string | null;
+  isOpenEnrollment: boolean;
+  capacity: number | null;
+  spotsTaken: number;
 };
 
 async function loadAd(adId: string): Promise<NormalizedAd | null> {
@@ -68,6 +71,9 @@ async function loadAd(adId: string): Promise<NormalizedAd | null> {
       institutionVerified: r.institution_verified,
       isCampusLecturer: r.is_campus_lecturer,
       courseCode: r.course_code,
+      isOpenEnrollment: r.is_open_enrollment,
+      capacity: r.capacity,
+      spotsTaken: r.spots_taken,
     };
   }
 
@@ -95,6 +101,9 @@ async function loadAd(adId: string): Promise<NormalizedAd | null> {
       institutionVerified: r.institution_verified,
       isCampusLecturer: false,
       courseCode: null,
+      isOpenEnrollment: r.is_open_enrollment,
+      capacity: r.capacity,
+      spotsTaken: r.spots_taken,
     };
   }
 
@@ -288,6 +297,9 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
             isStudent={viewerRole === "student"}
             existingStatus={existingStatus}
             isCampusLecturer={ad.isCampusLecturer}
+            isOpenEnrollment={ad.isOpenEnrollment}
+            capacity={ad.capacity ?? undefined}
+            spotsTaken={ad.spotsTaken}
           />
 
           {freeNoteRows && freeNoteRows.length > 0 && (

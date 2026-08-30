@@ -29,12 +29,15 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
     { data: batchAdRows },
     { data: teacherRows },
     { data: phone },
+    { data: openEnrollmentRows },
   ] = await Promise.all([
     supabase.from("prices").select("hourly_rate, monthly_rate").eq("owner_type", "class").eq("owner_id", id).maybeSingle(),
     supabase.rpc("list_public_reviews", { p_target_type: "class", p_target_id: id }),
     supabase
       .from("batches")
-      .select("id, title, mode, location, schedule_note, teacher_label, taught_by_teacher_id, status")
+      .select(
+        "id, title, mode, location, schedule_note, teacher_label, taught_by_teacher_id, status, is_open_enrollment, capacity",
+      )
       .eq("owner_type", "class")
       .eq("owner_id", id)
       .in("status", ["active", "upcoming"])
@@ -62,7 +65,23 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
     // count; accepted+visible+approved only, same gate the count uses.
     supabase.rpc("list_institute_teachers", { p_class_id: id }),
     supabase.rpc("get_class_contact", { p_class_id: id }),
+    // Spots taken per open-enrollment batch (0106) — a plain count, not
+    // batches.title/etc., so this stays a separate lightweight query rather
+    // than folding into the batches select above.
+    supabase
+      .from("enrollments")
+      .select("batch_id")
+      .eq("owner_type", "class")
+      .eq("owner_id", id)
+      .eq("status", "accepted")
+      .not("batch_id", "is", null),
   ]);
+
+  const spotsTakenByBatchId = new Map<string, number>();
+  for (const row of openEnrollmentRows ?? []) {
+    if (!row.batch_id) continue;
+    spotsTakenByBatchId.set(row.batch_id, (spotsTakenByBatchId.get(row.batch_id) ?? 0) + 1);
+  }
 
   const batchAdsByBatchId = new Map<string, { id: string; title: string; content: string }[]>();
   for (const ad of batchAdRows ?? []) {
@@ -109,6 +128,9 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
       location: b.location,
       scheduleNote: b.schedule_note,
       ads: batchAdsByBatchId.get(b.id) ?? [],
+      isOpenEnrollment: b.is_open_enrollment,
+      capacity: b.capacity,
+      spotsTaken: spotsTakenByBatchId.get(b.id) ?? 0,
     })),
     reviews: reviews.map((r) => ({
       id: r.id,

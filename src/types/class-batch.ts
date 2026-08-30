@@ -18,4 +18,9 @@ export type ClassBatch = {
    * institute wrote in the Advertisement tab, shown here too so a visitor
    * reading this profile sees the same pitch a search card would show. */
   ads: { id: string; title: string; content: string }[];
+  /** Open-enrollment (0106) — any signed-in student joins this batch
+   * instantly, no accept/decline step. capacity null means unlimited. */
+  isOpenEnrollment: boolean;
+  capacity: number | null;
+  spotsTaken: number;
 };

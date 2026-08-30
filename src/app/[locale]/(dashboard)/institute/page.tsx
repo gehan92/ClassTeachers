@@ -172,7 +172,7 @@ export default async function InstituteDashboardPage({
       ? supabase
           .from("batches")
           .select(
-            "id, title, mode, location, schedule_note, teacher_label, taught_by_teacher_id, subject_id, grade_band, hourly_rate, monthly_rate",
+            "id, title, mode, location, schedule_note, teacher_label, taught_by_teacher_id, subject_id, grade_band, hourly_rate, monthly_rate, is_open_enrollment, capacity",
           )
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
@@ -190,6 +190,8 @@ export default async function InstituteDashboardPage({
             grade_band: string | null;
             hourly_rate: number | null;
             monthly_rate: number | null;
+            is_open_enrollment: boolean;
+            capacity: number | null;
           }[],
         }),
     // Class-wise ads (0103) — one row per batch that already has a
@@ -499,6 +501,8 @@ export default async function InstituteDashboardPage({
     gradeBand: b.grade_band as InstituteBatchRow["gradeBand"],
     studentCount: batchStudentCounts.get(b.id) ?? 0,
     hasActiveAd: activeAdBatchIds.has(b.id),
+    isOpenEnrollment: b.is_open_enrollment,
+    capacity: b.capacity,
   }));
 
   // Class-wise ads (0103, multiple per class since 0104) — mirrors the

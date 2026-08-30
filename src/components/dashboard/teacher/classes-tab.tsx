@@ -35,6 +35,11 @@ export type TeacherBatchRow = {
    * used to disable/explain the Delete action up front rather than let the
    * teacher hit the server-side block after clicking. */
   hasActiveAd: boolean;
+  /** Open-enrollment (0106) — any student self-joins instantly via the
+   * public ad/profile page, no request/accept step. capacity is the
+   * optional cap; null means unlimited. */
+  isOpenEnrollment: boolean;
+  capacity: number | null;
 };
 
 /**
@@ -97,6 +102,8 @@ export function ClassesTab({
   const [scheduleNote, setScheduleNote] = useState("");
   const [gradeBand, setGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>("12-13");
   const [courseCode, setCourseCode] = useState("");
+  const [isOpenEnrollment, setIsOpenEnrollment] = useState(false);
+  const [capacity, setCapacity] = useState("");
   const [added, setAdded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -109,6 +116,8 @@ export function ClassesTab({
   const [editScheduleNote, setEditScheduleNote] = useState("");
   const [editGradeBand, setEditGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>("12-13");
   const [editCourseCode, setEditCourseCode] = useState("");
+  const [editIsOpenEnrollment, setEditIsOpenEnrollment] = useState(false);
+  const [editCapacity, setEditCapacity] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -124,6 +133,8 @@ export function ClassesTab({
     setScheduleNote("");
     setGradeBand("12-13");
     setCourseCode("");
+    setIsOpenEnrollment(false);
+    setCapacity("");
   }
 
   async function handleAdd() {
@@ -139,6 +150,8 @@ export function ClassesTab({
       scheduleNote,
       gradeBand: gradeBand === OPEN_GRADE_VALUE ? "" : gradeBand,
       courseCode: isCampusLecturer ? courseCode : undefined,
+      isOpenEnrollment,
+      capacity: isOpenEnrollment && capacity.trim() ? Number(capacity) : undefined,
     });
     setCreating(false);
     if (result.error) {
@@ -161,6 +174,8 @@ export function ClassesTab({
     setEditScheduleNote(batch.scheduleNote ?? "");
     setEditGradeBand(batch.gradeBand ?? OPEN_GRADE_VALUE);
     setEditCourseCode(batch.courseCode ?? "");
+    setEditIsOpenEnrollment(batch.isOpenEnrollment);
+    setEditCapacity(batch.capacity !== null ? String(batch.capacity) : "");
     setEditError(null);
   }
 
@@ -182,6 +197,8 @@ export function ClassesTab({
       scheduleNote: editScheduleNote,
       gradeBand: editGradeBand === OPEN_GRADE_VALUE ? "" : editGradeBand,
       courseCode: isCampusLecturer ? editCourseCode : undefined,
+      isOpenEnrollment: editIsOpenEnrollment,
+      capacity: editIsOpenEnrollment && editCapacity.trim() ? Number(editCapacity) : undefined,
     });
     setEditSaving(false);
     if (result.error) {
@@ -319,6 +336,28 @@ export function ClassesTab({
                 onChange={(e) => setScheduleNote(e.target.value)}
               />
             </div>
+            <div className="flex flex-col gap-2 rounded-md border border-border p-3 sm:col-span-2">
+              <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <input
+                  type="checkbox"
+                  className="size-3.5 accent-primary"
+                  checked={isOpenEnrollment}
+                  onChange={(e) => setIsOpenEnrollment(e.target.checked)}
+                />
+                {t("form.openEnrollmentLabel")}
+              </label>
+              <p className="text-xs text-muted-foreground">{t("form.openEnrollmentHint")}</p>
+              {isOpenEnrollment && (
+                <Input
+                  type="number"
+                  min={1}
+                  className="max-w-40"
+                  placeholder={t("form.capacityPlaceholder")}
+                  value={capacity}
+                  onChange={(e) => setCapacity(e.target.value)}
+                />
+              )}
+            </div>
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button onClick={handleAdd} disabled={creating}>
@@ -434,6 +473,28 @@ export function ClassesTab({
                           onChange={(e) => setEditScheduleNote(e.target.value)}
                         />
                       </div>
+                      <div className="flex flex-col gap-2 rounded-md border border-border p-3 sm:col-span-2">
+                        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                          <input
+                            type="checkbox"
+                            className="size-3.5 accent-primary"
+                            checked={editIsOpenEnrollment}
+                            onChange={(e) => setEditIsOpenEnrollment(e.target.checked)}
+                          />
+                          {t("form.openEnrollmentLabel")}
+                        </label>
+                        <p className="text-xs text-muted-foreground">{t("form.openEnrollmentHint")}</p>
+                        {editIsOpenEnrollment && (
+                          <Input
+                            type="number"
+                            min={1}
+                            className="max-w-40"
+                            placeholder={t("form.capacityPlaceholder")}
+                            value={editCapacity}
+                            onChange={(e) => setEditCapacity(e.target.value)}
+                          />
+                        )}
+                      </div>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2.5">
                       <Button size="sm" onClick={() => handleSaveEdit(batch.id)} disabled={editSaving}>
@@ -462,6 +523,11 @@ export function ClassesTab({
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                      {batch.isOpenEnrollment && (
+                        <span className="rounded-full bg-success/10 px-2.5 py-1 font-mono text-[11px] font-medium text-success">
+                          {batch.capacity ? t("openEnrollmentBadgeCapped", { count: roster.length, capacity: batch.capacity }) : t("openEnrollmentBadge")}
+                        </span>
+                      )}
                       <span className="rounded-full bg-background px-2.5 py-1 font-mono text-[11px] text-muted-foreground">
                         {t("studentCount", { count: roster.length })}
                       </span>

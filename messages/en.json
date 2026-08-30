@@ -71,6 +71,7 @@
       "join_request_received_general": "{studentName} requested to join your institute.",
       "join_request_accepted": "{ownerName} accepted your request to join.",
       "join_request_declined": "{ownerName} declined your request to join.",
+      "open_batch_joined": "{studentName} joined your open class \"{batchTitle}\".",
       "exam_graded": "Your exam \"{examTitle}\" was graded: {grade}.",
       "review_posted": "You received a new {rating}-star review.",
       "review_replied": "You got a reply to your review.",
@@ -280,10 +281,14 @@
     "modeOnline": "Online",
     "modePhysical": "Physical",
     "join": "Request to join",
+    "joinNow": "Join now",
     "joinNotStudent": "Only student accounts can request to join.",
     "joinPending": "Request sent",
     "joinAccepted": "Joined",
-    "joinDeclined": "Declined"
+    "joinDeclined": "Declined",
+    "openEnrollmentBadge": "Open — join instantly",
+    "spotsLeft": "{count} spots left",
+    "full": "Class full"
   },
   "adSlot": {
     "eyebrow": "Site-wide advertisement",
@@ -1044,6 +1049,8 @@
       "viewStudents": "View students",
       "hideStudents": "Hide students",
       "noStudents": "No students enrolled yet.",
+      "openEnrollmentBadge": "Open enrollment",
+      "openEnrollmentBadgeCapped": "Open — {count}/{capacity} joined",
       "deleteDialog": {
         "title": "Delete \"{title}\"?",
         "titleFallback": "Delete this class?",
@@ -1092,6 +1099,9 @@
         "intervalLabel": "Billing interval",
         "intervalHour": "Per hour",
         "intervalMonth": "Per month",
+        "openEnrollmentLabel": "Open enrollment — anyone can join instantly",
+        "openEnrollmentHint": "Students join immediately, no request to accept — good for open community or elder classes anyone can walk into.",
+        "capacityPlaceholder": "Max students (optional, leave blank for unlimited)",
         "submit": "Add batch",
         "teacherSelectEmpty": "No teachers on your roster yet — invite one in the Teachers tab first."
       }
@@ -1330,7 +1340,9 @@
       "modeOnline": "Online",
       "modePhysical": "Physical",
       "requestToJoin": "Request to join",
-      "requestToEnroll": "Request to enroll"
+      "requestToEnroll": "Request to enroll",
+      "joinNow": "Join now",
+      "openEnrollmentBadge": "Open — join instantly"
     },
     "live": {
       "title": "Live Classes",
@@ -1809,6 +1821,8 @@
       "delete": "Delete",
       "deleteBlockedByAd": "This class has a live ad. Pause or remove it in the Advertisement tab before deleting this class.",
       "deleteBlockedByAdCampus": "This course has a live ad. Pause or remove it in the Advertisement tab before deleting this course.",
+      "openEnrollmentBadge": "Open enrollment",
+      "openEnrollmentBadgeCapped": "Open — {count}/{capacity} joined",
       "deleteDialog": {
         "title": "Delete \"{title}\"?",
         "titleFallback": "Delete this class?",
@@ -1845,6 +1859,9 @@
         "locationPlaceholder": "e.g. Colombo 05",
         "scheduleLabel": "Schedule",
         "schedulePlaceholder": "e.g. Mon, Wed · 5:00 PM",
+        "openEnrollmentLabel": "Open enrollment — anyone can join instantly",
+        "openEnrollmentHint": "Students join immediately, no request to accept — good for open community or elder classes anyone can walk into.",
+        "capacityPlaceholder": "Max students (optional, leave blank for unlimited)",
         "submit": "Create batch",
         "submitCampus": "Create course"
       }
@@ -2360,7 +2377,13 @@
       "notStudent": "Only student accounts can request to join.",
       "notStudentCampus": "Only student accounts can request to enroll.",
       "viewProfile": "View full profile",
-      "anonymousHint": "No account needed — the teacher will get in touch using the contact details above."
+      "anonymousHint": "No account needed — the teacher will get in touch using the contact details above.",
+      "openEnrollmentBadge": "Open enrollment",
+      "spotsLeft": "{count} spots left",
+      "full": "This class is full.",
+      "joinNow": "Join now",
+      "joinedNow": "You're in! You've joined this class.",
+      "signUpToJoin": "Sign up to join instantly"
     }
   },
   "helpPage": {

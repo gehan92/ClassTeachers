@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { requestToJoin } from "@/lib/dashboard/batches-actions";
+import { requestToJoin, joinOpenBatch } from "@/lib/dashboard/batches-actions";
 import { submitInquiry } from "@/lib/inquiries-actions";
 
 const fieldClass =
@@ -21,6 +21,9 @@ export function JoinRequestBox({
   isStudent,
   existingStatus,
   isCampusLecturer = false,
+  isOpenEnrollment = false,
+  capacity,
+  spotsTaken = 0,
 }: {
   batchId: string;
   ownerType: "teacher" | "class";
@@ -31,14 +34,33 @@ export function JoinRequestBox({
   isStudent: boolean;
   existingStatus: "pending" | "accepted" | "declined" | null;
   isCampusLecturer?: boolean;
+  /** Open-enrollment batch (0106) — any signed-in student joins instantly,
+   * no accept/decline step. capacity/spotsTaken drive the "X spots left" /
+   * "Full" state; capacity undefined means unlimited. */
+  isOpenEnrollment?: boolean;
+  capacity?: number;
+  spotsTaken?: number;
 }) {
   const t = useTranslations("adPage.join");
   const tp = useTranslations("priceBox");
   const [interval, setInterval] = useState<"hr" | "mo">(hourlyRate !== undefined ? "hr" : "mo");
   const amount = interval === "hr" ? hourlyRate : monthlyRate;
+  const [joinedNow, setJoinedNow] = useState(false);
+  const spotsLeft = capacity !== undefined ? Math.max(0, capacity - spotsTaken) : undefined;
+  const isFull = spotsLeft === 0;
+  const showAsAccepted = existingStatus === "accepted" || joinedNow;
 
   return (
     <div className="flex h-fit flex-col gap-4 rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+      {isOpenEnrollment && (
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">{t("openEnrollmentBadge")}</span>
+          {!isFull && spotsLeft !== undefined && (
+            <span className="text-xs font-medium text-muted-foreground">{t("spotsLeft", { count: spotsLeft })}</span>
+          )}
+        </div>
+      )}
+
       {(hourlyRate !== undefined || monthlyRate !== undefined) && (
         <div>
           {hourlyRate !== undefined && monthlyRate !== undefined && (
@@ -73,9 +95,9 @@ export function JoinRequestBox({
       )}
 
       <div className="border-t border-border pt-4">
-        {existingStatus === "accepted" ? (
+        {showAsAccepted ? (
           <div>
-            <p className="mb-3 text-sm font-medium text-success">{t("accepted")}</p>
+            <p className="mb-3 text-sm font-medium text-success">{joinedNow ? t("joinedNow") : t("accepted")}</p>
             {ownerType === "teacher" && (
               <Link
                 href={`/teacher/${ownerId}`}
@@ -89,6 +111,21 @@ export function JoinRequestBox({
           <p className="text-sm font-medium text-muted-foreground">{t("pending")}</p>
         ) : existingStatus === "declined" ? (
           <p className="text-sm font-medium text-destructive">{t("declined")}</p>
+        ) : isOpenEnrollment ? (
+          isFull ? (
+            <p className="text-sm font-medium text-muted-foreground">{t("full")}</p>
+          ) : loggedIn && isStudent ? (
+            <StudentJoinNowForm batchId={batchId} onJoined={() => setJoinedNow(true)} />
+          ) : loggedIn ? (
+            <p className="text-sm text-muted-foreground">{isCampusLecturer ? t("notStudentCampus") : t("notStudent")}</p>
+          ) : (
+            <Link
+              href="/signup"
+              className="flex w-full items-center justify-center rounded-md bg-cta px-5 py-2.75 text-sm font-semibold text-cta-foreground transition-all hover:-translate-y-px hover:bg-cta-hover"
+            >
+              {t("signUpToJoin")}
+            </Link>
+          )
         ) : loggedIn && isStudent ? (
           <StudentRequestForm batchId={batchId} isCampusLecturer={isCampusLecturer} />
         ) : loggedIn ? (
@@ -97,6 +134,33 @@ export function JoinRequestBox({
           <AnonymousRequestForm ownerType={ownerType} ownerId={ownerId} isCampusLecturer={isCampusLecturer} />
         )}
       </div>
+    </div>
+  );
+}
+
+function StudentJoinNowForm({ batchId, onJoined }: { batchId: string; onJoined: () => void }) {
+  const t = useTranslations("adPage.join");
+  const [joining, setJoining] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleJoin() {
+    setJoining(true);
+    setError(null);
+    const result = await joinOpenBatch(batchId);
+    setJoining(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    onJoined();
+  }
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      <Button type="button" onClick={handleJoin} disabled={joining}>
+        {t("joinNow")}
+      </Button>
+      {error && <span className="text-xs font-medium text-destructive">{error}</span>}
     </div>
   );
 }

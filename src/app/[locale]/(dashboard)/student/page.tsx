@@ -105,7 +105,7 @@ export default async function StudentDashboardPage({
       .eq("student_id", userId),
     supabase
       .from("batches")
-      .select("id, owner_type, owner_id, title, mode, location, schedule_note, course_code")
+      .select("id, owner_type, owner_id, title, mode, location, schedule_note, course_code, is_open_enrollment")
       .order("created_at", { ascending: false }),
     // No explicit owner filter here — RLS (is_enrolled, 0047) already
     // scopes which assignment rows come back.
@@ -519,6 +519,7 @@ export default async function StudentDashboardPage({
       scheduleNote: b.schedule_note,
       isCampusLecturer: b.owner_type === "teacher" && campusLecturerTeacherIds.has(b.owner_id),
       courseCode: b.course_code,
+      isOpenEnrollment: b.is_open_enrollment,
     }));
 
   const studentNotes: StudentNoteRow[] = (noteRows ?? [])

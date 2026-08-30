@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
-import { requestToJoin } from "@/lib/dashboard/batches-actions";
+import { requestToJoin, joinOpenBatch } from "@/lib/dashboard/batches-actions";
 
 export type MyClassRow = {
   enrollmentId: string;
@@ -30,6 +30,9 @@ export type AvailableBatchRow = {
   scheduleNote: string | null;
   isCampusLecturer: boolean;
   courseCode: string | null;
+  /** Open-enrollment (0106) — joins instantly via joinOpenBatch instead of
+   * requestToJoin's pending request. */
+  isOpenEnrollment: boolean;
 };
 
 export function ClassesTab({
@@ -45,10 +48,10 @@ export function ClassesTab({
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleJoin(batchId: string) {
+  async function handleJoin(batchId: string, isOpenEnrollment: boolean) {
     setJoiningId(batchId);
     setError(null);
-    const result = await requestToJoin(batchId);
+    const result = isOpenEnrollment ? await joinOpenBatch(batchId) : await requestToJoin(batchId);
     setJoiningId(null);
     if (result.error) {
       setError(result.error);
@@ -151,9 +154,16 @@ export function ClassesTab({
               className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4.5 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="min-w-0">
-                <div className="font-semibold text-foreground">
-                  {batch.courseCode && <span className="text-muted-foreground">{batch.courseCode} · </span>}
-                  {batch.title}
+                <div className="mb-0.5 flex flex-wrap items-center gap-2">
+                  <div className="font-semibold text-foreground">
+                    {batch.courseCode && <span className="text-muted-foreground">{batch.courseCode} · </span>}
+                    {batch.title}
+                  </div>
+                  {batch.isOpenEnrollment && (
+                    <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success">
+                      {t("openEnrollmentBadge")}
+                    </span>
+                  )}
                 </div>
                 <div className="text-sm text-muted-foreground">{batch.ownerName}</div>
                 <div className="mt-1 text-xs text-muted-foreground">
@@ -165,10 +175,10 @@ export function ClassesTab({
               <Button
                 size="sm"
                 disabled={joiningId === batch.id}
-                onClick={() => handleJoin(batch.id)}
+                onClick={() => handleJoin(batch.id, batch.isOpenEnrollment)}
                 className="shrink-0"
               >
-                {batch.isCampusLecturer ? t("requestToEnroll") : t("requestToJoin")}
+                {batch.isOpenEnrollment ? t("joinNow") : batch.isCampusLecturer ? t("requestToEnroll") : t("requestToJoin")}
               </Button>
             </div>
           ))}

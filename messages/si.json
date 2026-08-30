@@ -71,6 +71,7 @@
       "join_request_received_general": "{studentName} ඔබේ ආයතනයට එකතු වීමට ඉල්ලීමක් කර ඇත.",
       "join_request_accepted": "{ownerName} ඔබේ එකතු වීමේ ඉල්ලීම පිළිගත්තා.",
       "join_request_declined": "{ownerName} ඔබේ එකතු වීමේ ඉල්ලීම ප්‍රතික්ෂේප කළා.",
+      "open_batch_joined": "{studentName} ඔබේ විවෘත පන්තියට එකතු විය: \"{batchTitle}\".",
       "exam_graded": "ඔබේ \"{examTitle}\" විභාගය ලකුණු කරන ලදී: {grade}.",
       "review_posted": "ඔබට තරු {rating} ක නව සමාලෝචනයක් ලැබී ඇත.",
       "review_replied": "ඔබේ සමාලෝචනයට පිළිතුරක් ලැබී ඇත.",
@@ -280,10 +281,14 @@
     "modeOnline": "මාර්ගගත",
     "modePhysical": "භෞතික",
     "join": "එකතු වීමට ඉල්ලන්න",
+    "joinNow": "දැන් එකතු වන්න",
     "joinNotStudent": "සිසු ගිණුම් වලට පමණක් එකතු වීමට ඉල්ලීමට හැකිය.",
     "joinPending": "ඉල්ලීම යවා ඇත",
     "joinAccepted": "එකතු විය",
-    "joinDeclined": "ප්‍රතික්ෂේප කරන ලදී"
+    "joinDeclined": "ප්‍රතික්ෂේප කරන ලදී",
+    "openEnrollmentBadge": "විවෘත — ක්ෂණිකව එකතු වන්න",
+    "spotsLeft": "ඉඩ {count}ක් ඉතිරිය",
+    "full": "පන්තිය පිරී ඇත"
   },
   "adSlot": {
     "eyebrow": "වේදිකා-ව්‍යාප්ත දැන්වීම",
@@ -1044,6 +1049,8 @@
       "viewStudents": "සිසුන් බලන්න",
       "hideStudents": "සිසුන් සඟවන්න",
       "noStudents": "තවම සිසුන් ලියාපදිංචි වී නැත.",
+      "openEnrollmentBadge": "විවෘත ලියාපදිංචිය",
+      "openEnrollmentBadgeCapped": "විවෘත — {count}/{capacity} එකතු වී ඇත",
       "deleteDialog": {
         "title": "\"{title}\" මකන්නද?",
         "titleFallback": "මෙම පන්තිය මකන්නද?",
@@ -1092,6 +1099,9 @@
         "intervalLabel": "ගෙවීම් කාල පරතරය",
         "intervalHour": "පැයකට",
         "intervalMonth": "මාසිකව",
+        "openEnrollmentLabel": "විවෘත ලියාපදිංචිය — ඕනෑම කෙනෙකුට ක්ෂණිකව එකතු විය හැක",
+        "openEnrollmentHint": "සිසුන් වහාම එකතු වේ, පිළිගැනීමට ඉල්ලීමක් නැත — ඕනෑම කෙනෙකුට එකතු විය හැකි විවෘත ප්‍රජා හෝ වැඩිහිටි පන්ති සඳහා සුදුසුය.",
+        "capacityPlaceholder": "උපරිම සිසුන් (විකල්ප, සීමාවක් නැතිනම් හිස්ව තබන්න)",
         "submit": "කණ්ඩායම එකතු කරන්න",
         "teacherSelectEmpty": "ඔබේ ලේඛනයේ තවම ගුරුවරුන් නැත — පළමුව ගුරුවරුන් පටිත්තෙන් ආරාධනා කරන්න."
       }
@@ -1330,7 +1340,9 @@
       "modeOnline": "මාර්ගගත",
       "modePhysical": "භෞතික",
       "requestToJoin": "එකතු වීමට ඉල්ලන්න",
-      "requestToEnroll": "ලියාපදිංචි වීමට ඉල්ලන්න"
+      "requestToEnroll": "ලියාපදිංචි වීමට ඉල්ලන්න",
+      "joinNow": "දැන් එකතු වන්න",
+      "openEnrollmentBadge": "විවෘත — ක්ෂණිකව එකතු වන්න"
     },
     "live": {
       "title": "සජීවී පන්ති",
@@ -1808,6 +1820,8 @@
       "edit": "සංස්කරණය කරන්න",
       "delete": "මකන්න",
       "deleteBlockedByAd": "මෙම පන්තියට සජීවී දැන්වීමක් ඇත. මෙම පන්තිය මැකීමට පෙර දැන්වීම් ටැබයේදී එය නවතන්න හෝ ඉවත් කරන්න.",
+      "openEnrollmentBadge": "විවෘත ලියාපදිංචිය",
+      "openEnrollmentBadgeCapped": "විවෘත — {count}/{capacity} එකතු වී ඇත",
       "deleteBlockedByAdCampus": "මෙම පාඨමාලාවට සජීවී දැන්වීමක් ඇත. මෙම පාඨමාලාව මැකීමට පෙර දැන්වීම් ටැබයේදී එය නවතන්න හෝ ඉවත් කරන්න.",
       "deleteDialog": {
         "title": "\"{title}\" මකන්නද?",
@@ -1845,6 +1859,9 @@
         "locationPlaceholder": "උදා: කොළඹ 05",
         "scheduleLabel": "කාලසටහන",
         "schedulePlaceholder": "උදා: සඳුදා, බදාදා · පස්වරු 5:00",
+        "openEnrollmentLabel": "විවෘත ලියාපදිංචිය — ඕනෑම කෙනෙකුට ක්ෂණිකව එකතු විය හැක",
+        "openEnrollmentHint": "සිසුන් වහාම එකතු වේ, පිළිගැනීමට ඉල්ලීමක් නැත — ඕනෑම කෙනෙකුට එකතු විය හැකි විවෘත ප්‍රජා හෝ වැඩිහිටි පන්ති සඳහා සුදුසුය.",
+        "capacityPlaceholder": "උපරිම සිසුන් (විකල්ප, සීමාවක් නැතිනම් හිස්ව තබන්න)",
         "submit": "කණ්ඩායම සාදන්න",
         "submitCampus": "පාඨමාලාව සාදන්න"
       }
@@ -2359,7 +2376,13 @@
       "notStudent": "සිසු ගිණුම් වලට පමණක් එකතු වීමට ඉල්ලීම් කළ හැක.",
       "notStudentCampus": "සිසු ගිණුම් වලට පමණක් ලියාපදිංචි වීමට ඉල්ලීම් කළ හැක.",
       "viewProfile": "සම්පූර්ණ පැතිකඩ බලන්න",
-      "anonymousHint": "ගිණුමක් අවශ්‍ය නැත — ඉහත සම්බන්ධතා විස්තර භාවිතයෙන් ගුරුවරයා ඔබ හා සම්බන්ධ වනු ඇත."
+      "anonymousHint": "ගිණුමක් අවශ්‍ය නැත — ඉහත සම්බන්ධතා විස්තර භාවිතයෙන් ගුරුවරයා ඔබ හා සම්බන්ධ වනු ඇත.",
+      "openEnrollmentBadge": "විවෘත ලියාපදිංචිය",
+      "spotsLeft": "ඉඩ {count}ක් ඉතිරිය",
+      "full": "මෙම පන්තිය පිරී ඇත.",
+      "joinNow": "දැන් එකතු වන්න",
+      "joinedNow": "ඔබ එකතු විය! ඔබ මෙම පන්තියට එකතු වී ඇත.",
+      "signUpToJoin": "ක්ෂණිකව එකතු වීමට ලියාපදිංචි වන්න"
     },
     "resourcesHeading": "{name} ගෙන් නොමිලේ සටහන්"
   },

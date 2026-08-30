@@ -140,7 +140,7 @@ export default async function TeacherDashboardPage({
     supabase
       .from("batches")
       .select(
-        "id, title, mode, class_size_type, location, schedule_note, grade_band, status, subject_id, hourly_rate, monthly_rate, course_code",
+        "id, title, mode, class_size_type, location, schedule_note, grade_band, status, subject_id, hourly_rate, monthly_rate, course_code, is_open_enrollment, capacity",
       )
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
@@ -452,6 +452,8 @@ export default async function TeacherDashboardPage({
     gradeBand: b.grade_band,
     courseCode: b.course_code,
     hasActiveAd: activeAdBatchIds.has(b.id),
+    isOpenEnrollment: b.is_open_enrollment,
+    capacity: b.capacity,
   }));
 
   // Institute Blueprint step 3b — every assigned institute batch, labeled

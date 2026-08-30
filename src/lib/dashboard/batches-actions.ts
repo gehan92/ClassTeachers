@@ -21,6 +21,8 @@ const createBatchSchema = z.object({
   gradeBand: z.enum(gradeBands).optional(),
   courseCode: z.string().trim().max(30).optional(),
   subjectName: z.string().trim().min(1).max(80).optional(),
+  isOpenEnrollment: z.boolean().optional(),
+  capacity: z.number().int().positive().optional(),
 });
 
 export async function createBatch(input: {
@@ -41,6 +43,12 @@ export async function createBatch(input: {
    * resolve_subject() so an institute admin can type either a real
    * syllabus subject or an ad-hoc/open-course name. */
   subjectName?: string;
+  /** Open-enrollment batch (0106) — any student self-joins via
+   * join_open_batch, skipping the request/accept step every other batch
+   * uses. capacity is the optional cap join_open_batch enforces; omitted
+   * means unlimited. */
+  isOpenEnrollment?: boolean;
+  capacity?: number;
 }): Promise<ActionResult> {
   const parsed = createBatchSchema.safeParse({
     ownerType: input.ownerType,
@@ -54,6 +62,8 @@ export async function createBatch(input: {
     gradeBand: input.gradeBand || undefined,
     courseCode: input.courseCode || undefined,
     subjectName: input.ownerType === "class" ? input.subjectName || undefined : undefined,
+    isOpenEnrollment: input.isOpenEnrollment,
+    capacity: input.capacity,
   });
   if (!parsed.success) {
     return { error: "Please check the highlighted fields and try again." };
@@ -104,6 +114,8 @@ export async function createBatch(input: {
     grade_band: parsed.data.gradeBand ?? null,
     course_code: parsed.data.courseCode ?? null,
     subject_id: subjectId,
+    is_open_enrollment: parsed.data.isOpenEnrollment ?? false,
+    capacity: parsed.data.isOpenEnrollment ? (parsed.data.capacity ?? null) : null,
   });
   if (error) {
     return { error: "Couldn't create the batch. Please try again." };
@@ -123,6 +135,8 @@ const updateBatchSchema = z.object({
   gradeBand: z.enum(gradeBands).optional(),
   courseCode: z.string().trim().max(30).optional(),
   subjectName: z.string().trim().min(1).max(80).optional(),
+  isOpenEnrollment: z.boolean().optional(),
+  capacity: z.number().int().positive().optional(),
 });
 
 export async function updateBatch(
@@ -139,6 +153,8 @@ export async function updateBatch(
     gradeBand: string;
     courseCode?: string;
     subjectName?: string;
+    isOpenEnrollment?: boolean;
+    capacity?: number;
   },
 ): Promise<ActionResult> {
   if (!batchId) {
@@ -156,6 +172,8 @@ export async function updateBatch(
     gradeBand: input.gradeBand || undefined,
     courseCode: input.courseCode || undefined,
     subjectName: input.ownerType === "class" ? input.subjectName || undefined : undefined,
+    isOpenEnrollment: input.isOpenEnrollment,
+    capacity: input.capacity,
   });
   if (!parsed.success) {
     return { error: "Please check the highlighted fields and try again." };
@@ -212,6 +230,12 @@ export async function updateBatch(
             teacher_label: parsed.data.teacherLabel || null,
             taught_by_teacher_id: parsed.data.taughtByTeacherId ?? null,
             subject_id: subjectId,
+          }
+        : {}),
+      ...(parsed.data.isOpenEnrollment !== undefined
+        ? {
+            is_open_enrollment: parsed.data.isOpenEnrollment,
+            capacity: parsed.data.isOpenEnrollment ? (parsed.data.capacity ?? null) : null,
           }
         : {}),
     })
@@ -320,6 +344,39 @@ export async function requestToJoin(batchId: string): Promise<ActionResult> {
       return { error: "You've already sent a request (or joined) this class." };
     }
     return { error: "Couldn't send your request. Please try again." };
+  }
+  return {};
+}
+
+/**
+ * Open-enrollment batches (0106) skip requestToJoin's pending step entirely
+ * — join_open_batch inserts (or flips) the enrollment straight to
+ * 'accepted', gated server-side on batches.is_open_enrollment and, when
+ * set, capacity, since the RLS insert policy itself only ever allows a
+ * client to insert 'pending'.
+ */
+export async function joinOpenBatch(batchId: string): Promise<ActionResult> {
+  if (!batchId) {
+    return { error: "Invalid class." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error } = await supabase.rpc("join_open_batch", { p_batch_id: batchId });
+  if (error) {
+    if (error.message.includes("class_not_found")) {
+      return { error: "That class couldn't be found." };
+    }
+    if (error.message.includes("batch_full")) {
+      return { error: "This class is full." };
+    }
+    return { error: "Couldn't join this class. Please try again." };
   }
   return {};
 }

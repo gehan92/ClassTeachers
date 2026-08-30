@@ -447,6 +447,8 @@ export type Database = {
           hourly_rate: number | null;
           monthly_rate: number | null;
           course_code: string | null;
+          is_open_enrollment: boolean;
+          capacity: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -467,6 +469,8 @@ export type Database = {
           hourly_rate?: number | null;
           monthly_rate?: number | null;
           course_code?: string | null;
+          is_open_enrollment?: boolean;
+          capacity?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -487,6 +491,8 @@ export type Database = {
           hourly_rate?: number | null;
           monthly_rate?: number | null;
           course_code?: string | null;
+          is_open_enrollment?: boolean;
+          capacity?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1484,6 +1490,10 @@ export type Database = {
         Args: { p_batch_id: string };
         Returns: undefined;
       };
+      join_open_batch: {
+        Args: { p_batch_id: string };
+        Returns: undefined;
+      };
       create_notification: {
         Args: { p_recipient_id: string; p_type: string; p_data?: Json; p_tab?: string | null };
         Returns: undefined;
@@ -1539,6 +1549,9 @@ export type Database = {
           rating: number;
           review_count: number;
           institution_verified: boolean;
+          is_open_enrollment: boolean;
+          capacity: number | null;
+          spots_taken: number;
         }[];
       };
       owns_exam: {
@@ -1693,6 +1706,9 @@ export type Database = {
           is_campus_lecturer: boolean;
           course_code: string | null;
           institution_verified: boolean;
+          is_open_enrollment: boolean;
+          capacity: number | null;
+          spots_taken: number;
         }[];
       };
       list_public_wanted_ads: {

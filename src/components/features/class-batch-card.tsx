@@ -32,7 +32,14 @@ export function ClassBatchCard({
             </div>
           )}
         </div>
-        <StatusBadge variant={batch.status}>{batch.status === "started" ? t("started") : t("upcoming")}</StatusBadge>
+        <div className="flex items-center gap-1.5">
+          {batch.isOpenEnrollment && (
+            <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success">
+              {t("openEnrollmentBadge")}
+            </span>
+          )}
+          <StatusBadge variant={batch.status}>{batch.status === "started" ? t("started") : t("upcoming")}</StatusBadge>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -47,7 +54,15 @@ export function ClassBatchCard({
           ))}
         </div>
         {join && (
-          <BatchJoinButton batchId={batch.id} loggedIn={join.loggedIn} isStudent={join.isStudent} initialStatus={join.status} />
+          <BatchJoinButton
+            batchId={batch.id}
+            loggedIn={join.loggedIn}
+            isStudent={join.isStudent}
+            initialStatus={join.status}
+            isOpenEnrollment={batch.isOpenEnrollment}
+            capacity={batch.capacity}
+            spotsTaken={batch.spotsTaken}
+          />
         )}
       </div>
 

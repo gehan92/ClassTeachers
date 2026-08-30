@@ -50,7 +50,7 @@ export function SiteHeader({
   const isSearchActive = pathname === "/teachers";
   // Students have no "inquiries" tab (they submit them, don't receive them)
   // — their equivalent inbound-message tab is Post an Ad's wanted-ad
-  // responses, same as the dashboard header's bellKey (dashboard-shell.tsx).
+  // responses.
   const bellTab = user?.role === "student" ? "wantedAds" : "inquiries";
   const inquiriesHref = user ? `${roleDashboardPath[user.role]}?tab=${bellTab}` : "/login";
   const userInitial = user ? user.name.charAt(0).toUpperCase() : "";

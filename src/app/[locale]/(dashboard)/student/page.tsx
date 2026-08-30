@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import type { NotificationRow } from "@/components/dashboard/notification-bell";
 import { OverviewTab } from "@/components/dashboard/student/overview-tab";
 import { AnnouncementsPanel, type AnnouncementRow } from "@/components/dashboard/student/announcements-panel";
 import { ClassesTab } from "@/components/dashboard/student/classes-tab";
@@ -83,6 +84,7 @@ export default async function StudentDashboardPage({
     { data: publicWantedAdRows },
     { data: myInquiryRows },
     { data: attendanceRows },
+    { data: notificationRows },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -152,7 +154,22 @@ export default async function StudentDashboardPage({
       .select("id, live_class_id, status, marked_at")
       .eq("student_id", userId)
       .order("marked_at", { ascending: false }),
+    supabase
+      .from("notifications")
+      .select("id, type, data, tab, read_at, created_at")
+      .eq("recipient_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(30),
   ]);
+
+  const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({
+    id: n.id,
+    type: n.type,
+    data: (n.data as Record<string, unknown>) ?? {},
+    tab: n.tab,
+    readAt: n.read_at,
+    createdAt: n.created_at,
+  }));
 
   const fullName = profile?.full_name ?? user!.email ?? "Student";
   const userInitial = fullName.charAt(0).toUpperCase();
@@ -721,8 +738,11 @@ export default async function StudentDashboardPage({
       userPhotoUrl={profile?.avatar_url ?? null}
       logoutLabel={t("logout")}
       demoRole="student"
-      bellKey="wantedAds"
-      realtimeWatch={[{ table: "live_class_reminders", filter: `student_id=eq.${userId}` }]}
+      notifications={notifications}
+      realtimeWatch={[
+        { table: "live_class_reminders", filter: `student_id=eq.${userId}` },
+        { table: "notifications", filter: `recipient_id=eq.${userId}` },
+      ]}
       groups={[
         {
           items: [

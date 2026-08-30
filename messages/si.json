@@ -62,6 +62,40 @@
     "turnOffCamera": "කැමරාව නවත්වන්න",
     "turnOnCamera": "කැමරාව ක්‍රියාත්මක කරන්න"
   },
+  "notifications": {
+    "heading": "දැනුම්දීම්",
+    "markAllRead": "සියල්ල කියවූ ලෙස සලකුණු කරන්න",
+    "empty": "තවම දැනුම්දීම් නැත.",
+    "types": {
+      "join_request_received": "{studentName} {batchTitle} ට එකතු වීමට ඉල්ලීමක් කර ඇත.",
+      "join_request_received_general": "{studentName} ඔබේ ආයතනයට එකතු වීමට ඉල්ලීමක් කර ඇත.",
+      "join_request_accepted": "{ownerName} ඔබේ එකතු වීමේ ඉල්ලීම පිළිගත්තා.",
+      "join_request_declined": "{ownerName} ඔබේ එකතු වීමේ ඉල්ලීම ප්‍රතික්ෂේප කළා.",
+      "exam_graded": "ඔබේ \"{examTitle}\" විභාගය ලකුණු කරන ලදී: {grade}.",
+      "review_posted": "ඔබට තරු {rating} ක නව සමාලෝචනයක් ලැබී ඇත.",
+      "review_replied": "ඔබේ සමාලෝචනයට පිළිතුරක් ලැබී ඇත.",
+      "new_inquiry": "{senderName} ඔබට විමසීමක් එව්වා.",
+      "inquiry_message": "විමසීමකට නව පණිවිඩයක්.",
+      "inquiry_reply": "ඔබේ පණිවිඩයට පිළිතුරක් ලැබී ඇත.",
+      "wanted_ad_response": "{responderType} කෙනෙක් ඔබේ ඉල්ලීමට පිළිතුරු දුන්නා.",
+      "listing_decision": "ඔබේ ලැයිස්තුව {decision}.",
+      "listing_resubmitted": "{kind} ලැයිස්තුවක් සමාලෝචනය සඳහා යළි ඉදිරිපත් කරන ලදී.",
+      "review_flagged": "සමාලෝචනයක් මධ්‍යස්ථභාවය සඳහා ලකුණු කරන ලදී.",
+      "generic": "ඔබට නව යාවත්කාලීනයක් ඇත."
+    },
+    "responderTypes": {
+      "teacher": "ගුරු",
+      "class": "ආයතන"
+    },
+    "decisions": {
+      "approved": "අනුමත කරන ලදී",
+      "rejected": "ප්‍රතික්ෂේප කරන ලදී"
+    },
+    "kinds": {
+      "teacher": "ගුරු",
+      "class": "ආයතන"
+    }
+  },
   "language": {
     "label": "භාෂාව"
   },

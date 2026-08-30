@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import type { NotificationRow } from "@/components/dashboard/notification-bell";
 import { OverviewTab } from "@/components/dashboard/teacher/overview-tab";
 import { ProfileTab } from "@/components/dashboard/teacher/profile-tab";
 import { NotesTab } from "@/components/dashboard/teacher/notes-tab";
@@ -102,6 +103,7 @@ export default async function TeacherDashboardPage({
     { data: instituteInviteRows },
     { data: assignedInstituteBatchRows },
     { data: managedBatchStudentRows },
+    { data: notificationRows },
   ] = await Promise.all([
     supabase.from("profiles").select("full_name, phone, notification_prefs, role").eq("id", userId).single(),
     supabase.from("teacher_profiles").select("*").eq("id", userId).maybeSingle(),
@@ -217,7 +219,22 @@ export default async function TeacherDashboardPage({
     // manages (0101), the piece get_roster_student_info (0032) never
     // covered since it only opens up for the institute's own owner.
     supabase.rpc("get_managed_batch_student_info"),
+    supabase
+      .from("notifications")
+      .select("id, type, data, tab, read_at, created_at")
+      .eq("recipient_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(30),
   ]);
+
+  const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({
+    id: n.id,
+    type: n.type,
+    data: (n.data as Record<string, unknown>) ?? {},
+    tab: n.tab,
+    readAt: n.read_at,
+    createdAt: n.created_at,
+  }));
 
   // Stage 2 — everything here needs an id list derived from a stage-1
   // result, but nothing here depends on anything else in this stage, so
@@ -850,9 +867,11 @@ export default async function TeacherDashboardPage({
       userPhotoUrl={teacherProfile?.photo_url ?? null}
       logoutLabel={t("logout")}
       demoRole="teacher"
+      notifications={notifications}
       realtimeWatch={[
         { table: "inquiries", filter: `owner_id=eq.${userId}` },
         { table: "enrollments", filter: `owner_id=eq.${userId}` },
+        { table: "notifications", filter: `recipient_id=eq.${userId}` },
         // No owner_id column on these three — the ownership link is one
         // hop away (exam_id/assignment_id/live_class_id), so they watch
         // unfiltered. See RealtimeRefresh's own comment for why that's a

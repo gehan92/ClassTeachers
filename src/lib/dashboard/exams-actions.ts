@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBatchOwner } from "@/lib/dashboard/resolve-batch-owner";
+import { notify } from "@/lib/dashboard/notify";
 
 type ActionResult = { error: string } | { error?: undefined };
 type SubmitExamResult = ActionResult & { autoGrade?: { score: number; maxScore: number } };
@@ -329,7 +330,7 @@ export async function gradeSubmission(input: {
 
   const { data: submission } = await supabase
     .from("exam_submissions")
-    .select("exam_id")
+    .select("exam_id, student_id")
     .eq("id", input.submissionId)
     .maybeSingle();
   if (!submission) {
@@ -338,7 +339,7 @@ export async function gradeSubmission(input: {
 
   const { data: exam } = await supabase
     .from("exams")
-    .select("owner_type, owner_id, batch_id")
+    .select("owner_type, owner_id, batch_id, title")
     .eq("id", submission.exam_id)
     .maybeSingle();
   if (!exam) {
@@ -369,5 +370,6 @@ export async function gradeSubmission(input: {
   if (error) {
     return { error: "Couldn't save this grade. Please try again." };
   }
+  await notify(supabase, submission.student_id, "exam_graded", { examTitle: exam.title, grade }, "exams");
   return {};
 }

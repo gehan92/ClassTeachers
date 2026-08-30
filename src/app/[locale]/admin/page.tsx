@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import type { NotificationRow } from "@/components/dashboard/notification-bell";
 import { OverviewTab } from "@/components/dashboard/admin/overview-tab";
 import { ApprovalsTab } from "@/components/dashboard/admin/approvals-tab";
 import { UsersTab } from "@/components/dashboard/admin/users-tab";
@@ -91,6 +92,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     { data: teacherProfileRows },
     { data: classProfileRows },
     { data: referralRows },
+    { data: notificationRows },
   ] = await Promise.all([
     supabase.from("teacher_profiles").select("id, created_at").eq("status", "pending").order("created_at", { ascending: false }),
     supabase.from("class_profiles").select("id, name, created_at").eq("status", "pending").order("created_at", { ascending: false }),
@@ -137,7 +139,22 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
       .from("referrals")
       .select("id, referrer_id, referred_id, reward_status, created_at")
       .order("created_at", { ascending: false }),
+    supabase
+      .from("notifications")
+      .select("id, type, data, tab, read_at, created_at")
+      .eq("recipient_id", user!.id)
+      .order("created_at", { ascending: false })
+      .limit(30),
   ]);
+
+  const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({
+    id: n.id,
+    type: n.type,
+    data: (n.data as Record<string, unknown>) ?? {},
+    tab: n.tab,
+    readAt: n.read_at,
+    createdAt: n.created_at,
+  }));
 
   const pendingTeacherIds = (pendingTeacherRows ?? []).map((row) => row.id);
   const flaggedTeacherIds = (flaggedReviewRows ?? []).filter((r) => r.target_type !== "class").map((r) => r.target_id);
@@ -343,6 +360,8 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
       userInitial={userInitial}
       logoutLabel={t("logout")}
       demoRole="admin"
+      notifications={notifications}
+      realtimeWatch={[{ table: "notifications", filter: `recipient_id=eq.${user!.id}` }]}
       groups={[
         {
           label: t("groupPlatform"),

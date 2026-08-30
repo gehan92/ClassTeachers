@@ -62,6 +62,40 @@
     "turnOffCamera": "Turn off camera",
     "turnOnCamera": "Turn on camera"
   },
+  "notifications": {
+    "heading": "Notifications",
+    "markAllRead": "Mark all as read",
+    "empty": "No notifications yet.",
+    "types": {
+      "join_request_received": "{studentName} requested to join {batchTitle}.",
+      "join_request_received_general": "{studentName} requested to join your institute.",
+      "join_request_accepted": "{ownerName} accepted your request to join.",
+      "join_request_declined": "{ownerName} declined your request to join.",
+      "exam_graded": "Your exam \"{examTitle}\" was graded: {grade}.",
+      "review_posted": "You received a new {rating}-star review.",
+      "review_replied": "You got a reply to your review.",
+      "new_inquiry": "{senderName} sent you an inquiry.",
+      "inquiry_message": "New message on an inquiry.",
+      "inquiry_reply": "You got a reply to your message.",
+      "wanted_ad_response": "A {responderType} responded to your request.",
+      "listing_decision": "Your listing was {decision}.",
+      "listing_resubmitted": "A {kind} listing was resubmitted for review.",
+      "review_flagged": "A review was flagged for moderation.",
+      "generic": "You have a new update."
+    },
+    "responderTypes": {
+      "teacher": "teacher",
+      "class": "institute"
+    },
+    "decisions": {
+      "approved": "approved",
+      "rejected": "rejected"
+    },
+    "kinds": {
+      "teacher": "teacher",
+      "class": "institute"
+    }
+  },
   "language": {
     "label": "Language"
   },

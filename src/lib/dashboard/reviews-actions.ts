@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { notify, notifyAdmins } from "@/lib/dashboard/notify";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -52,6 +53,13 @@ export async function postReview(input: {
   if (error) {
     return { error: "You need to have joined this teacher or institute to review them." };
   }
+
+  let recipientId = parsed.data.targetId;
+  if (parsed.data.targetType === "class") {
+    const { data: cp } = await supabase.from("class_profiles").select("owner_id").eq("id", parsed.data.targetId).maybeSingle();
+    recipientId = cp?.owner_id ?? parsed.data.targetId;
+  }
+  await notify(supabase, recipientId, "review_posted", { rating: parsed.data.rating }, "reviews");
   return {};
 }
 
@@ -76,10 +84,16 @@ export async function replyToReview(input: { id: string; replyText: string }): P
     return { error: "You need to be signed in." };
   }
 
-  const { error } = await supabase.from("reviews").update({ reply_text: replyText }).eq("id", input.id);
+  const { data: updated, error } = await supabase
+    .from("reviews")
+    .update({ reply_text: replyText })
+    .eq("id", input.id)
+    .select("reviewer_id")
+    .maybeSingle();
   if (error) {
     return { error: "Couldn't post your reply. Please try again." };
   }
+  await notify(supabase, updated?.reviewer_id, "review_replied", {}, "reviews");
   return {};
 }
 
@@ -104,5 +118,6 @@ export async function flagReview(input: { id: string; reason: string }): Promise
   if (error) {
     return { error: "Couldn't flag this review. Please try again." };
   }
+  await notifyAdmins(supabase, "review_flagged", {}, "flagged");
   return {};
 }

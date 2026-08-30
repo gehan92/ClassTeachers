@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { notify } from "@/lib/dashboard/notify";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -203,6 +204,9 @@ export async function respondToWantedAd(wantedAdId: string, message: string): Pr
     }
     return { error: "Couldn't send your response. Please try again." };
   }
+
+  const { data: wantedAd } = await supabase.from("wanted_ads").select("student_id").eq("id", parsed.data.wantedAdId).maybeSingle();
+  await notify(supabase, wantedAd?.student_id, "wanted_ad_response", { responderType }, "wantedAds");
   return {};
 }
 

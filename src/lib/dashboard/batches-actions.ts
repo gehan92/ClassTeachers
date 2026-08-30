@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { notify } from "./notify";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -344,18 +345,38 @@ export async function respondToJoinRequest(
     return { error: "You need to be signed in." };
   }
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("enrollments")
     .update({
       status: accept ? "accepted" : "declined",
       ...(accept && batchId ? { batch_id: batchId } : {}),
     })
-    .eq("id", enrollmentId);
+    .eq("id", enrollmentId)
+    .select("student_id, owner_type, owner_id")
+    .maybeSingle();
   if (error) {
     if (error.message.includes("duplicate key") || error.code === "23505") {
       return { error: "This student already has a request for that class." };
     }
     return { error: "Couldn't update this request. Please try again." };
+  }
+
+  if (updated) {
+    let ownerName = "—";
+    if (updated.owner_type === "teacher") {
+      const { data: p } = await supabase.from("profiles").select("full_name").eq("id", updated.owner_id).maybeSingle();
+      ownerName = p?.full_name ?? "—";
+    } else {
+      const { data: cp } = await supabase.from("class_profiles").select("name").eq("id", updated.owner_id).maybeSingle();
+      ownerName = cp?.name ?? "—";
+    }
+    await notify(
+      supabase,
+      updated.student_id,
+      accept ? "join_request_accepted" : "join_request_declined",
+      { ownerName },
+      "classes",
+    );
   }
   return {};
 }

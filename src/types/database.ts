@@ -1148,6 +1148,37 @@ export type Database = {
         Relationships: [];
       };
 
+      notifications: {
+        Row: {
+          id: string;
+          recipient_id: string;
+          type: string;
+          data: Json;
+          tab: string | null;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          recipient_id: string;
+          type: string;
+          data?: Json;
+          tab?: string | null;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          recipient_id?: string;
+          type?: string;
+          data?: Json;
+          tab?: string | null;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+
       inquiry_messages: {
         Row: {
           id: string;
@@ -1451,6 +1482,14 @@ export type Database = {
       };
       rejoin_after_decline: {
         Args: { p_batch_id: string };
+        Returns: undefined;
+      };
+      create_notification: {
+        Args: { p_recipient_id: string; p_type: string; p_data?: Json; p_tab?: string | null };
+        Returns: undefined;
+      };
+      create_admin_notification: {
+        Args: { p_type: string; p_data?: Json; p_tab?: string | null };
         Returns: undefined;
       };
       request_to_join_class: {

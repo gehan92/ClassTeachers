@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { notifyAdmins } from "@/lib/dashboard/notify";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -593,6 +594,7 @@ export async function resubmitListing(input: { kind: "teacher" | "class" }): Pro
     if (error) {
       return { error: "Couldn't resubmit your listing. Please try again." };
     }
+    await notifyAdmins(supabase, "listing_resubmitted", { kind: "teacher" }, "approvals");
     return {};
   }
 
@@ -608,5 +610,6 @@ export async function resubmitListing(input: { kind: "teacher" | "class" }): Pro
   if (error) {
     return { error: "Couldn't resubmit your listing. Please try again." };
   }
+  await notifyAdmins(supabase, "listing_resubmitted", { kind: "class" }, "approvals");
   return {};
 }

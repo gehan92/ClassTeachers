@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { notify } from "@/lib/dashboard/notify";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -97,10 +98,18 @@ export async function replyToInquiry(id: string, body: string): Promise<ActionRe
   if (insertError) {
     return { error: "Couldn't send your reply. Please try again." };
   }
-  const { error } = await supabase.from("inquiries").update({ status: "read" }).eq("id", parsed.data.id);
+  const { data: inquiry, error } = await supabase
+    .from("inquiries")
+    .update({ status: "read" })
+    .eq("id", parsed.data.id)
+    .select("inquirer_id")
+    .maybeSingle();
   if (error) {
     return { error: "Couldn't send your reply. Please try again." };
   }
+  // Only reachable when the sender was signed in at inquiry time (0037) — a
+  // guest inquirer has no account to notify.
+  await notify(supabase, inquiry?.inquirer_id, "inquiry_reply", {}, "inquiries");
   return {};
 }
 
@@ -133,9 +142,22 @@ export async function sendInquirerMessage(id: string, body: string): Promise<Act
   }
   // Flips the owner's badge/bell back on — otherwise it stays "read" forever
   // after their first reply and they'd never notice a follow-up arrived.
-  const { error } = await supabase.from("inquiries").update({ status: "new" }).eq("id", parsed.data.id);
+  const { data: inquiry, error } = await supabase
+    .from("inquiries")
+    .update({ status: "new" })
+    .eq("id", parsed.data.id)
+    .select("owner_type, owner_id")
+    .maybeSingle();
   if (error) {
     return { error: "Couldn't send your message. Please try again." };
+  }
+  if (inquiry) {
+    let recipientId = inquiry.owner_id;
+    if (inquiry.owner_type === "class") {
+      const { data: cp } = await supabase.from("class_profiles").select("owner_id").eq("id", inquiry.owner_id).maybeSingle();
+      recipientId = cp?.owner_id ?? inquiry.owner_id;
+    }
+    await notify(supabase, recipientId, "inquiry_message", {}, "inquiries");
   }
   return {};
 }

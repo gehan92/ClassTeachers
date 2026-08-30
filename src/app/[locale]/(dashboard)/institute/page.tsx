@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import type { NotificationRow } from "@/components/dashboard/notification-bell";
 import { OverviewTab } from "@/components/dashboard/institute/overview-tab";
 import { TeachersTab, type InstituteTeacherRow } from "@/components/dashboard/institute/teachers-tab";
 import { BatchesTab } from "@/components/dashboard/institute/batches-tab";
@@ -43,15 +44,35 @@ export default async function InstituteDashboardPage({
   // proxy.ts already gates this route behind an authenticated session.
   const userId = user!.id;
 
-  const [{ data: profile }, { data: classProfile }, { data: referralCodeValue }, { data: myReferralRows }] =
-    await Promise.all([
-      supabase.from("profiles").select("full_name, phone, notification_prefs").eq("id", userId).single(),
-      supabase.from("class_profiles").select("*").eq("owner_id", userId).maybeSingle(),
-      // Refer & Earn panel (Settings tab) — lazily assigns a code the first
-      // time it's asked for (referrals, 0089), nothing to backfill up front.
-      supabase.rpc("ensure_referral_code"),
-      supabase.rpc("list_my_referrals"),
-    ]);
+  const [
+    { data: profile },
+    { data: classProfile },
+    { data: referralCodeValue },
+    { data: myReferralRows },
+    { data: notificationRows },
+  ] = await Promise.all([
+    supabase.from("profiles").select("full_name, phone, notification_prefs").eq("id", userId).single(),
+    supabase.from("class_profiles").select("*").eq("owner_id", userId).maybeSingle(),
+    // Refer & Earn panel (Settings tab) — lazily assigns a code the first
+    // time it's asked for (referrals, 0089), nothing to backfill up front.
+    supabase.rpc("ensure_referral_code"),
+    supabase.rpc("list_my_referrals"),
+    supabase
+      .from("notifications")
+      .select("id, type, data, tab, read_at, created_at")
+      .eq("recipient_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(30),
+  ]);
+
+  const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({
+    id: n.id,
+    type: n.type,
+    data: (n.data as Record<string, unknown>) ?? {},
+    tab: n.tab,
+    readAt: n.read_at,
+    createdAt: n.created_at,
+  }));
 
   const fullName = profile?.full_name ?? user!.email ?? "Institute";
   const userInitial = fullName.charAt(0).toUpperCase();
@@ -620,13 +641,15 @@ export default async function InstituteDashboardPage({
       // owner_id on inquiries/enrollments is class_profiles.id for an
       // institute, not the auth user's own id — same distinction every
       // owner-scoped query on this page already makes.
+      notifications={notifications}
       realtimeWatch={
         instituteId
           ? [
               { table: "inquiries", filter: `owner_id=eq.${instituteId}` },
               { table: "enrollments", filter: `owner_id=eq.${instituteId}` },
+              { table: "notifications", filter: `recipient_id=eq.${userId}` },
             ]
-          : []
+          : [{ table: "notifications", filter: `recipient_id=eq.${userId}` }]
       }
       groups={[
         {

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
-  Bell,
   ChevronDown,
   LogOut,
   Menu,
@@ -45,6 +44,7 @@ import { LocaleSwitcher } from "@/components/layout/locale-switcher";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { logOutAction } from "@/lib/auth/actions";
 import { RealtimeRefresh, type RealtimeWatch } from "@/components/dashboard/realtime-refresh";
+import { NotificationBell, type NotificationRow } from "@/components/dashboard/notification-bell";
 import { LiveCallProvider, useLiveCall } from "@/components/dashboard/live-call-context";
 import { VideoCallPanel } from "@/components/dashboard/inline-file-viewer";
 import type { DashboardNavGroup, DemoRole } from "@/types/dashboard";
@@ -220,8 +220,10 @@ export function DashboardShell(props: {
   defaultTab: string;
   /** Tables to silently live-refresh on — see RealtimeRefresh. Mounted once here, outside panels[activeTab], so it keeps listening no matter which tab is open. */
   realtimeWatch?: RealtimeWatch[];
-  /** Which nav item's `count` drives the header bell — "inquiries" for teacher/institute, "wantedAds" for student (their equivalent inbound-message tab). Defaults to "inquiries" since that's every existing caller. */
-  bellKey?: string;
+  /** Recent rows from the notifications table (0105), newest first — the
+   * header bell renders these directly rather than jumping to one hardcoded
+   * tab's count like it used to. */
+  notifications?: NotificationRow[];
 }) {
   // The call's connection lifetime needs to survive tab switches, so its
   // state has to live above wherever panels[activeTab] gets swapped — see
@@ -245,7 +247,7 @@ function DashboardShellInner({
   panels,
   defaultTab,
   realtimeWatch,
-  bellKey = "inquiries",
+  notifications = [],
 }: {
   brandBadge?: string;
   userLabel: string;
@@ -257,7 +259,7 @@ function DashboardShellInner({
   panels: Record<string, React.ReactNode>;
   defaultTab: string;
   realtimeWatch?: RealtimeWatch[];
-  bellKey?: string;
+  notifications?: NotificationRow[];
 }) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const t = useTranslations("nav");
@@ -317,12 +319,6 @@ function DashboardShellInner({
 
   const navKeys = navKeysByRole[demoRole];
   const siteNavItems = siteNavItemDefs.filter((item) => navKeys.includes(item.key));
-
-  // Reuses the count already passed into groups for the sidebar's own
-  // badge (see teacher/institute/student page.tsx) — no separate prop
-  // needed. Only roles that pass a nav item matching bellKey get the bell —
-  // "inquiries" for teacher/institute, "wantedAds" for student.
-  const bellItem = groups.flatMap((g) => g.items).find((item) => item.key === bellKey);
 
   // The whole shell is locked to exactly the viewport height (h-dvh, not
   // min-h-screen) with overflow hidden — header, mobile tab strip, and
@@ -390,21 +386,7 @@ function DashboardShellInner({
           >
             {t("postYourAd")}
           </Button>
-          {bellItem && (
-            <button
-              type="button"
-              onClick={() => select(bellKey)}
-              aria-label={bellItem.label}
-              className="relative flex size-8 items-center justify-center rounded-md text-white/70 hover:bg-white/10 hover:text-white"
-            >
-              <Bell className="size-4.5" />
-              {!!bellItem.count && (
-                <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-cta font-mono text-[9px] font-bold text-cta-foreground">
-                  {bellItem.count > 9 ? "9+" : bellItem.count}
-                </span>
-              )}
-            </button>
-          )}
+          <NotificationBell notifications={notifications} onNavigate={select} />
           <LocaleSwitcher className="text-white/70 hover:bg-white/10 hover:text-white" />
           {userPhotoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- public Supabase Storage URL, not a local/optimizable asset

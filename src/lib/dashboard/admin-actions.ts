@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notify } from "@/lib/dashboard/notify";
 import type { Json } from "@/types/database";
 
 type ActionResult = { error: string } | { error?: undefined };
@@ -65,6 +66,13 @@ export async function resolveApproval(input: {
   await logAdminAction(supabase, admin.userId, "listing_approval_decision", input.kind, input.id, {
     decision: input.decision,
   });
+
+  let recipientId = input.id;
+  if (input.kind === "class") {
+    const { data: cp } = await supabase.from("class_profiles").select("owner_id").eq("id", input.id).maybeSingle();
+    recipientId = cp?.owner_id ?? input.id;
+  }
+  await notify(supabase, recipientId, "listing_decision", { decision: input.decision }, "profile");
   return {};
 }
 

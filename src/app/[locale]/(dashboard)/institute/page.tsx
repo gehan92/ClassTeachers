@@ -77,7 +77,7 @@ export default async function InstituteDashboardPage({
     { data: instituteEnrollmentRows },
     { data: reviewRows },
     { data: priceRow },
-    { data: adRow },
+    { data: adRows },
     { data: inquiryRows },
     { data: wantedAdRows },
     { data: myReviewRows },
@@ -111,15 +111,17 @@ export default async function InstituteDashboardPage({
           .eq("owner_id", instituteId)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    // Multiple institute-wide promotions (0104) — was .maybeSingle() when
+    // an institute could only ever have one.
     instituteId
       ? supabase
           .from("advertisements")
-          .select("content")
+          .select("id, content")
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
           .eq("placement", "own_profile")
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] as { id: string; content: string }[] }),
     instituteId
       ? supabase
           .from("inquiries")
@@ -469,20 +471,27 @@ export default async function InstituteDashboardPage({
     studentCount: batchStudentCounts.get(b.id) ?? 0,
   }));
 
-  // Class-wise ads (0103) — mirrors the teacher dashboard's Advertisement
-  // tab shape (TeacherAdBatchRow), minus a subject picker: an institute
-  // batch's subject is already resolved at creation (createBatch's
-  // resolve_subject step), so there's nothing to set here.
-  const classAdByBatchId = new Map((classAdRows ?? []).map((a) => [a.batch_id, a]));
+  // Class-wise ads (0103, multiple per class since 0104) — mirrors the
+  // teacher dashboard's Advertisement tab shape (TeacherAdBatchRow), minus
+  // a subject picker: an institute batch's subject is already resolved at
+  // creation (createBatch's resolve_subject step), so there's nothing to
+  // set here.
+  const classAdsByBatchId = new Map<string, { id: string; title: string; content: string | null; status: "active" | "expired" | "removed" }[]>();
+  for (const ad of classAdRows ?? []) {
+    if (!ad.batch_id) continue;
+    const list = classAdsByBatchId.get(ad.batch_id) ?? [];
+    list.push(ad);
+    classAdsByBatchId.set(ad.batch_id, list);
+  }
   const instituteAdBatches: InstituteAdBatchRow[] = (batchRows ?? []).map((b) => {
-    const ad = classAdByBatchId.get(b.id);
+    const ads = classAdsByBatchId.get(b.id) ?? [];
     return {
       id: b.id,
       title: b.title,
       subjectName: b.subject_id ? (subjectNameById.get(b.subject_id) ?? null) : null,
       hourlyRate: b.hourly_rate,
       monthlyRate: b.monthly_rate,
-      ad: ad ? { id: ad.id, title: ad.title, content: ad.content ?? "", status: ad.status } : null,
+      ads: ads.map((ad) => ({ id: ad.id, title: ad.title, content: ad.content ?? "", status: ad.status })),
     };
   });
 
@@ -641,7 +650,12 @@ export default async function InstituteDashboardPage({
         calendar: <CalendarTab sessions={calendarSessions} />,
         inquiries: <InquiriesTab inquiries={inquiries} />,
         studentRequests: <WantedAdsBrowseTab requests={wantedAdRequests} />,
-        ads: <AdvertisementTab initialContent={adRow?.content ?? ""} batches={instituteAdBatches} />,
+        ads: (
+          <AdvertisementTab
+            promotions={(adRows ?? []).map((row) => ({ id: row.id, content: row.content ?? "" }))}
+            batches={instituteAdBatches}
+          />
+        ),
         announcements: <AnnouncementsTab announcements={announcements} />,
         analytics: (
           <AnalyticsTab

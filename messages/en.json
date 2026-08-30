@@ -1046,17 +1046,29 @@
         "monthlyRateLabel": "Monthly rate (optional)",
         "ratePlaceholderNone": "Rs.",
         "rateHelper": "Leave blank to use your institute-wide default rate from Profile. Set one here to charge differently for this class.",
-        "save": "Save ad"
+        "save": "Save ad",
+        "addAnotherAd": "Add another ad",
+        "deleteAd": "Delete ad",
+        "confirmDelete": "Delete this ad? It will no longer show in search results.",
+        "rateHeading": "Class rate",
+        "saveRate": "Save rate",
+        "rateSaved": "Rate saved"
       },
       "panelTitle": "Your promotion",
+      "promotionSubtitle": "Institute-wide promotions shown on your public profile page — post as many as you like.",
       "promotionLabel": "Promotion text",
       "promotionPlaceholder": "e.g. Enrollment for the O/L 2027 group is now open — early-bird pricing until end of month.",
       "save": "Save",
       "saved": "Saved",
+      "noPromotions": "No promotions yet.",
+      "addPromotion": "Add a promotion",
+      "editPromotion": "Edit",
+      "deletePromotion": "Delete",
+      "confirmDeletePromotion": "Delete this promotion? It will no longer show on your public profile.",
       "spotlight": {
         "eyebrow": "Get more visibility",
         "cta": "See ad plans",
-        "empty": "Write your promotion text above to see a live preview here."
+        "empty": "Want more reach? See what a paid ad placement can do."
       }
     },
     "reviews": {

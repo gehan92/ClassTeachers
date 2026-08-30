@@ -25,7 +25,7 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
     { data: priceRow },
     { data: reviewRows },
     { data: batchRows },
-    { data: adRow },
+    { data: adRows },
     { data: teacherRows },
     { data: phone },
   ] = await Promise.all([
@@ -38,13 +38,15 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
       .eq("owner_id", id)
       .in("status", ["active", "upcoming"])
       .order("created_at", { ascending: false }),
+    // Multiple institute-wide promotions (0104) — was .maybeSingle().
     supabase
       .from("advertisements")
-      .select("content, title")
+      .select("id, content, title")
       .eq("owner_type", "class")
       .eq("owner_id", id)
       .eq("placement", "own_profile")
-      .maybeSingle(),
+      .eq("status", "active")
+      .order("created_at", { ascending: false }),
     // Institute Blueprint step 4a (0096) — the real roster, not just a
     // count; accepted+visible+approved only, same gate the count uses.
     supabase.rpc("list_institute_teachers", { p_class_id: id }),
@@ -70,8 +72,7 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
     reviewCount,
     hourlyRate: priceRow?.hourly_rate ?? undefined,
     monthlyRate: priceRow?.monthly_rate ?? undefined,
-    adHeadline: adRow?.title ?? undefined,
-    adText: adRow?.content ?? undefined,
+    promotions: (adRows ?? []).map((row) => ({ id: row.id, headline: row.title, text: row.content ?? "" })),
     batches: (batchRows ?? []).map((b) => ({
       id: b.id,
       title: b.title,

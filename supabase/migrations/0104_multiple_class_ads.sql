@@ -1,0 +1,17 @@
+-- Institutes wanted multiple ads live per class at once, plus the ability
+-- to delete an ad outright rather than only pause it — 0103 gave every
+-- class exactly one ad slot (upsert-by-batch), copying the teacher side's
+-- own one-ad-per-batch design (0039's advertisements_one_active_per_batch).
+--
+-- Dropping the cap here is global (the index isn't owner_type-scoped), not
+-- institute-only, but nothing changes for teachers in practice: their own
+-- ad actions (upsertBatchAd/createIndividualAd, ads-actions.ts) still do a
+-- find-existing-row-or-insert lookup per batch, so they'll keep producing
+-- at most one row per batch regardless of what the DB now permits. Only the
+-- institute dashboard's Advertisement tab actually creates more than one.
+--
+-- list_class_batch_ads()/get_public_class_ad() (0103) need no change —
+-- neither ever assumed at most one row per batch; they already just join
+-- and return whatever's there, so multiple active ads for the same class
+-- already show as multiple search cards for free.
+drop index if exists advertisements_one_active_per_batch;

@@ -53,8 +53,12 @@ export function ClassProfileView({
               <InstituteTeachersPanel teachers={classProfile.teachers} />
             </div>
           )}
-          {classProfile.adText && (
-            <AdSlot eyebrow={classProfile.adHeadline ?? classProfile.name} text={classProfile.adText} />
+          {classProfile.promotions.length > 0 && (
+            <div className="flex flex-col gap-4">
+              {classProfile.promotions.map((promotion) => (
+                <AdSlot key={promotion.id} eyebrow={promotion.headline || classProfile.name} text={promotion.text} />
+              ))}
+            </div>
           )}
           {classProfile.batches.length > 0 && (
             <div className="mt-5">

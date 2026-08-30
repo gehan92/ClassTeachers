@@ -50,8 +50,8 @@ export type ClassProfileDetail = {
   reviewCount: number;
   hourlyRate?: number;
   monthlyRate?: number;
-  adHeadline?: string;
-  adText?: string;
+  /** Multiple institute-wide promotions since 0104 (was a single adHeadline/adText pair). */
+  promotions: { id: string; headline: string; text: string }[];
   batches: ClassBatch[];
   reviews: ReviewDisplay[];
   phone: string | null;

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { GraduationCap, Star } from "lucide-react";
 import { Panel } from "@/components/features/teacher-profile-view";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import type { InstituteTeacherCard } from "@/types/class-profile";
 
 function TagList({ items }: { items: string[] }) {
@@ -83,11 +83,9 @@ export function InstituteTeachersPanel({ teachers }: { teachers: InstituteTeache
         </div>
       </Panel>
 
-      <Sheet open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-md">
-          {selected && <TeacherQuickProfile teacher={selected} />}
-        </SheetContent>
-      </Sheet>
+      <Dialog open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
+        <DialogContent>{selected && <TeacherQuickProfile teacher={selected} />}</DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -110,7 +108,7 @@ function TeacherQuickProfile({ teacher }: { teacher: InstituteTeacherCard }) {
 
   return (
     <>
-      <SheetHeader className="border-b border-border">
+      <DialogHeader className="border-b border-border">
         <div className="flex items-start gap-3">
           {teacher.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -121,8 +119,8 @@ function TeacherQuickProfile({ teacher }: { teacher: InstituteTeacherCard }) {
             </div>
           )}
           <div className="min-w-0 pt-0.5">
-            <SheetTitle>{teacher.displayName}</SheetTitle>
-            {subtitle && <SheetDescription className="truncate">{subtitle}</SheetDescription>}
+            <DialogTitle>{teacher.displayName}</DialogTitle>
+            {subtitle && <DialogDescription className="truncate">{subtitle}</DialogDescription>}
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               {teacher.reviewCount > 0 && (
                 <span className="flex items-center gap-1 text-xs text-foreground/80">
@@ -138,7 +136,7 @@ function TeacherQuickProfile({ teacher }: { teacher: InstituteTeacherCard }) {
             </div>
           </div>
         </div>
-      </SheetHeader>
+      </DialogHeader>
 
       <div className="flex-1 overflow-y-auto px-4 pb-4">
         <div className="mb-5">

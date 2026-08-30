@@ -72,6 +72,7 @@ export function ClassProfileView({
              institute's own view, same reasoning as TeacherProfileView. */}
           {!isOwnerView && <PriceBoxSidebar classProfile={classProfile} />}
           <DetailsPanel classProfile={classProfile} />
+          {classProfile.location && <LocationMapPanel location={classProfile.location} />}
         </div>
       </div>
     </>
@@ -271,6 +272,42 @@ function DetailsPanel({ classProfile }: { classProfile: ClassProfileDetail }) {
           )}
         </div>
       </div>
+    </Panel>
+  );
+}
+
+/**
+ * Keyless Google Maps embed (www.google.com/maps?q=...&output=embed) — the
+ * institute only ever stores a free-text location, not coordinates, so this
+ * searches by that text rather than pinning an exact address. This is the
+ * long-standing no-API-key embed technique, not the official (paid,
+ * key-gated) Maps Embed API — reliable in practice, but Google could change
+ * it without notice; ask for the official Embed API instead if that matters.
+ */
+function LocationMapPanel({ location }: { location: string }) {
+  const t = useTranslations("profilePage");
+  const query = encodeURIComponent(location);
+
+  return (
+    <Panel title={t("locationMapTitle")}>
+      <div className="overflow-hidden rounded-lg border border-border">
+        <iframe
+          title={location}
+          src={`https://www.google.com/maps?q=${query}&output=embed`}
+          className="h-44 w-full border-0"
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+        />
+      </div>
+      <a
+        href={`https://www.google.com/maps/search/?api=1&query=${query}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+      >
+        <MapPin className="size-3.5" />
+        {t("viewOnGoogleMaps")}
+      </a>
     </Panel>
   );
 }

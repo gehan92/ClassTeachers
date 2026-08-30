@@ -14,4 +14,8 @@ export type ClassBatch = {
   mode: "online" | "physical";
   location: string | null;
   scheduleNote: string | null;
+  /** Active search_results ads for this batch (0103/0104) — the ad copy an
+   * institute wrote in the Advertisement tab, shown here too so a visitor
+   * reading this profile sees the same pitch a search card would show. */
+  ads: { id: string; title: string; content: string }[];
 };

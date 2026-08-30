@@ -50,6 +50,17 @@ export function ClassBatchCard({
           <BatchJoinButton batchId={batch.id} loggedIn={join.loggedIn} isStudent={join.isStudent} initialStatus={join.status} />
         )}
       </div>
+
+      {batch.ads.length > 0 && (
+        <div className="mt-3 flex flex-col gap-2.5 border-t border-border pt-3">
+          {batch.ads.map((ad) => (
+            <div key={ad.id}>
+              <p className="text-sm font-medium text-foreground">{ad.title}</p>
+              <p className="mt-0.5 text-[13px] text-muted-foreground">{ad.content}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

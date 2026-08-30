@@ -26,6 +26,7 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
     { data: reviewRows },
     { data: batchRows },
     { data: adRows },
+    { data: batchAdRows },
     { data: teacherRows },
     { data: phone },
   ] = await Promise.all([
@@ -47,11 +48,29 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
       .eq("placement", "own_profile")
       .eq("status", "active")
       .order("created_at", { ascending: false }),
+    // Class-wise ad copy (0103/0104) — shown on each batch card here too,
+    // not just as a separate search-result card.
+    supabase
+      .from("advertisements")
+      .select("id, batch_id, title, content")
+      .eq("owner_type", "class")
+      .eq("owner_id", id)
+      .eq("placement", "search_results")
+      .eq("status", "active")
+      .order("created_at", { ascending: false }),
     // Institute Blueprint step 4a (0096) — the real roster, not just a
     // count; accepted+visible+approved only, same gate the count uses.
     supabase.rpc("list_institute_teachers", { p_class_id: id }),
     supabase.rpc("get_class_contact", { p_class_id: id }),
   ]);
+
+  const batchAdsByBatchId = new Map<string, { id: string; title: string; content: string }[]>();
+  for (const ad of batchAdRows ?? []) {
+    if (!ad.batch_id) continue;
+    const list = batchAdsByBatchId.get(ad.batch_id) ?? [];
+    list.push({ id: ad.id, title: ad.title, content: ad.content ?? "" });
+    batchAdsByBatchId.set(ad.batch_id, list);
+  }
 
   const dateFormatter = createDateFormatter(locale);
   const reviews = reviewRows ?? [];
@@ -81,6 +100,7 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
       mode: b.mode as "online" | "physical",
       location: b.location,
       scheduleNote: b.schedule_note,
+      ads: batchAdsByBatchId.get(b.id) ?? [],
     })),
     reviews: reviews.map((r) => ({
       id: r.id,

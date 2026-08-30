@@ -675,7 +675,9 @@
     "instituteReviewsTitle": "{count} institute reviews · {rating} average",
     "instituteDetailsTitle": "Institute details",
     "generalRateHelper": "Applies when a student joins the institute generally, rather than a specific teacher.",
-    "teachersAtInstitute": "Teachers at this institute"
+    "teachersAtInstitute": "Teachers at this institute",
+    "locationMapTitle": "Location",
+    "viewOnGoogleMaps": "View on Google Maps"
   },
   "adminDashboard": {
     "logout": "Log out",

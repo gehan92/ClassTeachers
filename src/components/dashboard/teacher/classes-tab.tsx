@@ -55,15 +55,34 @@ export type BatchRosterEntry = {
   phone: string | null;
 };
 
+/**
+ * A class an institute has assigned this teacher to teach — deliberately a
+ * much lighter shape than TeacherBatchRow. The institute owns the batch
+ * (title, schedule, mode); a linked teacher manages its content, not the
+ * batch record itself, so there's no edit/delete here, just enough to
+ * orient them: which institute, which class, how it runs, who's in it.
+ */
+export type InstituteTaughtBatchRow = {
+  id: string;
+  title: string;
+  instituteName: string;
+  mode: "online" | "physical";
+  location: string | null;
+  scheduleNote: string | null;
+  studentCount: number;
+};
+
 export function ClassesTab({
   batches,
   rosterByBatch,
   isCampusLecturer = false,
+  instituteBatches = [],
 }: {
   batches: TeacherBatchRow[];
   rosterByBatch: Record<string, BatchRosterEntry[]>;
   /** Swaps just the page heading to "Courses" — /roles already promises "course-style" language for this role. The rest of the tab (batch editor, roster) keeps its existing wording rather than a full terminology rewrite. */
   isCampusLecturer?: boolean;
+  instituteBatches?: InstituteTaughtBatchRow[];
 }) {
   const t = useTranslations("teacherDashboard.classes");
   const tc = useTranslations("teacherDashboard.common");
@@ -496,6 +515,62 @@ export function ClassesTab({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {instituteBatches.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <div>
+            <h2 className="text-lg text-foreground">{t("institutes.heading")}</h2>
+            <p className="text-sm text-muted-foreground">{t("institutes.subtitle")}</p>
+          </div>
+          <div className="flex flex-col gap-5">
+            {instituteBatches.map((batch) => {
+              const roster = rosterByBatch[batch.id] ?? [];
+              return (
+                <div key={batch.id} className="rounded-lg border border-border bg-white p-5">
+                  <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg text-foreground">{batch.title}</h3>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        {batch.instituteName}
+                        {" · "}
+                        {batch.mode === "online" ? t("form.modeOnline") : t("form.modePhysical")}
+                        {batch.location ? ` · ${batch.location}` : ""}
+                        {batch.scheduleNote ? ` · ${batch.scheduleNote}` : ""}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-background px-2.5 py-1 font-mono text-[11px] text-muted-foreground">
+                      {t("studentCount", { count: batch.studentCount })}
+                    </span>
+                  </div>
+
+                  {roster.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{t("noStudents")}</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t("columns.student")}</TableHead>
+                          <TableHead>{t("columns.joined")}</TableHead>
+                          <TableHead>{t("columns.contact")}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {roster.map((student, i) => (
+                          <TableRow key={`${batch.id}-${i}`}>
+                            <TableCell className="font-medium text-foreground">{student.name}</TableCell>
+                            <TableCell className="text-muted-foreground">{student.joinedAt}</TableCell>
+                            <TableCell className="text-muted-foreground">{student.phone ?? "—"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

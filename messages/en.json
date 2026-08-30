@@ -1703,6 +1703,10 @@
         "joined": "Joined",
         "contact": "Contact"
       },
+      "institutes": {
+        "heading": "Teaching at institutes",
+        "subtitle": "Classes an institute has assigned you to teach. The institute manages the class itself — you manage its notes, exams, live sessions, and assignments."
+      },
       "form": {
         "title": "New batch",
         "titleCampus": "New course",

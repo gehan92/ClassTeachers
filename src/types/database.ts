@@ -1420,6 +1420,17 @@ export type Database = {
         Args: { p_student_ids: string[] };
         Returns: { id: string; full_name: string; phone: string | null }[];
       };
+      get_managed_batch_student_info: {
+        Args: Record<string, never>;
+        Returns: {
+          enrollment_id: string;
+          student_id: string;
+          full_name: string;
+          phone: string | null;
+          batch_id: string;
+          joined_at: string;
+        }[];
+      };
       get_linked_teacher_names: {
         Args: { p_class_id: string; p_teacher_ids: string[] };
         Returns: { id: string; full_name: string; is_campus_lecturer: boolean }[];

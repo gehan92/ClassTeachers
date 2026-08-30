@@ -27,7 +27,12 @@ import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import type { TeacherProfileDetail } from "@/types/teacher-profile";
 import type { ReferralRow } from "@/components/dashboard/refer-earn-panel";
-import type { TeacherBatchRow, TeacherBatchOption, BatchRosterEntry } from "@/components/dashboard/teacher/classes-tab";
+import type {
+  TeacherBatchRow,
+  TeacherBatchOption,
+  BatchRosterEntry,
+  InstituteTaughtBatchRow,
+} from "@/components/dashboard/teacher/classes-tab";
 import type { TeacherNoteRow } from "@/components/dashboard/teacher/notes-tab";
 import type { TeacherStudentRow, TeacherJoinRequestRow } from "@/components/dashboard/teacher/students-tab";
 import type { TeacherLiveClassRow } from "@/components/dashboard/teacher/live-classes-tab";
@@ -96,6 +101,7 @@ export default async function TeacherDashboardPage({
     { data: myReferralRows },
     { data: instituteInviteRows },
     { data: assignedInstituteBatchRows },
+    { data: managedBatchStudentRows },
   ] = await Promise.all([
     supabase.from("profiles").select("full_name, phone, notification_prefs, role").eq("id", userId).single(),
     supabase.from("teacher_profiles").select("*").eq("id", userId).maybeSingle(),
@@ -114,7 +120,10 @@ export default async function TeacherDashboardPage({
       .eq("owner_id", userId)
       .eq("status", "accepted"),
     supabase.from("reviews").select("rating").eq("target_type", "teacher").eq("target_id", userId),
-    supabase.from("exams").select("id").eq("owner_type", "teacher").eq("owner_id", userId),
+    // No owner filter — RLS (can_manage_content, 0093) already scopes this
+    // to exams this teacher owns OR manages via an assigned institute
+    // batch, and pendingSubmissionsCount below should count both.
+    supabase.from("exams").select("id"),
     supabase.from("exam_submissions").select("id, exam_id").eq("status", "pending"),
     supabase
       .from("inquiries")
@@ -139,11 +148,16 @@ export default async function TeacherDashboardPage({
       .select("id, student_id, batch_id, joined_at, status")
       .eq("owner_type", "teacher")
       .eq("owner_id", userId),
+    // No owner filter on notes/question_bank_items/exams/live_classes/
+    // assignments below — 0093/0094 already scope every one of these
+    // tables' RLS to "owner OR admin OR a teacher assigned to the batch via
+    // can_manage_content", so an unfiltered select naturally returns this
+    // teacher's own content plus whatever they manage at a linked institute
+    // batch, with zero risk of over-fetching (RLS is the real boundary, not
+    // this filter — same trust-RLS pattern used throughout this codebase).
     supabase
       .from("notes")
       .select("id, title, batch_id, page_count, is_public, created_at")
-      .eq("owner_type", "teacher")
-      .eq("owner_id", userId)
       .order("created_at", { ascending: false }),
     supabase.from("subject_links").select("subject_id").eq("owner_type", "teacher").eq("owner_id", userId),
     // Batch-scoped "search results" ads (0039) — one per batch, distinct
@@ -159,8 +173,6 @@ export default async function TeacherDashboardPage({
       .select(
         "id, question_text, topic, grade_band, batch_id, type, difficulty, marks, language, options, multi_select, code_format, question_image_path",
       )
-      .eq("owner_type", "teacher")
-      .eq("owner_id", userId)
       .order("created_at", { ascending: false }),
     // correct_option_id/correct_option_ids/sample_answer are revoke()d from
     // ordinary SELECT on question_bank_items (0085) — even for the owning
@@ -171,21 +183,15 @@ export default async function TeacherDashboardPage({
     supabase
       .from("exams")
       .select("id, title, question_ids, duration_minutes, scheduled_at, batch_id, published, reveal_answers")
-      .eq("owner_type", "teacher")
-      .eq("owner_id", userId)
       .order("scheduled_at", { ascending: false }),
     supabase
       .from("live_classes")
       .select("id, title, mode, location, scheduled_at, duration_minutes, batch_id")
-      .eq("owner_type", "teacher")
-      .eq("owner_id", userId)
       .neq("status", "cancelled")
       .order("scheduled_at", { ascending: false }),
     supabase
       .from("assignments")
       .select("id, title, batch_id, lesson_id, file_path, due_at")
-      .eq("owner_type", "teacher")
-      .eq("owner_id", userId)
       .order("created_at", { ascending: false }),
     // Same RPC the public /teacher/[id] page uses to gate the phone number
     // — called here too so the dashboard's inline "view live page" shows
@@ -202,7 +208,15 @@ export default async function TeacherDashboardPage({
     // inside an institute (0091's taught_by_teacher_id), offered as a
     // content target alongside their own batches in notes/exams/live-
     // classes/question-bank/assignments.
-    supabase.from("batches").select("id, title, owner_id").eq("taught_by_teacher_id", userId),
+    supabase
+      .from("batches")
+      .select("id, title, owner_id, mode, location, schedule_note")
+      .eq("taught_by_teacher_id", userId),
+    // Institute Blueprint step 3b, completed — resolves every accepted
+    // student's name/phone across every institute batch this teacher
+    // manages (0101), the piece get_roster_student_info (0032) never
+    // covered since it only opens up for the institute's own owner.
+    supabase.rpc("get_managed_batch_student_info"),
   ]);
 
   // Stage 2 — everything here needs an id list derived from a stage-1
@@ -222,6 +236,12 @@ export default async function TeacherDashboardPage({
   const assignmentFilePaths = (assignmentRows ?? []).map((a) => a.file_path);
   const assignmentIds = (assignmentRows ?? []).map((a) => a.id);
   const inquiryIds = (inquiryRows ?? []).map((i) => i.id);
+  // Institute Blueprint step 3b — the institute names behind
+  // assignedInstituteBatchRows, needed to label each assigned batch
+  // clearly (e.g. "Horizon Institute — A/L Maths") everywhere it appears:
+  // content-target selectors, batch titles on notes/exams/etc., and the
+  // Classes tab's own "Teaching at institutes" section.
+  const assignedInstituteIds = [...new Set((assignedInstituteBatchRows ?? []).map((row) => row.owner_id))];
 
   const [
     { data: subjectRows },
@@ -234,6 +254,7 @@ export default async function TeacherDashboardPage({
     { data: signedAssignmentUrls },
     { data: assignmentSubmissionRows },
     { data: inquiryMessageRows },
+    { data: assignedInstituteRows },
   ] = await Promise.all([
     subjectIds.length
       ? supabase.from("subjects").select("id, translations, grade_band").in("id", subjectIds)
@@ -310,6 +331,9 @@ export default async function TeacherDashboardPage({
       : Promise.resolve({
           data: [] as { id: string; inquiry_id: string; sender_role: "owner" | "inquirer"; body: string; created_at: string }[],
         }),
+    assignedInstituteIds.length
+      ? supabase.from("class_profiles").select("id, name").in("id", assignedInstituteIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
   ]);
 
   // Stage 3 — signed URLs for submission photos, only knowable once stage 2
@@ -412,7 +436,20 @@ export default async function TeacherDashboardPage({
     courseCode: b.course_code,
     hasActiveAd: activeAdBatchIds.has(b.id),
   }));
-  const batchTitleById = new Map(batches.map((b) => [b.id, b.title]));
+
+  // Institute Blueprint step 3b — every assigned institute batch, labeled
+  // with its institute's name (e.g. "Horizon Institute — A/L Maths") so it
+  // reads clearly wherever it shows up alongside the teacher's own batches:
+  // content-target selectors, note/exam/live-class/assignment batch
+  // labels, and the Classes tab's own "Teaching at institutes" list below.
+  const assignedInstituteNameById = new Map((assignedInstituteRows ?? []).map((row) => [row.id, row.name]));
+  const instituteBatchLabelById = new Map(
+    (assignedInstituteBatchRows ?? []).map((b) => [b.id, `${assignedInstituteNameById.get(b.owner_id) ?? "—"} — ${b.title}`]),
+  );
+  const batchTitleById = new Map<string, string>([
+    ...batches.map((b): [string, string] => [b.id, b.title]),
+    ...instituteBatchLabelById,
+  ]);
 
   const batchAdByBatchId = new Map((batchAdRows ?? []).filter((a) => a.batch_id).map((a) => [a.batch_id as string, a]));
 
@@ -429,13 +466,42 @@ export default async function TeacherDashboardPage({
     };
   });
 
+  // get_roster_student_info only ever resolves this teacher's own students
+  // (0032); get_managed_batch_student_info (0101) is the institute-batch
+  // equivalent — merged into one map so every downstream lookup (rosters,
+  // submissions, analytics) works the same regardless of which side a
+  // student came from.
   const studentById = new Map((studentProfiles ?? []).map((p) => [p.id, p]));
+  for (const r of managedBatchStudentRows ?? []) {
+    if (!studentById.has(r.student_id)) {
+      studentById.set(r.student_id, { id: r.student_id, full_name: r.full_name, phone: r.phone });
+    }
+  }
 
+  // Personal enrollments only — this teacher's own Students tab (accept/
+  // decline join requests) is deliberately not extended to institute
+  // batches: approving who's "in" at an institute is the institute's own
+  // call (Students tab, 0097), not something a linked teacher does.
   const acceptedEnrollments = (enrollmentRows ?? []).filter((e) => e.status === "accepted");
   const pendingEnrollments = (enrollmentRows ?? []).filter((e) => e.status === "pending");
 
+  // Institute Blueprint step 3b — every accepted student across every
+  // institute batch this teacher manages, shaped like a regular enrollment
+  // row so it can be pooled together with acceptedEnrollments below for
+  // rosters, content-target student counts, and individual-student
+  // targeting on exams/live classes. Kept separate from acceptedEnrollments
+  // itself (see the comment above) so it never leaks into the personal
+  // Students tab.
+  const instituteAcceptedEnrollments = (managedBatchStudentRows ?? []).map((r) => ({
+    id: r.enrollment_id,
+    student_id: r.student_id,
+    batch_id: r.batch_id as string | null,
+    joined_at: r.joined_at,
+  }));
+  const combinedAcceptedEnrollments = [...acceptedEnrollments, ...instituteAcceptedEnrollments];
+
   const rosterByBatch: Record<string, BatchRosterEntry[]> = {};
-  for (const enrollment of acceptedEnrollments) {
+  for (const enrollment of combinedAcceptedEnrollments) {
     if (!enrollment.batch_id) continue;
     const student = studentById.get(enrollment.student_id);
     const entry: BatchRosterEntry = {
@@ -450,7 +516,7 @@ export default async function TeacherDashboardPage({
     id: n.id,
     title: n.title,
     batchId: n.batch_id,
-    batchTitle: batches.find((b) => b.id === n.batch_id)?.title ?? null,
+    batchTitle: n.batch_id ? (batchTitleById.get(n.batch_id) ?? null) : null,
     pageCount: n.page_count,
     isPublic: n.is_public,
     createdAtIso: n.created_at,
@@ -592,7 +658,10 @@ export default async function TeacherDashboardPage({
     ];
   });
 
-  const analyticsBatchOptions: AnalyticsBatchOption[] = batches.map((b) => ({ id: b.id, title: b.title }));
+  const analyticsBatchOptions: AnalyticsBatchOption[] = [
+    ...batches.map((b) => ({ id: b.id, title: b.title })),
+    ...(assignedInstituteBatchRows ?? []).map((b) => ({ id: b.id, title: instituteBatchLabelById.get(b.id) ?? b.title })),
+  ];
 
   const joinLinkByClassId = new Map((liveClassLinkRows ?? []).map((l) => [l.live_class_id, l.join_link]));
   const attendanceByKey = new Map((attendanceRows ?? []).map((a) => [`${a.live_class_id}:${a.student_id}`, a.status]));
@@ -603,13 +672,20 @@ export default async function TeacherDashboardPage({
     participantIdsByClassId.set(p.live_class_id, set);
   }
 
-  // A live class scoped to a batch only rosters that batch's students; an
-  // unscoped one (batch_id null) rosters everyone accepted with this
-  // teacher — same "null = all my students" shape as assignments (0049). An
-  // explicit participant list (0055) narrows that pool further, to exactly
-  // the students the teacher hand-picked.
+  // A live class scoped to a batch only rosters that batch's students —
+  // combinedAcceptedEnrollments so an institute-assigned batch's students
+  // are included, not just this teacher's own. An unscoped one (batch_id
+  // null) rosters everyone accepted directly with this teacher — same
+  // "null = all my students" shape as assignments (0049) — and stays
+  // scoped to acceptedEnrollments only, since batch_id can never be null
+  // for content a linked teacher manages at an institute (can_manage_content
+  // requires a batch), so there's no institute equivalent of "unscoped" to
+  // include here. An explicit participant list (0055) narrows either pool
+  // further, to exactly the students the teacher hand-picked.
   function rosterFor(liveClassId: string, batchId: string | null) {
-    const pool = batchId ? acceptedEnrollments.filter((e) => e.batch_id === batchId) : acceptedEnrollments;
+    const pool = batchId
+      ? combinedAcceptedEnrollments.filter((e) => e.batch_id === batchId)
+      : acceptedEnrollments;
     const participantIds = participantIdsByClassId.get(liveClassId);
     const scoped = participantIds ? pool.filter((e) => participantIds.has(e.student_id)) : pool;
     return scoped.map((e) => ({
@@ -747,18 +823,25 @@ export default async function TeacherDashboardPage({
   // Institute Blueprint step 3b — label each assigned batch with its
   // institute's name so it reads clearly alongside the teacher's own
   // batches in the same selector, e.g. "Horizon Institute — A/L Maths".
-  const assignedInstituteIds = [...new Set((assignedInstituteBatchRows ?? []).map((row) => row.owner_id))];
-  const { data: assignedInstituteRows } = assignedInstituteIds.length
-    ? await supabase.from("class_profiles").select("id, name").in("id", assignedInstituteIds)
-    : { data: [] as { id: string; name: string }[] };
-  const assignedInstituteNameById = new Map((assignedInstituteRows ?? []).map((row) => [row.id, row.name]));
   const contentTargetBatches: TeacherBatchOption[] = [
     ...batches.map((b) => ({ id: b.id, title: b.title })),
-    ...(assignedInstituteBatchRows ?? []).map((b) => ({
-      id: b.id,
-      title: `${assignedInstituteNameById.get(b.owner_id) ?? "—"} — ${b.title}`,
-    })),
+    ...(assignedInstituteBatchRows ?? []).map((b) => ({ id: b.id, title: instituteBatchLabelById.get(b.id) ?? b.title })),
   ];
+
+  // Classes tab's "Teaching at institutes" section — read-only (a linked
+  // teacher can't edit the batch itself, only the institute owner can), so
+  // this is a much lighter row shape than TeacherBatchRow, just enough to
+  // orient the teacher: which institute, which class, how it runs, and who's
+  // in it (rosterByBatch already includes these students, see above).
+  const instituteTaughtBatches: InstituteTaughtBatchRow[] = (assignedInstituteBatchRows ?? []).map((b) => ({
+    id: b.id,
+    title: b.title,
+    instituteName: assignedInstituteNameById.get(b.owner_id) ?? "—",
+    mode: b.mode,
+    location: b.location,
+    scheduleNote: b.schedule_note,
+    studentCount: rosterByBatch[b.id]?.length ?? 0,
+  }));
 
   return (
     <DashboardShell
@@ -867,7 +950,14 @@ export default async function TeacherDashboardPage({
           />
         ),
         notes: <NotesTab notes={notes} batches={contentTargetBatches} />,
-        classes: <ClassesTab batches={batches} rosterByBatch={rosterByBatch} isCampusLecturer={isCampusLecturer} />,
+        classes: (
+          <ClassesTab
+            batches={batches}
+            rosterByBatch={rosterByBatch}
+            isCampusLecturer={isCampusLecturer}
+            instituteBatches={instituteTaughtBatches}
+          />
+        ),
         questionBank: <QuestionBankTab initialQuestions={questions} batches={contentTargetBatches} />,
         exams: (
           <ExamsTab
@@ -875,8 +965,8 @@ export default async function TeacherDashboardPage({
             submissions={examSubmissions}
             questions={questions}
             batches={contentTargetBatches.map((b) => ({ id: b.id, title: b.title, studentCount: rosterByBatch[b.id]?.length ?? 0 }))}
-            totalStudentsCount={acceptedEnrollments.length}
-            studentPool={acceptedEnrollments.map((e) => ({
+            totalStudentsCount={combinedAcceptedEnrollments.length}
+            studentPool={combinedAcceptedEnrollments.map((e) => ({
               id: e.student_id,
               name: studentById.get(e.student_id)?.full_name ?? "—",
               batchId: e.batch_id,
@@ -896,8 +986,8 @@ export default async function TeacherDashboardPage({
             classes={liveClasses}
             hostName={fullName}
             batches={contentTargetBatches.map((b) => ({ id: b.id, title: b.title, studentCount: rosterByBatch[b.id]?.length ?? 0 }))}
-            totalStudentsCount={acceptedEnrollments.length}
-            studentPool={acceptedEnrollments.map((e) => ({
+            totalStudentsCount={combinedAcceptedEnrollments.length}
+            studentPool={combinedAcceptedEnrollments.map((e) => ({
               id: e.student_id,
               name: studentById.get(e.student_id)?.full_name ?? "—",
               batchId: e.batch_id,

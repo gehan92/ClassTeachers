@@ -101,6 +101,14 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
       rating: t.rating,
       reviewCount: t.review_count,
       isCampusLecturer: t.is_campus_lecturer,
+      bio: t.bio,
+      qualifications: t.qualifications ?? [],
+      workExperience: t.work_experience ?? [],
+      experienceYears: t.experience_years,
+      languages: t.languages ?? [],
+      academicTitle: t.academic_title,
+      institution: t.institution,
+      publications: t.publications ?? [],
     })),
   } satisfies ClassProfileDetail;
 }

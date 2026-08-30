@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { ArrowLeft, BadgeCheck, MapPin, School, Star, GraduationCap } from "lucide-react";
+import { ArrowLeft, BadgeCheck, MapPin, School, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { GateNote } from "@/components/features/gate-note";
 import { PriceBox } from "@/components/features/price-box";
@@ -8,6 +8,7 @@ import { LockPill } from "@/components/features/lock-pill";
 import { ReviewsPanel } from "@/components/features/reviews-panel";
 import { ClassBatchCard } from "@/components/features/class-batch-card";
 import { Panel } from "@/components/features/teacher-profile-view";
+import { InstituteTeachersPanel } from "@/components/features/institute-teacher-quick-view";
 import type { ClassProfileDetail } from "@/types/class-profile";
 
 /**
@@ -36,7 +37,7 @@ export function ClassProfileView({
           <AboutPanel classProfile={classProfile} showGate={showGate} />
           {classProfile.teachers.length > 0 && (
             <div className="mt-5">
-              <TeachersPanel classProfile={classProfile} />
+              <InstituteTeachersPanel teachers={classProfile.teachers} />
             </div>
           )}
           {classProfile.adText && (
@@ -176,55 +177,6 @@ function AboutPanel({ classProfile, showGate }: { classProfile: ClassProfileDeta
     <Panel title={t("about")}>
       {showGate && <GateNote />}
       <p className="m-0 text-sm text-foreground/85">{classProfile.description || t("noDescription")}</p>
-    </Panel>
-  );
-}
-
-function TeachersPanel({ classProfile }: { classProfile: ClassProfileDetail }) {
-  const t = useTranslations("profilePage");
-
-  return (
-    <Panel title={t("teachersAtInstitute")}>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {classProfile.teachers.map((teacher) => (
-          <Link
-            key={teacher.id}
-            href={`/teacher/${teacher.id}`}
-            className="flex items-start gap-3 rounded-lg border border-border p-3.5 transition-colors hover:border-primary/40 hover:bg-background"
-          >
-            {teacher.photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={teacher.photoUrl} alt="" className="size-11 shrink-0 rounded-full object-cover" />
-            ) : (
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-secondary">
-                <GraduationCap className="size-5 text-secondary-foreground" />
-              </div>
-            )}
-            <div className="min-w-0">
-              <div className="truncate font-medium text-foreground">{teacher.displayName}</div>
-              {teacher.headline && (
-                <div className="mt-0.5 truncate text-[13px] text-muted-foreground">{teacher.headline}</div>
-              )}
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-                {teacher.reviewCount > 0 && (
-                  <span className="flex items-center gap-1 text-xs text-foreground/80">
-                    <Star className="size-3 fill-cta text-cta" />
-                    {teacher.rating.toFixed(1)} ({teacher.reviewCount})
-                  </span>
-                )}
-                {teacher.subjects.slice(0, 2).map((subject) => (
-                  <span
-                    key={subject}
-                    className="rounded-sm border border-border bg-background px-1.5 py-0.5 font-mono text-[10.5px] text-foreground/70"
-                  >
-                    {subject}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
     </Panel>
   );
 }

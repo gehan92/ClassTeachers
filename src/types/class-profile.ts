@@ -14,6 +14,18 @@ export type InstituteTeacherCard = {
   rating: number;
   reviewCount: number;
   isCampusLecturer: boolean;
+  /** Credentials only — backs the "quick profile" popup on the institute
+   * page's Teachers panel. Deliberately excludes anything from this
+   * teacher's own independent practice (their batches, pricing, contact) —
+   * a visitor browsing an institute shouldn't be pulled into that. */
+  bio: string | null;
+  qualifications: string[];
+  workExperience: string[];
+  experienceYears: number | null;
+  languages: string[];
+  academicTitle: string | null;
+  institution: string | null;
+  publications: string[];
 };
 
 /**

@@ -1499,12 +1499,20 @@ export type Database = {
           display_name: string | null;
           photo_url: string | null;
           headline: string | null;
+          bio: string | null;
           subjects: string[];
           hourly_rate: number | null;
           monthly_rate: number | null;
           rating: number;
           review_count: number;
           is_campus_lecturer: boolean;
+          qualifications: string[] | null;
+          work_experience: string[] | null;
+          experience_years: number | null;
+          languages: string[] | null;
+          academic_title: string | null;
+          institution: string | null;
+          publications: string[] | null;
         }[];
       };
       resolve_subject: {

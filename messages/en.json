@@ -956,13 +956,13 @@
     },
     "teachers": {
       "title": "Teachers",
-      "subtitle": "Manage the teachers linked to your institute.",
-      "addTeacher": "+ Invite a teacher",
+      "subtitle": "Manage the teachers and lecturers linked to your institute.",
+      "addTeacher": "+ Invite a teacher or lecturer",
       "confirmRemove": "Remove {name} from your institute?",
-      "empty": "No teachers linked yet. Add one by their email below.",
+      "empty": "No teachers or lecturers linked yet. Add one by their email below.",
       "addForm": {
-        "title": "Invite a teacher",
-        "emailLabel": "Teacher's email",
+        "title": "Invite a teacher or lecturer",
+        "emailLabel": "Their email",
         "emailPlaceholder": "e.g. teacher@email.com",
         "helper": "They'll be added immediately if this email belongs to an existing ClassPortals teacher account.",
         "submit": "Send invite",
@@ -979,7 +979,8 @@
         "view": "View",
         "remove": "Remove",
         "invitePending": "Invite pending",
-        "cancelInvite": "Cancel invite"
+        "cancelInvite": "Cancel invite",
+        "lecturerBadge": "Campus Lecturer"
       }
     },
     "batches": {

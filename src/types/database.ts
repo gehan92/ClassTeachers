@@ -1422,7 +1422,7 @@ export type Database = {
       };
       get_linked_teacher_names: {
         Args: { p_class_id: string; p_teacher_ids: string[] };
-        Returns: { id: string; full_name: string }[];
+        Returns: { id: string; full_name: string; is_campus_lecturer: boolean }[];
       };
       find_teacher_by_email: {
         Args: { p_email: string };

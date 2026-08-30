@@ -15,9 +15,12 @@ const addTeacherSchema = z.object({ email: z.string().trim().email() });
 /**
  * Still "find by email" rather than a search picker (see 0035's comment) —
  * but no longer an instant link. This inserts a pending row; the teacher
- * has to accept it themselves (respondToRosterInvite) before they're
- * actually on the roster. 0091 added the status column and the trigger
- * that stops this from being anything other than a proposal until then.
+ * or lecturer has to accept it themselves (respondToRosterInvite) before
+ * they're actually on the roster. 0091 added the status column and the
+ * trigger that stops this from being anything other than a proposal until
+ * then; 0100 widened find_teacher_by_email to match campus_lecturer
+ * accounts too, since a lecturer already gets the same teacher_profiles
+ * row a regular teacher does.
  */
 export async function inviteTeacherToRoster(email: string): Promise<ActionResult> {
   const parsed = addTeacherSchema.safeParse({ email });
@@ -41,7 +44,7 @@ export async function inviteTeacherToRoster(email: string): Promise<ActionResult
   const { data: found } = await supabase.rpc("find_teacher_by_email", { p_email: parsed.data.email });
   const teacher = found?.[0];
   if (!teacher) {
-    return { error: "No teacher account found with that email. They need to sign up as a teacher first." };
+    return { error: "No teacher or lecturer account found with that email. They need to sign up first." };
   }
 
   const { error } = await supabase

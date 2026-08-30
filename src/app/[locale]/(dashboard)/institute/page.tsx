@@ -314,10 +314,11 @@ export default async function InstituteDashboardPage({
       { data: teacherReviews },
       { data: teacherPrices },
     ] = await Promise.all([
-      supabase.from("teacher_profiles").select("id, headline, status").in("id", teacherIds),
+      supabase.from("teacher_profiles").select("id, headline, academic_title, status").in("id", teacherIds),
       // Plain `profiles` select would return zero rows here — its only RLS
-      // policy is "your own row or admin" (0003). This RPC (0032) opens it
-      // up specifically for teachers linked to this institute.
+      // policy is "your own row or admin" (0003). This RPC (0032, widened
+      // by 0100 to also flag is_campus_lecturer) opens it up specifically
+      // for teachers linked to this institute.
       supabase.rpc("get_linked_teacher_names", { p_class_id: instituteId!, p_teacher_ids: teacherIds }),
       supabase.from("enrollments").select("owner_id").eq("owner_type", "teacher").in("owner_id", teacherIds),
       supabase.from("reviews").select("target_id, rating").eq("target_type", "teacher").in("target_id", teacherIds),
@@ -326,7 +327,9 @@ export default async function InstituteDashboardPage({
 
     const nameById = new Map((teacherPersonProfiles ?? []).map((p) => [p.id, p.full_name]));
     teacherNameById = nameById;
+    const isCampusLecturerById = new Map((teacherPersonProfiles ?? []).map((p) => [p.id, p.is_campus_lecturer]));
     const headlineById = new Map((teacherProfiles ?? []).map((p) => [p.id, p.headline]));
+    const academicTitleById = new Map((teacherProfiles ?? []).map((p) => [p.id, p.academic_title]));
     const statusById = new Map((teacherProfiles ?? []).map((p) => [p.id, p.status]));
     const priceById = new Map((teacherPrices ?? []).map((p) => [p.owner_id, p]));
 
@@ -368,11 +371,12 @@ export default async function InstituteDashboardPage({
         rosterStatus: rosterStatusById.get(teacherId) === "pending" ? "pending" : "accepted",
         id: teacherId,
         name: nameById.get(teacherId) ?? "—",
-        subject: headlineById.get(teacherId) ?? "",
+        subject: headlineById.get(teacherId) || academicTitleById.get(teacherId) || "",
         rateDisplay,
         studentCount: enrollmentCountById.get(teacherId) ?? 0,
         visible: isVisibleById.get(teacherId) ?? true,
         teacherHref: `/teacher/${teacherId}`,
+        isCampusLecturer: isCampusLecturerById.get(teacherId) ?? false,
       };
     });
   }

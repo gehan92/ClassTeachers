@@ -23,6 +23,7 @@ export type InstituteTeacherRow = {
   visible: boolean;
   teacherHref: string;
   rosterStatus: "pending" | "accepted";
+  isCampusLecturer: boolean;
 };
 
 function initialsFor(name: string) {
@@ -152,7 +153,14 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="font-medium text-foreground">{teacher.name}</span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium text-foreground">{teacher.name}</span>
+                          {teacher.isCampusLecturer && (
+                            <span className="w-fit rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[10.5px] uppercase tracking-wide text-muted-foreground">
+                              {t("table.lecturerBadge")}
+                            </span>
+                          )}
+                        </div>
                         {teacher.rosterStatus === "pending" && (
                           <span className="w-fit rounded-full bg-background px-2 py-0.5 font-mono text-[10.5px] text-muted-foreground">
                             {t("table.invitePending")}

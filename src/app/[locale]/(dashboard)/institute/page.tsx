@@ -23,7 +23,7 @@ import { loadClassProfile } from "@/lib/load-class-profile";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter } from "@/lib/format-date";
 import type { TeachersAtGlance } from "@/types/dashboard-institute";
-import type { InstituteBatchRow } from "@/components/dashboard/institute/batches-tab";
+import type { InstituteBatchRow, InstituteBatchRosterEntry } from "@/components/dashboard/institute/batches-tab";
 import type { ReferralRow } from "@/components/dashboard/refer-earn-panel";
 
 export default async function InstituteDashboardPage({
@@ -457,6 +457,13 @@ export default async function InstituteDashboardPage({
     if (!row.batch_id) continue;
     batchStudentCounts.set(row.batch_id, (batchStudentCounts.get(row.batch_id) ?? 0) + 1);
   }
+  // Delete is blocked while a live ad points at the batch (advertisements
+  // cascade-deletes with it) — same guard the teacher dashboard already
+  // uses, computed here from the same classAdRows the Advertisement tab
+  // maps below, so there's no extra query for it.
+  const activeAdBatchIds = new Set(
+    (classAdRows ?? []).filter((ad) => ad.status === "active" && ad.batch_id).map((ad) => ad.batch_id as string),
+  );
   const batches: InstituteBatchRow[] = (batchRows ?? []).map((b) => ({
     id: b.id,
     title: b.title,
@@ -466,9 +473,11 @@ export default async function InstituteDashboardPage({
     // Real roster link wins when set; falls back to the old free-text label
     // for batches created before 0091 that haven't been re-saved since.
     teacherLabel: (b.taught_by_teacher_id && teacherNameById.get(b.taught_by_teacher_id)) || b.teacher_label,
+    teacherId: b.taught_by_teacher_id,
     subjectName: b.subject_id ? (subjectNameById.get(b.subject_id) ?? null) : null,
     gradeBand: b.grade_band as InstituteBatchRow["gradeBand"],
     studentCount: batchStudentCounts.get(b.id) ?? 0,
+    hasActiveAd: activeAdBatchIds.has(b.id),
   }));
 
   // Class-wise ads (0103, multiple per class since 0104) — mirrors the
@@ -548,6 +557,48 @@ export default async function InstituteDashboardPage({
     batchId: row.batch_id,
     requestedAt: dateFormatter.format(new Date(row.joined_at)),
   }));
+
+  // Classes & Batches tab's per-class roster (attendance % + average exam
+  // marks alongside who's enrolled) — reuses analyticsAttendance/
+  // analyticsExamResults computed above for the Analytics tab, narrowed to
+  // one batch+student at a time instead of institute-wide, so this is zero
+  // new queries. "present" only (not "late"), matching the Analytics tab's
+  // own studentRows formula exactly (analytics-tab.tsx) so the two numbers
+  // never disagree.
+  const attendanceByBatchStudent = new Map<string, { present: number; total: number }>();
+  for (const a of analyticsAttendance) {
+    if (!a.batchId) continue;
+    const key = `${a.batchId}:${a.studentId}`;
+    const entry = attendanceByBatchStudent.get(key) ?? { present: 0, total: 0 };
+    entry.total += 1;
+    if (a.status === "present") entry.present += 1;
+    attendanceByBatchStudent.set(key, entry);
+  }
+  const marksByBatchStudent = new Map<string, { sum: number; count: number }>();
+  for (const r of analyticsExamResults) {
+    if (!r.batchId || r.scorePercent === null) continue;
+    const key = `${r.batchId}:${r.studentId}`;
+    const entry = marksByBatchStudent.get(key) ?? { sum: 0, count: 0 };
+    entry.sum += r.scorePercent;
+    entry.count += 1;
+    marksByBatchStudent.set(key, entry);
+  }
+  const instituteBatchRoster: Record<string, InstituteBatchRosterEntry[]> = {};
+  for (const row of acceptedInstituteEnrollments) {
+    if (!row.batch_id) continue;
+    const key = `${row.batch_id}:${row.student_id}`;
+    const att = attendanceByBatchStudent.get(key);
+    const marks = marksByBatchStudent.get(key);
+    const entry: InstituteBatchRosterEntry = {
+      studentId: row.student_id,
+      name: studentInfoById.get(row.student_id)?.full_name ?? "—",
+      phone: studentInfoById.get(row.student_id)?.phone ?? null,
+      joinedAt: dateFormatter.format(new Date(row.joined_at)),
+      attendancePercent: att && att.total > 0 ? Math.round((att.present / att.total) * 100) : null,
+      avgMarks: marks && marks.count > 0 ? Math.round(marks.sum / marks.count) : null,
+    };
+    (instituteBatchRoster[row.batch_id] ??= []).push(entry);
+  }
 
   const referrals: ReferralRow[] = (myReferralRows ?? []).map((row) => ({
     id: row.id,
@@ -639,7 +690,9 @@ export default async function InstituteDashboardPage({
           />
         ),
         teachers: <TeachersTab teachers={instituteTeachers} />,
-        batches: <BatchesTab batches={batches} teacherOptions={rosterTeacherOptions} />,
+        batches: (
+          <BatchesTab batches={batches} teacherOptions={rosterTeacherOptions} rosterByBatch={instituteBatchRoster} />
+        ),
         students: (
           <StudentsTab
             students={instituteStudents}

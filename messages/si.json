@@ -1004,6 +1004,40 @@
       "cancel": "අවලංගු කරන්න",
       "emptyState": "ඔබ තවම කණ්ඩායමක් එකතු කර නැත.",
       "studentCount": "සිසුන් {count}",
+      "edit": "සංස්කරණය",
+      "delete": "මකන්න",
+      "deleteBlockedByAd": "මෙම පන්තියට සජීවී දැන්වීමක් ඇත. මෙම පන්තිය මැකීමට පෙර දැන්වීම් පටිත්තෙන් එය නවත්වන්න හෝ ඉවත් කරන්න.",
+      "viewStudents": "සිසුන් බලන්න",
+      "hideStudents": "සිසුන් සඟවන්න",
+      "noStudents": "තවම සිසුන් ලියාපදිංචි වී නැත.",
+      "deleteDialog": {
+        "title": "\"{title}\" මකන්නද?",
+        "titleFallback": "මෙම පන්තිය මකන්නද?",
+        "description": "එහි ලියාපදිංචි වී ඇති සිසුන් ඔබේ සාමාන්‍ය ලියාපදිංචියට මාරු වනු ඇත, එයට වෙන් වූ සටහන්, විභාග හෝ පැවරුම් මකා නොදැමී පුළුල් (unscoped) වනු ඇත. මෙය නැවත කළ නොහැක."
+      },
+      "columns": {
+        "student": "සිසුවා",
+        "joined": "එකතු වූ දිනය",
+        "contact": "සම්බන්ධතාවය",
+        "attendance": "පැමිණීම",
+        "avgMarks": "සාමාන්‍ය ලකුණු"
+      },
+      "filters": {
+        "searchLabel": "සොයන්න",
+        "searchPlaceholder": "මාතෘකාව, විෂය, හෝ ගුරුවරයා අනුව සොයන්න...",
+        "gradeLabel": "ශ්‍රේණිය",
+        "allGrades": "සියලුම ශ්‍රේණි",
+        "modeLabel": "ආකාරය",
+        "allModes": "සියලුම ආකාර",
+        "clearFilters": "පෙරහන් හිස් කරන්න",
+        "noResults": "ඔබේ පෙරහන් වලට ගැලපෙන පන්ති නොමැත."
+      },
+      "pagination": {
+        "showingCount": "{total} න් {shown} ක් පෙන්වයි",
+        "previous": "පෙර",
+        "next": "ඊළඟ",
+        "pageInfo": "පිටුව {page} / {totalPages}"
+      },
       "form": {
         "title": "කණ්ඩායමක් එකතු කරන්න",
         "titleLabel": "කණ්ඩායමේ මාතෘකාව",
@@ -1018,6 +1052,8 @@
         "modeLabel": "ආකාරය",
         "modeOnline": "මාර්ගගත",
         "modePhysical": "භෞතික",
+        "locationLabel": "ස්ථානය",
+        "locationPlaceholder": "උදා: කොළඹ 05",
         "priceLabel": "මිල (රු.)",
         "intervalLabel": "ගෙවීම් කාල පරතරය",
         "intervalHour": "පැයකට",
@@ -1083,6 +1119,7 @@
       "confirmFlag": "පරිපාලක සමාලෝචනය සඳහා මෙම සමාලෝචනය සලකුණු කරන්නද?"
     },
     "common": {
+      "save": "සුරකින්න",
       "cancel": "අවලංගු කරන්න",
       "postReply": "පිළිතුර පළ කරන්න",
       "updatingList": "යාවත්කාලීන කරමින්…",

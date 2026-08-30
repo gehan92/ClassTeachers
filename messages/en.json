@@ -1004,6 +1004,40 @@
       "cancel": "Cancel",
       "emptyState": "You haven't added a batch yet.",
       "studentCount": "{count} students",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteBlockedByAd": "This class has a live ad. Pause or remove it in the Advertisement tab before deleting this class.",
+      "viewStudents": "View students",
+      "hideStudents": "Hide students",
+      "noStudents": "No students enrolled yet.",
+      "deleteDialog": {
+        "title": "Delete \"{title}\"?",
+        "titleFallback": "Delete this class?",
+        "description": "Students enrolled in it will move to your general enrollment, and any notes, exams or assignments scoped to it will become unscoped instead of being deleted. This can't be undone."
+      },
+      "columns": {
+        "student": "Student",
+        "joined": "Joined",
+        "contact": "Contact",
+        "attendance": "Attendance",
+        "avgMarks": "Avg. marks"
+      },
+      "filters": {
+        "searchLabel": "Search",
+        "searchPlaceholder": "Search by title, subject, or teacher...",
+        "gradeLabel": "Grade",
+        "allGrades": "All grades",
+        "modeLabel": "Mode",
+        "allModes": "All modes",
+        "clearFilters": "Clear filters",
+        "noResults": "No classes match your filters."
+      },
+      "pagination": {
+        "showingCount": "Showing {shown} of {total}",
+        "previous": "Previous",
+        "next": "Next",
+        "pageInfo": "Page {page} of {totalPages}"
+      },
       "form": {
         "title": "Add a batch",
         "titleLabel": "Batch title",
@@ -1018,6 +1052,8 @@
         "modeLabel": "Mode",
         "modeOnline": "Online",
         "modePhysical": "Physical",
+        "locationLabel": "Location",
+        "locationPlaceholder": "e.g. Colombo 05",
         "priceLabel": "Price (Rs.)",
         "intervalLabel": "Billing interval",
         "intervalHour": "Per hour",
@@ -1083,6 +1119,7 @@
       "confirmFlag": "Flag this review for admin moderation?"
     },
     "common": {
+      "save": "Save",
       "cancel": "Cancel",
       "postReply": "Post reply",
       "updatingList": "Updating…",

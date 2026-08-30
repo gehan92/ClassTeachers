@@ -111,38 +111,50 @@ export async function createBatch(input: {
 }
 
 const updateBatchSchema = z.object({
+  ownerType: z.enum(["teacher", "class"]),
   title: z.string().trim().min(2),
   mode: z.enum(["online", "physical"]),
-  classSizeType: z.enum(classSizeTypes),
+  classSizeType: z.enum(classSizeTypes).optional(),
   location: z.string().trim().optional(),
   scheduleNote: z.string().trim().optional(),
+  teacherLabel: z.string().trim().optional(),
+  taughtByTeacherId: z.string().uuid().optional(),
   gradeBand: z.enum(gradeBands).optional(),
   courseCode: z.string().trim().max(30).optional(),
+  subjectName: z.string().trim().min(1).max(80).optional(),
 });
 
 export async function updateBatch(
   batchId: string,
   input: {
+    ownerType: "teacher" | "class";
     title: string;
     mode: "online" | "physical";
-    classSizeType: "group" | "individual";
+    classSizeType?: "group" | "individual";
     location: string;
     scheduleNote: string;
+    teacherLabel?: string;
+    taughtByTeacherId?: string;
     gradeBand: string;
     courseCode?: string;
+    subjectName?: string;
   },
 ): Promise<ActionResult> {
   if (!batchId) {
     return { error: "Invalid class." };
   }
   const parsed = updateBatchSchema.safeParse({
+    ownerType: input.ownerType,
     title: input.title,
     mode: input.mode,
-    classSizeType: input.classSizeType,
+    classSizeType: input.classSizeType || undefined,
     location: input.location || undefined,
     scheduleNote: input.scheduleNote || undefined,
+    teacherLabel: input.ownerType === "class" ? input.teacherLabel || undefined : undefined,
+    taughtByTeacherId: input.ownerType === "class" ? input.taughtByTeacherId || undefined : undefined,
     gradeBand: input.gradeBand || undefined,
     courseCode: input.courseCode || undefined,
+    subjectName: input.ownerType === "class" ? input.subjectName || undefined : undefined,
   });
   if (!parsed.success) {
     return { error: "Please check the highlighted fields and try again." };
@@ -156,20 +168,55 @@ export async function updateBatch(
     return { error: "You need to be signed in." };
   }
 
+  let ownerId = user.id;
+  if (parsed.data.ownerType === "class") {
+    const { data: classProfile } = await supabase
+      .from("class_profiles")
+      .select("id")
+      .eq("owner_id", user.id)
+      .maybeSingle();
+    if (!classProfile) {
+      return { error: "No institute profile found for this account." };
+    }
+    ownerId = classProfile.id;
+  }
+
+  let subjectId: string | null | undefined = undefined;
+  if (parsed.data.ownerType === "class") {
+    if (parsed.data.subjectName) {
+      const { data: resolvedSubjectId, error: subjectError } = await supabase.rpc("resolve_subject", {
+        subject_name: parsed.data.subjectName,
+      });
+      if (subjectError || !resolvedSubjectId) {
+        return { error: "Couldn't resolve that subject. Please try again." };
+      }
+      subjectId = resolvedSubjectId;
+    } else {
+      subjectId = null;
+    }
+  }
+
   const { error } = await supabase
     .from("batches")
     .update({
       title: parsed.data.title,
       mode: parsed.data.mode,
-      class_size_type: parsed.data.classSizeType,
+      ...(parsed.data.classSizeType ? { class_size_type: parsed.data.classSizeType } : {}),
       location: parsed.data.location || null,
       schedule_note: parsed.data.scheduleNote || null,
       grade_band: parsed.data.gradeBand ?? null,
       course_code: parsed.data.courseCode ?? null,
+      ...(parsed.data.ownerType === "class"
+        ? {
+            teacher_label: parsed.data.teacherLabel || null,
+            taught_by_teacher_id: parsed.data.taughtByTeacherId ?? null,
+            subject_id: subjectId,
+          }
+        : {}),
     })
     .eq("id", batchId)
-    .eq("owner_type", "teacher")
-    .eq("owner_id", user.id);
+    .eq("owner_type", parsed.data.ownerType)
+    .eq("owner_id", ownerId);
   if (error) {
     return { error: "Couldn't update this class. Please try again." };
   }
@@ -186,7 +233,7 @@ export async function updateBatch(
  * live classes, exams) falls back to "unscoped/general" instead of
  * breaking, so this is the one case that actually needs a guard.
  */
-export async function deleteBatch(batchId: string): Promise<ActionResult> {
+export async function deleteBatch(batchId: string, ownerType: "teacher" | "class" = "teacher"): Promise<ActionResult> {
   if (!batchId) {
     return { error: "Invalid class." };
   }
@@ -197,6 +244,19 @@ export async function deleteBatch(batchId: string): Promise<ActionResult> {
   } = await supabase.auth.getUser();
   if (!user) {
     return { error: "You need to be signed in." };
+  }
+
+  let ownerId = user.id;
+  if (ownerType === "class") {
+    const { data: classProfile } = await supabase
+      .from("class_profiles")
+      .select("id")
+      .eq("owner_id", user.id)
+      .maybeSingle();
+    if (!classProfile) {
+      return { error: "No institute profile found for this account." };
+    }
+    ownerId = classProfile.id;
   }
 
   const { data: activeAd } = await supabase
@@ -213,8 +273,8 @@ export async function deleteBatch(batchId: string): Promise<ActionResult> {
     .from("batches")
     .delete()
     .eq("id", batchId)
-    .eq("owner_type", "teacher")
-    .eq("owner_id", user.id);
+    .eq("owner_type", ownerType)
+    .eq("owner_id", ownerId);
   if (error) {
     return { error: "Couldn't delete this class. Please try again." };
   }

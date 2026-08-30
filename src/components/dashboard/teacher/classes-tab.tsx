@@ -174,6 +174,7 @@ export function ClassesTab({
     setEditSaving(true);
     setEditError(null);
     const result = await updateBatch(batchId, {
+      ownerType: "teacher",
       title: editTitle,
       mode: editMode,
       classSizeType: editClassSizeType,
@@ -196,7 +197,7 @@ export function ClassesTab({
     if (!batchId) return;
     setDeletingId(batchId);
     setDeleteError(null);
-    const result = await deleteBatch(batchId);
+    const result = await deleteBatch(batchId, "teacher");
     setDeletingId(null);
     if (result.error) {
       setDeleteError({ batchId, message: result.error });

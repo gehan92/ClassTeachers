@@ -34,7 +34,7 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
     supabase.rpc("list_public_reviews", { p_target_type: "class", p_target_id: id }),
     supabase
       .from("batches")
-      .select("id, title, mode, location, schedule_note, teacher_label, status")
+      .select("id, title, mode, location, schedule_note, teacher_label, taught_by_teacher_id, status")
       .eq("owner_type", "class")
       .eq("owner_id", id)
       .in("status", ["active", "upcoming"])
@@ -72,6 +72,14 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
     batchAdsByBatchId.set(ad.batch_id, list);
   }
 
+  // Real roster link wins when set; falls back to the old free-text label
+  // for batches created before 0091 that haven't been re-saved since — same
+  // resolution the institute dashboard's own Classes & Batches tab already
+  // does (institute/page.tsx's teacherNameById), which this page previously
+  // skipped, so a batch with only a linked teacher (no free-text label)
+  // showed nothing here despite showing correctly in the dashboard.
+  const teacherNameById = new Map((teacherRows ?? []).map((t) => [t.teacher_id, t.display_name]));
+
   const dateFormatter = createDateFormatter(locale);
   const reviews = reviewRows ?? [];
   const reviewCount = reviews.length;
@@ -95,7 +103,7 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
     batches: (batchRows ?? []).map((b) => ({
       id: b.id,
       title: b.title,
-      teacherName: b.teacher_label,
+      teacherName: (b.taught_by_teacher_id && teacherNameById.get(b.taught_by_teacher_id)) || b.teacher_label,
       status: b.status === "upcoming" ? "upcoming" : "started",
       mode: b.mode as "online" | "physical",
       location: b.location,

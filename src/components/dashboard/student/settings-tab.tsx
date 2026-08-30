@@ -110,7 +110,7 @@ export function SettingsTab({
           <Button type="button" onClick={handleSaveChanges} disabled={saving}>
             {tc("save")}
           </Button>
-          {saved && <span className="text-sm font-medium text-success">{tc("saved")}</span>}
+          {saved && <span className="animate-in fade-in-0 text-sm font-medium text-success duration-200">{tc("saved")}</span>}
           {error && <span className="text-sm font-medium text-destructive">{error}</span>}
         </div>
       </div>

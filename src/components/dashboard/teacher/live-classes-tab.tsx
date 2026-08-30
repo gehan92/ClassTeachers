@@ -270,7 +270,7 @@ export function LiveClassesTab({
           <Button type="button" onClick={() => setAdding((v) => !v)}>
             {t("scheduleClass")}
           </Button>
-          {added && <span className="text-sm font-medium text-success">{tc("added")}</span>}
+          {added && <span className="animate-in fade-in-0 text-sm font-medium text-success duration-200">{tc("added")}</span>}
         </div>
       </div>
 

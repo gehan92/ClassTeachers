@@ -1,5 +1,7 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
+
 export function RefreshStatus({
   pending,
   stuck,
@@ -17,7 +19,9 @@ export function RefreshStatus({
 }) {
   if (stuck) {
     return (
-      <div className={`flex flex-wrap items-center gap-2 text-sm text-destructive ${className ?? ""}`}>
+      <div
+        className={`flex flex-wrap items-center gap-2 text-sm text-destructive animate-in fade-in-0 duration-200 ${className ?? ""}`}
+      >
         <span>{stuckLabel}</span>
         <button
           type="button"
@@ -30,7 +34,14 @@ export function RefreshStatus({
     );
   }
   if (pending) {
-    return <span className={`text-sm text-muted-foreground ${className ?? ""}`}>{pendingLabel}</span>;
+    return (
+      <span
+        className={`flex items-center gap-1.5 text-sm text-muted-foreground animate-in fade-in-0 duration-200 ${className ?? ""}`}
+      >
+        <Loader2 className="size-3.5 animate-spin" />
+        {pendingLabel}
+      </span>
+    );
   }
   return null;
 }

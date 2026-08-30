@@ -5,13 +5,14 @@ import { LockPill } from "./lock-pill";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import type { Listing } from "@/types/listing";
 
-export function ListingCard({ listing }: { listing: Listing }) {
+export function ListingCard({ listing, index }: { listing: Listing; index?: number }) {
   const t = useTranslations("listing");
 
   return (
     <Link
       href={listing.href}
-      className="flex flex-col overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)] transition-transform hover:-translate-y-0.5"
+      style={index !== undefined ? { animationDelay: `${Math.min(index, 10) * 45}ms` } : undefined}
+      className="flex flex-col overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)] transition-transform animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-500 hover:-translate-y-0.5"
     >
       <div className="relative flex h-33 items-end bg-gradient-to-br from-primary to-primary-light p-3">
         <span className="rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white">

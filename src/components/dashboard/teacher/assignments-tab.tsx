@@ -210,7 +210,7 @@ export function AssignmentsTab({
           <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-3">
-          {created && <span className="text-sm font-medium text-success">{tc("added")}</span>}
+          {created && <span className="animate-in fade-in-0 text-sm font-medium text-success duration-200">{tc("added")}</span>}
           <Button type="button" onClick={() => setCreating((v) => !v)}>
             {t("uploadTute")}
           </Button>
@@ -403,11 +403,15 @@ export function AssignmentsTab({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pagedAssignments.map((assignment) => {
+                  {pagedAssignments.map((assignment, i) => {
                     const total = submissionCountByAssignment.get(assignment.id) ?? 0;
                     const pending = pendingCountByAssignment.get(assignment.id) ?? 0;
                     return (
-                      <TableRow key={assignment.id}>
+                      <TableRow
+                        key={assignment.id}
+                        style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
+                        className="animate-in fade-in-0 fill-mode-both duration-300"
+                      >
                         <TableCell className="max-w-64 whitespace-normal font-medium text-foreground">
                           {assignment.title}
                         </TableCell>

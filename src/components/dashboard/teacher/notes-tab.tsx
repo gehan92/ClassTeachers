@@ -210,7 +210,7 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
           <Button type="button" onClick={() => setAdding((v) => !v)}>
             {t("uploadNote")}
           </Button>
-          {added && <span className="text-sm font-medium text-success">{tc("added")}</span>}
+          {added && <span className="animate-in fade-in-0 text-sm font-medium text-success duration-200">{tc("added")}</span>}
         </div>
       </div>
       <RefreshStatus
@@ -358,10 +358,14 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pagedNotes.map((note) => {
+                  {pagedNotes.map((note, i) => {
                     const isEditing = editingNoteId === note.id;
                     return (
-                      <TableRow key={note.id}>
+                      <TableRow
+                        key={note.id}
+                        style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
+                        className="animate-in fade-in-0 fill-mode-both duration-300"
+                      >
                         <TableCell className="max-w-72 whitespace-normal font-medium text-foreground">
                           {isEditing ? (
                             <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="bg-white" />

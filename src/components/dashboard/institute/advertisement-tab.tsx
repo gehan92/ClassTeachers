@@ -226,7 +226,7 @@ function ClassBatchRateForm({ batch, onSaved }: { batch: InstituteAdBatchRow; on
         </Button>
       </div>
       <p className="mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
-      {saved && <p className="mt-1 text-xs font-medium text-success">{t("rateSaved")}</p>}
+      {saved && <p className="animate-in fade-in-0 mt-1 text-xs font-medium text-success duration-200">{t("rateSaved")}</p>}
       {error && <p className="mt-1 text-xs font-medium text-destructive">{error}</p>}
     </div>
   );

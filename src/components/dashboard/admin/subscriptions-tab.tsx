@@ -99,7 +99,7 @@ export function SubscriptionsTab({
           <Button onClick={handleSave} disabled={saving}>
             {t("pricing.save")}
           </Button>
-          {saved && <span className="text-sm font-medium text-success">{tCommon("saved")}</span>}
+          {saved && <span className="animate-in fade-in-0 text-sm font-medium text-success duration-200">{tCommon("saved")}</span>}
           {error && <span className="text-sm font-medium text-destructive">{error}</span>}
         </div>
         <RefreshStatus

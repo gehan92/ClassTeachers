@@ -34,13 +34,14 @@ type LookingForFilter = (typeof lookingForFilters)[number];
  * added alongside this) rather than straight to a login/respond href, so a
  * visitor can actually read the full request before deciding to respond.
  */
-function RequestCard({ ad }: { ad: PublicWantedAd }) {
+function RequestCard({ ad, index }: { ad: PublicWantedAd; index?: number }) {
   const t = useTranslations("requestsPage");
 
   return (
     <Link
       href={`/requests/${ad.id}`}
-      className="flex flex-col overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)] transition-transform hover:-translate-y-0.5"
+      style={index !== undefined ? { animationDelay: `${Math.min(index, 10) * 45}ms` } : undefined}
+      className="flex flex-col overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)] transition-transform animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-500 hover:-translate-y-0.5"
     >
       <div className="relative flex h-33 items-end bg-gradient-to-br from-primary to-primary-light p-3">
         <span className="rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white">
@@ -142,8 +143,8 @@ export function WantedAdsBoard({ ads }: { ads: PublicWantedAd[] }) {
 
       {filteredAds.length > 0 ? (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredAds.map((ad) => (
-            <RequestCard key={ad.id} ad={ad} />
+          {filteredAds.map((ad, i) => (
+            <RequestCard key={ad.id} ad={ad} index={i} />
           ))}
         </div>
       ) : (

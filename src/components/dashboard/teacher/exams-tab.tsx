@@ -274,7 +274,7 @@ export function ExamsTab({
           <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-3">
-          {created && <span className="text-sm font-medium text-success">{tc("added")}</span>}
+          {created && <span className="animate-in fade-in-0 text-sm font-medium text-success duration-200">{tc("added")}</span>}
           <Button type="button" onClick={() => setCreating((v) => !v)}>
             {t("createExam")}
           </Button>
@@ -565,11 +565,15 @@ export function ExamsTab({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pagedExams.map((exam) => {
+                    {pagedExams.map((exam, i) => {
                       const total = submissionCountByExam.get(exam.id) ?? 0;
                       const pending = pendingCountByExam.get(exam.id) ?? 0;
                       return (
-                        <TableRow key={exam.id}>
+                        <TableRow
+                          key={exam.id}
+                          style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
+                          className="animate-in fade-in-0 fill-mode-both duration-300"
+                        >
                           <TableCell className="max-w-64 whitespace-normal font-medium text-foreground">
                             {exam.title}
                           </TableCell>

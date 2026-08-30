@@ -14,15 +14,18 @@ function AdListingRow({
   listing,
   signInLabel,
   viewClassLabel,
+  index,
 }: {
   listing: Listing;
   signInLabel: string;
   viewClassLabel: string;
+  index?: number;
 }) {
   return (
     <Link
       href={listing.href}
-      className="flex flex-col gap-3.5 rounded-lg border border-border bg-white p-4 transition-colors hover:border-primary sm:flex-row sm:items-center"
+      style={index !== undefined ? { animationDelay: `${Math.min(index, 10) * 35}ms` } : undefined}
+      className="flex flex-col gap-3.5 rounded-lg border border-border bg-white p-4 transition-colors animate-in fade-in-0 slide-in-from-bottom-1 fill-mode-both duration-300 hover:border-primary sm:flex-row sm:items-center"
     >
       <div className="h-16 w-16 shrink-0 rounded-md bg-gradient-to-br from-primary to-primary-light" />
 
@@ -106,12 +109,13 @@ export function AdBoard({ listings }: { listings: Listing[] }) {
 
           <div className="space-y-3">
             {filteredListings.length > 0 ? (
-              filteredListings.map((listing) => (
+              filteredListings.map((listing, i) => (
                 <AdListingRow
                   key={listing.id}
                   listing={listing}
                   signInLabel={tl("signInForContact")}
                   viewClassLabel={tl("viewClass")}
+                  index={i}
                 />
               ))
             ) : (

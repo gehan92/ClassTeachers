@@ -462,7 +462,7 @@ function DashboardShellInner({
           return (
             <div
               className={cn(
-                "z-40 flex shrink-0 flex-wrap items-center justify-between gap-2.5 border-b-2 bg-white px-5 py-2 shadow-[0_1px_2px_rgba(14,33,29,0.07)]",
+                "z-40 flex shrink-0 flex-wrap items-center justify-between gap-2.5 border-b-2 bg-white px-5 py-2 shadow-[0_1px_2px_rgba(14,33,29,0.07)] animate-in fade-in-0 slide-in-from-top-2 duration-200",
                 isExposed ? "border-b-destructive" : "border-b-success",
               )}
             >
@@ -556,7 +556,13 @@ function DashboardShellInner({
                 />
               </div>
             )}
-            <div style={{ display: activeCall && !activeCall.minimized ? "none" : "block" }}>{panels[activeTab]}</div>
+            <div
+              key={activeTab}
+              style={{ display: activeCall && !activeCall.minimized ? "none" : "block" }}
+              className="animate-in fade-in-0 slide-in-from-bottom-1 duration-200"
+            >
+              {panels[activeTab]}
+            </div>
           </div>
         </main>
       </div>

@@ -261,7 +261,7 @@ export function BatchesTab({
           <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-3">
-          {added && <span className="text-sm font-medium text-success">{t("added")}</span>}
+          {added && <span className="animate-in fade-in-0 text-sm font-medium text-success duration-200">{t("added")}</span>}
           <Button onClick={() => setShowForm(true)}>{t("addBatch")}</Button>
         </div>
       </div>
@@ -443,12 +443,16 @@ export function BatchesTab({
           ) : (
             <>
               <div className="flex flex-col gap-4">
-                {pagedBatches.map((batch) => {
+                {pagedBatches.map((batch, i) => {
                   const isEditing = editingBatchId === batch.id;
                   const isExpanded = expandedIds.has(batch.id);
                   const roster = rosterByBatch[batch.id] ?? [];
                   return (
-                    <div key={batch.id} className="rounded-lg border border-border bg-white p-4.5">
+                    <div
+                      key={batch.id}
+                      style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
+                      className="animate-in fade-in-0 slide-in-from-bottom-1 fill-mode-both rounded-lg border border-border bg-white p-4.5 duration-300"
+                    >
                       {isEditing ? (
                         <div className="rounded-md border border-border bg-muted/30 p-4">
                           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

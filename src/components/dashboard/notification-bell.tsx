@@ -115,7 +115,10 @@ export function NotificationBell({
       >
         <Bell className="size-4.5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-cta font-mono text-[9px] font-bold text-cta-foreground">
+          <span
+            key={unreadCount}
+            className="absolute -top-0.5 -right-0.5 flex size-4 animate-in zoom-in-50 items-center justify-center rounded-full bg-cta font-mono text-[9px] font-bold text-cta-foreground duration-200"
+          >
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -138,16 +141,20 @@ export function NotificationBell({
           <p className="px-3 py-6 text-center text-sm text-muted-foreground">{t("empty")}</p>
         ) : (
           <div className="max-h-96 overflow-y-auto py-1">
-            {notifications.map((n) => {
+            {notifications.map((n, i) => {
               const isUnread = !n.readAt && !readIds.has(n.id);
               return (
                 <DropdownMenuItem
                   key={n.id}
                   onClick={() => handleClickItem(n)}
-                  className={cn("flex-col items-start gap-0.5 whitespace-normal rounded-md px-3 py-2", isUnread && "bg-primary/5")}
+                  style={{ animationDelay: `${Math.min(i, 8) * 25}ms` }}
+                  className={cn(
+                    "flex-col items-start gap-0.5 whitespace-normal rounded-md px-3 py-2 animate-in fade-in-0 slide-in-from-top-1 fill-mode-both duration-200",
+                    isUnread && "bg-primary/5",
+                  )}
                 >
                   <div className="flex w-full items-start gap-2">
-                    {isUnread && <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-cta" />}
+                    {isUnread && <span className="mt-1.5 size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />}
                     <span className={cn("flex-1 text-[13px] leading-snug text-foreground", !isUnread && "text-muted-foreground")}>
                       {messageFor(t, n)}
                     </span>

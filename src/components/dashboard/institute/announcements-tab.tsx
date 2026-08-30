@@ -95,7 +95,7 @@ export function AnnouncementsTab({ announcements }: { announcements: InstituteAn
             <Button type="button" onClick={handlePost} disabled={posting}>
               {t("form.submit")}
             </Button>
-            {posted && <span className="text-sm font-medium text-success">{t("posted")}</span>}
+            {posted && <span className="animate-in fade-in-0 text-sm font-medium text-success duration-200">{t("posted")}</span>}
             {error && <span className="text-sm font-medium text-destructive">{error}</span>}
           </div>
         </div>

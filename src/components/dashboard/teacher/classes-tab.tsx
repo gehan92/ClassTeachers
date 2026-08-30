@@ -217,7 +217,7 @@ export function ClassesTab({
           <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-3">
-          {added && <span className="text-sm font-medium text-success">{tc("added")}</span>}
+          {added && <span className="animate-in fade-in-0 text-sm font-medium text-success duration-200">{tc("added")}</span>}
           <Button onClick={() => setShowForm((v) => !v)}>
             {isCampusLecturer ? t("addBatchCampus") : t("addBatch")}
           </Button>

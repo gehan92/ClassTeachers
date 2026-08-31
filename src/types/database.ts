@@ -76,6 +76,7 @@ export type Database = {
           notification_prefs: Json;
           preferred_locale: string;
           referral_code: string | null;
+          profile_completed_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -104,6 +105,7 @@ export type Database = {
           notification_prefs?: Json;
           preferred_locale?: string;
           referral_code?: string | null;
+          profile_completed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -132,6 +134,7 @@ export type Database = {
           notification_prefs?: Json;
           preferred_locale?: string;
           referral_code?: string | null;
+          profile_completed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

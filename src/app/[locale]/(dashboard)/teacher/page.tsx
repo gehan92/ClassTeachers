@@ -24,6 +24,7 @@ import { AdvertisementTab } from "@/components/dashboard/teacher/advertisement-t
 import type { TeacherAdBatchRow } from "@/components/dashboard/teacher/advertisement-tab";
 import { SettingsTab, type InstituteInviteRow } from "@/components/dashboard/teacher/settings-tab";
 import { TeacherProfileView } from "@/components/features/teacher-profile-view";
+import { TeacherOnboardingWizard } from "@/components/onboarding/teacher-onboarding-wizard";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import type { TeacherProfileDetail } from "@/types/teacher-profile";
@@ -66,6 +67,44 @@ export default async function TeacherDashboardPage({
   } = await supabase.auth.getUser();
   // proxy.ts already gates this route behind an authenticated session.
   const userId = user!.id;
+
+  // Onboarding gate (0107) — checked before any of the heavier dashboard
+  // queries below run, so an incomplete profile never fetches (let alone
+  // renders) real dashboard data. profile_completed_at lives on `profiles`
+  // regardless of role; existing accounts were backfilled to non-null in
+  // the same migration, so this only affects accounts created afterward.
+  const [{ data: gateProfile }, { data: gateTeacherProfile }] = await Promise.all([
+    supabase.from("profiles").select("role, profile_completed_at").eq("id", userId).single(),
+    supabase
+      .from("teacher_profiles")
+      .select("headline, bio, class_type, institution, academic_title, qualifications, work_experience, publications, experience_years, location, languages")
+      .eq("id", userId)
+      .maybeSingle(),
+  ]);
+  if (gateProfile && !gateProfile.profile_completed_at && gateProfile.role !== "admin") {
+    const isCampusLecturer = gateProfile.role === "campus_lecturer";
+    return (
+      <TeacherOnboardingWizard
+        isCampusLecturer={isCampusLecturer}
+        initial={{
+          headline: gateTeacherProfile?.headline ?? "",
+          bio: gateTeacherProfile?.bio ?? "",
+          classType: gateTeacherProfile?.class_type ?? "both",
+          institution: gateTeacherProfile?.institution ?? "",
+          academicTitle: gateTeacherProfile?.academic_title ?? "",
+          qualifications: (gateTeacherProfile?.qualifications ?? []).join(", "),
+          workExperience: (gateTeacherProfile?.work_experience ?? []).join(", "),
+          publications: (gateTeacherProfile?.publications ?? []).join(", "),
+          experienceYears: gateTeacherProfile?.experience_years?.toString() ?? "",
+          location: gateTeacherProfile?.location ?? "",
+          languages: (gateTeacherProfile?.languages ?? []).join(", "),
+          hourlyRate: "",
+          monthlyRate: "",
+        }}
+      />
+    );
+  }
+
   const dateFormatter = createDateFormatter(locale);
   const scheduleFormatter = createScheduleFormatter(locale);
 

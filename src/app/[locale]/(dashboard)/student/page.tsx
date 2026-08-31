@@ -26,6 +26,7 @@ import type { StudentExamRow, StudentExamQuestion } from "@/components/dashboard
 import type { StudentAssignmentRow } from "@/components/dashboard/student/assignments-tab";
 import type { WantedAdRow, WantedAdResponseRow } from "@/components/dashboard/student/wanted-ads-tab";
 import type { PublicWantedAd } from "@/components/features/wanted-ads-board";
+import { StudentOnboardingWizard } from "@/components/onboarding/student-onboarding-wizard";
 
 type RawQuestionOption = { id: string; text: string; imagePath?: string };
 type RawLiveClassRow = {
@@ -60,6 +61,37 @@ export default async function StudentDashboardPage({
   } = await supabase.auth.getUser();
   // proxy.ts already gates this route behind an authenticated session.
   const userId = user!.id;
+
+  // Onboarding gate (0107) — checked before any of the heavier dashboard
+  // queries below run, so an incomplete profile never fetches (let alone
+  // renders) real dashboard data. Applies to parent accounts too — they
+  // resolve to role "student" under the hood (see signUpAction's comment).
+  const { data: gateProfile } = await supabase
+    .from("profiles")
+    .select(
+      "full_name, role, profile_completed_at, date_of_birth, education_level, grade_level, location, preferred_mode, subjects, learning_goals, languages, achievements, interests",
+    )
+    .eq("id", userId)
+    .single();
+  if (gateProfile && !gateProfile.profile_completed_at && gateProfile.role !== "admin") {
+    return (
+      <StudentOnboardingWizard
+        initial={{
+          fullName: gateProfile.full_name,
+          dateOfBirth: gateProfile.date_of_birth ?? "",
+          educationLevel: gateProfile.education_level ?? "",
+          gradeLevel: gateProfile.grade_level ?? "",
+          location: gateProfile.location ?? "",
+          preferredMode: gateProfile.preferred_mode ?? "",
+          subjects: (gateProfile.subjects ?? []).join(", "),
+          learningGoals: gateProfile.learning_goals ?? "",
+          languages: (gateProfile.languages ?? []).join(", "),
+          achievements: (gateProfile.achievements ?? []).join(", "),
+          interests: (gateProfile.interests ?? []).join(", "),
+        }}
+      />
+    );
+  }
 
   // Stage 1 — every query below only needs userId (or nothing at all,
   // relying purely on RLS), not each other's results, so they all run as

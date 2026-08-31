@@ -97,6 +97,127 @@
       "class": "institute"
     }
   },
+  "onboarding": {
+    "common": {
+      "stepOf": "Step {step} of {total}",
+      "back": "Back",
+      "next": "Next",
+      "finish": "Finish",
+      "saving": "Saving…"
+    },
+    "student": {
+      "subtitle": "A few quick things so teachers and institutes can actually find and help you.",
+      "step1": {
+        "title": "Who you are",
+        "dobLabel": "Date of birth",
+        "educationLabel": "Education level",
+        "educationPlaceholder": "Select your education level",
+        "gradeLabel": "Grade",
+        "gradePlaceholder": "e.g. Grade 10, A/L 2027"
+      },
+      "educationLevels": {
+        "school": "School",
+        "campus": "University / Campus",
+        "graduated": "Graduated"
+      },
+      "step2": {
+        "title": "Where you're learning from",
+        "locationLabel": "Location",
+        "locationPlaceholder": "e.g. Colombo 05",
+        "modeLabel": "Preferred mode",
+        "modePlaceholder": "Select a mode"
+      },
+      "preferredModes": {
+        "online": "Online",
+        "in_person": "In person",
+        "both": "Both"
+      },
+      "step3": {
+        "title": "What you're here to learn",
+        "subjectsLabel": "Subjects of interest",
+        "subjectsPlaceholder": "e.g. Combined Maths, Chemistry",
+        "goalsLabel": "Learning goals",
+        "goalsPlaceholder": "What are you hoping to achieve?",
+        "languagesLabel": "Languages",
+        "languagesPlaceholder": "e.g. English, Sinhala"
+      },
+      "step4": {
+        "title": "Anything else worth knowing",
+        "achievementsLabel": "Achievements",
+        "achievementsPlaceholder": "e.g. School prefect, Maths olympiad finalist",
+        "interestsLabel": "Interests",
+        "interestsPlaceholder": "e.g. Chess, robotics, debating",
+        "photoLabel": "Profile photo",
+        "uploading": "Uploading…",
+        "uploadPhoto": "Upload photo"
+      }
+    },
+    "teacher": {
+      "subtitle": "A few more details so students and institutes can trust what they see.",
+      "subtitleCampus": "A few more details so students can trust what they see.",
+      "step1": {
+        "title": "Your background",
+        "titleCampus": "Your academic record",
+        "qualificationsLabel": "Qualifications",
+        "qualificationsPlaceholder": "e.g. BSc Mathematics, PGDE",
+        "experienceLabel": "Years of experience",
+        "publicationsLabel": "Publications",
+        "publicationsPlaceholder": "e.g. Journal articles, papers (optional)",
+        "workExperienceLabel": "Work experience",
+        "workExperiencePlaceholder": "e.g. Royal College (2019–2023) (optional)"
+      },
+      "step2": {
+        "title": "Where you teach",
+        "locationLabel": "Location",
+        "locationPlaceholder": "e.g. Colombo 05",
+        "languagesLabel": "Languages",
+        "languagesPlaceholder": "e.g. English, Sinhala (optional)"
+      },
+      "stepVerification": {
+        "title": "Verification",
+        "documentLabel": "Verification document",
+        "documentHint": "A staff ID, appointment letter, or similar — helps students trust your listing.",
+        "uploading": "Uploading…",
+        "uploaded": "Uploaded",
+        "upload": "Upload document"
+      },
+      "step3": {
+        "title": "Your rate and photo",
+        "hourlyLabel": "Hourly rate (Rs.)",
+        "monthlyLabel": "Monthly rate (Rs.)",
+        "rateHint": "Set at least one — you can add the other later.",
+        "photoLabel": "Profile photo",
+        "uploading": "Uploading…",
+        "uploadPhoto": "Upload photo"
+      }
+    },
+    "institute": {
+      "subtitle": "A few more details so students know who they're joining.",
+      "step1": {
+        "title": "Tell students about the institute",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "What makes your institute worth joining?",
+        "establishedLabel": "Year established",
+        "establishedPlaceholder": "e.g. 2015"
+      },
+      "step2": {
+        "title": "How to reach you",
+        "phoneLabel": "Contact phone",
+        "phonePlaceholder": "e.g. 011 234 5678",
+        "documentLabel": "Verification document (optional)",
+        "documentHint": "A business registration or similar — helps your listing get verified faster.",
+        "uploading": "Uploading…",
+        "uploaded": "Uploaded",
+        "upload": "Upload document"
+      },
+      "step3": {
+        "title": "Logo",
+        "photoLabel": "Institute logo",
+        "uploading": "Uploading…",
+        "uploadPhoto": "Upload logo"
+      }
+    }
+  },
   "language": {
     "label": "Language"
   },

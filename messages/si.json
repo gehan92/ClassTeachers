@@ -97,6 +97,127 @@
       "class": "ආයතන"
     }
   },
+  "onboarding": {
+    "common": {
+      "stepOf": "පියවර {step} / {total}",
+      "back": "ආපසු",
+      "next": "ඊළඟට",
+      "finish": "අවසන් කරන්න",
+      "saving": "සුරකිමින්…"
+    },
+    "student": {
+      "subtitle": "ගුරුවරුන්ට සහ ආයතනවලට ඔබව සොයාගෙන උදව් කිරීමට ටිකක් තොරතුරු.",
+      "step1": {
+        "title": "ඔබ කවුරුන්ද",
+        "dobLabel": "උපන් දිනය",
+        "educationLabel": "අධ්‍යාපන මට්ටම",
+        "educationPlaceholder": "ඔබේ අධ්‍යාපන මට්ටම තෝරන්න",
+        "gradeLabel": "ශ්‍රේණිය",
+        "gradePlaceholder": "උදා: ශ්‍රේණිය 10, A/L 2027"
+      },
+      "educationLevels": {
+        "school": "පාසල",
+        "campus": "විශ්ව විද්‍යාලය / කැම්පස්",
+        "graduated": "උපාධිධාරී"
+      },
+      "step2": {
+        "title": "ඔබ ඉගෙන ගන්නේ කොහෙන්ද",
+        "locationLabel": "ස්ථානය",
+        "locationPlaceholder": "උදා: කොළඹ 05",
+        "modeLabel": "කැමති ක්‍රමය",
+        "modePlaceholder": "ක්‍රමයක් තෝරන්න"
+      },
+      "preferredModes": {
+        "online": "මාර්ගගත",
+        "in_person": "සෘජුව",
+        "both": "දෙකම"
+      },
+      "step3": {
+        "title": "ඔබ ඉගෙන ගැනීමට කැමති දේ",
+        "subjectsLabel": "කැමති විෂයයන්",
+        "subjectsPlaceholder": "උදා: සංයුක්ත ගණිතය, රසායන විද්‍යාව",
+        "goalsLabel": "ඉගෙනුම් ඉලක්ක",
+        "goalsPlaceholder": "ඔබ බලාපොරොත්තු වන්නේ කුමක්ද?",
+        "languagesLabel": "භාෂාවන්",
+        "languagesPlaceholder": "උදා: ඉංග්‍රීසි, සිංහල"
+      },
+      "step4": {
+        "title": "දැනගත යුතු වෙනත් දේ",
+        "achievementsLabel": "ජයග්‍රහණ",
+        "achievementsPlaceholder": "උදා: පාසල් ප්‍රාථමිකයා, ගණිත ඔලිම්පියාඩ් අවසන් වටය",
+        "interestsLabel": "රුචිකත්වයන්",
+        "interestsPlaceholder": "උදා: චෙස්, රොබෝටික්ස්, විවාද",
+        "photoLabel": "පැතිකඩ ඡායාරූපය",
+        "uploading": "උඩුගත කරමින්…",
+        "uploadPhoto": "ඡායාරූපය උඩුගත කරන්න"
+      }
+    },
+    "teacher": {
+      "subtitle": "සිසුන්ට සහ ආයතනවලට ඔබ ගැන විශ්වාස කළ හැකි වීමට තව කිහිපයක්.",
+      "subtitleCampus": "සිසුන්ට ඔබ ගැන විශ්වාස කළ හැකි වීමට තව කිහිපයක්.",
+      "step1": {
+        "title": "ඔබේ පසුබිම",
+        "titleCampus": "ඔබේ අධ්‍යාපන වාර්තාව",
+        "qualificationsLabel": "සුදුසුකම්",
+        "qualificationsPlaceholder": "උදා: BSc ගණිතය, PGDE",
+        "experienceLabel": "පළපුරුද්ද (වසර)",
+        "publicationsLabel": "ප්‍රකාශන",
+        "publicationsPlaceholder": "උදා: සඟරා ලිපි (විකල්පයි)",
+        "workExperienceLabel": "රැකියා පළපුරුද්ද",
+        "workExperiencePlaceholder": "උදා: රාජකීය විද්‍යාලය (2019–2023) (විකල්පයි)"
+      },
+      "step2": {
+        "title": "ඔබ උගන්වන්නේ කොහෙන්ද",
+        "locationLabel": "ස්ථානය",
+        "locationPlaceholder": "උදා: කොළඹ 05",
+        "languagesLabel": "භාෂාවන්",
+        "languagesPlaceholder": "උදා: ඉංග්‍රීසි, සිංහල (විකල්පයි)"
+      },
+      "stepVerification": {
+        "title": "සත්‍යාපනය",
+        "documentLabel": "සත්‍යාපන ලේඛනය",
+        "documentHint": "කාර්ය මණ්ඩල හැඳුනුම්පතක්, පත්වීම් ලිපියක් හෝ ඒ හා සමාන දෙයක් — සිසුන්ට ඔබේ ලැයිස්තුව විශ්වාස කිරීමට උපකාරී වේ.",
+        "uploading": "උඩුගත කරමින්…",
+        "uploaded": "උඩුගත කර ඇත",
+        "upload": "ලේඛනය උඩුගත කරන්න"
+      },
+      "step3": {
+        "title": "ඔබේ මිල සහ ඡායාරූපය",
+        "hourlyLabel": "පැයට මිල (රු.)",
+        "monthlyLabel": "මසකට මිල (රු.)",
+        "rateHint": "අවම වශයෙන් එකක් සකසන්න — අනෙක පසුව එකතු කළ හැක.",
+        "photoLabel": "පැතිකඩ ඡායාරූපය",
+        "uploading": "උඩුගත කරමින්…",
+        "uploadPhoto": "ඡායාරූපය උඩුගත කරන්න"
+      }
+    },
+    "institute": {
+      "subtitle": "සිසුන්ට තමන් එකතු වන්නේ කාටද කියා දැන ගැනීමට තව කිහිපයක්.",
+      "step1": {
+        "title": "ආයතනය ගැන සිසුන්ට කියන්න",
+        "descriptionLabel": "විස්තරය",
+        "descriptionPlaceholder": "ඔබේ ආයතනයට එකතු වීම වටින්නේ ඇයි?",
+        "establishedLabel": "ආරම්භ කළ වර්ෂය",
+        "establishedPlaceholder": "උදා: 2015"
+      },
+      "step2": {
+        "title": "ඔබව සම්බන්ධ කර ගන්නේ කෙසේද",
+        "phoneLabel": "සම්බන්ධතා දුරකථනය",
+        "phonePlaceholder": "උදා: 011 234 5678",
+        "documentLabel": "සත්‍යාපන ලේඛනය (විකල්පයි)",
+        "documentHint": "ව්‍යාපාර ලියාපදිංචියක් හෝ ඒ හා සමාන දෙයක් — ඔබේ ලැයිස්තුව වේගයෙන් සත්‍යාපනය වීමට උපකාරී වේ.",
+        "uploading": "උඩුගත කරමින්…",
+        "uploaded": "උඩුගත කර ඇත",
+        "upload": "ලේඛනය උඩුගත කරන්න"
+      },
+      "step3": {
+        "title": "ලාංඡනය",
+        "photoLabel": "ආයතන ලාංඡනය",
+        "uploading": "උඩුගත කරමින්…",
+        "uploadPhoto": "ලාංඡනය උඩුගත කරන්න"
+      }
+    }
+  },
   "language": {
     "label": "භාෂාව"
   },

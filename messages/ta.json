@@ -97,6 +97,127 @@
       "class": "நிறுவனம்"
     }
   },
+  "onboarding": {
+    "common": {
+      "stepOf": "படி {step} / {total}",
+      "back": "பின்",
+      "next": "அடுத்து",
+      "finish": "முடிக்கவும்",
+      "saving": "சேமிக்கிறது…"
+    },
+    "student": {
+      "subtitle": "ஆசிரியர்களும் நிறுவனங்களும் உங்களைக் கண்டறிந்து உதவ சில விரைவான விவரங்கள்.",
+      "step1": {
+        "title": "நீங்கள் யார்",
+        "dobLabel": "பிறந்த தேதி",
+        "educationLabel": "கல்வி நிலை",
+        "educationPlaceholder": "உங்கள் கல்வி நிலையைத் தேர்ந்தெடுக்கவும்",
+        "gradeLabel": "தரம்",
+        "gradePlaceholder": "எ.கா. தரம் 10, A/L 2027"
+      },
+      "educationLevels": {
+        "school": "பள்ளி",
+        "campus": "பல்கலைக்கழகம் / வளாகம்",
+        "graduated": "பட்டதாரி"
+      },
+      "step2": {
+        "title": "நீங்கள் எங்கிருந்து கற்கிறீர்கள்",
+        "locationLabel": "இடம்",
+        "locationPlaceholder": "எ.கா. கொழும்பு 05",
+        "modeLabel": "விருப்பமான முறை",
+        "modePlaceholder": "ஒரு முறையைத் தேர்ந்தெடுக்கவும்"
+      },
+      "preferredModes": {
+        "online": "ஆன்லைன்",
+        "in_person": "நேரடி",
+        "both": "இரண்டும்"
+      },
+      "step3": {
+        "title": "நீங்கள் கற்க வந்திருப்பது என்ன",
+        "subjectsLabel": "விருப்ப பாடங்கள்",
+        "subjectsPlaceholder": "எ.கா. கூட்டு கணிதம், வேதியியல்",
+        "goalsLabel": "கற்றல் இலக்குகள்",
+        "goalsPlaceholder": "நீங்கள் எதை அடைய விரும்புகிறீர்கள்?",
+        "languagesLabel": "மொழிகள்",
+        "languagesPlaceholder": "எ.கா. ஆங்கிலம், சிங்களம்"
+      },
+      "step4": {
+        "title": "தெரிந்திருக்க வேண்டிய மற்றவை",
+        "achievementsLabel": "சாதனைகள்",
+        "achievementsPlaceholder": "எ.கா. பள்ளி பிரிபெக்ட், கணித ஒலிம்பியாட் இறுதிப் போட்டியாளர்",
+        "interestsLabel": "ஆர்வங்கள்",
+        "interestsPlaceholder": "எ.கா. சதுரங்கம், ரோபோட்டிக்ஸ், விவாதம்",
+        "photoLabel": "சுயவிவரப் புகைப்படம்",
+        "uploading": "பதிவேற்றுகிறது…",
+        "uploadPhoto": "புகைப்படத்தைப் பதிவேற்றவும்"
+      }
+    },
+    "teacher": {
+      "subtitle": "மாணவர்களும் நிறுவனங்களும் நீங்கள் காண்பிப்பதை நம்ப சில கூடுதல் விவரங்கள்.",
+      "subtitleCampus": "மாணவர்கள் நீங்கள் காண்பிப்பதை நம்ப சில கூடுதல் விவரங்கள்.",
+      "step1": {
+        "title": "உங்கள் பின்னணி",
+        "titleCampus": "உங்கள் கல்விப் பதிவு",
+        "qualificationsLabel": "தகுதிகள்",
+        "qualificationsPlaceholder": "எ.கா. BSc கணிதம், PGDE",
+        "experienceLabel": "அனுபவ ஆண்டுகள்",
+        "publicationsLabel": "வெளியீடுகள்",
+        "publicationsPlaceholder": "எ.கா. இதழ் கட்டுரைகள் (விருப்பமானது)",
+        "workExperienceLabel": "பணி அனுபவம்",
+        "workExperiencePlaceholder": "எ.கா. ராயல் கல்லூரி (2019–2023) (விருப்பமானது)"
+      },
+      "step2": {
+        "title": "நீங்கள் எங்கு கற்பிக்கிறீர்கள்",
+        "locationLabel": "இடம்",
+        "locationPlaceholder": "எ.கா. கொழும்பு 05",
+        "languagesLabel": "மொழிகள்",
+        "languagesPlaceholder": "எ.கா. ஆங்கிலம், சிங்களம் (விருப்பமானது)"
+      },
+      "stepVerification": {
+        "title": "சரிபார்ப்பு",
+        "documentLabel": "சரிபார்ப்பு ஆவணம்",
+        "documentHint": "பணியாளர் அடையாள அட்டை, நியமனக் கடிதம் அல்லது அது போன்றது — உங்கள் பட்டியலை மாணவர்கள் நம்ப உதவும்.",
+        "uploading": "பதிவேற்றுகிறது…",
+        "uploaded": "பதிவேற்றப்பட்டது",
+        "upload": "ஆவணத்தைப் பதிவேற்றவும்"
+      },
+      "step3": {
+        "title": "உங்கள் கட்டணமும் புகைப்படமும்",
+        "hourlyLabel": "மணிநேர கட்டணம் (Rs.)",
+        "monthlyLabel": "மாத கட்டணம் (Rs.)",
+        "rateHint": "குறைந்தது ஒன்றையாவது அமைக்கவும் — மற்றொன்றை பின்னர் சேர்க்கலாம்.",
+        "photoLabel": "சுயவிவரப் புகைப்படம்",
+        "uploading": "பதிவேற்றுகிறது…",
+        "uploadPhoto": "புகைப்படத்தைப் பதிவேற்றவும்"
+      }
+    },
+    "institute": {
+      "subtitle": "தாங்கள் யாருடன் இணைகிறோம் என்பதை மாணவர்கள் அறிய சில கூடுதல் விவரங்கள்.",
+      "step1": {
+        "title": "நிறுவனத்தைப் பற்றி மாணவர்களிடம் கூறுங்கள்",
+        "descriptionLabel": "விளக்கம்",
+        "descriptionPlaceholder": "உங்கள் நிறுவனத்தில் சேருவது ஏன் மதிப்புக்குரியது?",
+        "establishedLabel": "நிறுவப்பட்ட ஆண்டு",
+        "establishedPlaceholder": "எ.கா. 2015"
+      },
+      "step2": {
+        "title": "உங்களை எவ்வாறு தொடர்பு கொள்வது",
+        "phoneLabel": "தொடர்பு தொலைபேசி",
+        "phonePlaceholder": "எ.கா. 011 234 5678",
+        "documentLabel": "சரிபார்ப்பு ஆவணம் (விருப்பமானது)",
+        "documentHint": "வணிக பதிவு அல்லது அது போன்றது — உங்கள் பட்டியல் வேகமாக சரிபார்க்கப்பட உதவும்.",
+        "uploading": "பதிவேற்றுகிறது…",
+        "uploaded": "பதிவேற்றப்பட்டது",
+        "upload": "ஆவணத்தைப் பதிவேற்றவும்"
+      },
+      "step3": {
+        "title": "லோகோ",
+        "photoLabel": "நிறுவன லோகோ",
+        "uploading": "பதிவேற்றுகிறது…",
+        "uploadPhoto": "லோகோவைப் பதிவேற்றவும்"
+      }
+    }
+  },
   "language": {
     "label": "மொழி"
   },

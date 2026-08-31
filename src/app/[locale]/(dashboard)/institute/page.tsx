@@ -20,6 +20,7 @@ import type {
 import { CalendarTab, type InstituteCalendarSession } from "@/components/dashboard/institute/calendar-tab";
 import { AnnouncementsTab, type InstituteAnnouncementRow } from "@/components/dashboard/institute/announcements-tab";
 import { ClassProfileView } from "@/components/features/class-profile-view";
+import { InstituteOnboardingWizard } from "@/components/onboarding/institute-onboarding-wizard";
 import { loadClassProfile } from "@/lib/load-class-profile";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter } from "@/lib/format-date";
@@ -51,7 +52,7 @@ export default async function InstituteDashboardPage({
     { data: myReferralRows },
     { data: notificationRows },
   ] = await Promise.all([
-    supabase.from("profiles").select("full_name, phone, notification_prefs").eq("id", userId).single(),
+    supabase.from("profiles").select("full_name, phone, notification_prefs, role, profile_completed_at").eq("id", userId).single(),
     supabase.from("class_profiles").select("*").eq("owner_id", userId).maybeSingle(),
     // Refer & Earn panel (Settings tab) — lazily assigns a code the first
     // time it's asked for (referrals, 0089), nothing to backfill up front.
@@ -73,6 +74,27 @@ export default async function InstituteDashboardPage({
     readAt: n.read_at,
     createdAt: n.created_at,
   }));
+
+  // Onboarding gate (0107) — checked before any of the heavier
+  // batches/teachers/reviews queries further down run, so an incomplete
+  // profile never fetches (let alone renders) real dashboard data. Both
+  // `profile` and `classProfile` were already fetched above for other
+  // reasons, so this needs no extra query.
+  if (profile && !profile.profile_completed_at && profile.role !== "admin") {
+    return (
+      <InstituteOnboardingWizard
+        initial={{
+          name: classProfile?.name ?? "",
+          location: classProfile?.location ?? "",
+          description: classProfile?.description ?? "",
+          established: classProfile?.established ?? "",
+          phone: profile.phone ?? "",
+          hourlyRate: "",
+          monthlyRate: "",
+        }}
+      />
+    );
+  }
 
   const fullName = profile?.full_name ?? user!.email ?? "Institute";
   const userInitial = fullName.charAt(0).toUpperCase();

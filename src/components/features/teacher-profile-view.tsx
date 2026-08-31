@@ -110,11 +110,11 @@ function Hero({
             <img
               src={teacher.photoUrl}
               alt=""
-              className="mx-auto size-28 shrink-0 rounded-full border-4 border-white object-cover shadow-md sm:mx-0 sm:size-36"
+              className="mx-auto size-20 shrink-0 rounded-full border-4 border-white object-cover shadow-md sm:mx-0"
             />
           ) : (
             <div
-              className={`mx-auto flex size-28 shrink-0 items-center justify-center rounded-full border-4 border-white font-display text-4xl font-bold text-white shadow-md sm:mx-0 sm:size-36 ${avatarGradientClass(teacher.id)}`}
+              className={`mx-auto flex size-20 shrink-0 items-center justify-center rounded-full border-4 border-white font-display text-2xl font-bold text-white shadow-md sm:mx-0 ${avatarGradientClass(teacher.id)}`}
             >
               {teacher.avatarInitials}
             </div>

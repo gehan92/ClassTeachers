@@ -233,11 +233,11 @@ function ProfileCard({
             <img
               src={photoUrl}
               alt=""
-              className="mx-auto size-28 shrink-0 rounded-full border-4 border-white object-cover shadow-md sm:mx-0"
+              className="mx-auto size-20 shrink-0 rounded-full border-4 border-white object-cover shadow-md sm:mx-0"
             />
           ) : (
             <div
-              className={`mx-auto flex size-28 shrink-0 items-center justify-center rounded-full border-4 border-white font-display text-3xl font-bold text-white shadow-md sm:mx-0 ${avatarGradientClass(name)}`}
+              className={`mx-auto flex size-20 shrink-0 items-center justify-center rounded-full border-4 border-white font-display text-2xl font-bold text-white shadow-md sm:mx-0 ${avatarGradientClass(name)}`}
             >
               {name.charAt(0).toUpperCase()}
             </div>

@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { BadgeCheck, Star } from "lucide-react";
+import { BadgeCheck, BookOpen, GraduationCap, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { LockPill } from "./lock-pill";
 import { avatarGradientClass } from "@/lib/avatar-color";
@@ -15,6 +15,11 @@ export function ListingCard({ listing, index }: { listing: Listing; index?: numb
       className="flex flex-col overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)] transition-transform animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-500 hover:-translate-y-0.5"
     >
       <div className="relative flex h-33 items-end bg-gradient-to-br from-primary to-primary-light p-3">
+        {listing.kind === "class" ? (
+          <BookOpen className="pointer-events-none absolute -right-3 -top-3 size-24 text-white/10" aria-hidden />
+        ) : (
+          <GraduationCap className="pointer-events-none absolute -right-3 -top-3 size-24 text-white/10" aria-hidden />
+        )}
         <span className="rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white">
           {listing.gradeChip}
         </span>
@@ -23,18 +28,18 @@ export function ListingCard({ listing, index }: { listing: Listing; index?: numb
           <img
             src={listing.photoUrl}
             alt=""
-            className="absolute -bottom-5.5 right-3.5 size-14 rounded-full border-4 border-white object-cover shadow-sm"
+            className="absolute -bottom-8.5 right-3.5 size-22 rounded-full border-4 border-white object-cover shadow-sm"
           />
         ) : (
           <div
-            className={`absolute -bottom-5.5 right-3.5 flex size-14 items-center justify-center rounded-full border-4 border-white font-display text-lg font-bold text-white shadow-sm ${avatarGradientClass(listing.id)}`}
+            className={`absolute -bottom-8.5 right-3.5 flex size-22 items-center justify-center rounded-full border-4 border-white font-display text-2xl font-bold text-white shadow-sm ${avatarGradientClass(listing.id)}`}
           >
             {listing.avatarInitials}
           </div>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col px-4 pb-4 pt-7.5">
+      <div className="flex flex-1 flex-col px-4 pb-4 pt-10.5">
         <div className="flex items-center gap-1.5 font-display text-[17px] tracking-wide text-primary">
           {listing.name}
           <span title={listing.verified ? t("institutionVerified") : t("reviewed")}>

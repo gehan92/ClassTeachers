@@ -27,6 +27,7 @@ import type { StudentAssignmentRow } from "@/components/dashboard/student/assign
 import type { WantedAdRow, WantedAdResponseRow } from "@/components/dashboard/student/wanted-ads-tab";
 import type { PublicWantedAd } from "@/components/features/wanted-ads-board";
 import { StudentOnboardingWizard } from "@/components/onboarding/student-onboarding-wizard";
+import type { InstituteTeacherCard, InstituteQuickView } from "@/types/class-profile";
 
 type RawQuestionOption = { id: string; text: string; imagePath?: string };
 type RawLiveClassRow = {
@@ -221,6 +222,12 @@ export default async function StudentDashboardPage({
     .map((e) => e.id);
   const teacherIds = acceptedEnrollments.filter((e) => e.owner_type === "teacher").map((e) => e.owner_id);
   const classIds = acceptedEnrollments.filter((e) => e.owner_type === "class").map((e) => e.owner_id);
+  // Deduped separately from the arrays above — a multi-batch institute
+  // enrollment (0092) can repeat the same owner_id across several accepted
+  // rows, and each of these two feeds a one-row-per-id fetch below (the
+  // class workspace's "quick view" popups), not a per-batch one.
+  const acceptedTeacherOwnerIds = [...new Set(teacherIds)];
+  const acceptedClassOwnerIds = [...new Set(classIds)];
   const teacherOwnerIds = new Set<string>();
   const classOwnerIds = new Set<string>();
   for (const e of enrollments ?? []) (e.owner_type === "teacher" ? teacherOwnerIds : classOwnerIds).add(e.owner_id);
@@ -257,6 +264,8 @@ export default async function StudentDashboardPage({
     inquiryOnlyTeacherProfiles,
     { data: myInquiryMessageRows },
     { data: announcementRows },
+    teacherProfileResults,
+    { data: classProfileDetailRows },
   ] = await Promise.all([
     // An exam can be narrowed by batch and/or an explicit hand-picked
     // student list (0060/0061) — is_enrolled_in_exam() is the one place
@@ -340,6 +349,36 @@ export default async function StudentDashboardPage({
           .order("created_at", { ascending: false })
           .limit(5)
       : Promise.resolve({ data: [] as { id: string; owner_id: string; title: string; body: string; created_at: string }[] }),
+    // Class workspace "quick view" popups (student dashboard equivalent of
+    // the institute dashboard's own teacher quick-view) — one row per
+    // distinct enrolled teacher, same bounded-by-how-many-classes-this-
+    // student-is-actually-in shape as inquiryOnlyTeacherProfiles above.
+    // display_name comes back masked (mask_display_name is unconditional on
+    // this RPC) — deliberately ignored below in favor of teacherNameById,
+    // which already holds the real name for an accepted enrollment.
+    acceptedTeacherOwnerIds.length
+      ? Promise.all(
+          acceptedTeacherOwnerIds.map((id) => supabase.rpc("get_public_teacher_profile", { p_teacher_id: id })),
+        )
+      : Promise.resolve([]),
+    // class_profiles' SELECT policy is already public for any approved row
+    // (0005) — no RPC needed, same reasoning classOwners above relies on.
+    acceptedClassOwnerIds.length
+      ? supabase
+          .from("class_profiles")
+          .select("id, description, photo_url, location, class_type, established, institution_verified")
+          .in("id", acceptedClassOwnerIds)
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            description: string | null;
+            photo_url: string | null;
+            location: string | null;
+            class_type: "physical" | "online" | "both" | null;
+            established: string | null;
+            institution_verified: boolean;
+          }[],
+        }),
   ]);
 
   const visibleExamIdSet = new Set(visibleExamIds ?? []);
@@ -442,6 +481,46 @@ export default async function StudentDashboardPage({
   function ownerName(ownerType: "teacher" | "class", ownerId: string) {
     return (ownerType === "teacher" ? teacherNameById.get(ownerId) : classNameById.get(ownerId)) ?? "—";
   }
+
+  // Class workspace "quick view" popups (student dashboard) — reuses the
+  // exact InstituteTeacherCard shape the institute dashboard's own teacher
+  // popup already renders, so both sides of the same feature share one
+  // component (TeacherQuickProfile) with zero duplication.
+  const teacherProfiles: InstituteTeacherCard[] = teacherProfileResults.flatMap(({ data }) => {
+    const row = data?.[0];
+    if (!row) return [];
+    return [
+      {
+        id: row.id,
+        displayName: teacherNameById.get(row.id) ?? row.display_name ?? "—",
+        photoUrl: row.photo_url,
+        headline: row.headline,
+        subjects: row.subjects ?? [],
+        rating: Number(row.rating),
+        reviewCount: Number(row.review_count),
+        isCampusLecturer: row.is_campus_lecturer,
+        bio: row.bio,
+        qualifications: row.qualifications ?? [],
+        workExperience: row.work_experience ?? [],
+        experienceYears: row.experience_years,
+        languages: row.languages ?? [],
+        academicTitle: row.academic_title,
+        institution: row.institution,
+        publications: row.publications ?? [],
+      },
+    ];
+  });
+
+  const instituteProfiles: InstituteQuickView[] = (classProfileDetailRows ?? []).map((row) => ({
+    id: row.id,
+    name: classNameById.get(row.id) ?? "—",
+    photoUrl: row.photo_url,
+    description: row.description,
+    location: row.location,
+    classType: row.class_type,
+    establishedText: row.established,
+    verified: row.institution_verified,
+  }));
 
   const announcements: AnnouncementRow[] = (announcementRows ?? []).map((a) => ({
     id: a.id,
@@ -852,6 +931,8 @@ export default async function StudentDashboardPage({
             liveClasses={liveClasses}
             reminderClassIds={reminderClassIds}
             studentName={fullName}
+            teacherProfiles={teacherProfiles}
+            instituteProfiles={instituteProfiles}
           />
         ),
         live: <LiveClassesTab classes={liveClasses} studentName={fullName} reminderClassIds={reminderClassIds} />,

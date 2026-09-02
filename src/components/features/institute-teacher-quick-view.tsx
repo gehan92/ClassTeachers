@@ -90,7 +90,10 @@ export function InstituteTeachersPanel({ teachers }: { teachers: InstituteTeache
   );
 }
 
-function TeacherQuickProfile({ teacher }: { teacher: InstituteTeacherCard }) {
+/** Exported so other "already connected, credentials-only peek" surfaces —
+ * e.g. the student dashboard's class workspace — can reuse the exact same
+ * rendering instead of duplicating it for a near-identical data shape. */
+export function TeacherQuickProfile({ teacher }: { teacher: InstituteTeacherCard }) {
   const t = useTranslations("profilePage");
   const subtitle =
     teacher.isCampusLecturer && (teacher.academicTitle || teacher.institution)

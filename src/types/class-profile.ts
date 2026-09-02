@@ -28,6 +28,21 @@ export type InstituteTeacherCard = {
   publications: string[];
 };
 
+/** Lean institute summary for a "quick view" popup (the student dashboard's
+ * class-workspace equivalent of InstituteTeacherCard above) — description/
+ * verification/established only, no batches/reviews/promotions/phone, since
+ * the viewer is already an enrolled student, not someone deciding to join. */
+export type InstituteQuickView = {
+  id: string;
+  name: string;
+  photoUrl: string | null;
+  description: string | null;
+  location: string | null;
+  classType: "physical" | "online" | "both" | null;
+  establishedText: string | null;
+  verified: boolean;
+};
+
 /**
  * Full detail shape for a public institute/class profile page. Mirrors
  * class_profiles (0005) + prices (owner_type 'class') + reviews (0015) +

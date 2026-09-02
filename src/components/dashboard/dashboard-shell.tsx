@@ -377,15 +377,6 @@ function DashboardShellInner({
         </nav>
 
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            nativeButton={false}
-            render={<Link href="/advertise" />}
-            className="hidden border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white sm:inline-flex"
-          >
-            {t("postYourAd")}
-          </Button>
           <NotificationBell notifications={notifications} onNavigate={select} />
           <LocaleSwitcher className="text-white/70 hover:bg-white/10 hover:text-white" />
           {userPhotoUrl ? (
@@ -431,21 +422,17 @@ function DashboardShellInner({
                     {t(item.key)}
                   </Link>
                 ))}
-                <Link
-                  href="/advertise"
-                  className="mt-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
-                >
-                  {t("postYourAd")}
-                </Link>
-                {siteNavItems.map((item) => (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    className="rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
-                  >
-                    {t(item.key)}
-                  </Link>
-                ))}
+                <div className="mt-3 flex flex-col gap-1">
+                  {siteNavItems.map((item) => (
+                    <Link
+                      key={item.key}
+                      href={item.href}
+                      className="rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+                    >
+                      {t(item.key)}
+                    </Link>
+                  ))}
+                </div>
               </nav>
             </SheetContent>
           </Sheet>

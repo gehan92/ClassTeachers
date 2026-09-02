@@ -18,6 +18,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { useIsMounted } from "@/lib/hooks/use-is-mounted";
 import { submitExam } from "@/lib/dashboard/exams-actions";
@@ -74,8 +76,12 @@ export type StudentExamRow = {
 
 export function ExamsTab({ exams }: { exams: StudentExamRow[] }) {
   const t = useTranslations("studentDashboard.exams");
+  const tc = useTranslations("studentDashboard.common");
   const [activeExamId, setActiveExamId] = useState<string | null>(null);
   const [reviewExamId, setReviewExamId] = useState<string | null>(null);
+  const pastExams = exams.filter((exam) => exam.submission?.status === "graded");
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(pastExams.length);
+  const pagedPastExams = pastExams.slice(offset, offset + pageSize);
 
   const activeExam = activeExamId ? (exams.find((e) => e.id === activeExamId) ?? null) : null;
   if (activeExam) {
@@ -83,7 +89,6 @@ export function ExamsTab({ exams }: { exams: StudentExamRow[] }) {
   }
 
   const dueExams = exams.filter((exam) => exam.submission?.status !== "graded");
-  const pastExams = exams.filter((exam) => exam.submission?.status === "graded");
   const reviewExam = reviewExamId ? (exams.find((e) => e.id === reviewExamId) ?? null) : null;
 
   return (
@@ -125,7 +130,7 @@ export function ExamsTab({ exams }: { exams: StudentExamRow[] }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pastExams.map((exam) => (
+              {pagedPastExams.map((exam) => (
                 <TableRow key={exam.id}>
                   <TableCell className="font-medium whitespace-normal text-foreground">{exam.title}</TableCell>
                   <TableCell className="whitespace-normal text-muted-foreground">{exam.teacherName}</TableCell>
@@ -149,6 +154,17 @@ export function ExamsTab({ exams }: { exams: StudentExamRow[] }) {
               ))}
             </TableBody>
           </Table>
+        )}
+        {pastExams.length > 0 && (
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            showingLabel={tc("pagination.showingCount", { shown: pagedPastExams.length, total: pastExams.length })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+          />
         )}
       </div>
 

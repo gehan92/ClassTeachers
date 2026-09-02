@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { LockPill } from "@/components/features/lock-pill";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import { cn } from "@/lib/utils";
 import type { Listing } from "@/types/listing";
 
@@ -76,6 +78,9 @@ export function AdBoard({ listings }: { listings: Listing[] }) {
     [listings, filter],
   );
 
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(filteredListings.length);
+  const pagedListings = filteredListings.slice(offset, offset + pageSize);
+
   return (
     <>
       <section className="py-15">
@@ -94,7 +99,10 @@ export function AdBoard({ listings }: { listings: Listing[] }) {
                 type="button"
                 role="radio"
                 aria-checked={filter === value}
-                onClick={() => setFilter(value)}
+                onClick={() => {
+                  setFilter(value);
+                  setPage(1);
+                }}
                 className={cn(
                   "rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors",
                   filter === value
@@ -109,7 +117,7 @@ export function AdBoard({ listings }: { listings: Listing[] }) {
 
           <div className="space-y-3">
             {filteredListings.length > 0 ? (
-              filteredListings.map((listing, i) => (
+              pagedListings.map((listing, i) => (
                 <AdListingRow
                   key={listing.id}
                   listing={listing}
@@ -124,6 +132,21 @@ export function AdBoard({ listings }: { listings: Listing[] }) {
               </div>
             )}
           </div>
+
+          {filteredListings.length > 0 && (
+            <PaginationFooter
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              showingLabel={t("currentAds.pagination.showingCount", {
+                shown: pagedListings.length,
+                total: filteredListings.length,
+              })}
+              previousLabel={t("currentAds.pagination.previous")}
+              nextLabel={t("currentAds.pagination.next")}
+              pageInfoLabel={t("currentAds.pagination.pageInfo", { page: currentPage, totalPages })}
+            />
+          )}
         </div>
       </section>
 

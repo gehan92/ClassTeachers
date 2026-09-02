@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import { groupByClass } from "@/lib/dashboard/group-by-class";
 
 export type StudentNoteRow = {
@@ -19,9 +21,12 @@ export type StudentNoteRow = {
 
 export function NotesTab({ notes, studentName }: { notes: StudentNoteRow[]; studentName: string }) {
   const t = useTranslations("studentDashboard.notes");
+  const tc = useTranslations("studentDashboard.common");
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
   const openNote = notes.find((note) => note.id === openNoteId) ?? null;
-  const groupedNotes = useMemo(() => groupByClass(notes), [notes]);
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(notes.length);
+  const pagedNotes = notes.slice(offset, offset + pageSize);
+  const groupedNotes = useMemo(() => groupByClass(pagedNotes), [pagedNotes]);
 
   return (
     <div>
@@ -61,6 +66,15 @@ export function NotesTab({ notes, studentName }: { notes: StudentNoteRow[]; stud
               </div>
             </div>
           ))}
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            showingLabel={tc("pagination.showingCount", { shown: pagedNotes.length, total: notes.length })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+          />
         </div>
       )}
     </div>

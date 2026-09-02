@@ -510,7 +510,13 @@
       "filterAll": "සියල්ල",
       "filterTeachers": "ගුරුවරු",
       "filterInstitutes": "ආයතන",
-      "empty": "මෙම පෙරහන සමඟ ගැළපෙන දැන්වීම් නැත."
+      "empty": "මෙම පෙරහන සමඟ ගැළපෙන දැන්වීම් නැත.",
+      "pagination": {
+        "showingCount": "{total} න් {shown} පෙන්වයි",
+        "previous": "පෙර",
+        "next": "ඊළඟ",
+        "pageInfo": "පිටුව {page} න් {totalPages}"
+      }
     },
     "form": {
       "eyebrow": "දැන්වීමක් පළ කරන්න",
@@ -548,6 +554,12 @@
     },
     "respondCta": "පිළිතුරු දෙන්න",
     "empty": "මෙම පෙරහන සමඟ ගැළපෙන ඉල්ලීම් නැත.",
+    "pagination": {
+      "showingCount": "{total} න් {shown} පෙන්වයි",
+      "previous": "පෙර",
+      "next": "ඊළඟ",
+      "pageInfo": "පිටුව {page} න් {totalPages}"
+    },
     "detail": {
       "backToRequests": "ඉල්ලීම් වෙත ආපසු",
       "aboutHeading": "මෙම ඉල්ලීම ගැන",
@@ -837,7 +849,13 @@
     "generalRateHelper": "සිසුවෙකු නිශ්චිත ගුරුවරයෙකුට වඩා සාමාන්‍යයෙන් ආයතනයට එකතු වන විට අදාළ වේ.",
     "teachersAtInstitute": "මෙම ආයතනයේ ගුරුවරුන්",
     "locationMapTitle": "ස්ථානය",
-    "viewOnGoogleMaps": "Google සිතියමේ බලන්න"
+    "viewOnGoogleMaps": "Google සිතියමේ බලන්න",
+    "pagination": {
+      "showingCount": "{total} න් {shown} පෙන්වයි",
+      "previous": "පෙර",
+      "next": "ඊළඟ",
+      "pageInfo": "පිටුව {page} න් {totalPages}"
+    }
   },
   "adminDashboard": {
     "logout": "පිටවන්න",
@@ -1055,7 +1073,13 @@
     "common": {
       "updatingList": "යාවත්කාලීන කරමින්…",
       "updateStuck": "තවම යාවත්කාලීන වී නැත — ඔබේ වෙනස්කම සුරකින ලදී.",
-      "reloadPage": "පිටුව නැවත පූරණය කරන්න"
+      "reloadPage": "පිටුව නැවත පූරණය කරන්න",
+      "pagination": {
+        "showingCount": "{total} න් {shown} පෙන්වයි",
+        "previous": "පෙර",
+        "next": "ඊළඟ",
+        "pageInfo": "පිටුව {page} න් {totalPages}"
+      }
     }
   },
   "instituteDashboard": {
@@ -1289,7 +1313,13 @@
       "postReply": "පිළිතුර පළ කරන්න",
       "updatingList": "යාවත්කාලීන කරමින්…",
       "updateStuck": "තවම යාවත්කාලීන වී නැත — ඔබේ වෙනස්කම සුරකින ලදී.",
-      "reloadPage": "පිටුව නැවත පූරණය කරන්න"
+      "reloadPage": "පිටුව නැවත පූරණය කරන්න",
+      "pagination": {
+        "showingCount": "{total} න් {shown} පෙන්වයි",
+        "previous": "පෙර",
+        "next": "ඊළඟ",
+        "pageInfo": "පිටුව {page} න් {totalPages}"
+      }
     },
     "profile": {
       "title": "පැතිකඩ",
@@ -1737,7 +1767,13 @@
       "close": "වසන්න",
       "updatingList": "යාවත්කාලීන කරමින්…",
       "updateStuck": "තවම යාවත්කාලීන වී නැත — ඔබේ වෙනස්කම සුරකින ලදී.",
-      "reloadPage": "පිටුව නැවත පූරණය කරන්න"
+      "reloadPage": "පිටුව නැවත පූරණය කරන්න",
+      "pagination": {
+        "showingCount": "{total} න් {shown} පෙන්වයි",
+        "previous": "පෙර",
+        "next": "ඊළඟ",
+        "pageInfo": "පිටුව {page} න් {totalPages}"
+      }
     }
   },
   "teacherDashboard": {
@@ -1756,7 +1792,13 @@
       "close": "වසන්න",
       "updatingList": "යාවත්කාලීන කරමින්…",
       "updateStuck": "තවම යාවත්කාලීන වී නැත — ඔබේ වෙනස්කම සුරකින ලදී.",
-      "reloadPage": "පිටුව නැවත පූරණය කරන්න"
+      "reloadPage": "පිටුව නැවත පූරණය කරන්න",
+      "pagination": {
+        "showingCount": "{total} න් {shown} පෙන්වයි",
+        "previous": "පෙර",
+        "next": "ඊළඟ",
+        "pageInfo": "පිටුව {page} න් {totalPages}"
+      }
     },
     "tabs": {
       "overview": "දළ විශ්ලේෂණය",
@@ -2467,7 +2509,13 @@
     "allSubjects": "සියලුම විෂයයන්",
     "titleTeacher": "ඔබේ ගුරුවරයා සොයාගන්න",
     "titleOnline": "මාර්ගගත පාඩම් සොයාගන්න",
-    "subtitleOnline": "සජීවී මාර්ගගත පන්ති පවත්වන සත්‍යාපිත ගුරුවරුන් සසඳන්න විෂය, ස්ථානය සහ ශ්‍රේණිය අනුව පෙරහන් කරන්න."
+    "subtitleOnline": "සජීවී මාර්ගගත පන්ති පවත්වන සත්‍යාපිත ගුරුවරුන් සසඳන්න විෂය, ස්ථානය සහ ශ්‍රේණිය අනුව පෙරහන් කරන්න.",
+    "pagination": {
+      "showingCount": "{total} න් {shown} පෙන්වයි",
+      "previous": "පෙර",
+      "next": "ඊළඟ",
+      "pageInfo": "පිටුව {page} න් {totalPages}"
+    }
   },
   "adPage": {
     "teacherFallback": "ගුරුවරයා",

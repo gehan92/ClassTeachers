@@ -1,6 +1,10 @@
+"use client";
+
 import { useTranslations } from "next-intl";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { StatusBadge } from "@/components/features/status-badge";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { StudentExamRow } from "@/components/dashboard/student/exams-tab";
 import type { StudentAssignmentRow } from "@/components/dashboard/student/assignments-tab";
@@ -39,9 +43,17 @@ export function ProgressTab({
   assignments: StudentAssignmentRow[];
 }) {
   const t = useTranslations("studentDashboard.progress");
+  const tc = useTranslations("studentDashboard.common");
 
   const gradedExams = exams.filter((e) => e.submission?.status === "graded");
   const gradedAssignments = assignments.filter((a) => a.submission?.status === "graded");
+
+  const attendancePage = usePagination(attendance.length);
+  const pagedAttendance = attendance.slice(attendancePage.offset, attendancePage.offset + attendancePage.pageSize);
+  const examsPage = usePagination(exams.length);
+  const pagedExams = exams.slice(examsPage.offset, examsPage.offset + examsPage.pageSize);
+  const assignmentsPage = usePagination(assignments.length);
+  const pagedAssignments = assignments.slice(assignmentsPage.offset, assignmentsPage.offset + assignmentsPage.pageSize);
 
   return (
     <div className="flex flex-col gap-6">
@@ -75,7 +87,7 @@ export function ProgressTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {attendance.map((row) => (
+              {pagedAttendance.map((row) => (
                 <TableRow key={row.id}>
                   <TableCell className="font-medium whitespace-normal text-foreground">{row.sessionTitle}</TableCell>
                   <TableCell className="whitespace-normal text-muted-foreground">{row.teacherName}</TableCell>
@@ -89,6 +101,17 @@ export function ProgressTab({
               ))}
             </TableBody>
           </Table>
+        )}
+        {attendance.length > 0 && (
+          <PaginationFooter
+            currentPage={attendancePage.currentPage}
+            totalPages={attendancePage.totalPages}
+            onPageChange={attendancePage.setPage}
+            showingLabel={tc("pagination.showingCount", { shown: pagedAttendance.length, total: attendance.length })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", { page: attendancePage.currentPage, totalPages: attendancePage.totalPages })}
+          />
         )}
       </div>
 
@@ -107,7 +130,7 @@ export function ProgressTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {exams.map((exam) => (
+              {pagedExams.map((exam) => (
                 <TableRow key={exam.id}>
                   <TableCell className="font-medium whitespace-normal text-foreground">{exam.title}</TableCell>
                   <TableCell className="whitespace-normal text-muted-foreground">{exam.teacherName}</TableCell>
@@ -121,6 +144,17 @@ export function ProgressTab({
               ))}
             </TableBody>
           </Table>
+        )}
+        {exams.length > 0 && (
+          <PaginationFooter
+            currentPage={examsPage.currentPage}
+            totalPages={examsPage.totalPages}
+            onPageChange={examsPage.setPage}
+            showingLabel={tc("pagination.showingCount", { shown: pagedExams.length, total: exams.length })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", { page: examsPage.currentPage, totalPages: examsPage.totalPages })}
+          />
         )}
       </div>
 
@@ -139,7 +173,7 @@ export function ProgressTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {assignments.map((assignment) => (
+              {pagedAssignments.map((assignment) => (
                 <TableRow key={assignment.id}>
                   <TableCell className="font-medium whitespace-normal text-foreground">{assignment.title}</TableCell>
                   <TableCell className="whitespace-normal text-muted-foreground">{assignment.teacherName}</TableCell>
@@ -153,6 +187,20 @@ export function ProgressTab({
               ))}
             </TableBody>
           </Table>
+        )}
+        {assignments.length > 0 && (
+          <PaginationFooter
+            currentPage={assignmentsPage.currentPage}
+            totalPages={assignmentsPage.totalPages}
+            onPageChange={assignmentsPage.setPage}
+            showingLabel={tc("pagination.showingCount", { shown: pagedAssignments.length, total: assignments.length })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", {
+              page: assignmentsPage.currentPage,
+              totalPages: assignmentsPage.totalPages,
+            })}
+          />
         )}
       </div>
     </div>

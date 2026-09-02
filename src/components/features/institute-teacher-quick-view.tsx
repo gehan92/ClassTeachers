@@ -5,6 +5,8 @@ import { useTranslations } from "next-intl";
 import { GraduationCap, Star } from "lucide-react";
 import { Panel } from "@/components/features/teacher-profile-view";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import type { InstituteTeacherCard } from "@/types/class-profile";
 
 function TagList({ items }: { items: string[] }) {
@@ -36,12 +38,14 @@ function TagList({ items }: { items: string[] }) {
 export function InstituteTeachersPanel({ teachers }: { teachers: InstituteTeacherCard[] }) {
   const t = useTranslations("profilePage");
   const [selected, setSelected] = useState<InstituteTeacherCard | null>(null);
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(teachers.length);
+  const pagedTeachers = teachers.slice(offset, offset + pageSize);
 
   return (
     <>
       <Panel title={t("teachersAtInstitute")}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {teachers.map((teacher) => (
+          {pagedTeachers.map((teacher) => (
             <button
               key={teacher.id}
               type="button"
@@ -81,6 +85,15 @@ export function InstituteTeachersPanel({ teachers }: { teachers: InstituteTeache
             </button>
           ))}
         </div>
+        <PaginationFooter
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          showingLabel={t("pagination.showingCount", { shown: pagedTeachers.length, total: teachers.length })}
+          previousLabel={t("pagination.previous")}
+          nextLabel={t("pagination.next")}
+          pageInfoLabel={t("pagination.pageInfo", { page: currentPage, totalPages })}
+        />
       </Panel>
 
       <Dialog open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>

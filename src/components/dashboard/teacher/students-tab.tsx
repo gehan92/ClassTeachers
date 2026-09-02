@@ -8,7 +8,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import { respondToJoinRequest } from "@/lib/dashboard/batches-actions";
 
 export type TeacherStudentRow = {
@@ -52,6 +54,9 @@ export function StudentsTab({
     );
   }, [students, query]);
 
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(filtered.length);
+  const pagedStudents = filtered.slice(offset, offset + pageSize);
+
   async function handleRespond(id: string, accept: boolean) {
     setRespondingId(id);
     setError(null);
@@ -74,7 +79,10 @@ export function StudentsTab({
         <Input
           placeholder={t("searchPlaceholder")}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setPage(1);
+          }}
           className="w-full sm:w-64"
         />
       </div>
@@ -136,7 +144,7 @@ export function StudentsTab({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((student) => (
+            {pagedStudents.map((student) => (
               <TableRow key={student.id}>
                 <TableCell>
                   <div className="flex items-center gap-2.5">
@@ -155,6 +163,18 @@ export function StudentsTab({
             ))}
           </TableBody>
         </Table>
+
+        {filtered.length > 0 && (
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            showingLabel={tc("pagination.showingCount", { shown: pagedStudents.length, total: filtered.length })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+          />
+        )}
       </div>
     </div>
   );

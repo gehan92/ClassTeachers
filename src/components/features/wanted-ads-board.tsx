@@ -5,6 +5,8 @@ import { useTranslations } from "next-intl";
 import { GraduationCap } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Input } from "@/components/ui/input";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { cn } from "@/lib/utils";
 
@@ -91,11 +93,15 @@ export function WantedAdsBoard({ ads }: { ads: PublicWantedAd[] }) {
     });
   }, [ads, query, filter]);
 
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(filteredAds.length);
+  const pagedAds = filteredAds.slice(offset, offset + pageSize);
+
   const hasFilters = query.length > 0 || filter !== "all";
 
   function clearFilters() {
     setQuery("");
     setFilter("all");
+    setPage(1);
   }
 
   return (
@@ -106,7 +112,10 @@ export function WantedAdsBoard({ ads }: { ads: PublicWantedAd[] }) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
             placeholder={t("searchPlaceholder")}
             className="bg-white sm:max-w-80"
           />
@@ -117,7 +126,10 @@ export function WantedAdsBoard({ ads }: { ads: PublicWantedAd[] }) {
                 type="button"
                 role="radio"
                 aria-checked={filter === value}
-                onClick={() => setFilter(value)}
+                onClick={() => {
+                  setFilter(value);
+                  setPage(1);
+                }}
                 className={cn(
                   "rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors",
                   filter === value
@@ -142,11 +154,22 @@ export function WantedAdsBoard({ ads }: { ads: PublicWantedAd[] }) {
       </div>
 
       {filteredAds.length > 0 ? (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredAds.map((ad, i) => (
-            <RequestCard key={ad.id} ad={ad} index={i} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {pagedAds.map((ad, i) => (
+              <RequestCard key={ad.id} ad={ad} index={i} />
+            ))}
+          </div>
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            showingLabel={t("pagination.showingCount", { shown: pagedAds.length, total: filteredAds.length })}
+            previousLabel={t("pagination.previous")}
+            nextLabel={t("pagination.next")}
+            pageInfoLabel={t("pagination.pageInfo", { page: currentPage, totalPages })}
+          />
+        </>
       ) : (
         <div className="rounded-lg border border-dashed border-input bg-white p-10 text-center text-muted-foreground">
           {t("empty")}

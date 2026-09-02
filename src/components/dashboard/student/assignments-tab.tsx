@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/table";
 import { PdfViewerPanel } from "@/components/dashboard/inline-file-viewer";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { submitAssignment } from "@/lib/dashboard/assignments-actions";
 import { groupByClass } from "@/lib/dashboard/group-by-class";
@@ -48,6 +50,8 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
 
   const dueAssignments = assignments.filter((a) => a.submission?.status !== "graded");
   const pastAssignments = assignments.filter((a) => a.submission?.status === "graded");
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(pastAssignments.length);
+  const pagedPastAssignments = pastAssignments.slice(offset, offset + pageSize);
   const groupedDue = useMemo(
     () => groupByClass(dueAssignments.map((a) => ({ ...a, ownerName: a.teacherName }))),
     [dueAssignments],
@@ -138,7 +142,7 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pastAssignments.map((assignment) => (
+              {pagedPastAssignments.map((assignment) => (
                 <TableRow key={assignment.id}>
                   <TableCell className="font-medium whitespace-normal text-foreground">{assignment.title}</TableCell>
                   <TableCell className="whitespace-normal text-muted-foreground">{assignment.teacherName}</TableCell>
@@ -164,6 +168,20 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
               ))}
             </TableBody>
           </Table>
+        )}
+        {pastAssignments.length > 0 && (
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            showingLabel={tc("pagination.showingCount", {
+              shown: pagedPastAssignments.length,
+              total: pastAssignments.length,
+            })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+          />
         )}
       </div>
     </div>

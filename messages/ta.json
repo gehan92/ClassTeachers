@@ -510,7 +510,13 @@
       "filterAll": "அனைத்தும்",
       "filterTeachers": "ஆசிரியர்கள்",
       "filterInstitutes": "நிறுவனங்கள்",
-      "empty": "இந்த வடிகட்டலுக்குப் பொருந்தும் விளம்பரங்கள் இல்லை."
+      "empty": "இந்த வடிகட்டலுக்குப் பொருந்தும் விளம்பரங்கள் இல்லை.",
+      "pagination": {
+        "showingCount": "{total} இல் {shown} காட்டப்படுகிறது",
+        "previous": "முந்தைய",
+        "next": "அடுத்து",
+        "pageInfo": "பக்கம் {page} / {totalPages}"
+      }
     },
     "form": {
       "eyebrow": "விளம்பரத்தை இடுங்கள்",
@@ -548,6 +554,12 @@
     },
     "respondCta": "பதிலளி",
     "empty": "இந்த வடிகட்டலுக்குப் பொருந்தும் கோரிக்கைகள் இல்லை.",
+    "pagination": {
+      "showingCount": "{total} இல் {shown} காட்டப்படுகிறது",
+      "previous": "முந்தைய",
+      "next": "அடுத்து",
+      "pageInfo": "பக்கம் {page} / {totalPages}"
+    },
     "detail": {
       "backToRequests": "கோரிக்கைகளுக்குத் திரும்பு",
       "aboutHeading": "இந்தக் கோரிக்கை பற்றி",
@@ -837,7 +849,13 @@
     "generalRateHelper": "ஒரு மாணவர் குறிப்பிட்ட ஆசிரியரைத் தேர்ந்தெடுக்காமல் பொதுவாக நிறுவனத்தில் இணையும்போது இது பொருந்தும்.",
     "teachersAtInstitute": "இந்த நிறுவனத்தில் உள்ள ஆசிரியர்கள்",
     "locationMapTitle": "இடம்",
-    "viewOnGoogleMaps": "Google வரைபடத்தில் காண்க"
+    "viewOnGoogleMaps": "Google வரைபடத்தில் காண்க",
+    "pagination": {
+      "showingCount": "{total} இல் {shown} காட்டப்படுகிறது",
+      "previous": "முந்தைய",
+      "next": "அடுத்து",
+      "pageInfo": "பக்கம் {page} / {totalPages}"
+    }
   },
   "adminDashboard": {
     "logout": "வெளியேறு",
@@ -1055,7 +1073,13 @@
     "common": {
       "updatingList": "புதுப்பிக்கிறது…",
       "updateStuck": "இன்னும் புதுப்பிக்கப்படவில்லை — உங்கள் மாற்றம் சேமிக்கப்பட்டது.",
-      "reloadPage": "பக்கத்தை மீண்டும் ஏற்று"
+      "reloadPage": "பக்கத்தை மீண்டும் ஏற்று",
+      "pagination": {
+        "showingCount": "{total} இல் {shown} காட்டப்படுகிறது",
+        "previous": "முந்தைய",
+        "next": "அடுத்து",
+        "pageInfo": "பக்கம் {page} / {totalPages}"
+      }
     }
   },
   "instituteDashboard": {
@@ -1289,7 +1313,13 @@
       "postReply": "பதிலை இடு",
       "updatingList": "புதுப்பிக்கிறது…",
       "updateStuck": "இன்னும் புதுப்பிக்கப்படவில்லை — உங்கள் மாற்றம் சேமிக்கப்பட்டது.",
-      "reloadPage": "பக்கத்தை மீண்டும் ஏற்று"
+      "reloadPage": "பக்கத்தை மீண்டும் ஏற்று",
+      "pagination": {
+        "showingCount": "{total} இல் {shown} காட்டப்படுகிறது",
+        "previous": "முந்தைய",
+        "next": "அடுத்து",
+        "pageInfo": "பக்கம் {page} / {totalPages}"
+      }
     },
     "profile": {
       "title": "சுயவிவரம்",
@@ -1737,7 +1767,13 @@
       "close": "மூடு",
       "updatingList": "புதுப்பிக்கிறது…",
       "updateStuck": "இன்னும் புதுப்பிக்கப்படவில்லை — உங்கள் மாற்றம் சேமிக்கப்பட்டது.",
-      "reloadPage": "பக்கத்தை மீண்டும் ஏற்று"
+      "reloadPage": "பக்கத்தை மீண்டும் ஏற்று",
+      "pagination": {
+        "showingCount": "{total} இல் {shown} காட்டப்படுகிறது",
+        "previous": "முந்தைய",
+        "next": "அடுத்து",
+        "pageInfo": "பக்கம் {page} / {totalPages}"
+      }
     }
   },
   "teacherDashboard": {
@@ -1756,7 +1792,13 @@
       "close": "மூடு",
       "updatingList": "புதுப்பிக்கிறது…",
       "updateStuck": "இன்னும் புதுப்பிக்கப்படவில்லை — உங்கள் மாற்றம் சேமிக்கப்பட்டது.",
-      "reloadPage": "பக்கத்தை மீண்டும் ஏற்று"
+      "reloadPage": "பக்கத்தை மீண்டும் ஏற்று",
+      "pagination": {
+        "showingCount": "{total} இல் {shown} காட்டப்படுகிறது",
+        "previous": "முந்தைய",
+        "next": "அடுத்து",
+        "pageInfo": "பக்கம் {page} / {totalPages}"
+      }
     },
     "tabs": {
       "overview": "கண்ணோட்டம்",
@@ -2467,7 +2509,13 @@
     "titleCampus": "ஒரு வளாக விரிவுரையாளரைக் கண்டறியுங்கள்",
     "subtitleCampus": "பாடம், இடம் மற்றும் தரம் அடிப்படையில் வடிகட்டி சரிபார்க்கப்பட்ட வளாக மற்றும் தொழில்முறை விரிவுரையாளர்களை ஒப்பிடுங்கள்.",
     "titleOnline": "ஆன்லைன் பாடங்களைக் கண்டறியுங்கள்",
-    "subtitleOnline": "பாடம், இடம் மற்றும் தரம் அடிப்படையில் வடிகட்டி நேரடி ஆன்லைன் வகுப்புகளை நடத்தும் சரிபார்க்கப்பட்ட ஆசிரியர்களை ஒப்பிடுங்கள்."
+    "subtitleOnline": "பாடம், இடம் மற்றும் தரம் அடிப்படையில் வடிகட்டி நேரடி ஆன்லைன் வகுப்புகளை நடத்தும் சரிபார்க்கப்பட்ட ஆசிரியர்களை ஒப்பிடுங்கள்.",
+    "pagination": {
+      "showingCount": "{total} இல் {shown} காட்டப்படுகிறது",
+      "previous": "முந்தைய",
+      "next": "அடுத்து",
+      "pageInfo": "பக்கம் {page} / {totalPages}"
+    }
   },
   "adPage": {
     "teacherFallback": "ஆசிரியர்",

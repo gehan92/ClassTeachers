@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { ReviewItem } from "@/components/features/review-item";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import { replyToReview, flagReview } from "@/lib/dashboard/reviews-actions";
 import type { ReviewDisplay } from "@/types/review";
 
@@ -27,6 +29,8 @@ export function ReviewsTab({
   const [replyText, setReplyText] = useState("");
   const [flaggedIds, setFlaggedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(reviews.length);
+  const pagedReviews = reviews.slice(offset, offset + pageSize);
 
   function startReply(id: string) {
     setReplyingId(id);
@@ -75,7 +79,7 @@ export function ReviewsTab({
         {reviews.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">{t("empty")}</p>
         ) : (
-          reviews.map((review) => (
+          pagedReviews.map((review) => (
             <div key={review.id}>
               <ReviewItem review={review} />
               {replyingId !== review.id && (
@@ -113,6 +117,18 @@ export function ReviewsTab({
               )}
             </div>
           ))
+        )}
+
+        {reviews.length > 0 && (
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            showingLabel={tc("pagination.showingCount", { shown: pagedReviews.length, total: reviews.length })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+          />
         )}
       </div>
     </div>

@@ -510,7 +510,13 @@
       "filterAll": "All",
       "filterTeachers": "Teachers",
       "filterInstitutes": "Institutes",
-      "empty": "No ads match this filter yet."
+      "empty": "No ads match this filter yet.",
+      "pagination": {
+        "showingCount": "Showing {shown} of {total}",
+        "previous": "Previous",
+        "next": "Next",
+        "pageInfo": "Page {page} of {totalPages}"
+      }
     },
     "form": {
       "eyebrow": "Post an ad",
@@ -548,6 +554,12 @@
     },
     "respondCta": "Respond",
     "empty": "No requests match this filter yet.",
+    "pagination": {
+      "showingCount": "Showing {shown} of {total}",
+      "previous": "Previous",
+      "next": "Next",
+      "pageInfo": "Page {page} of {totalPages}"
+    },
     "detail": {
       "backToRequests": "Back to requests",
       "aboutHeading": "About this request",
@@ -837,7 +849,13 @@
     "generalRateHelper": "Applies when a student joins the institute generally, rather than a specific teacher.",
     "teachersAtInstitute": "Teachers at this institute",
     "locationMapTitle": "Location",
-    "viewOnGoogleMaps": "View on Google Maps"
+    "viewOnGoogleMaps": "View on Google Maps",
+    "pagination": {
+      "showingCount": "Showing {shown} of {total}",
+      "previous": "Previous",
+      "next": "Next",
+      "pageInfo": "Page {page} of {totalPages}"
+    }
   },
   "adminDashboard": {
     "logout": "Log out",
@@ -1055,7 +1073,13 @@
     "common": {
       "updatingList": "Updating…",
       "updateStuck": "Still not updated — your change was saved.",
-      "reloadPage": "Reload page"
+      "reloadPage": "Reload page",
+      "pagination": {
+        "showingCount": "Showing {shown} of {total}",
+        "previous": "Previous",
+        "next": "Next",
+        "pageInfo": "Page {page} of {totalPages}"
+      }
     }
   },
   "instituteDashboard": {
@@ -1289,7 +1313,13 @@
       "postReply": "Post reply",
       "updatingList": "Updating…",
       "updateStuck": "Still not updated — your change was saved.",
-      "reloadPage": "Reload page"
+      "reloadPage": "Reload page",
+      "pagination": {
+        "showingCount": "Showing {shown} of {total}",
+        "previous": "Previous",
+        "next": "Next",
+        "pageInfo": "Page {page} of {totalPages}"
+      }
     },
     "profile": {
       "title": "Profile",
@@ -1737,7 +1767,13 @@
       "close": "Close",
       "updatingList": "Updating…",
       "updateStuck": "Still not updated — your change was saved.",
-      "reloadPage": "Reload page"
+      "reloadPage": "Reload page",
+      "pagination": {
+        "showingCount": "Showing {shown} of {total}",
+        "previous": "Previous",
+        "next": "Next",
+        "pageInfo": "Page {page} of {totalPages}"
+      }
     }
   },
   "teacherDashboard": {
@@ -1756,7 +1792,13 @@
       "close": "Close",
       "updatingList": "Updating…",
       "updateStuck": "Still not updated — your change was saved.",
-      "reloadPage": "Reload page"
+      "reloadPage": "Reload page",
+      "pagination": {
+        "showingCount": "Showing {shown} of {total}",
+        "previous": "Previous",
+        "next": "Next",
+        "pageInfo": "Page {page} of {totalPages}"
+      }
     },
     "tabs": {
       "overview": "Overview",
@@ -2467,7 +2509,13 @@
     "roleClass": "Class",
     "online": "Online",
     "teacherCount": "{count} teachers",
-    "allSubjects": "All subjects"
+    "allSubjects": "All subjects",
+    "pagination": {
+      "showingCount": "Showing {shown} of {total}",
+      "previous": "Previous",
+      "next": "Next",
+      "pageInfo": "Page {page} of {totalPages}"
+    }
   },
   "adPage": {
     "teacherFallback": "Teacher",

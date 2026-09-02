@@ -12,7 +12,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { setUserSuspended, setInstitutionVerified, getVerificationDocumentUrl } from "@/lib/dashboard/admin-actions";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import type { PlatformUser, PlatformUserRole } from "@/types/dashboard-admin";
 
 type RoleFilter = "all" | PlatformUserRole;
@@ -52,6 +54,9 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
       return matchesSearch && matchesRole;
     });
   }, [users, search, role]);
+
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(filtered.length);
+  const pagedUsers = filtered.slice(offset, offset + pageSize);
 
   async function toggleUserStatus(user: PlatformUser) {
     const suspended = user.status !== "active";
@@ -122,11 +127,20 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
       <div className="mb-4 flex flex-col gap-2.5 sm:flex-row sm:items-center">
         <Input
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
           placeholder={t("searchPlaceholder")}
           className="sm:max-w-xs"
         />
-        <Select value={role} onValueChange={(value) => setRole(value as RoleFilter)}>
+        <Select
+          value={role}
+          onValueChange={(value) => {
+            setRole(value as RoleFilter);
+            setPage(1);
+          }}
+        >
           <SelectTrigger className="sm:w-48">
             <SelectValue placeholder={t("roleFilter.all")} />
           </SelectTrigger>
@@ -152,7 +166,7 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((user) => (
+            {pagedUsers.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>
                   <div className="flex items-center gap-2.5">
@@ -222,6 +236,18 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
             )}
           </TableBody>
         </Table>
+
+        {filtered.length > 0 && (
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            showingLabel={tc("pagination.showingCount", { shown: pagedUsers.length, total: filtered.length })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+          />
+        )}
       </div>
     </div>
   );

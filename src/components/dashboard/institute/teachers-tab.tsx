@@ -11,7 +11,9 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import { inviteTeacherToRoster, removeTeacherFromRoster, setTeacherVisibility } from "@/lib/dashboard/institute-actions";
 
 export type InstituteTeacherRow = {
@@ -47,6 +49,8 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
   const [visibility, setVisibility] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(teachers.map((teacher) => [teacher.id, teacher.visible])),
   );
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(teachers.length);
+  const pagedTeachers = teachers.slice(offset, offset + pageSize);
 
   async function handleAdd() {
     const trimmed = email.trim();
@@ -143,7 +147,7 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {teachers.map((teacher) => (
+              {pagedTeachers.map((teacher) => (
                 <TableRow key={teacher.id}>
                   <TableCell>
                     <div className="flex items-center gap-2.5">
@@ -200,6 +204,17 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
               ))}
             </TableBody>
           </Table>
+        )}
+        {teachers.length > 0 && (
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            showingLabel={tc("pagination.showingCount", { shown: pagedTeachers.length, total: teachers.length })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+          />
         )}
       </div>
     </div>

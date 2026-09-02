@@ -13,6 +13,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useLiveCall } from "@/components/dashboard/live-call-context";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import { markAttendance, dismissLiveClassReminder } from "@/lib/dashboard/live-classes-actions";
 
 export type StudentLiveClassRow = {
@@ -50,10 +52,13 @@ export function LiveClassesTab({
   reminderClassIds: string[];
 }) {
   const t = useTranslations("studentDashboard.live");
+  const tc = useTranslations("studentDashboard.common");
   const [now, setNow] = useState(() => Date.now());
   const [markedId, setMarkedId] = useState<string | null>(null);
   const [dismissedReminderIds, setDismissedReminderIds] = useState<Set<string>>(new Set());
   const { activeCall, startCall, restoreCall } = useLiveCall();
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(classes.length);
+  const pagedClasses = classes.slice(offset, offset + pageSize);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30000);
@@ -148,7 +153,7 @@ export function LiveClassesTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {classes.map((row) => (
+              {pagedClasses.map((row) => (
                 <LiveClassRow
                   key={row.id}
                   row={row}
@@ -162,6 +167,17 @@ export function LiveClassesTab({
               ))}
             </TableBody>
           </Table>
+        )}
+        {classes.length > 0 && (
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            showingLabel={tc("pagination.showingCount", { shown: pagedClasses.length, total: classes.length })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+          />
         )}
       </div>
     </div>

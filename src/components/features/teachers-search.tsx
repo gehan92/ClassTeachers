@@ -8,6 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { GradeLadder } from "./grade-ladder";
 import { ListingCard } from "./listing-card";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import { cn } from "@/lib/utils";
 import type { Listing } from "@/types/listing";
 
@@ -133,32 +135,6 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
   const onlineOnlyId = useId();
   const searchParams = useSearchParams();
 
-  useEffect(() => {
-    // Re-sync whenever the URL's search params actually change (not just on
-    // mount) — nav links like "Find teachers"/"Find classes" navigate
-    // client-side to the same /teachers route with a different ?category=,
-    // which reuses this component instance instead of remounting it. A
-    // mount-only effect would silently keep the previous filters selected.
-    const categoryFromUrl = searchParams.get("category");
-    const subjectFromUrl = searchParams.get("subject");
-    const locationFromUrl = searchParams.get("location");
-    const gradeFromUrl = searchParams.get("grade");
-    const priceIntervalFromUrl = searchParams.get("priceInterval");
-    const resolvedCategory = categoryFromUrl && isCategory(categoryFromUrl) ? categoryFromUrl : "all";
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from the URL, not derived render state
-    setCategory(resolvedCategory);
-    setSubject(subjectFromUrl ?? "");
-    setLocation(locationFromUrl ?? "");
-    setOnlineOnly(searchParams.get("online") === "true");
-    // Campus lecturers are a single grade band by definition — the ladder
-    // isn't shown for this category (see render below), so no leftover grade
-    // filter from a previous view should silently keep narrowing results here.
-    setGrade(resolvedCategory !== "campus" && gradeFromUrl && isGrade(gradeFromUrl) ? gradeFromUrl : undefined);
-    setPriceInterval(priceIntervalFromUrl && isPriceInterval(priceIntervalFromUrl) ? priceIntervalFromUrl : "any");
-    setPriceMin(searchParams.get("priceMin") ?? "");
-    setPriceMax(searchParams.get("priceMax") ?? "");
-  }, [searchParams]);
-
   const results = useMemo(() => {
     const subjectQuery = subject.trim().toLowerCase();
     const locationQuery = location.trim().toLowerCase();
@@ -195,6 +171,37 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
     });
   }, [listings, category, subject, location, onlineOnly, grade, priceInterval, priceMin, priceMax]);
 
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(results.length);
+  const pagedResults = results.slice(offset, offset + pageSize);
+
+  useEffect(() => {
+    // Re-sync whenever the URL's search params actually change (not just on
+    // mount) — nav links like "Find teachers"/"Find classes" navigate
+    // client-side to the same /teachers route with a different ?category=,
+    // which reuses this component instance instead of remounting it. A
+    // mount-only effect would silently keep the previous filters selected.
+    const categoryFromUrl = searchParams.get("category");
+    const subjectFromUrl = searchParams.get("subject");
+    const locationFromUrl = searchParams.get("location");
+    const gradeFromUrl = searchParams.get("grade");
+    const priceIntervalFromUrl = searchParams.get("priceInterval");
+    const resolvedCategory = categoryFromUrl && isCategory(categoryFromUrl) ? categoryFromUrl : "all";
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from the URL, not derived render state
+    setCategory(resolvedCategory);
+    setSubject(subjectFromUrl ?? "");
+    setLocation(locationFromUrl ?? "");
+    setOnlineOnly(searchParams.get("online") === "true");
+    // Campus lecturers are a single grade band by definition — the ladder
+    // isn't shown for this category (see render below), so no leftover grade
+    // filter from a previous view should silently keep narrowing results here.
+    setGrade(resolvedCategory !== "campus" && gradeFromUrl && isGrade(gradeFromUrl) ? gradeFromUrl : undefined);
+    setPriceInterval(priceIntervalFromUrl && isPriceInterval(priceIntervalFromUrl) ? priceIntervalFromUrl : "any");
+    setPriceMin(searchParams.get("priceMin") ?? "");
+    setPriceMax(searchParams.get("priceMax") ?? "");
+    setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setPage is a stable setState setter from usePagination, intentionally omitted like every other setter above
+  }, [searchParams]);
+
   const hasFilters =
     category !== "all" ||
     subject.length > 0 ||
@@ -214,6 +221,7 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
     setPriceInterval("any");
     setPriceMin("");
     setPriceMax("");
+    setPage(1);
   }
 
   return (
@@ -222,19 +230,32 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
         <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input
             value={subject}
-            onChange={(e) => setSubject(e.target.value)}
+            onChange={(e) => {
+              setSubject(e.target.value);
+              setPage(1);
+            }}
             placeholder={category === "campus" ? tSearch("subjectPlaceholderCampus") : tSearch("subjectPlaceholder")}
             className="bg-white"
           />
           <Input
             value={location}
-            onChange={(e) => setLocation(e.target.value)}
+            onChange={(e) => {
+              setLocation(e.target.value);
+              setPage(1);
+            }}
             placeholder={tSearch("locationPlaceholder")}
             className="bg-white"
           />
         </div>
         <div className="mb-3 flex items-center gap-2">
-          <Checkbox id={onlineOnlyId} checked={onlineOnly} onCheckedChange={setOnlineOnly} />
+          <Checkbox
+            id={onlineOnlyId}
+            checked={onlineOnly}
+            onCheckedChange={(checked) => {
+              setOnlineOnly(checked);
+              setPage(1);
+            }}
+          />
           <Label htmlFor={onlineOnlyId} className="cursor-pointer text-sm font-normal text-foreground/80">
             {tSearch("onlineOnly")}
           </Label>
@@ -242,14 +263,31 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
         <div className="mb-3">
           <PriceFilter
             interval={priceInterval}
-            onIntervalChange={setPriceInterval}
+            onIntervalChange={(interval) => {
+              setPriceInterval(interval);
+              setPage(1);
+            }}
             min={priceMin}
-            onMinChange={setPriceMin}
+            onMinChange={(value) => {
+              setPriceMin(value);
+              setPage(1);
+            }}
             max={priceMax}
-            onMaxChange={setPriceMax}
+            onMaxChange={(value) => {
+              setPriceMax(value);
+              setPage(1);
+            }}
           />
         </div>
-        {category !== "campus" && <GradeLadder value={grade} onChange={setGrade} />}
+        {category !== "campus" && (
+          <GradeLadder
+            value={grade}
+            onChange={(value) => {
+              setGrade(value);
+              setPage(1);
+            }}
+          />
+        )}
       </div>
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -262,11 +300,22 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
       </div>
 
       {results.length > 0 ? (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {results.map((listing, i) => (
-            <ListingCard key={listing.id} listing={listing} index={i} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {pagedResults.map((listing, i) => (
+              <ListingCard key={listing.id} listing={listing} index={i} />
+            ))}
+          </div>
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            showingLabel={t("pagination.showingCount", { shown: pagedResults.length, total: results.length })}
+            previousLabel={t("pagination.previous")}
+            nextLabel={t("pagination.next")}
+            pageInfoLabel={t("pagination.pageInfo", { page: currentPage, totalPages })}
+          />
+        </>
       ) : (
         <div className="rounded-lg border border-dashed border-input bg-white p-10 text-center text-muted-foreground">
           {t("noResults")}

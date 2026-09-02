@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/features/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import { grantReferralReward } from "@/lib/dashboard/admin-actions";
 import type { AdminReferral } from "@/types/dashboard-admin";
 
@@ -19,6 +21,8 @@ export function ReferralsTab({ initialReferrals }: { initialReferrals: AdminRefe
   const [referrals, setReferrals] = useState(initialReferrals);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(referrals.length);
+  const pagedReferrals = referrals.slice(offset, offset + pageSize);
 
   async function handleGrant(id: string) {
     setPendingId(id);
@@ -63,7 +67,7 @@ export function ReferralsTab({ initialReferrals }: { initialReferrals: AdminRefe
             </TableRow>
           </TableHeader>
           <TableBody>
-            {referrals.map((referral) => (
+            {pagedReferrals.map((referral) => (
               <TableRow key={referral.id}>
                 <TableCell className="font-medium text-foreground">{referral.referrerName}</TableCell>
                 <TableCell className="text-muted-foreground">{referral.referredName}</TableCell>
@@ -91,6 +95,18 @@ export function ReferralsTab({ initialReferrals }: { initialReferrals: AdminRefe
             )}
           </TableBody>
         </Table>
+
+        {referrals.length > 0 && (
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            showingLabel={tc("pagination.showingCount", { shown: pagedReferrals.length, total: referrals.length })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+          />
+        )}
       </div>
     </div>
   );

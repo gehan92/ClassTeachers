@@ -11,8 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { TerminalBlock } from "@/components/dashboard/terminal-block";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import { createQuestion, updateQuestion, deleteQuestion } from "@/lib/dashboard/question-bank-actions";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
 import type { GradeBand } from "@/types/grade-band";
@@ -200,6 +202,9 @@ export function QuestionBankTab({
       return matchesSearch && matchesGrade && matchesBatch && matchesLanguage;
     });
   }, [questions, search, gradeFilter, batchFilter, languageFilter]);
+
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(filtered.length);
+  const pagedQuestions = filtered.slice(offset, offset + pageSize);
 
   function openCreate() {
     setForm(blankForm());
@@ -708,10 +713,19 @@ export function QuestionBankTab({
           <Input
             placeholder={t("filters.searchPlaceholder")}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             className="w-full sm:w-64"
           />
-          <Select value={gradeFilter} onValueChange={(value) => setGradeFilter(value as string)}>
+          <Select
+            value={gradeFilter}
+            onValueChange={(value) => {
+              setGradeFilter(value as string);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-full sm:w-auto">
               <SelectValue />
             </SelectTrigger>
@@ -724,7 +738,13 @@ export function QuestionBankTab({
               ))}
             </SelectContent>
           </Select>
-          <Select value={batchFilter} onValueChange={(value) => setBatchFilter(value as string)}>
+          <Select
+            value={batchFilter}
+            onValueChange={(value) => {
+              setBatchFilter(value as string);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-full sm:w-auto">
               <SelectValue />
             </SelectTrigger>
@@ -737,7 +757,13 @@ export function QuestionBankTab({
               ))}
             </SelectContent>
           </Select>
-          <Select value={languageFilter} onValueChange={(value) => setLanguageFilter(value as string)}>
+          <Select
+            value={languageFilter}
+            onValueChange={(value) => {
+              setLanguageFilter(value as string);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-full sm:w-auto">
               <SelectValue />
             </SelectTrigger>
@@ -755,6 +781,7 @@ export function QuestionBankTab({
         {filtered.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">{t("emptyState")}</p>
         ) : (
+          <div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -770,7 +797,7 @@ export function QuestionBankTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((q) => (
+              {pagedQuestions.map((q) => (
                 <Fragment key={q.id}>
                   <TableRow>
                     <TableCell className="max-w-80 truncate text-foreground">{q.text}</TableCell>
@@ -871,6 +898,16 @@ export function QuestionBankTab({
               ))}
             </TableBody>
           </Table>
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            showingLabel={tc("pagination.showingCount", { shown: pagedQuestions.length, total: filtered.length })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+          />
+          </div>
         )}
       </div>
     </div>

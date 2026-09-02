@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { resolveFlaggedReview } from "@/lib/dashboard/admin-actions";
 import { cn } from "@/lib/utils";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import type { FlaggedReview } from "@/types/dashboard-admin";
 
 export function FlaggedReviewsTab({ initialReviews }: { initialReviews: FlaggedReview[] }) {
@@ -17,6 +19,8 @@ export function FlaggedReviewsTab({ initialReviews }: { initialReviews: FlaggedR
   const [reviews, setReviews] = useState(initialReviews);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(reviews.length);
+  const pagedReviews = reviews.slice(offset, offset + pageSize);
 
   async function handleResolve(id: string, decision: "keep" | "remove") {
     setPendingId(id);
@@ -53,7 +57,7 @@ export function FlaggedReviewsTab({ initialReviews }: { initialReviews: FlaggedR
         {reviews.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">{t("noFlaggedReviews")}</p>
         ) : (
-          reviews.map((review, index) => (
+          pagedReviews.map((review, index) => (
             <div
               key={review.id}
               className={cn("py-4.5 first:pt-0 last:pb-0", index > 0 && "border-t border-border")}
@@ -89,6 +93,18 @@ export function FlaggedReviewsTab({ initialReviews }: { initialReviews: FlaggedR
               </div>
             </div>
           ))
+        )}
+
+        {reviews.length > 0 && (
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            showingLabel={tc("pagination.showingCount", { shown: pagedReviews.length, total: reviews.length })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+          />
         )}
       </div>
     </div>

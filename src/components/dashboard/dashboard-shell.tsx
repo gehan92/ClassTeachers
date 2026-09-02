@@ -28,6 +28,7 @@ import {
   Calendar,
   Inbox,
   BellRing,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -114,6 +115,8 @@ const TAB_ICONS: Partial<Record<string, LucideIcon>> = {
   inquiries: MessageSquare,
   ads: Megaphone,
   settings: SettingsIcon,
+  progress: TrendingUp,
+  wantedAds: Megaphone,
   // Institute-only tabs (studentRequests is shared with teacher, which had
   // the same gap).
   teachers: GraduationCap,

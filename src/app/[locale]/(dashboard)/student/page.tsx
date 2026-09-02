@@ -778,18 +778,13 @@ export default async function StudentDashboardPage({
       ]}
       groups={[
         {
-          items: [
-            { key: "overview", label: t("tabs.overview") },
-            { key: "progress", label: t("tabs.progress") },
-          ],
+          items: [{ key: "overview", label: t("tabs.overview") }],
         },
         {
           label: t("groupClasses"),
           items: [
             { key: "classes", label: t("tabs.classes") },
             { key: "live", label: t("tabs.live") },
-            { key: "wantedAds", label: t("tabs.wantedAds"), count: unreadResponsesCount },
-            { key: "inquiries", label: t("tabs.inquiries") },
           ],
         },
         {
@@ -798,12 +793,15 @@ export default async function StudentDashboardPage({
             { key: "notes", label: t("tabs.notes") },
             { key: "exams", label: t("tabs.exams"), count: examsDueCount },
             { key: "assignments", label: t("tabs.assignments"), count: assignmentsDueCount },
+            { key: "progress", label: t("tabs.progress") },
           ],
         },
         {
-          label: t("groupAccount"),
+          label: t("groupMore"),
           items: [
             { key: "reviews", label: t("tabs.reviews") },
+            { key: "inquiries", label: t("tabs.inquiries") },
+            { key: "wantedAds", label: t("tabs.wantedAds"), count: unreadResponsesCount },
             { key: "profile", label: t("tabs.profile") },
             { key: "settings", label: t("tabs.settings") },
           ],

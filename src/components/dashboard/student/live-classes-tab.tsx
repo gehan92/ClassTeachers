@@ -19,6 +19,9 @@ export type StudentLiveClassRow = {
   id: string;
   title: string;
   teacherName: string;
+  ownerId: string;
+  ownerType: "teacher" | "class";
+  batchId: string | null;
   scheduledAtIso: string;
   scheduledLabel: string;
   durationMinutes: number;

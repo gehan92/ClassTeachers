@@ -129,7 +129,7 @@ export default async function StudentDashboardPage({
     supabase.from("notes").select("id, owner_type, owner_id, batch_id, title, page_count"),
     supabase
       .from("exams")
-      .select("id, owner_type, owner_id, title, question_ids, duration_minutes, scheduled_at, reveal_answers")
+      .select("id, owner_type, owner_id, batch_id, title, question_ids, duration_minutes, scheduled_at, reveal_answers")
       .order("scheduled_at", { ascending: true }),
     supabase
       .from("exam_submissions")
@@ -477,6 +477,9 @@ export default async function StudentDashboardPage({
     id: row.id,
     title: row.title,
     teacherName: ownerName(row.ownerType, row.owner_id),
+    ownerId: row.owner_id,
+    ownerType: row.ownerType,
+    batchId: row.batch_id,
     scheduledAtIso: row.scheduled_at,
     scheduledLabel: scheduleFormatter.format(new Date(row.scheduled_at)),
     durationMinutes: row.duration_minutes,
@@ -526,6 +529,7 @@ export default async function StudentDashboardPage({
       return {
         enrollmentId: e.id,
         ownerId: e.owner_id,
+        batchId: e.batch_id,
         batchTitle: batch?.title ?? null,
         ownerName: ownerName(e.owner_type, e.owner_id),
         ownerType: e.owner_type,
@@ -562,6 +566,8 @@ export default async function StudentDashboardPage({
       batchId: n.batch_id,
       batchTitle: n.batch_id ? (batchById.get(n.batch_id)?.title ?? null) : null,
       ownerName: ownerName(n.owner_type, n.owner_id),
+      ownerId: n.owner_id,
+      ownerType: n.owner_type,
       pageCount: n.page_count,
     }));
 
@@ -580,6 +586,9 @@ export default async function StudentDashboardPage({
       id: e.id,
       title: e.title,
       teacherName: ownerName(e.owner_type, e.owner_id),
+      ownerId: e.owner_id,
+      ownerType: e.owner_type,
+      batchId: e.batch_id,
       durationMinutes: e.duration_minutes,
       scheduledLabel: e.scheduled_at ? scheduleFormatter.format(new Date(e.scheduled_at)) : "—",
       isOpen: !e.scheduled_at || !isFuture(e.scheduled_at),
@@ -649,6 +658,8 @@ export default async function StudentDashboardPage({
       id: a.id,
       title: a.title,
       teacherName: ownerName(a.owner_type, a.owner_id),
+      ownerId: a.owner_id,
+      ownerType: a.owner_type,
       batchId: a.batch_id,
       batchTitle: a.batch_id ? (batchById.get(a.batch_id)?.title ?? null) : null,
       lessonTitle: a.lesson_id ? (lessonTitleById.get(a.lesson_id) ?? null) : null,
@@ -831,7 +842,18 @@ export default async function StudentDashboardPage({
             assignments={assignments}
           />
         ),
-        classes: <ClassesTab myClasses={myClasses} availableBatches={availableBatches} />,
+        classes: (
+          <ClassesTab
+            myClasses={myClasses}
+            availableBatches={availableBatches}
+            notes={studentNotes}
+            exams={exams}
+            assignments={assignments}
+            liveClasses={liveClasses}
+            reminderClassIds={reminderClassIds}
+            studentName={fullName}
+          />
+        ),
         live: <LiveClassesTab classes={liveClasses} studentName={fullName} reminderClassIds={reminderClassIds} />,
         wantedAds: (
           <WantedAdsTab

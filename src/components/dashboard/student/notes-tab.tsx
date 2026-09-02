@@ -12,6 +12,8 @@ export type StudentNoteRow = {
   batchId: string | null;
   batchTitle: string | null;
   ownerName: string;
+  ownerId: string;
+  ownerType: "teacher" | "class";
   pageCount: number | null;
 };
 

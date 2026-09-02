@@ -1453,6 +1453,8 @@
       "typeClass": "පන්තිය",
       "typeCampusLecturer": "කැම්පස් කථිකාචාර්ය",
       "viewProfile": "පැතිකඩ බලන්න",
+      "openClass": "පන්තිය විවෘත කරන්න",
+      "backToClasses": "මගේ පන්ති වෙත ආපසු",
       "emptyState": "ඔබ තවම කිසිදු පන්තියකට එකතු වී නැත.",
       "pendingTitle": "විසඳීමට ඇති ඉල්ලීම්",
       "pendingStatus": "ගුරුවරයාගේ පිළිතුර එනතෙක් රැඳී සිටී",

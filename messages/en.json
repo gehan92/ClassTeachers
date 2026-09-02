@@ -1453,6 +1453,8 @@
       "typeClass": "Class",
       "typeCampusLecturer": "Campus Lecturer",
       "viewProfile": "View profile",
+      "openClass": "Open class",
+      "backToClasses": "Back to my classes",
       "emptyState": "You haven't joined any classes yet.",
       "pendingTitle": "Pending requests",
       "pendingStatus": "Waiting for the teacher to respond",

@@ -23,6 +23,8 @@ export type StudentAssignmentRow = {
   id: string;
   title: string;
   teacherName: string;
+  ownerId: string;
+  ownerType: "teacher" | "class";
   batchId: string | null;
   batchTitle: string | null;
   lessonTitle: string | null;

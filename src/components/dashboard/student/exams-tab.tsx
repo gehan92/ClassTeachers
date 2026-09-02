@@ -53,6 +53,9 @@ export type StudentExamRow = {
   id: string;
   title: string;
   teacherName: string;
+  ownerId: string;
+  ownerType: "teacher" | "class";
+  batchId: string | null;
   durationMinutes: number;
   scheduledLabel: string;
   isOpen: boolean;
@@ -167,7 +170,7 @@ function ExamCard({ exam, onOpen }: { exam: StudentExamRow; onOpen: () => void }
         )}
       </div>
       <p className="mb-3.5 text-sm text-muted-foreground">
-        {t("durationLabel", { minutes: exam.durationMinutes })} · {exam.scheduledLabel}
+        {exam.teacherName} · {t("durationLabel", { minutes: exam.durationMinutes })} · {exam.scheduledLabel}
       </p>
 
       {!exam.isOpen && <p className="text-sm text-muted-foreground">{t("scheduledLabel", { date: exam.scheduledLabel })}</p>}

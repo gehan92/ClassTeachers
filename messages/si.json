@@ -1771,6 +1771,12 @@
       "suggestedTitleInstituteWithSubject": "{subject} ආයතනයක් හෝ පන්තියක් සොයමින්",
       "descriptionLabel": "විස්තරය (විකල්ප)",
       "descriptionPlaceholder": "ඔබට අවශ්‍ය දේ ගැන තව ටිකක් කියන්න...",
+      "preview": {
+        "button": "පෙරදසුන",
+        "dialogTitle": "ඔබේ දැන්වීම පෙනෙන ආකාරය",
+        "dialogSubtitle": "ගුරුවරුන් සහ ආයතන ඉල්ලීම් පිරික්සන විට ඔවුන් දකින දේ මෙයයි.",
+        "untitled": "ඔබේ දැන්වීමේ ශීර්ෂය"
+      },
       "emptyState": "ඔබ තවම දැන්වීමක් පළ කර නැත.",
       "statusOpen": "විවෘතයි",
       "statusClosed": "වසා ඇත",

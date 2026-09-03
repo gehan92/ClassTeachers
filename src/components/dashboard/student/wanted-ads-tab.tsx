@@ -2,14 +2,17 @@
 
 import { useEffect, useId, useState } from "react";
 import { useTranslations } from "next-intl";
+import { GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/features/status-badge";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
+import { avatarGradientClass } from "@/lib/avatar-color";
 import {
   createWantedAd,
   updateWantedAd,
@@ -274,6 +277,91 @@ function buildSuggestedTitle(
   return grade ? `${base} — ${grade}` : base;
 }
 
+/**
+ * Mirrors RequestCard's markup (wanted-ads-board.tsx) almost exactly — same
+ * banner/avatar/footer-pill structure — so what a student sees here is what
+ * actually renders on /requests, not an approximation. Pulls lookingFor/mode
+ * labels and the "Respond" pill straight from requestsPage's own translation
+ * keys rather than duplicating that copy, so the preview can't drift out of
+ * sync with the real public card's wording.
+ */
+function WantedAdPreviewCard({
+  seed,
+  lookingFor,
+  subjectName,
+  mode,
+  gradeLevel,
+  title,
+  description,
+}: {
+  seed: string;
+  lookingFor: LookingFor;
+  subjectName: string | undefined;
+  mode: Mode | "";
+  gradeLevel: string;
+  title: string;
+  description: string;
+}) {
+  const t = useTranslations("studentDashboard.wantedAds");
+  const tr = useTranslations("requestsPage");
+
+  return (
+    <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+      <div className="relative flex h-33 items-end bg-gradient-to-br from-primary to-primary-light p-3">
+        <span className="rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white">
+          {tr(`lookingForOptions.${lookingFor}`)}
+        </span>
+        <div
+          className={`absolute -bottom-5.5 right-3.5 flex size-14 items-center justify-center rounded-full border-4 border-white text-white shadow-sm ${avatarGradientClass(seed)}`}
+        >
+          <GraduationCap className="size-5.5" />
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col px-4 pb-4 pt-7.5">
+        <div className="mb-1 line-clamp-2 font-display text-[17px] tracking-wide text-primary">
+          {title.trim() || t("preview.untitled")}
+        </div>
+        <div className="mb-2.5 text-[12.5px] text-muted-foreground">
+          {[subjectName, mode ? tr(`modeOptions.${mode}`) : null, gradeLevel.trim() || null].filter(Boolean).join(" · ")}
+        </div>
+        {description.trim() && <p className="mb-3.5 line-clamp-2 text-[12.5px] text-muted-foreground">{description}</p>}
+
+        <div className="mt-auto flex items-center border-t border-dashed border-border pt-3.5">
+          <span className="rounded-sm border border-input px-3.5 py-1.5 text-[13px] font-semibold text-primary">
+            {tr("respondCta")}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WantedAdPreviewDialog({
+  open,
+  onOpenChange,
+  ...cardProps
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+} & Parameters<typeof WantedAdPreviewCard>[0]) {
+  const t = useTranslations("studentDashboard.wantedAds");
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{t("preview.dialogTitle")}</DialogTitle>
+          <DialogDescription>{t("preview.dialogSubtitle")}</DialogDescription>
+        </DialogHeader>
+        <div className="overflow-y-auto px-4 pb-4">
+          <WantedAdPreviewCard {...cardProps} />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }) {
   const t = useTranslations("studentDashboard.wantedAds");
   const tc = useTranslations("studentDashboard.common");
@@ -290,6 +378,7 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Only drafts while the student hasn't typed their own headline yet — once
   // they touch the field directly (handleTitleChange below), this stops
@@ -375,11 +464,25 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
         <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
           {t("postAd")}
         </Button>
+        <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+          {t("preview.button")}
+        </Button>
         <Button type="button" size="sm" variant="outline" onClick={() => setOpen(false)}>
           {tc("close")}
         </Button>
         {error && <span className="text-sm font-medium text-destructive">{error}</span>}
       </div>
+      <WantedAdPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        seed={title || "preview"}
+        lookingFor={lookingFor}
+        subjectName={subjectOptions.find((s) => s.id === subjectId)?.name}
+        mode={mode}
+        gradeLevel={gradeLevel}
+        title={title}
+        description={description}
+      />
     </div>
   );
 }
@@ -410,6 +513,7 @@ function WantedAdCard({
   const [toggling, setToggling] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   async function handleSave() {
     if (!title.trim()) {
@@ -519,6 +623,9 @@ function WantedAdCard({
             <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
               {tc("save")}
             </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+              {t("preview.button")}
+            </Button>
             <Button type="button" size="sm" variant="outline" onClick={() => setEditing(false)}>
               {tc("close")}
             </Button>
@@ -526,6 +633,17 @@ function WantedAdCard({
           </div>
         </div>
       )}
+      <WantedAdPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        seed={ad.id}
+        lookingFor={lookingFor}
+        subjectName={subjectOptions.find((s) => s.id === subjectId)?.name}
+        mode={mode}
+        gradeLevel={gradeLevel}
+        title={title}
+        description={description}
+      />
     </div>
   );
 }

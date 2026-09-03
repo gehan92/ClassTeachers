@@ -1771,6 +1771,12 @@
       "suggestedTitleInstituteWithSubject": "Looking for a {subject} institute or class",
       "descriptionLabel": "Description (optional)",
       "descriptionPlaceholder": "Share a bit more about what you need...",
+      "preview": {
+        "button": "Preview",
+        "dialogTitle": "How your ad will look",
+        "dialogSubtitle": "This is what teachers and institutes will see when they browse requests.",
+        "untitled": "Your ad headline"
+      },
       "emptyState": "You haven't posted any ads yet.",
       "statusOpen": "Open",
       "statusClosed": "Closed",

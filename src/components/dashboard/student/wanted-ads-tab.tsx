@@ -425,15 +425,21 @@ function WantedAdPreviewCard({
 
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
-      <div className="relative flex h-33 items-end gap-1.5 bg-gradient-to-br from-primary to-primary-light p-3">
-        <span className="rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white">
-          {tr(`lookingForOptions.${lookingFor}`)}
-        </span>
-        {classType === "revision" && (
+      <div className="relative flex h-33 items-start bg-gradient-to-br from-primary to-primary-light p-3">
+        {/* pr-16 reserves the avatar's bottom-right footprint so a second
+         * badge wraps to its own line instead of sliding underneath it —
+         * flex-wrap alone isn't enough since the avatar is absolutely
+         * positioned and doesn't participate in this row's layout. */}
+        <div className="flex flex-wrap gap-1.5 pr-16">
           <span className="rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white">
-            {tr("classTypeOptions.revision")}
+            {tr(`lookingForOptions.${lookingFor}`)}
           </span>
-        )}
+          {classType === "revision" && (
+            <span className="rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white">
+              {tr("classTypeOptions.revision")}
+            </span>
+          )}
+        </div>
         <div
           className={`absolute -bottom-5.5 right-3.5 flex size-14 items-center justify-center rounded-full border-4 border-white text-white shadow-sm ${avatarGradientClass(seed)}`}
         >

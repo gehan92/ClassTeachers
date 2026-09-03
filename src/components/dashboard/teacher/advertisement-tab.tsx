@@ -9,8 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { AdSlot } from "@/components/features/ad-slot";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { AdPreviewCard } from "@/components/dashboard/ad-preview-card";
+import { AdHistoryList, type AdHistoryRow } from "@/components/dashboard/ad-history-list";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
-import { updateOwnProfileAd, upsertBatchAd, setBatchAdActive, createIndividualAd } from "@/lib/dashboard/ads-actions";
+import {
+  updateOwnProfileAd,
+  upsertBatchAd,
+  setBatchAdActive,
+  deleteBatchAd,
+  createIndividualAd,
+} from "@/lib/dashboard/ads-actions";
 import type { GradeBand } from "@/types/grade-band";
 import { GRADE_BAND_SELECT_VALUES, OPEN_GRADE_VALUE } from "@/lib/grade-band-options";
 
@@ -33,18 +41,19 @@ export function AdvertisementTab({
   subjectOptions,
   defaultHourlyRate,
   defaultMonthlyRate,
+  history = [],
 }: {
   initialContent: string;
   batches: TeacherAdBatchRow[];
   subjectOptions: { id: string; name: string }[];
   defaultHourlyRate?: number | null;
   defaultMonthlyRate?: number | null;
+  history?: AdHistoryRow[];
 }) {
   const t = useTranslations("teacherDashboard.ads");
   const tc = useTranslations("teacherDashboard.common");
 
   const [promotionText, setPromotionText] = useState(initialContent);
-  const [savedText, setSavedText] = useState(initialContent);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -58,7 +67,6 @@ export function AdvertisementTab({
       setError(result.error);
       return;
     }
-    setSavedText(promotionText);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
@@ -120,10 +128,23 @@ export function AdvertisementTab({
       <AdSlot
         size="sm"
         eyebrow={t("adSlot.eyebrow")}
-        text={savedText || t("adSlot.empty")}
+        text={promotionText || t("adSlot.empty")}
         ctaLabel={t("adSlot.ctaLabel")}
         ctaHref="/advertise"
       />
+
+      {history.length > 0 && (
+        <div className="rounded-lg border border-border bg-white p-5">
+          <h3 className="mb-1 text-lg">{t("history.heading")}</h3>
+          <p className="mb-4 text-sm text-muted-foreground">{t("history.subtitle")}</p>
+          <AdHistoryList
+            items={history}
+            ownerType="teacher"
+            restoreLabel={t("history.restore")}
+            restoredLabel={t("history.restored")}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -149,9 +170,12 @@ function BatchAdCard({
   const [hourlyRate, setHourlyRate] = useState(batch.hourlyRate != null ? String(batch.hourlyRate) : "");
   const [monthlyRate, setMonthlyRate] = useState(batch.monthlyRate != null ? String(batch.monthlyRate) : "");
   const [active, setActive] = useState(batch.ad?.status === "active");
+  const [deleted, setDeleted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toggling, setToggling] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { refresh } = useDashboardRefresh();
 
   async function handleSave() {
     if (!subjectId || !title.trim() || !content.trim()) return;
@@ -184,6 +208,21 @@ function BatchAdCard({
     }
   }
 
+  async function handleDelete() {
+    if (!batch.ad) return;
+    if (!window.confirm(t("confirmDelete"))) return;
+    setDeleting(true);
+    setError(null);
+    const result = await deleteBatchAd(batch.ad.id);
+    setDeleting(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setDeleted(true);
+    refresh();
+  }
+
   return (
     <div className="rounded-lg border border-border bg-white p-5">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
@@ -193,7 +232,7 @@ function BatchAdCard({
             {batch.subjectName ? t("batchSubject", { subject: batch.subjectName }) : t("noSubjectYet")}
           </p>
         </div>
-        {batch.ad && !editing && (
+        {batch.ad && !deleted && !editing && (
           <div className="flex items-center gap-2">
             <span className={`text-sm font-medium ${active ? "text-success" : "text-muted-foreground"}`}>
               {active ? t("active") : t("paused")}
@@ -205,7 +244,7 @@ function BatchAdCard({
 
       {!editing && (
         <div>
-          {batch.ad ? (
+          {batch.ad && !deleted ? (
             <div className="mb-3">
               <p className="text-sm font-medium text-foreground">{batch.ad.title}</p>
               <p className="mt-1 text-sm text-muted-foreground">{batch.ad.content}</p>
@@ -213,9 +252,24 @@ function BatchAdCard({
           ) : (
             <p className="mb-3 text-sm text-muted-foreground">{t("noAdYet")}</p>
           )}
-          <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
-            {batch.ad ? t("editAd") : t("createAd")}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
+              {batch.ad && !deleted ? t("editAd") : t("createAd")}
+            </Button>
+            {batch.ad && !deleted && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {t("deleteAd")}
+              </Button>
+            )}
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+          </div>
         </div>
       )}
 
@@ -292,6 +346,13 @@ function BatchAdCard({
             </div>
           </div>
           <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
+          <AdPreviewCard
+            badgeLabel={t("previewBadge")}
+            emptyLabel={t("previewEmpty")}
+            title={title}
+            content={content}
+            meta={subjectOptions.find((s) => s.id === subjectId) ? [subjectOptions.find((s) => s.id === subjectId)!.name] : []}
+          />
           <div className="flex items-center gap-3">
             <Button type="button" size="sm" onClick={handleSave} disabled={saving || subjectOptions.length === 0}>
               {t("save")}
@@ -493,6 +554,16 @@ function IndividualAdCreator({
             </div>
           </div>
           <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
+          <AdPreviewCard
+            badgeLabel={t("previewBadge")}
+            emptyLabel={t("previewEmpty")}
+            title={title}
+            content={content}
+            meta={[
+              subjectOptions.find((s) => s.id === subjectId)?.name,
+              mode === "online" ? t("modeOnline") : t("modePhysical"),
+            ].filter((v): v is string => Boolean(v))}
+          />
           <div className="flex items-center gap-3">
             <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
               {t("save")}

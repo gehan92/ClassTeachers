@@ -29,6 +29,7 @@ import {
   Inbox,
   BellRing,
   TrendingUp,
+  HelpCircle,
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -380,6 +381,14 @@ function DashboardShellInner({
         </nav>
 
         <div className="flex items-center gap-3">
+          <Link
+            href="/help"
+            title={t("help")}
+            aria-label={t("help")}
+            className="hidden size-8 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white sm:flex"
+          >
+            <HelpCircle className="size-4.5" />
+          </Link>
           <NotificationBell notifications={notifications} onNavigate={select} />
           <LocaleSwitcher className="text-white/70 hover:bg-white/10 hover:text-white" />
           {userPhotoUrl ? (
@@ -435,6 +444,9 @@ function DashboardShellInner({
                       {t(item.key)}
                     </Link>
                   ))}
+                  <Link href="/help" className="rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted">
+                    {t("help")}
+                  </Link>
                 </div>
               </nav>
             </SheetContent>

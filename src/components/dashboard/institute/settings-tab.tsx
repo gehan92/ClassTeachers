@@ -27,9 +27,11 @@ export function SettingsTab({
   const [notifications, setNotifications] = useState({
     enrolments: initialNotificationPrefs.enrolments ?? true,
     reviews: initialNotificationPrefs.reviews ?? true,
+    listingDecisions: initialNotificationPrefs.listingDecisions ?? true,
+    newInquiries: initialNotificationPrefs.newInquiries ?? true,
   });
 
-  function handleToggleNotification(key: "enrolments" | "reviews") {
+  function handleToggleNotification(key: "enrolments" | "reviews" | "listingDecisions" | "newInquiries") {
     return (checked: boolean) => {
       setNotifications((n) => ({ ...n, [key]: checked }));
       updateNotificationPrefs({ [key]: checked });
@@ -62,6 +64,22 @@ export function SettingsTab({
               id="notif-reviews"
               checked={notifications.reviews}
               onCheckedChange={handleToggleNotification("reviews")}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="notif-listingDecisions">{t("notifications.listingDecisions")}</Label>
+            <Switch
+              id="notif-listingDecisions"
+              checked={notifications.listingDecisions}
+              onCheckedChange={handleToggleNotification("listingDecisions")}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="notif-newInquiries">{t("notifications.newInquiries")}</Label>
+            <Switch
+              id="notif-newInquiries"
+              checked={notifications.newInquiries}
+              onCheckedChange={handleToggleNotification("newInquiries")}
             />
           </div>
         </div>

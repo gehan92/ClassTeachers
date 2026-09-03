@@ -64,27 +64,33 @@ export function SettingsTab({
     }
   }
 
-  const [newNotes, setNewNotes] = useState(initialNotificationPrefs.newNotes ?? true);
-  const [liveReminders, setLiveReminders] = useState(initialNotificationPrefs.liveReminders ?? true);
-  const [examGraded, setExamGraded] = useState(initialNotificationPrefs.examGraded ?? true);
+  // Every key here has a matching notify() call site passing this exact
+  // prefKey (see src/lib/dashboard/notify.ts) — a toggle only belongs on
+  // this list if it actually gates something the bell can fire.
+  const NOTIFICATION_KEYS = [
+    "examGraded",
+    "joinRequestUpdates",
+    "reviewReplies",
+    "wantedAdResponses",
+    "inquiryReplies",
+  ] as const;
+  const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(NOTIFICATION_KEYS.map((key) => [key, initialNotificationPrefs[key] ?? true])),
+  );
   const [toggleError, setToggleError] = useState<string | null>(null);
-  const newNotesId = useId();
-  const liveRemindersId = useId();
-  const examGradedId = useId();
+  const notifIdPrefix = useId();
 
   // Optimistic toggle: flips immediately for responsiveness, then reverts
-  // itself (`current` is the pre-toggle value, captured fresh each render)
-  // and shows an error if the save actually failed.
-  function handleToggleNotification(key: string, current: boolean, setter: (value: boolean) => void) {
-    return async (checked: boolean) => {
-      setter(checked);
-      setToggleError(null);
-      const result = await updateNotificationPrefs({ [key]: checked });
-      if (result.error) {
-        setter(current);
-        setToggleError(result.error);
-      }
-    };
+  // itself and shows an error if the save actually failed.
+  async function handleToggleNotification(key: string, checked: boolean) {
+    const previous = notifPrefs[key];
+    setNotifPrefs((prev) => ({ ...prev, [key]: checked }));
+    setToggleError(null);
+    const result = await updateNotificationPrefs({ [key]: checked });
+    if (result.error) {
+      setNotifPrefs((prev) => ({ ...prev, [key]: previous }));
+      setToggleError(result.error);
+    }
   }
 
   return (
@@ -136,30 +142,16 @@ export function SettingsTab({
       <div className={panelClass}>
         <h3 className="mb-4 text-lg">{tp("notificationsTitle")}</h3>
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-3">
-            <Label htmlFor={newNotesId}>{tp("notifNewNotes")}</Label>
-            <Switch
-              id={newNotesId}
-              checked={newNotes}
-              onCheckedChange={handleToggleNotification("newNotes", newNotes, setNewNotes)}
-            />
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <Label htmlFor={liveRemindersId}>{tp("notifLiveReminders")}</Label>
-            <Switch
-              id={liveRemindersId}
-              checked={liveReminders}
-              onCheckedChange={handleToggleNotification("liveReminders", liveReminders, setLiveReminders)}
-            />
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <Label htmlFor={examGradedId}>{tp("notifExamGraded")}</Label>
-            <Switch
-              id={examGradedId}
-              checked={examGraded}
-              onCheckedChange={handleToggleNotification("examGraded", examGraded, setExamGraded)}
-            />
-          </div>
+          {NOTIFICATION_KEYS.map((key) => (
+            <div key={key} className="flex items-center justify-between gap-3">
+              <Label htmlFor={`${notifIdPrefix}-${key}`}>{t(`notifications.${key}`)}</Label>
+              <Switch
+                id={`${notifIdPrefix}-${key}`}
+                checked={notifPrefs[key]}
+                onCheckedChange={(checked) => handleToggleNotification(key, checked)}
+              />
+            </div>
+          ))}
         </div>
         {toggleError && <p className="mt-3 text-sm font-medium text-destructive">{toggleError}</p>}
       </div>

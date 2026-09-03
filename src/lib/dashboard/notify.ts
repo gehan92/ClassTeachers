@@ -12,6 +12,15 @@ import type { Database, Json } from "@/types/database";
  * failing to write shouldn't take down the actual thing that happened (an
  * accept, a grade, a reply), so every caller fires this and ignores the
  * result.
+ *
+ * `prefKey`, when passed, gates the notification on the recipient's own
+ * notification_prefs (profiles.notification_prefs, toggled from each
+ * dashboard's Settings tab) — every notify() call used to fire
+ * unconditionally regardless of what the toggles said, which made the
+ * Settings UI decorative. Missing/undefined for a key still means "on"
+ * (opt-out, not opt-in), matching how the Settings toggles already default
+ * to checked. Omit prefKey entirely for notifications nobody should be able
+ * to turn off (none currently — every notify() call site passes one).
  */
 export async function notify(
   supabase: SupabaseClient<Database>,
@@ -19,8 +28,18 @@ export async function notify(
   type: string,
   data: Record<string, Json> = {},
   tab?: string,
+  prefKey?: string,
 ): Promise<void> {
   if (!recipientId) return;
+  if (prefKey) {
+    const { data: recipientProfile } = await supabase
+      .from("profiles")
+      .select("notification_prefs")
+      .eq("id", recipientId)
+      .maybeSingle();
+    const prefs = (recipientProfile?.notification_prefs as Record<string, boolean> | null) ?? {};
+    if (prefs[prefKey] === false) return;
+  }
   await supabase.rpc("create_notification", {
     p_recipient_id: recipientId,
     p_type: type,

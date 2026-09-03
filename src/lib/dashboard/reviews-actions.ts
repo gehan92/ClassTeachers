@@ -59,7 +59,7 @@ export async function postReview(input: {
     const { data: cp } = await supabase.from("class_profiles").select("owner_id").eq("id", parsed.data.targetId).maybeSingle();
     recipientId = cp?.owner_id ?? parsed.data.targetId;
   }
-  await notify(supabase, recipientId, "review_posted", { rating: parsed.data.rating }, "reviews");
+  await notify(supabase, recipientId, "review_posted", { rating: parsed.data.rating }, "reviews", "reviews");
   return {};
 }
 
@@ -93,7 +93,7 @@ export async function replyToReview(input: { id: string; replyText: string }): P
   if (error) {
     return { error: "Couldn't post your reply. Please try again." };
   }
-  await notify(supabase, updated?.reviewer_id, "review_replied", {}, "reviews");
+  await notify(supabase, updated?.reviewer_id, "review_replied", {}, "reviews", "reviewReplies");
   return {};
 }
 

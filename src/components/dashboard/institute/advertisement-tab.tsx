@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { AdSlot } from "@/components/features/ad-slot";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { AdPreviewCard } from "@/components/dashboard/ad-preview-card";
+import { AdHistoryList, type AdHistoryRow } from "@/components/dashboard/ad-history-list";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import {
   createClassBatchAd,
@@ -40,9 +42,13 @@ export type InstitutePromotionRow = { id: string; content: string };
 export function AdvertisementTab({
   promotions,
   batches,
+  adHistory = [],
+  promotionHistory = [],
 }: {
   promotions: InstitutePromotionRow[];
   batches: InstituteAdBatchRow[];
+  adHistory?: AdHistoryRow[];
+  promotionHistory?: AdHistoryRow[];
 }) {
   const t = useTranslations("instituteDashboard.ads");
   const tc = useTranslations("instituteDashboard.common");
@@ -110,6 +116,39 @@ export function AdvertisementTab({
         ctaLabel={t("spotlight.cta")}
         ctaHref="/advertise"
       />
+
+      {(adHistory.length > 0 || promotionHistory.length > 0) && (
+        <div className="rounded-lg border border-border bg-white p-5">
+          <h3 className="mb-1 text-lg">{t("history.heading")}</h3>
+          <p className="mb-4 text-sm text-muted-foreground">{t("history.subtitle")}</p>
+          {adHistory.length > 0 && (
+            <div className="mb-4">
+              <p className="mb-2 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                {t("history.classAdsHeading")}
+              </p>
+              <AdHistoryList
+                items={adHistory}
+                ownerType="class"
+                restoreLabel={t("history.restore")}
+                restoredLabel={t("history.restored")}
+              />
+            </div>
+          )}
+          {promotionHistory.length > 0 && (
+            <div>
+              <p className="mb-2 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                {t("history.promotionsHeading")}
+              </p>
+              <AdHistoryList
+                items={promotionHistory}
+                ownerType="class"
+                restoreLabel={t("history.restore")}
+                restoredLabel={t("history.restored")}
+              />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -327,6 +366,7 @@ function ClassBatchAdCard({ ad, onDeleted, onSaved }: { ad: InstituteAdRow; onDe
               onChange={(e) => setContent(e.target.value)}
             />
           </div>
+          <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
           <div className="flex items-center gap-3">
             <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
               {t("save")}
@@ -393,6 +433,7 @@ function ClassBatchAdCreateForm({
           onChange={(e) => setContent(e.target.value)}
         />
       </div>
+      <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
       <div className="flex items-center gap-3">
         <Button type="button" size="sm" onClick={handleCreate} disabled={saving}>
           {t("save")}
@@ -519,6 +560,7 @@ function PromotionCard({
             value={content}
             onChange={(e) => setContent(e.target.value)}
           />
+          <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} content={content} />
           <div className="flex items-center gap-3">
             <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
               {t("save")}
@@ -567,6 +609,7 @@ function PromotionCreateForm({ onCreated, onCancel }: { onCreated: () => void; o
           onChange={(e) => setContent(e.target.value)}
         />
       </div>
+      <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} content={content} />
       <div className="flex items-center gap-3">
         <Button type="button" size="sm" onClick={handleCreate} disabled={saving}>
           {t("save")}

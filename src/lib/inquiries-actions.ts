@@ -109,7 +109,7 @@ export async function replyToInquiry(id: string, body: string): Promise<ActionRe
   }
   // Only reachable when the sender was signed in at inquiry time (0037) — a
   // guest inquirer has no account to notify.
-  await notify(supabase, inquiry?.inquirer_id, "inquiry_reply", {}, "inquiries");
+  await notify(supabase, inquiry?.inquirer_id, "inquiry_reply", {}, "inquiries", "inquiryReplies");
   return {};
 }
 
@@ -157,7 +157,7 @@ export async function sendInquirerMessage(id: string, body: string): Promise<Act
       const { data: cp } = await supabase.from("class_profiles").select("owner_id").eq("id", inquiry.owner_id).maybeSingle();
       recipientId = cp?.owner_id ?? inquiry.owner_id;
     }
-    await notify(supabase, recipientId, "inquiry_message", {}, "inquiries");
+    await notify(supabase, recipientId, "inquiry_message", {}, "inquiries", "newInquiries");
   }
   return {};
 }

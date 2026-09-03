@@ -6,6 +6,7 @@ import { TeachersTab, type InstituteTeacherRow } from "@/components/dashboard/in
 import { BatchesTab } from "@/components/dashboard/institute/batches-tab";
 import { StudentsTab, type InstituteStudentRow, type InstituteJoinRequestRow } from "@/components/dashboard/institute/students-tab";
 import { AdvertisementTab, type InstituteAdBatchRow } from "@/components/dashboard/institute/advertisement-tab";
+import type { AdHistoryRow } from "@/components/dashboard/ad-history-list";
 import { ReviewsTab } from "@/components/dashboard/institute/reviews-tab";
 import { ProfileTab } from "@/components/dashboard/institute/profile-tab";
 import { SettingsTab } from "@/components/dashboard/institute/settings-tab";
@@ -159,12 +160,14 @@ export default async function InstituteDashboardPage({
     instituteId
       ? supabase
           .from("advertisements")
-          .select("id, content")
+          .select("id, content, status")
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
           .eq("placement", "own_profile")
           .order("created_at", { ascending: false })
-      : Promise.resolve({ data: [] as { id: string; content: string }[] }),
+      : Promise.resolve({
+          data: [] as { id: string; content: string; status: "active" | "expired" | "removed" | "deleted" }[],
+        }),
     instituteId
       ? supabase
           .from("inquiries")
@@ -226,7 +229,7 @@ export default async function InstituteDashboardPage({
           .eq("owner_id", instituteId)
           .eq("placement", "search_results")
       : Promise.resolve({
-          data: [] as { id: string; batch_id: string | null; title: string; content: string | null; status: "active" | "expired" | "removed" }[],
+          data: [] as { id: string; batch_id: string | null; title: string; content: string | null; status: "active" | "expired" | "removed" | "deleted" }[],
         }),
   ]);
 
@@ -533,10 +536,14 @@ export default async function InstituteDashboardPage({
   // creation (createBatch's resolve_subject step), so there's nothing to
   // set here.
   const classAdsByBatchId = new Map<string, { id: string; title: string; content: string | null; status: "active" | "expired" | "removed" }[]>();
+  // Deleted (0109 soft-delete) ads are set aside here rather than filtered
+  // out entirely — the Advertisement tab's "Ad history" section below still
+  // needs to show and let the owner restore them.
+  const deletedClassAdRows = (classAdRows ?? []).filter((ad) => ad.status === "deleted");
   for (const ad of classAdRows ?? []) {
-    if (!ad.batch_id) continue;
+    if (!ad.batch_id || ad.status === "deleted") continue;
     const list = classAdsByBatchId.get(ad.batch_id) ?? [];
-    list.push(ad);
+    list.push({ id: ad.id, title: ad.title, content: ad.content, status: ad.status });
     classAdsByBatchId.set(ad.batch_id, list);
   }
   const instituteAdBatches: InstituteAdBatchRow[] = (batchRows ?? []).map((b) => {
@@ -589,6 +596,18 @@ export default async function InstituteDashboardPage({
   const studentInfoById = new Map((enrolledStudentRows ?? []).map((row) => [row.id, row]));
   const batchTitleById = new Map((batchRows ?? []).map((b) => [b.id, b.title]));
   const generalBatchLabel = t("students.noBatch");
+
+  // Ad history (0109) — deleted class ads and promotions, shown read-only
+  // with a Restore action; see deletedClassAdRows above.
+  const instituteAdHistory: AdHistoryRow[] = deletedClassAdRows.map((ad) => ({
+    id: ad.id,
+    title: ad.title,
+    content: ad.content ?? "",
+    meta: ad.batch_id ? (batchTitleById.get(ad.batch_id) ?? undefined) : undefined,
+  }));
+  const institutePromotionHistory: AdHistoryRow[] = (adRows ?? [])
+    .filter((row) => row.status === "deleted")
+    .map((row) => ({ id: row.id, content: row.content ?? "" }));
 
   const instituteStudents: InstituteStudentRow[] = acceptedInstituteEnrollments.map((row) => ({
     id: row.id,
@@ -754,8 +773,12 @@ export default async function InstituteDashboardPage({
         studentRequests: <WantedAdsBrowseTab requests={wantedAdRequests} />,
         ads: (
           <AdvertisementTab
-            promotions={(adRows ?? []).map((row) => ({ id: row.id, content: row.content ?? "" }))}
+            promotions={(adRows ?? [])
+              .filter((row) => row.status !== "deleted")
+              .map((row) => ({ id: row.id, content: row.content ?? "" }))}
             batches={instituteAdBatches}
+            adHistory={instituteAdHistory}
+            promotionHistory={institutePromotionHistory}
           />
         ),
         announcements: <AnnouncementsTab announcements={announcements} />,

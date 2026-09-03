@@ -22,6 +22,7 @@ import { InquiriesTab } from "@/components/dashboard/inquiries-tab";
 import { WantedAdsBrowseTab } from "@/components/dashboard/wanted-ads-browse-tab";
 import { AdvertisementTab } from "@/components/dashboard/teacher/advertisement-tab";
 import type { TeacherAdBatchRow } from "@/components/dashboard/teacher/advertisement-tab";
+import type { AdHistoryRow } from "@/components/dashboard/ad-history-list";
 import { SettingsTab, type InstituteInviteRow } from "@/components/dashboard/teacher/settings-tab";
 import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { TeacherOnboardingWizard } from "@/components/onboarding/teacher-onboarding-wizard";
@@ -509,7 +510,18 @@ export default async function TeacherDashboardPage({
     ...instituteBatchLabelById,
   ]);
 
-  const batchAdByBatchId = new Map((batchAdRows ?? []).filter((a) => a.batch_id).map((a) => [a.batch_id as string, a]));
+  // Deleted (0109 soft-delete) rows stay in batchAdRows so the Advertisement
+  // tab's "Ad history" section can list and restore them — they're set
+  // aside here rather than treated as a batch's live ad.
+  const batchAdByBatchId = new Map<string, { id: string; title: string; content: string | null; status: "active" | "expired" | "removed" }>();
+  const deletedBatchAdRows: NonNullable<typeof batchAdRows> = [];
+  for (const a of batchAdRows ?? []) {
+    if (a.status === "deleted") {
+      deletedBatchAdRows.push(a);
+      continue;
+    }
+    if (a.batch_id) batchAdByBatchId.set(a.batch_id, { id: a.id, title: a.title, content: a.content, status: a.status });
+  }
 
   const adBatches: TeacherAdBatchRow[] = (batchRows ?? []).map((b) => {
     const ad = batchAdByBatchId.get(b.id);
@@ -523,6 +535,13 @@ export default async function TeacherDashboardPage({
       ad: ad ? { id: ad.id, title: ad.title, content: ad.content ?? "", status: ad.status } : null,
     };
   });
+
+  const teacherAdHistory: AdHistoryRow[] = deletedBatchAdRows.map((ad) => ({
+    id: ad.id,
+    title: ad.title,
+    content: ad.content ?? "",
+    meta: ad.batch_id ? (batchTitleById.get(ad.batch_id) ?? undefined) : undefined,
+  }));
 
   // get_roster_student_info only ever resolves this teacher's own students
   // (0032); get_managed_batch_student_info (0101) is the institute-batch
@@ -1074,6 +1093,7 @@ export default async function TeacherDashboardPage({
             subjectOptions={subjectOptions}
             defaultHourlyRate={priceRow?.hourly_rate}
             defaultMonthlyRate={priceRow?.monthly_rate}
+            history={teacherAdHistory}
           />
         ),
         settings: (

@@ -955,7 +955,7 @@ export type Database = {
           content: string | null;
           placement: "own_profile" | "search_results" | "homepage_banner" | "homepage_spotlight";
           plan: "basic" | "featured" | "homepage_spotlight";
-          status: "active" | "expired" | "removed";
+          status: "active" | "expired" | "removed" | "deleted";
           subject_id: string | null;
           batch_id: string | null;
           starts_at: string;
@@ -971,7 +971,7 @@ export type Database = {
           content?: string | null;
           placement?: "own_profile" | "search_results" | "homepage_banner" | "homepage_spotlight";
           plan: "basic" | "featured" | "homepage_spotlight";
-          status?: "active" | "expired" | "removed";
+          status?: "active" | "expired" | "removed" | "deleted";
           subject_id?: string | null;
           batch_id?: string | null;
           starts_at?: string;
@@ -987,7 +987,7 @@ export type Database = {
           content?: string | null;
           placement?: "own_profile" | "search_results" | "homepage_banner" | "homepage_spotlight";
           plan?: "basic" | "featured" | "homepage_spotlight";
-          status?: "active" | "expired" | "removed";
+          status?: "active" | "expired" | "removed" | "deleted";
           subject_id?: string | null;
           batch_id?: string | null;
           starts_at?: string;

@@ -370,6 +370,6 @@ export async function gradeSubmission(input: {
   if (error) {
     return { error: "Couldn't save this grade. Please try again." };
   }
-  await notify(supabase, submission.student_id, "exam_graded", { examTitle: exam.title, grade }, "exams");
+  await notify(supabase, submission.student_id, "exam_graded", { examTitle: exam.title, grade }, "exams", "examGraded");
   return {};
 }

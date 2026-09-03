@@ -433,6 +433,7 @@ export async function respondToJoinRequest(
       accept ? "join_request_accepted" : "join_request_declined",
       { ownerName },
       "classes",
+      "joinRequestUpdates",
     );
   }
   return {};

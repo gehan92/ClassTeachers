@@ -72,7 +72,7 @@ export async function resolveApproval(input: {
     const { data: cp } = await supabase.from("class_profiles").select("owner_id").eq("id", input.id).maybeSingle();
     recipientId = cp?.owner_id ?? input.id;
   }
-  await notify(supabase, recipientId, "listing_decision", { decision: input.decision }, "profile");
+  await notify(supabase, recipientId, "listing_decision", { decision: input.decision }, "profile", "listingDecisions");
   return {};
 }
 

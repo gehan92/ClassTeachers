@@ -1276,10 +1276,12 @@
         "save": "Save ad",
         "addAnotherAd": "Add another ad",
         "deleteAd": "Delete ad",
-        "confirmDelete": "Delete this ad? It will no longer show in search results.",
+        "confirmDelete": "Delete this ad? It will no longer show in search results. You can restore it later from Ad history.",
         "rateHeading": "Class rate",
         "saveRate": "Save rate",
-        "rateSaved": "Rate saved"
+        "rateSaved": "Rate saved",
+        "previewBadge": "Preview",
+        "previewEmpty": "Fill in the title and details above to see a live preview here."
       },
       "panelTitle": "Your promotion",
       "promotionSubtitle": "Institute-wide promotions shown on your public profile page — post as many as you like.",
@@ -1291,11 +1293,21 @@
       "addPromotion": "Add a promotion",
       "editPromotion": "Edit",
       "deletePromotion": "Delete",
-      "confirmDeletePromotion": "Delete this promotion? It will no longer show on your public profile.",
+      "confirmDeletePromotion": "Delete this promotion? It will no longer show on your public profile. You can restore it later from Ad history.",
+      "previewBadge": "Preview",
+      "previewEmpty": "Write your promotion text above to see a live preview here.",
       "spotlight": {
         "eyebrow": "Get more visibility",
         "cta": "See ad plans",
         "empty": "Want more reach? See what a paid ad placement can do."
+      },
+      "history": {
+        "heading": "Ad history",
+        "subtitle": "Ads and promotions you've deleted — restore one to bring it back as paused, then switch it on again when you're ready.",
+        "classAdsHeading": "Class ads",
+        "promotionsHeading": "Promotions",
+        "restore": "Restore",
+        "restored": "Restored"
       }
     },
     "reviews": {
@@ -1380,7 +1392,9 @@
       "notificationsHeading": "Notifications",
       "notifications": {
         "enrolments": "New enrolments",
-        "reviews": "New reviews"
+        "reviews": "New reviews",
+        "listingDecisions": "Your listing is approved or rejected",
+        "newInquiries": "A new inquiry arrives"
       }
     },
     "students": {
@@ -1671,10 +1685,7 @@
         "preferredMode": "Preferred class mode",
         "availability": "Availability"
       },
-      "notificationsTitle": "Notifications",
-      "notifNewNotes": "New notes",
-      "notifLiveReminders": "Live class reminders",
-      "notifExamGraded": "Exam graded"
+      "notificationsTitle": "Notifications"
     },
     "assignments": {
       "title": "Assignments",
@@ -1717,7 +1728,14 @@
       },
       "changePassword": "Change password",
       "contactHeading": "Contact preference",
-      "contactSubtitle": "Controls what your teachers can see about you."
+      "contactSubtitle": "Controls what your teachers can see about you.",
+      "notifications": {
+        "examGraded": "Exam graded",
+        "joinRequestUpdates": "A class accepts or declines your join request",
+        "reviewReplies": "A teacher or institute replies to your review",
+        "wantedAdResponses": "A teacher or institute responds to your request ad",
+        "inquiryReplies": "A teacher or institute replies to your inquiry"
+      }
     },
     "wantedAds": {
       "heading": "Post an Ad",
@@ -2358,7 +2376,11 @@
         "ratePlaceholderDefault": "Default: Rs. {rate}",
         "ratePlaceholderNone": "Rs.",
         "rateHelper": "Leave blank to use your default rate from Profile. Set one here to charge differently for this class — e.g. more for individual tutoring than a group class.",
-        "save": "Save ad"
+        "save": "Save ad",
+        "deleteAd": "Delete ad",
+        "confirmDelete": "Delete this ad? It will no longer show in search results. You can restore it later from Ad history.",
+        "previewBadge": "Preview",
+        "previewEmpty": "Fill in the title and details above to see a live preview here."
       },
       "individualAd": {
         "heading": "Advertise individual tutoring",
@@ -2380,7 +2402,9 @@
         "ratePlaceholderDefault": "Default: Rs. {rate}",
         "ratePlaceholderNone": "Rs.",
         "rateHelper": "Leave blank to use your default rate from Profile. Set one here to charge differently for individual tutoring than your group classes.",
-        "save": "Save ad"
+        "save": "Save ad",
+        "previewBadge": "Preview",
+        "previewEmpty": "Fill in the title and details above to see a live preview here."
       },
       "promotionHeading": "Promotion text",
       "promotionLabel": "Promotion text",
@@ -2391,6 +2415,12 @@
         "text": "Want more reach?",
         "ctaLabel": "See ad plans",
         "empty": "Write your promotion text above to see a live preview here."
+      },
+      "history": {
+        "heading": "Ad history",
+        "subtitle": "Ads you've deleted — restore one to bring it back as paused, then switch it on again when you're ready.",
+        "restore": "Restore",
+        "restored": "Restored"
       }
     },
     "settings": {
@@ -2409,7 +2439,9 @@
       "notifications": {
         "enrolments": "New enrolments",
         "reviews": "New reviews",
-        "submissions": "Exam submissions"
+        "submissions": "Exam submissions",
+        "listingDecisions": "Your listing is approved or rejected",
+        "newInquiries": "A new inquiry arrives"
       },
       "instituteInvites": {
         "heading": "Institute invites",

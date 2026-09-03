@@ -868,7 +868,10 @@ export default async function StudentDashboardPage({
       ]}
       groups={[
         {
-          items: [{ key: "overview", label: t("tabs.overview") }],
+          items: [
+            { key: "overview", label: t("tabs.overview") },
+            { key: "progress", label: t("tabs.progress") },
+          ],
         },
         {
           label: t("groupClasses"),
@@ -883,7 +886,6 @@ export default async function StudentDashboardPage({
             { key: "notes", label: t("tabs.notes") },
             { key: "exams", label: t("tabs.exams"), count: examsDueCount },
             { key: "assignments", label: t("tabs.assignments"), count: assignmentsDueCount },
-            { key: "progress", label: t("tabs.progress") },
           ],
         },
         {

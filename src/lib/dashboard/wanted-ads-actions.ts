@@ -206,7 +206,7 @@ export async function respondToWantedAd(wantedAdId: string, message: string): Pr
   }
 
   const { data: wantedAd } = await supabase.from("wanted_ads").select("student_id").eq("id", parsed.data.wantedAdId).maybeSingle();
-  await notify(supabase, wantedAd?.student_id, "wanted_ad_response", { responderType }, "wantedAds");
+  await notify(supabase, wantedAd?.student_id, "wanted_ad_response", { responderType }, "wantedAds", "wantedAdResponses");
   return {};
 }
 

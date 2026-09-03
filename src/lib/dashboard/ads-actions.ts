@@ -282,14 +282,82 @@ export async function deleteClassBatchAd(adId: string): Promise<ActionResult> {
     return { error: "No institute profile found for this account." };
   }
 
+  // Soft delete (0109) — the row stays so it can show up in Ad history and
+  // be restored later, rather than a hard .delete() with no way back.
   const { error } = await supabase
     .from("advertisements")
-    .delete()
+    .update({ status: "deleted" })
     .eq("id", adId)
     .eq("owner_type", "class")
     .eq("owner_id", classProfile.id);
   if (error) {
     return { error: "Couldn't delete this ad. Please try again." };
+  }
+  return {};
+}
+
+export async function deleteBatchAd(adId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  // Soft delete (0109), mirroring deleteClassBatchAd above — the teacher
+  // side previously had no delete at all, only pause (setBatchAdActive).
+  const { error } = await supabase
+    .from("advertisements")
+    .update({ status: "deleted" })
+    .eq("id", adId)
+    .eq("owner_type", "teacher")
+    .eq("owner_id", user.id);
+  if (error) {
+    return { error: "Couldn't delete this ad. Please try again." };
+  }
+  return {};
+}
+
+const restoreAdSchema = z.object({ adId: z.string().uuid(), ownerType: z.enum(["teacher", "class"]) });
+
+/**
+ * Undo for deleteBatchAd/deleteClassBatchAd/deleteInstitutePromotion (0109)
+ * — brings a deleted row back as 'removed' (paused), not straight back to
+ * 'active', so the owner reviews it and flips it live again deliberately
+ * rather than a restore silently making an old ad public again.
+ */
+export async function restoreAd(input: { adId: string; ownerType: "teacher" | "class" }): Promise<ActionResult> {
+  const parsed = restoreAdSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: "Couldn't restore this ad. Please try again." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  let ownerId = user.id;
+  if (parsed.data.ownerType === "class") {
+    const { data: classProfile } = await supabase.from("class_profiles").select("id").eq("owner_id", user.id).maybeSingle();
+    if (!classProfile) {
+      return { error: "No institute profile found for this account." };
+    }
+    ownerId = classProfile.id;
+  }
+
+  const { error } = await supabase
+    .from("advertisements")
+    .update({ status: "removed" })
+    .eq("id", parsed.data.adId)
+    .eq("owner_type", parsed.data.ownerType)
+    .eq("owner_id", ownerId);
+  if (error) {
+    return { error: "Couldn't restore this ad. Please try again." };
   }
   return {};
 }
@@ -411,9 +479,10 @@ export async function deleteInstitutePromotion(adId: string): Promise<ActionResu
     return { error: "No institute profile found for this account." };
   }
 
+  // Soft delete (0109) — see deleteClassBatchAd above.
   const { error } = await supabase
     .from("advertisements")
-    .delete()
+    .update({ status: "deleted" })
     .eq("id", adId)
     .eq("owner_type", "class")
     .eq("owner_id", classProfile.id)

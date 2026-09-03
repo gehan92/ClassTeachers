@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -141,6 +141,7 @@ function WantedAdFields({
   description,
   setDescription,
   idPrefix,
+  titleHint,
 }: {
   subjectOptions: SubjectOption[];
   lookingFor: LookingFor;
@@ -156,6 +157,11 @@ function WantedAdFields({
   description: string;
   setDescription: (value: string) => void;
   idPrefix: string;
+  /** Shown under the headline field only by the create flow (WantedAdCreator
+   * auto-drafts a headline from the fields above) — editing an existing ad
+   * never auto-overwrites its saved headline, so there's nothing to explain
+   * there. */
+  titleHint?: string;
 }) {
   const t = useTranslations("studentDashboard.wantedAds");
 
@@ -226,6 +232,7 @@ function WantedAdFields({
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t("titlePlaceholder")}
           />
+          {titleHint && <p className="text-xs text-muted-foreground">{titleHint}</p>}
         </div>
       </div>
       <div className="grid gap-1.5">
@@ -242,6 +249,31 @@ function WantedAdFields({
   );
 }
 
+/**
+ * A blank headline is the single biggest thing stopping a student from
+ * posting — not everyone can turn "I'm looking for a Sinhala teacher for
+ * Grade 11" into a punchy title from scratch. This drafts one from the
+ * fields the student's already picking anyway, so there's something usable
+ * the moment they've chosen a couple of dropdowns instead of a blank input.
+ * Grade is appended with a dash rather than a translated "for" connector —
+ * sidesteps needing per-language word-order handling for something that's
+ * just a starting point the student edits anyway.
+ */
+function buildSuggestedTitle(
+  t: ReturnType<typeof useTranslations>,
+  lookingFor: LookingFor,
+  subjectName: string | undefined,
+  gradeLevel: string,
+) {
+  const base = subjectName
+    ? t(lookingFor === "teacher" ? "suggestedTitleTeacherWithSubject" : "suggestedTitleInstituteWithSubject", {
+        subject: subjectName,
+      })
+    : t(lookingFor === "teacher" ? "suggestedTitleTeacherBase" : "suggestedTitleInstituteBase");
+  const grade = gradeLevel.trim();
+  return grade ? `${base} — ${grade}` : base;
+}
+
 function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }) {
   const t = useTranslations("studentDashboard.wantedAds");
   const tc = useTranslations("studentDashboard.common");
@@ -254,9 +286,26 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
   const [mode, setMode] = useState<Mode | "">("");
   const [gradeLevel, setGradeLevel] = useState("");
   const [title, setTitle] = useState("");
+  const [titleTouched, setTitleTouched] = useState(false);
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Only drafts while the student hasn't typed their own headline yet — once
+  // they touch the field directly (handleTitleChange below), this stops
+  // overwriting whatever they wrote.
+  useEffect(() => {
+    if (titleTouched) return;
+    const subjectName = subjectOptions.find((s) => s.id === subjectId)?.name;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- drafting a suggestion from other field state, not derived render state
+    setTitle(buildSuggestedTitle(t, lookingFor, subjectName, gradeLevel));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- t/subjectOptions are stable for this component's lifetime; only the actual field values should retrigger the draft
+  }, [lookingFor, subjectId, gradeLevel, titleTouched]);
+
+  function handleTitleChange(value: string) {
+    setTitleTouched(true);
+    setTitle(value);
+  }
 
   async function handleSave() {
     if (!title.trim()) {
@@ -277,6 +326,7 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
     setMode("");
     setGradeLevel("");
     setTitle("");
+    setTitleTouched(false);
     setDescription("");
     refresh();
   }
@@ -315,7 +365,8 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
         gradeLevel={gradeLevel}
         setGradeLevel={setGradeLevel}
         title={title}
-        setTitle={setTitle}
+        setTitle={handleTitleChange}
+        titleHint={t("titleAutoDraftHint")}
         description={description}
         setDescription={setDescription}
         idPrefix={idPrefix}

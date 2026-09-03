@@ -1803,6 +1803,12 @@
       "suggestedTitleInstituteWithSubject": "Looking for a {subject} institute or class",
       "descriptionLabel": "Description (optional)",
       "descriptionPlaceholder": "Share a bit more about what you need...",
+      "descriptionAutoDraftHint": "We've drafted a starting point from your selections above — expand or edit it as needed.",
+      "additionalDetailsLabel": "Additional details (optional)",
+      "additionalDetailsPlaceholder": "Anything else worth mentioning — preferred timing, budget, topics to focus on...",
+      "wordsCounter": "{count}/{limit} words",
+      "descriptionTooLong": "Please shorten your description to {limit} words or fewer.",
+      "additionalDetailsTooLong": "Please shorten additional details to {limit} words or fewer.",
       "preview": {
         "button": "Preview",
         "dialogTitle": "How your ad will look",

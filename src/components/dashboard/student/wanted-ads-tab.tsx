@@ -34,6 +34,23 @@ const MEDIUM_OPTIONS: Medium[] = ["english", "sinhala", "tamil", "other"];
 type ClassType = "new" | "revision";
 const CLASS_TYPE_OPTIONS: ClassType[] = ["new", "revision"];
 
+const DESCRIPTION_WORD_LIMIT = 60;
+const ADDITIONAL_DETAILS_WORD_LIMIT = 60;
+
+function countWords(text: string): number {
+  const trimmed = text.trim();
+  return trimmed ? trimmed.split(/\s+/).length : 0;
+}
+
+function WordCounter({ count, limit }: { count: number; limit: number }) {
+  const t = useTranslations("studentDashboard.wantedAds");
+  return (
+    <p className={`text-xs ${count > limit ? "font-medium text-destructive" : "text-muted-foreground"}`}>
+      {t("wordsCounter", { count, limit })}
+    </p>
+  );
+}
+
 export type WantedAdRow = {
   id: string;
   lookingFor: LookingFor;
@@ -166,6 +183,7 @@ function WantedAdFields({
   setDescription,
   idPrefix,
   titleHint,
+  descriptionHint,
 }: {
   subjectOptions: SubjectOption[];
   lookingFor: LookingFor;
@@ -190,6 +208,8 @@ function WantedAdFields({
    * never auto-overwrites its saved headline, so there's nothing to explain
    * there. */
   titleHint?: string;
+  /** Same story as titleHint, for the auto-drafted description. */
+  descriptionHint?: string;
 }) {
   const t = useTranslations("studentDashboard.wantedAds");
 
@@ -300,9 +320,19 @@ function WantedAdFields({
           onChange={(e) => setDescription(e.target.value)}
           placeholder={t("descriptionPlaceholder")}
         />
+        {descriptionHint && <p className="text-xs text-muted-foreground">{descriptionHint}</p>}
+        <WordCounter count={countWords(description)} limit={DESCRIPTION_WORD_LIMIT} />
       </div>
     </div>
   );
+}
+
+function buildLookingForSentence(t: ReturnType<typeof useTranslations>, lookingFor: LookingFor, subjectName: string | undefined) {
+  return subjectName
+    ? t(lookingFor === "teacher" ? "suggestedTitleTeacherWithSubject" : "suggestedTitleInstituteWithSubject", {
+        subject: subjectName,
+      })
+    : t(lookingFor === "teacher" ? "suggestedTitleTeacherBase" : "suggestedTitleInstituteBase");
 }
 
 /**
@@ -321,13 +351,38 @@ function buildSuggestedTitle(
   subjectName: string | undefined,
   gradeLevel: string,
 ) {
-  const base = subjectName
-    ? t(lookingFor === "teacher" ? "suggestedTitleTeacherWithSubject" : "suggestedTitleInstituteWithSubject", {
-        subject: subjectName,
-      })
-    : t(lookingFor === "teacher" ? "suggestedTitleTeacherBase" : "suggestedTitleInstituteBase");
+  const base = buildLookingForSentence(t, lookingFor, subjectName);
   const grade = gradeLevel.trim();
   return grade ? `${base} — ${grade}` : base;
+}
+
+/**
+ * Same motivation as buildSuggestedTitle, for the description: a blank
+ * paragraph is intimidating, and most of what a description would say is
+ * already sitting in the fields above. Facts are joined as "Label: value"
+ * fragments (not woven into one flowing sentence) so each language only
+ * needs to translate the label word — no per-language grammar/word-order
+ * handling for a multi-clause sentence. Medium always has a value (default
+ * 'sinhala') so it's always included; the revision tag only shows up when
+ * it's actually notable, same call as the card's badge.
+ */
+function buildSuggestedDescription(
+  t: ReturnType<typeof useTranslations>,
+  lookingFor: LookingFor,
+  subjectName: string | undefined,
+  mode: Mode | "",
+  medium: Medium,
+  classType: ClassType,
+  gradeLevel: string,
+) {
+  const base = buildLookingForSentence(t, lookingFor, subjectName);
+  const facts = [
+    gradeLevel.trim() ? `${t("gradeLabel")}: ${gradeLevel.trim()}` : null,
+    mode ? `${t("modeLabel")}: ${t(`modeOptions.${mode}`)}` : null,
+    `${t("mediumLabel")}: ${t(`mediumOptions.${medium}`)}`,
+    classType === "revision" ? t("classTypeOptions.revision") : null,
+  ].filter((fact): fact is string => Boolean(fact));
+  return facts.length > 0 ? `${base}.\n${facts.join(" · ")}` : `${base}.`;
 }
 
 /**
@@ -442,6 +497,8 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
   const [title, setTitle] = useState("");
   const [titleTouched, setTitleTouched] = useState(false);
   const [description, setDescription] = useState("");
+  const [descriptionTouched, setDescriptionTouched] = useState(false);
+  const [additionalDetails, setAdditionalDetails] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -457,9 +514,25 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- t/subjectOptions are stable for this component's lifetime; only the actual field values should retrigger the draft
   }, [lookingFor, subjectId, gradeLevel, titleTouched]);
 
+  // Same drafting pattern as the headline, one effect down — keeps drafting
+  // the description from the structured fields until the student edits it
+  // directly (handleDescriptionChange below).
+  useEffect(() => {
+    if (descriptionTouched) return;
+    const subjectName = subjectOptions.find((s) => s.id === subjectId)?.name;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- drafting a suggestion from other field state, not derived render state
+    setDescription(buildSuggestedDescription(t, lookingFor, subjectName, mode, medium, classType, gradeLevel));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- t/subjectOptions are stable for this component's lifetime; only the actual field values should retrigger the draft
+  }, [lookingFor, subjectId, mode, medium, classType, gradeLevel, descriptionTouched]);
+
   function handleTitleChange(value: string) {
     setTitleTouched(true);
     setTitle(value);
+  }
+
+  function handleDescriptionChange(value: string) {
+    setDescriptionTouched(true);
+    setDescription(value);
   }
 
   async function handleSave() {
@@ -467,9 +540,27 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
       setError(t("titleRequired"));
       return;
     }
+    if (countWords(description) > DESCRIPTION_WORD_LIMIT) {
+      setError(t("descriptionTooLong", { limit: DESCRIPTION_WORD_LIMIT }));
+      return;
+    }
+    if (countWords(additionalDetails) > ADDITIONAL_DETAILS_WORD_LIMIT) {
+      setError(t("additionalDetailsTooLong", { limit: ADDITIONAL_DETAILS_WORD_LIMIT }));
+      return;
+    }
     setSaving(true);
     setError(null);
-    const result = await createWantedAd({ lookingFor, subjectId, mode, gradeLevel, medium, classType, title, description });
+    const finalDescription = [description.trim(), additionalDetails.trim()].filter(Boolean).join("\n\n");
+    const result = await createWantedAd({
+      lookingFor,
+      subjectId,
+      mode,
+      gradeLevel,
+      medium,
+      classType,
+      title,
+      description: finalDescription,
+    });
     setSaving(false);
     if (result.error) {
       setError(result.error);
@@ -485,6 +576,8 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
     setTitle("");
     setTitleTouched(false);
     setDescription("");
+    setDescriptionTouched(false);
+    setAdditionalDetails("");
     refresh();
   }
 
@@ -529,9 +622,21 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
         setTitle={handleTitleChange}
         titleHint={t("titleAutoDraftHint")}
         description={description}
-        setDescription={setDescription}
+        setDescription={handleDescriptionChange}
+        descriptionHint={t("descriptionAutoDraftHint")}
         idPrefix={idPrefix}
       />
+      <div className="mt-4 grid gap-1.5">
+        <Label htmlFor={`${idPrefix}-additional-details`}>{t("additionalDetailsLabel")}</Label>
+        <textarea
+          id={`${idPrefix}-additional-details`}
+          className={textareaClass}
+          value={additionalDetails}
+          onChange={(e) => setAdditionalDetails(e.target.value)}
+          placeholder={t("additionalDetailsPlaceholder")}
+        />
+        <WordCounter count={countWords(additionalDetails)} limit={ADDITIONAL_DETAILS_WORD_LIMIT} />
+      </div>
       <div className="mt-4 flex items-center gap-3">
         <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
           {t("postAd")}
@@ -555,7 +660,7 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
         classType={classType}
         gradeLevel={gradeLevel}
         title={title}
-        description={description}
+        description={[description.trim(), additionalDetails.trim()].filter(Boolean).join("\n\n")}
       />
     </div>
   );
@@ -594,6 +699,10 @@ function WantedAdCard({
   async function handleSave() {
     if (!title.trim()) {
       setError(t("titleRequired"));
+      return;
+    }
+    if (countWords(description) > DESCRIPTION_WORD_LIMIT) {
+      setError(t("descriptionTooLong", { limit: DESCRIPTION_WORD_LIMIT }));
       return;
     }
     setSaving(true);

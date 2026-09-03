@@ -1803,6 +1803,12 @@
       "suggestedTitleInstituteWithSubject": "{subject} ආයතනයක් හෝ පන්තියක් සොයමින්",
       "descriptionLabel": "විස්තරය (විකල්ප)",
       "descriptionPlaceholder": "ඔබට අවශ්‍ය දේ ගැන තව ටිකක් කියන්න...",
+      "descriptionAutoDraftHint": "ඉහත ඔබේ තේරීම් අනුව ආරම්භක ලක්ෂ්‍යයක් අප කෙටුම්පත් කළෙමු — අවශ්‍ය පරිදි දිගු කරන්න හෝ සංස්කරණය කරන්න.",
+      "additionalDetailsLabel": "අමතර විස්තර (විකල්ප)",
+      "additionalDetailsPlaceholder": "සඳහන් කළ යුතු වෙනත් යමක් — කැමති වේලාව, අයවැය, අවධානය යොමු කළ යුතු මාතෘකා...",
+      "wordsCounter": "වචන {count}/{limit}",
+      "descriptionTooLong": "කරුණාකර ඔබේ විස්තරය වචන {limit} හෝ අඩුවෙන් තබන්න.",
+      "additionalDetailsTooLong": "කරුණාකර අමතර විස්තර වචන {limit} හෝ අඩුවෙන් තබන්න.",
       "preview": {
         "button": "පෙරදසුන",
         "dialogTitle": "ඔබේ දැන්වීම පෙනෙන ආකාරය",

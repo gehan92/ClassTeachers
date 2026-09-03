@@ -19,7 +19,11 @@ const wantedAdSchema = z.object({
   medium: z.enum(mediumOptions),
   classType: z.enum(classTypeOptions),
   title: z.string().trim().min(2),
-  description: z.string().trim().optional(),
+  // The word limits shown in the composer (60 words each for the drafted
+  // description and the additional-details box, combined client-side into
+  // this one field) are a UX guardrail, not exact security here — this is
+  // just a generous backstop against abuse/junk.
+  description: z.string().trim().max(3000).optional(),
 });
 
 export async function createWantedAd(input: {

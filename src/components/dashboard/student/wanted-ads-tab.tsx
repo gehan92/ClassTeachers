@@ -358,13 +358,17 @@ function buildSuggestedTitle(
 
 /**
  * Same motivation as buildSuggestedTitle, for the description: a blank
- * paragraph is intimidating, and most of what a description would say is
- * already sitting in the fields above. Facts are joined as "Label: value"
- * fragments (not woven into one flowing sentence) so each language only
- * needs to translate the label word — no per-language grammar/word-order
- * handling for a multi-clause sentence. Medium always has a value (default
- * 'sinhala') so it's always included; the revision tag only shows up when
- * it's actually notable, same call as the card's badge.
+ * paragraph is intimidating, and most of what it would say is already
+ * sitting in the fields above. Reads as a short, professional paragraph —
+ * a handful of complete, independently-translated sentences joined with
+ * plain spaces — rather than a "Label: value" fact list (the first version
+ * of this, which Gehan felt read as too mechanical/not detailed enough).
+ * Every sentence is a whole, hand-translated unit per language (only
+ * {subject}/{grade}/{medium} are interpolated, never assembled from
+ * fragments), so nothing here depends on runtime word-order or grammar
+ * agreement across en/si/ta. Medium always has a value (default 'sinhala')
+ * so its sentence always appears; grade/mode/revision only add a sentence
+ * when actually set, same as the card's badge only showing for revision.
  */
 function buildSuggestedDescription(
   t: ReturnType<typeof useTranslations>,
@@ -375,14 +379,16 @@ function buildSuggestedDescription(
   classType: ClassType,
   gradeLevel: string,
 ) {
-  const base = buildLookingForSentence(t, lookingFor, subjectName);
-  const facts = [
-    gradeLevel.trim() ? `${t("gradeLabel")}: ${gradeLevel.trim()}` : null,
-    mode ? `${t("modeLabel")}: ${t(`modeOptions.${mode}`)}` : null,
-    `${t("mediumLabel")}: ${t(`mediumOptions.${medium}`)}`,
-    classType === "revision" ? t("classTypeOptions.revision") : null,
-  ].filter((fact): fact is string => Boolean(fact));
-  return facts.length > 0 ? `${base}.\n${facts.join(" · ")}` : `${base}.`;
+  const sentences = [`${buildLookingForSentence(t, lookingFor, subjectName)}.`];
+  const grade = gradeLevel.trim();
+  if (grade) sentences.push(t("descriptionGradeSentence", { grade }));
+  if (mode === "online") sentences.push(t("descriptionModeSentenceOnline"));
+  else if (mode === "physical") sentences.push(t("descriptionModeSentencePhysical"));
+  else if (mode === "both") sentences.push(t("descriptionModeSentenceBoth"));
+  sentences.push(t("descriptionMediumSentence", { medium: t(`mediumOptions.${medium}`) }));
+  if (classType === "revision") sentences.push(t("descriptionRevisionSentence"));
+  sentences.push(t("descriptionClosingSentence"));
+  return sentences.join(" ");
 }
 
 /**

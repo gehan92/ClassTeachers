@@ -16,6 +16,8 @@ export type PublicWantedAd = {
   subject: string | null;
   mode: "online" | "physical" | "both" | null;
   gradeLevel: string | null;
+  medium: "english" | "sinhala" | "tamil" | "other";
+  classType: "new" | "revision";
   title: string;
   description: string | null;
   createdLabel: string;
@@ -45,10 +47,15 @@ function RequestCard({ ad, index }: { ad: PublicWantedAd; index?: number }) {
       style={index !== undefined ? { animationDelay: `${Math.min(index, 10) * 45}ms` } : undefined}
       className="flex flex-col overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)] transition-transform animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-500 hover:-translate-y-0.5"
     >
-      <div className="relative flex h-33 items-end bg-gradient-to-br from-primary to-primary-light p-3">
+      <div className="relative flex h-33 items-end gap-1.5 bg-gradient-to-br from-primary to-primary-light p-3">
         <span className="rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white">
           {t(`lookingForOptions.${ad.lookingFor}`)}
         </span>
+        {ad.classType === "revision" && (
+          <span className="rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white">
+            {t("classTypeOptions.revision")}
+          </span>
+        )}
         <div
           className={`absolute -bottom-5.5 right-3.5 flex size-14 items-center justify-center rounded-full border-4 border-white text-white shadow-sm ${avatarGradientClass(ad.id)}`}
         >
@@ -59,7 +66,7 @@ function RequestCard({ ad, index }: { ad: PublicWantedAd; index?: number }) {
       <div className="flex flex-1 flex-col px-4 pb-4 pt-7.5">
         <div className="mb-1 line-clamp-2 font-display text-[17px] tracking-wide text-primary">{ad.title}</div>
         <div className="mb-2.5 text-[12.5px] text-muted-foreground">
-          {[ad.subject, ad.mode ? t(`modeOptions.${ad.mode}`) : null, ad.gradeLevel, ad.createdLabel]
+          {[ad.subject, ad.mode ? t(`modeOptions.${ad.mode}`) : null, t(`mediumOptions.${ad.medium}`), ad.gradeLevel, ad.createdLabel]
             .filter(Boolean)
             .join(" · ")}
         </div>

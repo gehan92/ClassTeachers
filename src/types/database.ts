@@ -1007,6 +1007,8 @@ export type Database = {
           subject_id: string | null;
           mode: "online" | "physical" | "both" | null;
           grade_level: string | null;
+          medium: "english" | "sinhala" | "tamil" | "other";
+          class_type: "new" | "revision";
           title: string;
           description: string | null;
           status: "active" | "closed";
@@ -1020,6 +1022,8 @@ export type Database = {
           subject_id?: string | null;
           mode?: "online" | "physical" | "both" | null;
           grade_level?: string | null;
+          medium?: "english" | "sinhala" | "tamil" | "other";
+          class_type?: "new" | "revision";
           title: string;
           description?: string | null;
           status?: "active" | "closed";
@@ -1033,6 +1037,8 @@ export type Database = {
           subject_id?: string | null;
           mode?: "online" | "physical" | "both" | null;
           grade_level?: string | null;
+          medium?: "english" | "sinhala" | "tamil" | "other";
+          class_type?: "new" | "revision";
           title?: string;
           description?: string | null;
           status?: "active" | "closed";
@@ -1722,6 +1728,8 @@ export type Database = {
           subject: string | null;
           mode: string | null;
           grade_level: string | null;
+          medium: string;
+          class_type: string;
           title: string;
           description: string | null;
           created_at: string;
@@ -1735,6 +1743,8 @@ export type Database = {
           subject: string | null;
           mode: string | null;
           grade_level: string | null;
+          medium: string;
+          class_type: string;
           title: string;
           description: string | null;
           created_at: string;
@@ -1748,6 +1758,8 @@ export type Database = {
           subject: string | null;
           mode: string | null;
           grade_level: string | null;
+          medium: string;
+          class_type: string;
           title: string;
           description: string | null;
           created_at: string;

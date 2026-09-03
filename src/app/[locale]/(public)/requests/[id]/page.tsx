@@ -73,8 +73,13 @@ export default async function RequestDetailPage({ params }: PageProps<"/[locale]
             <GraduationCap className="size-8" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="mb-1 font-mono text-xs uppercase tracking-[0.12em] text-white/70">
-              {t(`lookingForOptions.${ad.looking_for as "teacher" | "institute"}`)}
+            <div className="mb-1 flex flex-wrap items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-white/70">
+              <span>{t(`lookingForOptions.${ad.looking_for as "teacher" | "institute"}`)}</span>
+              {ad.class_type === "revision" && (
+                <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 normal-case tracking-normal">
+                  {t("classTypeOptions.revision")}
+                </span>
+              )}
             </div>
             <h1 className="mb-1.5 text-2xl text-white">{ad.title}</h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-white/85">
@@ -84,6 +89,9 @@ export default async function RequestDetailPage({ params }: PageProps<"/[locale]
                   {t(`modeOptions.${ad.mode as "online" | "physical" | "both"}`)}
                 </span>
               )}
+              <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs">
+                {t(`mediumOptions.${ad.medium as "english" | "sinhala" | "tamil" | "other"}`)}
+              </span>
               {ad.grade_level && (
                 <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs">
                   {ad.grade_level}

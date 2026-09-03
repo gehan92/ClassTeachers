@@ -486,6 +486,8 @@ export default async function InstituteDashboardPage({
     subject: row.subject,
     mode: row.mode as "online" | "physical" | "both" | null,
     gradeLevel: row.grade_level,
+    medium: row.medium as "english" | "sinhala" | "tamil" | "other",
+    classType: row.class_type as "new" | "revision",
     title: row.title,
     description: row.description,
     createdLabel: dateFormatter.format(new Date(row.created_at)),

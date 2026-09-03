@@ -157,7 +157,7 @@ export default async function StudentDashboardPage({
       .in("target_type", ["teacher", "class"]),
     supabase
       .from("wanted_ads")
-      .select("id, looking_for, subject_id, mode, grade_level, title, description, status")
+      .select("id, looking_for, subject_id, mode, grade_level, medium, class_type, title, description, status")
       .eq("student_id", userId)
       .order("created_at", { ascending: false }),
     // The full catalog, not just subjects this student already has a class
@@ -784,6 +784,8 @@ export default async function StudentDashboardPage({
     subjectName: ad.subject_id ? (subjectNameById.get(ad.subject_id) ?? null) : null,
     mode: ad.mode,
     gradeLevel: ad.grade_level,
+    medium: ad.medium,
+    classType: ad.class_type,
     title: ad.title,
     description: ad.description,
     status: ad.status,
@@ -814,6 +816,8 @@ export default async function StudentDashboardPage({
       subject: row.subject,
       mode: row.mode as "online" | "physical" | "both" | null,
       gradeLevel: row.grade_level,
+      medium: row.medium as "english" | "sinhala" | "tamil" | "other",
+      classType: row.class_type as "new" | "revision",
       title: row.title,
       description: row.description,
       createdLabel: dateFormatter.format(new Date(row.created_at)),

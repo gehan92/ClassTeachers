@@ -8,12 +8,16 @@ type ActionResult = { error: string } | { error?: undefined };
 
 const lookingForOptions = ["teacher", "institute"] as const;
 const modeOptions = ["online", "physical", "both"] as const;
+const mediumOptions = ["english", "sinhala", "tamil", "other"] as const;
+const classTypeOptions = ["new", "revision"] as const;
 
 const wantedAdSchema = z.object({
   lookingFor: z.enum(lookingForOptions),
   subjectId: z.string().uuid().optional(),
   mode: z.enum(modeOptions).optional(),
   gradeLevel: z.string().trim().optional(),
+  medium: z.enum(mediumOptions),
+  classType: z.enum(classTypeOptions),
   title: z.string().trim().min(2),
   description: z.string().trim().optional(),
 });
@@ -23,6 +27,8 @@ export async function createWantedAd(input: {
   subjectId: string;
   mode: string;
   gradeLevel: string;
+  medium: string;
+  classType: string;
   title: string;
   description: string;
 }): Promise<ActionResult> {
@@ -31,6 +37,8 @@ export async function createWantedAd(input: {
     subjectId: input.subjectId || undefined,
     mode: input.mode || undefined,
     gradeLevel: input.gradeLevel,
+    medium: input.medium,
+    classType: input.classType,
     title: input.title,
     description: input.description,
   });
@@ -52,6 +60,8 @@ export async function createWantedAd(input: {
     subject_id: parsed.data.subjectId ?? null,
     mode: parsed.data.mode ?? null,
     grade_level: parsed.data.gradeLevel || null,
+    medium: parsed.data.medium,
+    class_type: parsed.data.classType,
     title: parsed.data.title,
     description: parsed.data.description || null,
   });
@@ -68,6 +78,8 @@ export async function updateWantedAd(
     subjectId: string;
     mode: string;
     gradeLevel: string;
+    medium: string;
+    classType: string;
     title: string;
     description: string;
   },
@@ -77,6 +89,8 @@ export async function updateWantedAd(
     subjectId: input.subjectId || undefined,
     mode: input.mode || undefined,
     gradeLevel: input.gradeLevel,
+    medium: input.medium,
+    classType: input.classType,
     title: input.title,
     description: input.description,
   });
@@ -99,6 +113,8 @@ export async function updateWantedAd(
       subject_id: parsed.data.subjectId ?? null,
       mode: parsed.data.mode ?? null,
       grade_level: parsed.data.gradeLevel || null,
+      medium: parsed.data.medium,
+      class_type: parsed.data.classType,
       title: parsed.data.title,
       description: parsed.data.description || null,
     })

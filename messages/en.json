@@ -386,6 +386,16 @@
       "physical": "In-person",
       "both": "Either"
     },
+    "mediumOptions": {
+      "english": "English medium",
+      "sinhala": "Sinhala medium",
+      "tamil": "Tamil medium",
+      "other": "Other medium"
+    },
+    "classTypeOptions": {
+      "new": "New class",
+      "revision": "Revision class"
+    },
     "respond": "Respond",
     "cancelReply": "Cancel",
     "sendResponse": "Send response",
@@ -551,6 +561,16 @@
       "online": "Online",
       "physical": "In-person",
       "both": "Either"
+    },
+    "mediumOptions": {
+      "english": "English medium",
+      "sinhala": "Sinhala medium",
+      "tamil": "Tamil medium",
+      "other": "Other medium"
+    },
+    "classTypeOptions": {
+      "new": "New class",
+      "revision": "Revision class"
     },
     "respondCta": "Respond",
     "empty": "No requests match this filter yet.",
@@ -1758,6 +1778,18 @@
         "online": "Online",
         "physical": "In-person",
         "both": "Either"
+      },
+      "mediumLabel": "Medium",
+      "mediumOptions": {
+        "english": "English medium",
+        "sinhala": "Sinhala medium",
+        "tamil": "Tamil medium",
+        "other": "Other medium"
+      },
+      "classTypeLabel": "Class type",
+      "classTypeOptions": {
+        "new": "New class",
+        "revision": "Revision class"
       },
       "gradeLabel": "Grade / level",
       "gradePlaceholder": "e.g. Grade 11",

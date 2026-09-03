@@ -11,6 +11,8 @@ export type WantedAdBrowseRow = {
   subject: string | null;
   mode: "online" | "physical" | "both" | null;
   gradeLevel: string | null;
+  medium: "english" | "sinhala" | "tamil" | "other";
+  classType: "new" | "revision";
   title: string;
   description: string | null;
   createdLabel: string;
@@ -80,11 +82,21 @@ function RequestItem({ request }: { request: WantedAdBrowseRow }) {
           <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
             {t(`lookingForOptions.${request.lookingFor}`)}
           </span>
+          {request.classType === "revision" && (
+            <span className="rounded-full bg-accent-deep/10 px-2 py-0.5 text-xs font-medium text-accent-deep">
+              {t("classTypeOptions.revision")}
+            </span>
+          )}
         </div>
         <span className="text-xs text-muted-foreground">{request.createdLabel}</span>
       </div>
       <p className="text-xs text-muted-foreground">
-        {[request.subject, request.mode ? t(`modeOptions.${request.mode}`) : null, request.gradeLevel]
+        {[
+          request.subject,
+          request.mode ? t(`modeOptions.${request.mode}`) : null,
+          t(`mediumOptions.${request.medium}`),
+          request.gradeLevel,
+        ]
           .filter(Boolean)
           .join(" · ")}
       </p>

@@ -386,6 +386,16 @@
       "physical": "நேரடியாக",
       "both": "இரண்டும் சரி"
     },
+    "mediumOptions": {
+      "english": "ஆங்கில மொழிமூலம்",
+      "sinhala": "சிங்கள மொழிமூலம்",
+      "tamil": "தமிழ் மொழிமூலம்",
+      "other": "மற்ற மொழிமூலம்"
+    },
+    "classTypeOptions": {
+      "new": "புதிய வகுப்பு",
+      "revision": "மீள்பார்வை வகுப்பு"
+    },
     "respond": "பதிலளி",
     "cancelReply": "ரத்துசெய்",
     "sendResponse": "பதிலை அனுப்பு",
@@ -551,6 +561,16 @@
       "online": "ஆன்லைன்",
       "physical": "நேரடியாக",
       "both": "இரண்டும் சரி"
+    },
+    "mediumOptions": {
+      "english": "ஆங்கில மொழிமூலம்",
+      "sinhala": "சிங்கள மொழிமூலம்",
+      "tamil": "தமிழ் மொழிமூலம்",
+      "other": "மற்ற மொழிமூலம்"
+    },
+    "classTypeOptions": {
+      "new": "புதிய வகுப்பு",
+      "revision": "மீள்பார்வை வகுப்பு"
     },
     "respondCta": "பதிலளி",
     "empty": "இந்த வடிகட்டலுக்குப் பொருந்தும் கோரிக்கைகள் இல்லை.",
@@ -1758,6 +1778,18 @@
         "online": "ஆன்லைன்",
         "physical": "நேரடியாக",
         "both": "இரண்டும் சரி"
+      },
+      "mediumLabel": "மொழிமூலம்",
+      "mediumOptions": {
+        "english": "ஆங்கில மொழிமூலம்",
+        "sinhala": "சிங்கள மொழிமூலம்",
+        "tamil": "தமிழ் மொழிமூலம்",
+        "other": "மற்ற மொழிமூலம்"
+      },
+      "classTypeLabel": "வகுப்பு வகை",
+      "classTypeOptions": {
+        "new": "புதிய வகுப்பு",
+        "revision": "மீள்பார்வை வகுப்பு"
       },
       "gradeLabel": "தரம் / நிலை",
       "gradePlaceholder": "எ.கா. தரம் 11",

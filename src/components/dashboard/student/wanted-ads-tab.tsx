@@ -29,6 +29,10 @@ type LookingFor = "teacher" | "institute";
 const LOOKING_FOR_OPTIONS: LookingFor[] = ["teacher", "institute"];
 type Mode = "online" | "physical" | "both";
 const MODE_OPTIONS: Mode[] = ["online", "physical", "both"];
+type Medium = "english" | "sinhala" | "tamil" | "other";
+const MEDIUM_OPTIONS: Medium[] = ["english", "sinhala", "tamil", "other"];
+type ClassType = "new" | "revision";
+const CLASS_TYPE_OPTIONS: ClassType[] = ["new", "revision"];
 
 export type WantedAdRow = {
   id: string;
@@ -37,6 +41,8 @@ export type WantedAdRow = {
   subjectName: string | null;
   mode: Mode | null;
   gradeLevel: string | null;
+  medium: Medium;
+  classType: ClassType;
   title: string;
   description: string | null;
   status: "active" | "closed";
@@ -116,9 +122,20 @@ function SampleAdsSection({ ads }: { ads: PublicWantedAd[] }) {
               <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">
                 {t(`lookingForOptions.${ad.lookingFor}`)}
               </span>
+              {ad.classType === "revision" && (
+                <span className="rounded-full bg-accent-deep/10 px-2 py-0.5 text-[11px] font-medium text-accent-deep">
+                  {t("classTypeOptions.revision")}
+                </span>
+              )}
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {[ad.subject, ad.mode ? t(`modeOptions.${ad.mode}`) : null, ad.gradeLevel, ad.createdLabel]
+              {[
+                ad.subject,
+                ad.mode ? t(`modeOptions.${ad.mode}`) : null,
+                t(`mediumOptions.${ad.medium}`),
+                ad.gradeLevel,
+                ad.createdLabel,
+              ]
                 .filter(Boolean)
                 .join(" · ")}
             </p>
@@ -137,6 +154,10 @@ function WantedAdFields({
   setSubjectId,
   mode,
   setMode,
+  medium,
+  setMedium,
+  classType,
+  setClassType,
   gradeLevel,
   setGradeLevel,
   title,
@@ -153,6 +174,10 @@ function WantedAdFields({
   setSubjectId: (value: string) => void;
   mode: Mode | "";
   setMode: (value: Mode | "") => void;
+  medium: Medium;
+  setMedium: (value: Medium) => void;
+  classType: ClassType;
+  setClassType: (value: ClassType) => void;
   gradeLevel: string;
   setGradeLevel: (value: string) => void;
   title: string;
@@ -170,7 +195,7 @@ function WantedAdFields({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="grid gap-1.5">
           <Label htmlFor={`${idPrefix}-looking-for`}>{t("lookingForLabel")}</Label>
           <Select value={lookingFor} onValueChange={(value) => setLookingFor((value as LookingFor) ?? "teacher")}>
@@ -211,6 +236,36 @@ function WantedAdFields({
               {MODE_OPTIONS.map((option) => (
                 <SelectItem key={option} value={option}>
                   {t(`modeOptions.${option}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor={`${idPrefix}-medium`}>{t("mediumLabel")}</Label>
+          <Select value={medium} onValueChange={(value) => setMedium((value as Medium) ?? "sinhala")}>
+            <SelectTrigger id={`${idPrefix}-medium`} className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MEDIUM_OPTIONS.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {t(`mediumOptions.${option}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor={`${idPrefix}-class-type`}>{t("classTypeLabel")}</Label>
+          <Select value={classType} onValueChange={(value) => setClassType((value as ClassType) ?? "new")}>
+            <SelectTrigger id={`${idPrefix}-class-type`} className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CLASS_TYPE_OPTIONS.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {t(`classTypeOptions.${option}`)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -288,6 +343,8 @@ function WantedAdPreviewCard({
   lookingFor,
   subjectName,
   mode,
+  medium,
+  classType,
   gradeLevel,
   title,
   description,
@@ -296,6 +353,8 @@ function WantedAdPreviewCard({
   lookingFor: LookingFor;
   subjectName: string | undefined;
   mode: Mode | "";
+  medium: Medium;
+  classType: ClassType;
   gradeLevel: string;
   title: string;
   description: string;
@@ -305,10 +364,15 @@ function WantedAdPreviewCard({
 
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
-      <div className="relative flex h-33 items-end bg-gradient-to-br from-primary to-primary-light p-3">
+      <div className="relative flex h-33 items-end gap-1.5 bg-gradient-to-br from-primary to-primary-light p-3">
         <span className="rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white">
           {tr(`lookingForOptions.${lookingFor}`)}
         </span>
+        {classType === "revision" && (
+          <span className="rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white">
+            {tr("classTypeOptions.revision")}
+          </span>
+        )}
         <div
           className={`absolute -bottom-5.5 right-3.5 flex size-14 items-center justify-center rounded-full border-4 border-white text-white shadow-sm ${avatarGradientClass(seed)}`}
         >
@@ -321,7 +385,9 @@ function WantedAdPreviewCard({
           {title.trim() || t("preview.untitled")}
         </div>
         <div className="mb-2.5 text-[12.5px] text-muted-foreground">
-          {[subjectName, mode ? tr(`modeOptions.${mode}`) : null, gradeLevel.trim() || null].filter(Boolean).join(" · ")}
+          {[subjectName, mode ? tr(`modeOptions.${mode}`) : null, tr(`mediumOptions.${medium}`), gradeLevel.trim() || null]
+            .filter(Boolean)
+            .join(" · ")}
         </div>
         {description.trim() && <p className="mb-3.5 line-clamp-2 text-[12.5px] text-muted-foreground">{description}</p>}
 
@@ -370,6 +436,8 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
   const [lookingFor, setLookingFor] = useState<LookingFor>("teacher");
   const [subjectId, setSubjectId] = useState("");
   const [mode, setMode] = useState<Mode | "">("");
+  const [medium, setMedium] = useState<Medium>("sinhala");
+  const [classType, setClassType] = useState<ClassType>("new");
   const [gradeLevel, setGradeLevel] = useState("");
   const [title, setTitle] = useState("");
   const [titleTouched, setTitleTouched] = useState(false);
@@ -401,7 +469,7 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
     }
     setSaving(true);
     setError(null);
-    const result = await createWantedAd({ lookingFor, subjectId, mode, gradeLevel, title, description });
+    const result = await createWantedAd({ lookingFor, subjectId, mode, gradeLevel, medium, classType, title, description });
     setSaving(false);
     if (result.error) {
       setError(result.error);
@@ -411,6 +479,8 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
     setLookingFor("teacher");
     setSubjectId("");
     setMode("");
+    setMedium("sinhala");
+    setClassType("new");
     setGradeLevel("");
     setTitle("");
     setTitleTouched(false);
@@ -449,6 +519,10 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
         setSubjectId={setSubjectId}
         mode={mode}
         setMode={setMode}
+        medium={medium}
+        setMedium={setMedium}
+        classType={classType}
+        setClassType={setClassType}
         gradeLevel={gradeLevel}
         setGradeLevel={setGradeLevel}
         title={title}
@@ -477,6 +551,8 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
         lookingFor={lookingFor}
         subjectName={subjectOptions.find((s) => s.id === subjectId)?.name}
         mode={mode}
+        medium={medium}
+        classType={classType}
         gradeLevel={gradeLevel}
         title={title}
         description={description}
@@ -503,6 +579,8 @@ function WantedAdCard({
   const [lookingFor, setLookingFor] = useState<LookingFor>(ad.lookingFor);
   const [subjectId, setSubjectId] = useState(ad.subjectId ?? "");
   const [mode, setMode] = useState<Mode | "">(ad.mode ?? "");
+  const [medium, setMedium] = useState<Medium>(ad.medium);
+  const [classType, setClassType] = useState<ClassType>(ad.classType);
   const [gradeLevel, setGradeLevel] = useState(ad.gradeLevel ?? "");
   const [title, setTitle] = useState(ad.title);
   const [description, setDescription] = useState(ad.description ?? "");
@@ -520,7 +598,7 @@ function WantedAdCard({
     }
     setSaving(true);
     setError(null);
-    const result = await updateWantedAd(ad.id, { lookingFor, subjectId, mode, gradeLevel, title, description });
+    const result = await updateWantedAd(ad.id, { lookingFor, subjectId, mode, gradeLevel, medium, classType, title, description });
     setSaving(false);
     if (result.error) {
       setError(result.error);
@@ -554,11 +632,19 @@ function WantedAdCard({
     <div className="rounded-lg border border-border bg-white p-5">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h4 className="text-base font-medium text-foreground">{ad.title}</h4>
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="text-base font-medium text-foreground">{ad.title}</h4>
+            {ad.classType === "revision" && (
+              <span className="rounded-full bg-accent-deep/10 px-2 py-0.5 text-[11px] font-medium text-accent-deep">
+                {t("classTypeOptions.revision")}
+              </span>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">
             {t(`lookingForOptions.${ad.lookingFor}`)}
             {ad.subjectName ? ` · ${ad.subjectName}` : ""}
             {ad.mode ? ` · ${t(`modeOptions.${ad.mode}`)}` : ""}
+            {` · ${t(`mediumOptions.${ad.medium}`)}`}
             {ad.gradeLevel ? ` · ${ad.gradeLevel}` : ""}
           </p>
         </div>
@@ -609,6 +695,10 @@ function WantedAdCard({
             setSubjectId={setSubjectId}
             mode={mode}
             setMode={setMode}
+            medium={medium}
+            setMedium={setMedium}
+            classType={classType}
+            setClassType={setClassType}
             gradeLevel={gradeLevel}
             setGradeLevel={setGradeLevel}
             title={title}
@@ -638,6 +728,8 @@ function WantedAdCard({
         lookingFor={lookingFor}
         subjectName={subjectOptions.find((s) => s.id === subjectId)?.name}
         mode={mode}
+        medium={medium}
+        classType={classType}
         gradeLevel={gradeLevel}
         title={title}
         description={description}

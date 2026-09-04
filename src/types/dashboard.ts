@@ -2,6 +2,11 @@ export type DashboardTabDef = {
   key: string;
   label: string;
   count?: number;
+  /** Small accent dot next to the label — unread "new content" notifications
+   * exist for this tab (new note/exam/assignment/live class). Independent of
+   * `count`, which on Exams/Assignments already means something else (items
+   * still due), not "unseen." */
+  hasNew?: boolean;
 };
 
 export type DashboardNavGroup = {

@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBatchOwner } from "@/lib/dashboard/resolve-batch-owner";
+import { notifyContentAudience } from "@/lib/dashboard/notify";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -72,6 +73,8 @@ export async function uploadNote(formData: FormData): Promise<ActionResult> {
     await supabase.storage.from("notes").remove([filePath]);
     return { error: "Couldn't save the note. Please try again." };
   }
+
+  await notifyContentAudience(supabase, target, null, "new_note", { title: parsed.data.title }, "notes", "newClassContent");
 
   return {};
 }

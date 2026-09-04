@@ -204,6 +204,16 @@ export default async function StudentDashboardPage({
     createdAt: n.created_at,
   }));
 
+  // Sidebar "new content" dots — same notifications this page already
+  // fetched for the bell, just checked for an unread row of the matching
+  // type. Independent of examsDueCount/assignmentsDueCount below, which
+  // mean "still due," not "unseen."
+  const hasUnreadOfType = (type: string) => notifications.some((n) => n.type === type && !n.readAt);
+  const hasNewNotes = hasUnreadOfType("new_note");
+  const hasNewExams = hasUnreadOfType("new_exam");
+  const hasNewAssignments = hasUnreadOfType("new_assignment");
+  const hasNewLive = hasUnreadOfType("new_live_class");
+
   const fullName = profile?.full_name ?? user!.email ?? "Student";
   const userInitial = fullName.charAt(0).toUpperCase();
 
@@ -881,15 +891,15 @@ export default async function StudentDashboardPage({
           label: t("groupClasses"),
           items: [
             { key: "classes", label: t("tabs.classes") },
-            { key: "live", label: t("tabs.live") },
+            { key: "live", label: t("tabs.live"), hasNew: hasNewLive },
           ],
         },
         {
           label: t("groupContent"),
           items: [
-            { key: "notes", label: t("tabs.notes") },
-            { key: "exams", label: t("tabs.exams"), count: examsDueCount },
-            { key: "assignments", label: t("tabs.assignments"), count: assignmentsDueCount },
+            { key: "notes", label: t("tabs.notes"), hasNew: hasNewNotes },
+            { key: "exams", label: t("tabs.exams"), count: examsDueCount, hasNew: hasNewExams },
+            { key: "assignments", label: t("tabs.assignments"), count: assignmentsDueCount, hasNew: hasNewAssignments },
           ],
         },
         {

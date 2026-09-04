@@ -73,6 +73,10 @@
       "join_request_declined": "{ownerName} declined your request to join.",
       "open_batch_joined": "{studentName} joined your open class \"{batchTitle}\".",
       "exam_graded": "Your exam \"{examTitle}\" was graded: {grade}.",
+      "new_note": "A new note was shared: \"{title}\".",
+      "new_exam": "A new exam is open: \"{title}\".",
+      "new_assignment": "A new assignment was posted: \"{title}\".",
+      "new_live_class": "A new live class was scheduled: \"{title}\".",
       "review_posted": "You received a new {rating}-star review.",
       "review_replied": "You got a reply to your review.",
       "new_inquiry": "{senderName} sent you an inquiry.",
@@ -1754,7 +1758,8 @@
         "joinRequestUpdates": "A class accepts or declines your join request",
         "reviewReplies": "A teacher or institute replies to your review",
         "wantedAdResponses": "A teacher or institute responds to your request ad",
-        "inquiryReplies": "A teacher or institute replies to your inquiry"
+        "inquiryReplies": "A teacher or institute replies to your inquiry",
+        "newClassContent": "A teacher or institute posts a new note, exam, assignment, or live class"
       }
     },
     "wantedAds": {

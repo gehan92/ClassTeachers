@@ -48,6 +48,44 @@ export async function notify(
   });
 }
 
+/**
+ * Broadcasts a notification to every student who can actually see a fresh
+ * piece of class content (a new note/exam/assignment/live class) — the
+ * counterpart to notify()'s single-recipient case, for the "teacher creates
+ * something" trigger points that never had a bell notification before.
+ * Mirrors the same audience rule content visibility itself already uses:
+ * an explicit participant list (exam_participants/live_class_participants,
+ * 0055/0060) wins when the teacher narrowed it to specific students;
+ * otherwise every accepted enrollment for this owner (scoped to the batch
+ * when the content itself is batch-scoped, matching belongsToClass's own
+ * "batch-less content is visible from any of that owner's classes" rule).
+ */
+export async function notifyContentAudience(
+  supabase: SupabaseClient<Database>,
+  target: { ownerType: "teacher" | "class"; ownerId: string; batchId: string | null },
+  explicitParticipantIds: string[] | null,
+  type: string,
+  data: Record<string, Json> = {},
+  tab?: string,
+  prefKey?: string,
+): Promise<void> {
+  let studentIds: string[];
+  if (explicitParticipantIds && explicitParticipantIds.length > 0) {
+    studentIds = explicitParticipantIds;
+  } else {
+    let query = supabase
+      .from("enrollments")
+      .select("student_id")
+      .eq("owner_type", target.ownerType)
+      .eq("owner_id", target.ownerId)
+      .eq("status", "accepted");
+    if (target.batchId) query = query.eq("batch_id", target.batchId);
+    const { data: rows } = await query;
+    studentIds = [...new Set((rows ?? []).map((r) => r.student_id))];
+  }
+  await Promise.all(studentIds.map((studentId) => notify(supabase, studentId, type, data, tab, prefKey)));
+}
+
 export async function notifyAdmins(
   supabase: SupabaseClient<Database>,
   type: string,

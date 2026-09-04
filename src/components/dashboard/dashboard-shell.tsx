@@ -163,6 +163,7 @@ function NavList({
             >
               {Icon && <Icon className="size-3.5" />}
               {item.label}
+              {item.hasNew && <span className="size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />}
               {item.count !== undefined && <span className="ml-1.5 opacity-70">{item.count}</span>}
             </button>
           );
@@ -197,6 +198,7 @@ function NavList({
                 >
                   {Icon && <Icon className="size-4 shrink-0" />}
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                  {item.hasNew && <span className="size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />}
                   {item.count !== undefined && (
                     <span className="shrink-0 rounded-full bg-background px-1.5 py-0.25 font-mono text-[11px] text-muted-foreground">
                       {item.count}

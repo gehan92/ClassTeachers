@@ -39,6 +39,14 @@ function messageFor(t: Translator, n: NotificationRow): string {
       return t("types.join_request_declined", { ownerName: str(data.ownerName) });
     case "exam_graded":
       return t("types.exam_graded", { examTitle: str(data.examTitle), grade: str(data.grade) });
+    case "new_note":
+      return t("types.new_note", { title: str(data.title) });
+    case "new_exam":
+      return t("types.new_exam", { title: str(data.title) });
+    case "new_assignment":
+      return t("types.new_assignment", { title: str(data.title) });
+    case "new_live_class":
+      return t("types.new_live_class", { title: str(data.title) });
     case "review_posted":
       return t("types.review_posted", { rating: str(data.rating) });
     case "review_replied":

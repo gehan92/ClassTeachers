@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAssignmentOwner } from "@/lib/dashboard/resolve-batch-owner";
+import { notifyContentAudience } from "@/lib/dashboard/notify";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -72,6 +73,16 @@ export async function createAssignment(formData: FormData): Promise<ActionResult
     await supabase.storage.from("assignments").remove([filePath]);
     return { error: "Couldn't save the assignment. Please try again." };
   }
+
+  await notifyContentAudience(
+    supabase,
+    { ownerType: target.ownerType, ownerId: target.ownerId, batchId: target.batchId },
+    null,
+    "new_assignment",
+    { title: parsed.data.title },
+    "assignments",
+    "newClassContent",
+  );
 
   return {};
 }

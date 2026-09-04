@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBatchOwner } from "@/lib/dashboard/resolve-batch-owner";
-import { notify } from "@/lib/dashboard/notify";
+import { notify, notifyContentAudience } from "@/lib/dashboard/notify";
 
 type ActionResult = { error: string } | { error?: undefined };
 type SubmitExamResult = ActionResult & { autoGrade?: { score: number; maxScore: number } };
@@ -107,10 +107,34 @@ export async function setExamPublished(examId: string, published: boolean): Prom
     return { error: "Invalid exam." };
   }
   const supabase = await createClient();
-  const { error } = await supabase.from("exams").update({ published }).eq("id", examId);
+  const { data: exam, error } = await supabase
+    .from("exams")
+    .update({ published })
+    .eq("id", examId)
+    .select("owner_type, owner_id, batch_id, title")
+    .maybeSingle();
   if (error) {
     return { error: "Couldn't update this exam. Please try again." };
   }
+
+  // Only the draft-to-published transition is notify-worthy — flipping a
+  // published exam back to draft (or re-publishing) shouldn't re-notify.
+  if (published && exam) {
+    const { data: participants } = await supabase
+      .from("exam_participants")
+      .select("student_id")
+      .eq("exam_id", examId);
+    await notifyContentAudience(
+      supabase,
+      { ownerType: exam.owner_type as "teacher" | "class", ownerId: exam.owner_id, batchId: exam.batch_id },
+      participants && participants.length > 0 ? participants.map((p) => p.student_id) : null,
+      "new_exam",
+      { title: exam.title },
+      "exams",
+      "newClassContent",
+    );
+  }
+
   return {};
 }
 

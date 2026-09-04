@@ -73,6 +73,7 @@ export function SettingsTab({
     "reviewReplies",
     "wantedAdResponses",
     "inquiryReplies",
+    "newClassContent",
   ] as const;
   const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(NOTIFICATION_KEYS.map((key) => [key, initialNotificationPrefs[key] ?? true])),

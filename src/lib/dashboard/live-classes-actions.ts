@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBatchOwner } from "@/lib/dashboard/resolve-batch-owner";
+import { notifyContentAudience } from "@/lib/dashboard/notify";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -103,6 +104,16 @@ export async function createLiveClass(input: {
       return { error: "Class was scheduled, but the video room couldn't be created. Please try again." };
     }
   }
+
+  await notifyContentAudience(
+    supabase,
+    target,
+    parsed.data.participantStudentIds ?? null,
+    "new_live_class",
+    { title: parsed.data.title },
+    "live",
+    "newClassContent",
+  );
 
   return {};
 }

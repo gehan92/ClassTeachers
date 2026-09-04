@@ -58,44 +58,14 @@ function belongsToClass(row: Owned, target: MyClassRow) {
   );
 }
 
-/** "View profile" for an already-enrolled class opens the credentials-only
- * quick-view popup when one is available (it always should be, for anyone
- * actually joinable) — falling back to the real public-page link only if
- * the lookup somehow comes up empty, so the action is never a dead click. */
-function ViewProfileAction({
-  ownerType,
-  ownerId,
-  hasQuickView,
-  onOpenQuickView,
-  className,
-}: {
-  ownerType: "teacher" | "class";
-  ownerId: string;
-  hasQuickView: boolean;
-  onOpenQuickView: () => void;
-  className: string;
-}) {
-  const t = useTranslations("studentDashboard.classes");
-  if (hasQuickView) {
-    return (
-      <button type="button" onClick={onOpenQuickView} className={className}>
-        {t("viewProfile")}
-      </button>
-    );
-  }
-  return (
-    <Link href={`/${ownerType === "teacher" ? "teacher" : "class"}/${ownerId}`} className={className}>
-      {t("viewProfile")}
-    </Link>
-  );
-}
-
 /**
- * Clickable avatar sitting next to the owner's name — same "View profile"
- * click target as ViewProfileAction (quick-view popup when available, real
- * profile page otherwise), just as a photo instead of text, so the row
- * doesn't stay all-text once a photo exists. Purely additive: the text link
- * next to "Open class" is untouched.
+ * Clickable avatar sitting next to the owner's name — opens the
+ * credentials-only quick-view popup when one is available (it always should
+ * be, for anyone actually joinable), falling back to the real profile page
+ * link only if the lookup somehow comes up empty, so it's never a dead
+ * click. Was originally paired with a separate "View profile" text link;
+ * Gehan flagged the text link as redundant once the avatar did the same
+ * job, so it's the only "view profile" affordance on these rows now.
  */
 function OwnerAvatar({
   ownerType,
@@ -300,17 +270,6 @@ export function ClassesTab({
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-4">
-                    <ViewProfileAction
-                      ownerType={item.ownerType}
-                      ownerId={item.ownerId}
-                      hasQuickView={
-                        item.ownerType === "teacher"
-                          ? teacherProfileById.has(item.ownerId)
-                          : instituteProfileById.has(item.ownerId)
-                      }
-                      onOpenQuickView={() => openQuickView(item.ownerType, item.ownerId)}
-                      className="text-sm font-medium text-muted-foreground hover:underline"
-                    />
                     <Button size="sm" onClick={() => setOpenClassId(item.enrollmentId)}>
                       {t("openClass")}
                     </Button>
@@ -456,13 +415,6 @@ function ClassWorkspace({
             {classRow.scheduleNote && <div className="mt-1 text-xs text-muted-foreground">{classRow.scheduleNote}</div>}
           </div>
         </div>
-        <ViewProfileAction
-          ownerType={classRow.ownerType}
-          ownerId={classRow.ownerId}
-          hasQuickView={hasQuickView}
-          onOpenQuickView={onOpenQuickView}
-          className="shrink-0 text-sm font-medium text-muted-foreground hover:underline"
-        />
       </div>
 
       <div className="flex flex-col gap-8">

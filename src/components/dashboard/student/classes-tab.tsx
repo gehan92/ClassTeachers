@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, GraduationCap, School } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -90,6 +90,53 @@ function ViewProfileAction({
   );
 }
 
+/**
+ * Clickable avatar sitting next to the owner's name — same "View profile"
+ * click target as ViewProfileAction (quick-view popup when available, real
+ * profile page otherwise), just as a photo instead of text, so the row
+ * doesn't stay all-text once a photo exists. Purely additive: the text link
+ * next to "Open class" is untouched.
+ */
+function OwnerAvatar({
+  ownerType,
+  ownerId,
+  photoUrl,
+  hasQuickView,
+  onOpenQuickView,
+}: {
+  ownerType: "teacher" | "class";
+  ownerId: string;
+  photoUrl: string | null;
+  hasQuickView: boolean;
+  onOpenQuickView: () => void;
+}) {
+  const image = photoUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element -- signed/public Supabase Storage URL, not a local/optimizable asset
+    <img src={photoUrl} alt="" className="size-11 shrink-0 rounded-full object-cover" />
+  ) : (
+    <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-secondary">
+      {ownerType === "teacher" ? (
+        <GraduationCap className="size-5 text-secondary-foreground" />
+      ) : (
+        <School className="size-5 text-secondary-foreground" />
+      )}
+    </div>
+  );
+
+  if (hasQuickView) {
+    return (
+      <button type="button" onClick={onOpenQuickView} className="shrink-0 rounded-full">
+        {image}
+      </button>
+    );
+  }
+  return (
+    <Link href={`/${ownerType === "teacher" ? "teacher" : "class"}/${ownerId}`} className="shrink-0 rounded-full">
+      {image}
+    </Link>
+  );
+}
+
 export function ClassesTab({
   myClasses,
   availableBatches,
@@ -132,6 +179,11 @@ export function ClassesTab({
     else setQuickViewInstituteId(ownerId);
   }
 
+  function getPhotoUrl(ownerType: "teacher" | "class", ownerId: string): string | null {
+    if (ownerType === "teacher") return teacherProfileById.get(ownerId)?.photoUrl ?? null;
+    return instituteProfileById.get(ownerId)?.photoUrl ?? null;
+  }
+
   async function handleJoin(batchId: string, isOpenEnrollment: boolean) {
     setJoiningId(batchId);
     setError(null);
@@ -164,6 +216,7 @@ export function ClassesTab({
               ? teacherProfileById.has(openClass.ownerId)
               : instituteProfileById.has(openClass.ownerId)
           }
+          photoUrl={getPhotoUrl(openClass.ownerType, openClass.ownerId)}
           onOpenQuickView={() => openQuickView(openClass.ownerType, openClass.ownerId)}
           onBack={() => setOpenClassId(null)}
         />
@@ -223,15 +276,28 @@ export function ClassesTab({
                   key={item.enrollmentId}
                   className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4.5 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="min-w-0">
-                    <div className="mb-1 flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-foreground">{item.ownerName}</span>
-                      <span className="rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-                        {item.ownerType === "teacher" ? t("typeTeacher") : t("typeClass")}
-                      </span>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <OwnerAvatar
+                      ownerType={item.ownerType}
+                      ownerId={item.ownerId}
+                      photoUrl={getPhotoUrl(item.ownerType, item.ownerId)}
+                      hasQuickView={
+                        item.ownerType === "teacher"
+                          ? teacherProfileById.has(item.ownerId)
+                          : instituteProfileById.has(item.ownerId)
+                      }
+                      onOpenQuickView={() => openQuickView(item.ownerType, item.ownerId)}
+                    />
+                    <div className="min-w-0">
+                      <div className="mb-1 flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-foreground">{item.ownerName}</span>
+                        <span className="rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                          {item.ownerType === "teacher" ? t("typeTeacher") : t("typeClass")}
+                        </span>
+                      </div>
+                      {item.batchTitle && <div className="text-sm text-muted-foreground">{item.batchTitle}</div>}
+                      {item.scheduleNote && <div className="mt-1 text-xs text-muted-foreground">{item.scheduleNote}</div>}
                     </div>
-                    {item.batchTitle && <div className="text-sm text-muted-foreground">{item.batchTitle}</div>}
-                    {item.scheduleNote && <div className="mt-1 text-xs text-muted-foreground">{item.scheduleNote}</div>}
                   </div>
                   <div className="flex shrink-0 items-center gap-4">
                     <ViewProfileAction
@@ -330,6 +396,7 @@ function ClassWorkspace({
   reminderClassIds,
   studentName,
   hasQuickView,
+  photoUrl,
   onOpenQuickView,
   onBack,
 }: {
@@ -341,6 +408,7 @@ function ClassWorkspace({
   reminderClassIds: string[];
   studentName: string;
   hasQuickView: boolean;
+  photoUrl: string | null;
   onOpenQuickView: () => void;
   onBack: () => void;
 }) {
@@ -365,19 +433,28 @@ function ClassWorkspace({
       </Button>
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-white p-4.5">
-        <div className="min-w-0">
-          <div className="mb-1 flex flex-wrap items-center gap-2">
-            <span className="text-lg font-semibold text-foreground">{classRow.ownerName}</span>
-            <span className="rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-              {classRow.isCampusLecturer
-                ? t("typeCampusLecturer")
-                : classRow.ownerType === "teacher"
-                  ? t("typeTeacher")
-                  : t("typeClass")}
-            </span>
+        <div className="flex min-w-0 items-center gap-3">
+          <OwnerAvatar
+            ownerType={classRow.ownerType}
+            ownerId={classRow.ownerId}
+            photoUrl={photoUrl}
+            hasQuickView={hasQuickView}
+            onOpenQuickView={onOpenQuickView}
+          />
+          <div className="min-w-0">
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <span className="text-lg font-semibold text-foreground">{classRow.ownerName}</span>
+              <span className="rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                {classRow.isCampusLecturer
+                  ? t("typeCampusLecturer")
+                  : classRow.ownerType === "teacher"
+                    ? t("typeTeacher")
+                    : t("typeClass")}
+              </span>
+            </div>
+            {classRow.batchTitle && <div className="text-sm text-muted-foreground">{classRow.batchTitle}</div>}
+            {classRow.scheduleNote && <div className="mt-1 text-xs text-muted-foreground">{classRow.scheduleNote}</div>}
           </div>
-          {classRow.batchTitle && <div className="text-sm text-muted-foreground">{classRow.batchTitle}</div>}
-          {classRow.scheduleNote && <div className="mt-1 text-xs text-muted-foreground">{classRow.scheduleNote}</div>}
         </div>
         <ViewProfileAction
           ownerType={classRow.ownerType}

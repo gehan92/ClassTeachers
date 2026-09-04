@@ -192,6 +192,51 @@ export function WantedAdsBoard({ ads }: { ads: PublicWantedAd[] }) {
           {t("empty")}
         </div>
       )}
+
+      <ClosingCtaBanner />
     </>
+  );
+}
+
+/**
+ * This board's audience is genuinely two-sided (students checking existing
+ * requests before posting their own, teachers/institutes browsing to
+ * respond) and always shown — even with a handful of ads the page shouldn't
+ * dead-end after the grid/pagination. Two static CTAs rather than one
+ * role-detected CTA: this component has no session data today (the page
+ * doesn't fetch a user), and adding that just to pick one CTA would be more
+ * machinery than a filler banner warrants — the wrong CTA for a visitor's
+ * role is just a no-op click, not a broken state.
+ */
+function ClosingCtaBanner() {
+  const t = useTranslations("requestsPage.closingCta");
+
+  return (
+    <div className="mt-8 grid grid-cols-1 divide-y divide-border rounded-2xl border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+      <div className="flex flex-col items-start gap-2 p-6">
+        <div className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-accent-deep before:inline-block before:h-px before:w-4 before:bg-accent-deep before:content-['']">
+          {t("studentEyebrow")}
+        </div>
+        <p className="text-sm text-muted-foreground">{t("studentText")}</p>
+        <Link
+          href="/student?tab=wantedAds"
+          className="mt-1 inline-flex items-center justify-center rounded-sm bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-px hover:bg-primary-light"
+        >
+          {t("studentCta")}
+        </Link>
+      </div>
+      <div className="flex flex-col items-start gap-2 p-6">
+        <div className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-accent-deep before:inline-block before:h-px before:w-4 before:bg-accent-deep before:content-['']">
+          {t("teacherEyebrow")}
+        </div>
+        <p className="text-sm text-muted-foreground">{t("teacherText")}</p>
+        <Link
+          href="/advertise"
+          className="mt-1 inline-flex items-center justify-center rounded-sm border border-input px-4 py-2 text-sm font-semibold text-primary transition-all hover:-translate-y-px hover:bg-secondary"
+        >
+          {t("teacherCta")}
+        </Link>
+      </div>
+    </div>
   );
 }

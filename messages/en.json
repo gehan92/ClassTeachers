@@ -574,6 +574,14 @@
     },
     "respondCta": "Respond",
     "empty": "No requests match this filter yet.",
+    "closingCta": {
+      "studentEyebrow": "For students",
+      "studentText": "Don't see a match yet? Post your own request and let teachers and institutes come to you.",
+      "studentCta": "Post a request",
+      "teacherEyebrow": "For teachers & institutes",
+      "teacherText": "Want more students finding you directly? List your profile on ClassPortals.",
+      "teacherCta": "List your profile"
+    },
     "pagination": {
       "showingCount": "Showing {shown} of {total}",
       "previous": "Previous",

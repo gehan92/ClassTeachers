@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,6 @@ import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { usePagination } from "@/lib/hooks/use-pagination";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { submitAssignment } from "@/lib/dashboard/assignments-actions";
-import { groupByClass } from "@/lib/dashboard/group-by-class";
 
 export type StudentAssignmentRow = {
   id: string;
@@ -47,15 +46,8 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
   const [activeAssignmentId, setActiveAssignmentId] = useState<string | null>(null);
   const [viewingWorksheetId, setViewingWorksheetId] = useState<string | null>(null);
   const [viewingResultId, setViewingResultId] = useState<string | null>(null);
-
-  const dueAssignments = assignments.filter((a) => a.submission?.status !== "graded");
-  const pastAssignments = assignments.filter((a) => a.submission?.status === "graded");
-  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(pastAssignments.length);
-  const pagedPastAssignments = pastAssignments.slice(offset, offset + pageSize);
-  const groupedDue = useMemo(
-    () => groupByClass(dueAssignments.map((a) => ({ ...a, ownerName: a.teacherName }))),
-    [dueAssignments],
-  );
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(assignments.length);
+  const pagedAssignments = assignments.slice(offset, offset + pageSize);
 
   const viewingWorksheet = viewingWorksheetId
     ? (assignments.find((a) => a.id === viewingWorksheetId) ?? null)
@@ -97,86 +89,40 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
         <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
 
-      <h2 className="mb-1 text-lg font-semibold text-foreground">{t("dueTitle")}</h2>
-      <p className="mb-4 text-sm text-muted-foreground">{t("dueSubtitle")}</p>
-
-      {dueAssignments.length === 0 ? (
-        <div className="mb-8 rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
-          {t("dueEmpty")}
-        </div>
-      ) : (
-        <div className="mb-8 flex flex-col gap-5">
-          {groupedDue.map((group) => (
-            <div key={group.key}>
-              <h3 className="mb-2 text-sm font-semibold text-foreground">{group.heading}</h3>
-              <div className="flex flex-col gap-3">
-                {group.rows.map((assignment) => (
-                  <AssignmentCard
-                    key={assignment.id}
-                    assignment={assignment}
-                    onOpen={() => setActiveAssignmentId(assignment.id)}
-                    onViewWorksheet={() => setViewingWorksheetId(assignment.id)}
-                    onViewResult={() => setViewingResultId(assignment.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <h2 className="mb-3 text-lg font-semibold text-foreground">{t("pastTitle")}</h2>
       <div className="rounded-lg border border-border bg-white">
-        {pastAssignments.length === 0 ? (
-          <div className="p-5 text-sm text-muted-foreground">{t("pastEmpty")}</div>
+        {assignments.length === 0 ? (
+          <p className="p-5 text-sm text-muted-foreground">{t("empty")}</p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t("tableAssignment")}</TableHead>
+                <TableHead>{t("colAssignment")}</TableHead>
                 <TableHead>{t("tableTeacher")}</TableHead>
-                <TableHead>{t("tableGrade")}</TableHead>
-                <TableHead>{t("tableFeedback")}</TableHead>
-                <TableHead>{t("tableDate")}</TableHead>
-                <TableHead>{t("tableResult")}</TableHead>
+                <TableHead>{t("colDue")}</TableHead>
+                <TableHead className="text-right">{t("colAction")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pagedPastAssignments.map((assignment) => (
-                <TableRow key={assignment.id}>
-                  <TableCell className="font-medium whitespace-normal text-foreground">{assignment.title}</TableCell>
-                  <TableCell className="whitespace-normal text-muted-foreground">{assignment.teacherName}</TableCell>
-                  <TableCell className="text-muted-foreground">{assignment.submission?.grade ?? "—"}</TableCell>
-                  <TableCell className="whitespace-normal text-muted-foreground">
-                    {assignment.submission?.feedback ?? "—"}
-                  </TableCell>
-                  <TableCell className="whitespace-normal text-muted-foreground">
-                    {assignment.submission?.submittedLabel ?? "—"}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto p-0 font-semibold text-primary hover:underline"
-                      onClick={() => setViewingResultId(assignment.id)}
-                    >
-                      {t("viewResult")}
-                    </Button>
-                  </TableCell>
-                </TableRow>
+              {pagedAssignments.map((assignment) => (
+                <AssignmentRow
+                  key={assignment.id}
+                  assignment={assignment}
+                  onOpen={() => setActiveAssignmentId(assignment.id)}
+                  onViewWorksheet={() => setViewingWorksheetId(assignment.id)}
+                  onViewResult={() => setViewingResultId(assignment.id)}
+                />
               ))}
             </TableBody>
           </Table>
         )}
-        {pastAssignments.length > 0 && (
+        {assignments.length > 0 && (
           <PaginationFooter
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setPage}
             showingLabel={tc("pagination.showingCount", {
-              shown: pagedPastAssignments.length,
-              total: pastAssignments.length,
+              shown: pagedAssignments.length,
+              total: assignments.length,
             })}
             previousLabel={tc("pagination.previous")}
             nextLabel={tc("pagination.next")}
@@ -188,7 +134,14 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
   );
 }
 
-function AssignmentCard({
+/**
+ * One row per assignment, past and upcoming together with a status badge
+ * telling them apart — same shape as LiveClassesTab's single table,
+ * replacing the old split "Due now" (grouped-by-class cards) / "Past
+ * results" table (Gehan flagged the split as clutter once he saw Live
+ * Classes handle it as one list).
+ */
+function AssignmentRow({
   assignment,
   onOpen,
   onViewWorksheet,
@@ -202,48 +155,49 @@ function AssignmentCard({
   const t = useTranslations("studentDashboard.assignments");
 
   return (
-    <div className="rounded-lg border border-border bg-white p-4.5">
-      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <div className="font-semibold text-foreground">{assignment.title}</div>
-        {assignment.submission?.status === "pending" && (
-          <StatusBadge variant="pending">{t("pendingGrading")}</StatusBadge>
+    <TableRow>
+      <TableCell className="max-w-72 whitespace-normal font-medium text-foreground">
+        {assignment.title}
+        {(assignment.batchTitle || assignment.lessonTitle) && (
+          <div className="text-xs font-normal text-muted-foreground">
+            {[assignment.batchTitle, assignment.lessonTitle].filter(Boolean).join(" · ")}
+          </div>
         )}
-      </div>
-      {(assignment.lessonTitle || assignment.dueLabel) && (
-        <p className="mb-3.5 text-sm text-muted-foreground">
-          {[assignment.lessonTitle, assignment.dueLabel ? t("dueLabel", { date: assignment.dueLabel }) : null]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
-      )}
-
-      <div className="flex flex-wrap items-center gap-2.5">
-        <Button type="button" variant="ghost" size="sm" className="h-auto p-0 font-semibold text-primary hover:underline" onClick={onViewWorksheet}>
-          {t("viewWorksheet")}
-        </Button>
-        {!assignment.submission && (
-          <Button size="sm" onClick={onOpen}>
-            {t("submitAnswer")}
+      </TableCell>
+      <TableCell className="whitespace-normal text-muted-foreground">{assignment.teacherName}</TableCell>
+      <TableCell className="whitespace-normal text-muted-foreground">
+        {assignment.dueLabel ? t("dueLabel", { date: assignment.dueLabel }) : "—"}
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button type="button" variant="ghost" size="sm" onClick={onViewWorksheet}>
+            {t("viewWorksheet")}
           </Button>
-        )}
-        {assignment.submission?.status === "pending" && (
-          <>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-auto p-0 font-semibold text-primary hover:underline"
-              onClick={onViewResult}
-            >
-              {t("viewSubmission")}
+          {assignment.submission?.status === "graded" ? (
+            <>
+              <StatusBadge variant="graded">{assignment.submission.grade ?? "—"}</StatusBadge>
+              <Button type="button" variant="ghost" size="sm" onClick={onViewResult}>
+                {t("viewResult")}
+              </Button>
+            </>
+          ) : assignment.submission?.status === "pending" ? (
+            <>
+              <StatusBadge variant="pending">{t("pendingGrading")}</StatusBadge>
+              <Button type="button" variant="ghost" size="sm" onClick={onViewResult}>
+                {t("viewSubmission")}
+              </Button>
+              <Button size="sm" variant="outline" onClick={onOpen}>
+                {t("resubmit")}
+              </Button>
+            </>
+          ) : (
+            <Button size="sm" onClick={onOpen}>
+              {t("submitAnswer")}
             </Button>
-            <Button size="sm" variant="outline" onClick={onOpen}>
-              {t("resubmit")}
-            </Button>
-          </>
-        )}
-      </div>
-    </div>
+          )}
+        </div>
+      </TableCell>
+    </TableRow>
   );
 }
 

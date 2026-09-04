@@ -7,7 +7,6 @@ import { Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/features/status-badge";
-import { LockPill } from "@/components/features/lock-pill";
 import { TerminalBlock } from "@/components/dashboard/terminal-block";
 import {
   Table,
@@ -78,18 +77,19 @@ export function ExamsTab({ exams }: { exams: StudentExamRow[] }) {
   const t = useTranslations("studentDashboard.exams");
   const tc = useTranslations("studentDashboard.common");
   const [activeExamId, setActiveExamId] = useState<string | null>(null);
-  const [reviewExamId, setReviewExamId] = useState<string | null>(null);
-  const pastExams = exams.filter((exam) => exam.submission?.status === "graded");
-  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(pastExams.length);
-  const pagedPastExams = pastExams.slice(offset, offset + pageSize);
+  const [resultExamId, setResultExamId] = useState<string | null>(null);
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(exams.length);
+  const pagedExams = exams.slice(offset, offset + pageSize);
 
   const activeExam = activeExamId ? (exams.find((e) => e.id === activeExamId) ?? null) : null;
   if (activeExam) {
     return <ExamWorkspace exam={activeExam} onExit={() => setActiveExamId(null)} />;
   }
 
-  const dueExams = exams.filter((exam) => exam.submission?.status !== "graded");
-  const reviewExam = reviewExamId ? (exams.find((e) => e.id === reviewExamId) ?? null) : null;
+  const resultExam = resultExamId ? (exams.find((e) => e.id === resultExamId) ?? null) : null;
+  if (resultExam) {
+    return <ExamResultPanel exam={resultExam} onClose={() => setResultExamId(null)} />;
+  }
 
   return (
     <div>
@@ -98,129 +98,144 @@ export function ExamsTab({ exams }: { exams: StudentExamRow[] }) {
         <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
 
-      <h2 className="mb-1 text-lg font-semibold text-foreground">{t("dueTitle")}</h2>
-      <p className="mb-4 text-sm text-muted-foreground">{t("dueSubtitle")}</p>
-
-      {dueExams.length === 0 ? (
-        <div className="mb-8 rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
-          {t("dueEmpty")}
-        </div>
-      ) : (
-        <div className="mb-8 flex flex-col gap-4">
-          {dueExams.map((exam) => (
-            <ExamCard key={exam.id} exam={exam} onOpen={() => setActiveExamId(exam.id)} />
-          ))}
-        </div>
-      )}
-
-      <h2 className="mb-3 text-lg font-semibold text-foreground">{t("pastTitle")}</h2>
       <div className="rounded-lg border border-border bg-white">
-        {pastExams.length === 0 ? (
-          <div className="p-5 text-sm text-muted-foreground">{t("pastEmpty")}</div>
+        {exams.length === 0 ? (
+          <p className="p-5 text-sm text-muted-foreground">{t("empty")}</p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t("tableExam")}</TableHead>
+                <TableHead>{t("colExam")}</TableHead>
                 <TableHead>{t("tableTeacher")}</TableHead>
-                <TableHead>{t("tableGrade")}</TableHead>
-                <TableHead>{t("tableFeedback")}</TableHead>
-                <TableHead>{t("tableDate")}</TableHead>
-                <TableHead>{t("tableAnswers")}</TableHead>
+                <TableHead>{t("colSchedule")}</TableHead>
+                <TableHead className="text-right">{t("colAction")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pagedPastExams.map((exam) => (
-                <TableRow key={exam.id}>
-                  <TableCell className="font-medium whitespace-normal text-foreground">{exam.title}</TableCell>
-                  <TableCell className="whitespace-normal text-muted-foreground">{exam.teacherName}</TableCell>
-                  <TableCell className="text-muted-foreground">{exam.submission?.grade ?? "—"}</TableCell>
-                  <TableCell className="whitespace-normal text-muted-foreground">
-                    {exam.submission?.feedback ?? "—"}
-                  </TableCell>
-                  <TableCell className="whitespace-normal text-muted-foreground">
-                    {exam.submission?.submittedLabel ?? "—"}
-                  </TableCell>
-                  <TableCell>
-                    {exam.reviewAnswers ? (
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setReviewExamId(exam.id)}>
-                        {t("viewAnswers")}
-                      </Button>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-                </TableRow>
+              {pagedExams.map((exam) => (
+                <ExamRow
+                  key={exam.id}
+                  exam={exam}
+                  onStart={() => setActiveExamId(exam.id)}
+                  onViewResult={() => setResultExamId(exam.id)}
+                />
               ))}
             </TableBody>
           </Table>
         )}
-        {pastExams.length > 0 && (
+        {exams.length > 0 && (
           <PaginationFooter
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setPage}
-            showingLabel={tc("pagination.showingCount", { shown: pagedPastExams.length, total: pastExams.length })}
+            showingLabel={tc("pagination.showingCount", { shown: pagedExams.length, total: exams.length })}
             previousLabel={tc("pagination.previous")}
             nextLabel={tc("pagination.next")}
             pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
           />
         )}
       </div>
-
-      {reviewExam && <AnswerReviewPanel exam={reviewExam} onClose={() => setReviewExamId(null)} />}
     </div>
   );
 }
 
-function ExamCard({ exam, onOpen }: { exam: StudentExamRow; onOpen: () => void }) {
+/**
+ * One row per exam, past and upcoming together with a status badge telling
+ * them apart — same shape as LiveClassesTab's single table, replacing the
+ * old split "Due now" cards / "Past results" table (Gehan flagged the split
+ * as clutter once he saw Live Classes handle it as one list).
+ */
+function ExamRow({
+  exam,
+  onStart,
+  onViewResult,
+}: {
+  exam: StudentExamRow;
+  onStart: () => void;
+  onViewResult: () => void;
+}) {
   const t = useTranslations("studentDashboard.exams");
 
   return (
-    <div className="rounded-lg border border-border bg-white p-4.5">
-      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <div className="font-semibold text-foreground">{exam.title}</div>
-        {!exam.isOpen && <LockPill>{t("notOpenYet")}</LockPill>}
-        {exam.isOpen && exam.submission?.status === "pending" && (
+    <TableRow>
+      <TableCell className="font-medium whitespace-normal text-foreground">{exam.title}</TableCell>
+      <TableCell className="whitespace-normal text-muted-foreground">{exam.teacherName}</TableCell>
+      <TableCell className="whitespace-normal text-muted-foreground">
+        {exam.scheduledLabel} · {t("durationLabel", { minutes: exam.durationMinutes })}
+      </TableCell>
+      <TableCell className="text-right">
+        {exam.submission?.status === "graded" ? (
+          <div className="flex items-center justify-end gap-2">
+            <StatusBadge variant="graded">{exam.submission.grade ?? "—"}</StatusBadge>
+            <Button type="button" variant="ghost" size="sm" onClick={onViewResult}>
+              {t("viewResult")}
+            </Button>
+          </div>
+        ) : exam.submission?.status === "pending" ? (
           <StatusBadge variant="pending">{t("pendingGrading")}</StatusBadge>
+        ) : !exam.isOpen ? (
+          <StatusBadge variant="closed">{t("notOpenYet")}</StatusBadge>
+        ) : (
+          <Button size="sm" onClick={onStart}>
+            {t("startExam")}
+          </Button>
         )}
-      </div>
-      <p className="mb-3.5 text-sm text-muted-foreground">
-        {exam.teacherName} · {t("durationLabel", { minutes: exam.durationMinutes })} · {exam.scheduledLabel}
-      </p>
+      </TableCell>
+    </TableRow>
+  );
+}
 
-      {!exam.isOpen && <p className="text-sm text-muted-foreground">{t("scheduledLabel", { date: exam.scheduledLabel })}</p>}
+/**
+ * Grade + feedback (same header block AssignmentResultPanel uses), plus the
+ * per-question breakdown once the teacher has both graded the exam and
+ * opted it into reveal_answers (0079) — exam.reviewAnswers is the gate for
+ * that section; it's null for every exam that hasn't opted in, in which
+ * case the grade/feedback block above is the whole panel.
+ */
+function ExamResultPanel({ exam, onClose }: { exam: StudentExamRow; onClose: () => void }) {
+  const t = useTranslations("studentDashboard.exams");
+  const tc = useTranslations("studentDashboard.common");
 
-      {exam.isOpen && !exam.submission && (
-        <Button size="sm" onClick={onOpen}>
-          {t("startExam")}
+  return (
+    <div>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <div className="text-sm font-semibold text-foreground">{exam.title}</div>
+          <div className="text-xs text-muted-foreground">{exam.teacherName}</div>
+        </div>
+        <Button size="sm" variant="outline" onClick={onClose}>
+          {tc("close")}
         </Button>
-      )}
+      </div>
 
-      {exam.isOpen && exam.submission?.status === "pending" && (
-        <p className="text-sm text-foreground/80">{t("submittedBody")}</p>
-      )}
+      <div className="mb-5 flex flex-wrap items-center gap-5 rounded-lg border border-border bg-white p-4">
+        <div>
+          <div className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+            {t("resultGradeHeading")}
+          </div>
+          <div className="text-lg font-semibold text-foreground">{exam.submission?.grade ?? "—"}</div>
+        </div>
+        <p className="min-w-0 flex-1 text-sm text-muted-foreground">
+          {exam.submission?.feedback || t("resultNoFeedback")}
+        </p>
+      </div>
+
+      {exam.reviewAnswers && <QuestionReview exam={exam} />}
     </div>
   );
 }
 
 /** Read-only per-question breakdown — the student's own answer next to the
- * correct one, once the teacher has both graded the exam and opted it into
- * reveal_answers (0079). exam.reviewAnswers is the single gate for this
- * whole panel; it's null for every exam that hasn't opted in. */
-function AnswerReviewPanel({ exam, onClose }: { exam: StudentExamRow; onClose: () => void }) {
+ * correct one. Only ever rendered once exam.reviewAnswers is confirmed
+ * non-null by ExamResultPanel above. */
+function QuestionReview({ exam }: { exam: StudentExamRow }) {
   const t = useTranslations("studentDashboard.exams");
   if (!exam.reviewAnswers) return null;
   const { mcqAnswers, codeAnswers } = exam.reviewAnswers;
 
   return (
-    <div className="mt-4 rounded-lg border border-border bg-white p-5">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-lg">{t("answerReviewHeading", { title: exam.title })}</h3>
-        <Button type="button" variant="outline" size="sm" onClick={onClose}>
-          {t("closeAnswers")}
-        </Button>
-      </div>
+    <div className="rounded-lg border border-border bg-white p-5">
+      <h3 className="mb-3 text-sm font-semibold text-foreground">{t("questionReviewHeading")}</h3>
       <div className="flex flex-col gap-4">
         {exam.questions.map((q, index) => {
           const selectedIds = mcqAnswers[q.id] ?? [];

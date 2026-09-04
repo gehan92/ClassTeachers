@@ -586,7 +586,10 @@
       "noDescription": "වැඩිදුර විස්තර එක් කර නැත.",
       "postedOn": "පළ කළේ {date}",
       "respondHeading": "ඔබට උදව් කළ හැකිද?",
-      "respondHelper": "සම්බන්ධ වී ඔවුන්ට දන්වන්න — ඔබේ පණිවිඩය කෙලින්ම සිසුවා වෙත යයි."
+      "respondHelper": "සම්බන්ධ වී ඔවුන්ට දන්වන්න — ඔබේ පණිවිඩය කෙලින්ම සිසුවා වෙත යයි.",
+      "alreadyRespondedHeading": "ඔබ දැනටමත් පිළිතුරු දී ඇත",
+      "alreadyRespondedHelper": "ඔබ එවූ පණිවිඩය මෙයයි — ඔබේ dashboard එකෙන් කළමනාකරණය කරන්න හෝ පසු විපරම් කරන්න.",
+      "viewResponseCta": "dashboard එකේ බලන්න"
     }
   },
   "termsPage": {

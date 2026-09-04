@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter } from "@/lib/format-date";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { getSubjectIcon } from "@/lib/subject-icon";
-import { getWantedAdRespondHref } from "@/lib/wanted-ad-respond-href";
+import { getWantedAdRespondHref, resolveWantedAdResponder } from "@/lib/wanted-ad-respond-href";
 
 async function loadAd(id: string) {
   const supabase = await createClient();
@@ -52,6 +52,19 @@ export default async function RequestDetailPage({ params }: PageProps<"/[locale]
     data: { user },
   } = await supabase.auth.getUser();
   const respondHref = await getWantedAdRespondHref(supabase, user?.id);
+
+  const responder = await resolveWantedAdResponder(supabase, user?.id);
+  let myResponse: string | null = null;
+  if (responder) {
+    const { data: existingResponse } = await supabase
+      .from("wanted_ad_responses")
+      .select("message")
+      .eq("wanted_ad_id", ad.id)
+      .eq("responder_type", responder.responderType)
+      .eq("responder_id", responder.responderId)
+      .maybeSingle();
+    myResponse = existingResponse?.message ?? null;
+  }
 
   const dateFormatter = createDateFormatter(locale);
   const t = await getTranslations("requestsPage");
@@ -118,11 +131,24 @@ export default async function RequestDetailPage({ params }: PageProps<"/[locale]
         </div>
 
         <div className="flex h-fit flex-col gap-3 rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
-          <h3 className="text-sm font-semibold text-foreground">{td("respondHeading")}</h3>
-          <p className="text-sm text-muted-foreground">{td("respondHelper")}</p>
-          <Button nativeButton={false} render={<Link href={respondHref} />}>
-            {t("respondCta")}
-          </Button>
+          {myResponse ? (
+            <>
+              <h3 className="text-sm font-semibold text-foreground">{td("alreadyRespondedHeading")}</h3>
+              <p className="text-sm text-muted-foreground">{td("alreadyRespondedHelper")}</p>
+              <p className="rounded-md bg-secondary/60 px-3 py-2 text-sm text-foreground/85">{myResponse}</p>
+              <Button variant="outline" nativeButton={false} render={<Link href={respondHref} />}>
+                {td("viewResponseCta")}
+              </Button>
+            </>
+          ) : (
+            <>
+              <h3 className="text-sm font-semibold text-foreground">{td("respondHeading")}</h3>
+              <p className="text-sm text-muted-foreground">{td("respondHelper")}</p>
+              <Button nativeButton={false} render={<Link href={respondHref} />}>
+                {t("respondCta")}
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -19,3 +19,27 @@ export async function getWantedAdRespondHref(
   if (profile?.role === "class") return "/institute?tab=studentRequests";
   return "/login";
 }
+
+/**
+ * Resolves the (responder_type, responder_id) pair `wanted_ad_responses`
+ * rows are actually keyed by — same role/class_profile lookup
+ * `respondToWantedAd` (wanted-ads-actions.ts) does inline, pulled out here
+ * so a second caller (the request detail page, checking whether the viewer
+ * already responded to *this* ad) doesn't have to re-derive it. Returns
+ * null for anyone who isn't a signed-in teacher/institute account, which
+ * callers should treat as "not a possible responder" rather than an error.
+ */
+export async function resolveWantedAdResponder(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string | undefined,
+): Promise<{ responderType: "teacher" | "class"; responderId: string } | null> {
+  if (!userId) return null;
+
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", userId).maybeSingle();
+  if (profile?.role === "teacher") return { responderType: "teacher", responderId: userId };
+  if (profile?.role === "class") {
+    const { data: classProfile } = await supabase.from("class_profiles").select("id").eq("owner_id", userId).maybeSingle();
+    if (classProfile) return { responderType: "class", responderId: classProfile.id };
+  }
+  return null;
+}

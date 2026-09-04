@@ -586,7 +586,10 @@
       "noDescription": "No further details were added.",
       "postedOn": "Posted {date}",
       "respondHeading": "Can you help?",
-      "respondHelper": "Reach out and let them know — your message goes straight to the student."
+      "respondHelper": "Reach out and let them know — your message goes straight to the student.",
+      "alreadyRespondedHeading": "You've already responded",
+      "alreadyRespondedHelper": "Here's the message you sent — manage or follow up from your dashboard.",
+      "viewResponseCta": "View in dashboard"
     }
   },
   "termsPage": {

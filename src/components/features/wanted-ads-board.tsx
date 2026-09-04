@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { createElement, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { GraduationCap } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Input } from "@/components/ui/input";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { usePagination } from "@/lib/hooks/use-pagination";
 import { avatarGradientClass } from "@/lib/avatar-color";
+import { getSubjectIcon } from "@/lib/subject-icon";
 import { cn } from "@/lib/utils";
 
 export type PublicWantedAd = {
@@ -30,13 +30,17 @@ type LookingForFilter = (typeof lookingForFilters)[number];
  * Deliberately mirrors ListingCard's shape (same banner/avatar/footer-pill
  * structure as /teachers) so the two searchable pages feel like one design
  * system, not two — Gehan flagged the mismatch after comparing screenshots.
- * The avatar stays generic (a graduation-cap glyph, colored from the ad id)
- * rather than a name-derived initial like ListingCard's — a wanted-ad never
+ * The avatar stays generic (a subject-category glyph, colored from the ad
+ * id — never a name-derived initial like ListingCard's) — a wanted-ad never
  * identifies who posted it, even to a signed-in teacher/institute, so
  * nothing here should look like a placeholder for a real photo that's just
- * waiting to be "unlocked." Links to the ad's own detail page (/requests/[id],
- * added alongside this) rather than straight to a login/respond href, so a
- * visitor can actually read the full request before deciding to respond.
+ * waiting to be "unlocked." Varying the icon by subject (getSubjectIcon)
+ * mirrors how demand-side "wanted" posts on other platforms (TaskRabbit,
+ * Urban Company) use a category icon rather than a photo of the requester —
+ * professional without compromising that anonymity. Links to the ad's own
+ * detail page (/requests/[id], added alongside this) rather than straight
+ * to a login/respond href, so a visitor can actually read the full request
+ * before deciding to respond.
  */
 function RequestCard({ ad, index }: { ad: PublicWantedAd; index?: number }) {
   const t = useTranslations("requestsPage");
@@ -65,7 +69,7 @@ function RequestCard({ ad, index }: { ad: PublicWantedAd; index?: number }) {
         <div
           className={`absolute -bottom-5.5 right-3.5 flex size-14 items-center justify-center rounded-full border-4 border-white text-white shadow-sm ${avatarGradientClass(ad.id)}`}
         >
-          <GraduationCap className="size-5.5" />
+          {createElement(getSubjectIcon(ad.subject), { className: "size-5.5" })}
         </div>
       </div>
 

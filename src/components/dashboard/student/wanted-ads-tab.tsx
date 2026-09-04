@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { createElement, useEffect, useId, useState } from "react";
 import { useTranslations } from "next-intl";
-import { GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +12,7 @@ import { StatusBadge } from "@/components/features/status-badge";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { avatarGradientClass } from "@/lib/avatar-color";
+import { getSubjectIcon } from "@/lib/subject-icon";
 import {
   createWantedAd,
   updateWantedAd,
@@ -443,7 +443,7 @@ function WantedAdPreviewCard({
         <div
           className={`absolute -bottom-5.5 right-3.5 flex size-14 items-center justify-center rounded-full border-4 border-white text-white shadow-sm ${avatarGradientClass(seed)}`}
         >
-          <GraduationCap className="size-5.5" />
+          {createElement(getSubjectIcon(subjectName), { className: "size-5.5" })}
         </div>
       </div>
 

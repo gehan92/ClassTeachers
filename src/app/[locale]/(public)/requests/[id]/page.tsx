@@ -1,12 +1,14 @@
+import { createElement } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ArrowLeft, GraduationCap } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter } from "@/lib/format-date";
 import { avatarGradientClass } from "@/lib/avatar-color";
+import { getSubjectIcon } from "@/lib/subject-icon";
 import { getWantedAdRespondHref } from "@/lib/wanted-ad-respond-href";
 
 async function loadAd(id: string) {
@@ -70,7 +72,7 @@ export default async function RequestDetailPage({ params }: PageProps<"/[locale]
           <div
             className={`mx-auto flex size-20 shrink-0 items-center justify-center rounded-full border-4 border-white text-white shadow-sm sm:mx-0 ${avatarGradientClass(ad.id)}`}
           >
-            <GraduationCap className="size-8" />
+            {createElement(getSubjectIcon(ad.subject), { className: "size-8" })}
           </div>
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-wrap items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-white/70">

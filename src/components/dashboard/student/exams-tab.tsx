@@ -108,7 +108,7 @@ export function ExamsTab({ exams }: { exams: StudentExamRow[] }) {
                 <TableHead>{t("colExam")}</TableHead>
                 <TableHead>{t("tableTeacher")}</TableHead>
                 <TableHead>{t("colSchedule")}</TableHead>
-                <TableHead className="text-right">{t("colAction")}</TableHead>
+                <TableHead>{t("colAction")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -163,9 +163,9 @@ function ExamRow({
       <TableCell className="whitespace-normal text-muted-foreground">
         {exam.scheduledLabel} · {t("durationLabel", { minutes: exam.durationMinutes })}
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell>
         {exam.submission?.status === "graded" ? (
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center gap-2">
             <StatusBadge variant="graded">{exam.submission.grade ?? "—"}</StatusBadge>
             <Button type="button" variant="ghost" size="sm" onClick={onViewResult}>
               {t("viewResult")}

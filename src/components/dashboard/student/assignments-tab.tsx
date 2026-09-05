@@ -99,7 +99,7 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
                 <TableHead>{t("colAssignment")}</TableHead>
                 <TableHead>{t("tableTeacher")}</TableHead>
                 <TableHead>{t("colDue")}</TableHead>
-                <TableHead className="text-right">{t("colAction")}</TableHead>
+                <TableHead>{t("colAction")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -168,8 +168,8 @@ function AssignmentRow({
       <TableCell className="whitespace-normal text-muted-foreground">
         {assignment.dueLabel ? t("dueLabel", { date: assignment.dueLabel }) : "—"}
       </TableCell>
-      <TableCell className="text-right">
-        <div className="flex flex-wrap items-center justify-end gap-2">
+      <TableCell>
+        <div className="flex flex-wrap items-center gap-2">
           <Button type="button" variant="ghost" size="sm" onClick={onViewWorksheet}>
             {t("viewWorksheet")}
           </Button>

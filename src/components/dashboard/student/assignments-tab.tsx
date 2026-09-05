@@ -47,6 +47,7 @@ export function AssignmentsTab({
   assignments,
   hideHeading,
   scope = "workspace",
+  tNamespace = "studentDashboard.assignments",
 }: {
   assignments: StudentAssignmentRow[];
   hideHeading?: boolean;
@@ -55,8 +56,11 @@ export function AssignmentsTab({
    * records and marks only; uploading an answer only happens inside My
    * Classes, per Gehan's explicit split. */
   scope?: "workspace" | "history";
+  /** Lets Homework reuse this exact component with its own heading/labels
+   * instead of "Assignments" copy. */
+  tNamespace?: string;
 }) {
-  const t = useTranslations("studentDashboard.assignments");
+  const t = useTranslations(tNamespace);
   const tc = useTranslations("studentDashboard.common");
   const [now] = useState(() => Date.now());
   const [activeAssignmentId, setActiveAssignmentId] = useState<string | null>(null);
@@ -82,7 +86,9 @@ export function AssignmentsTab({
 
   const viewingResult = viewingResultId ? (assignments.find((a) => a.id === viewingResultId) ?? null) : null;
   if (viewingResult) {
-    return <AssignmentResultPanel assignment={viewingResult} onClose={() => setViewingResultId(null)} />;
+    return (
+      <AssignmentResultPanel assignment={viewingResult} tNamespace={tNamespace} onClose={() => setViewingResultId(null)} />
+    );
   }
 
   const activeAssignment = activeAssignmentId
@@ -92,6 +98,7 @@ export function AssignmentsTab({
     return (
       <SubmitWorkspace
         assignment={activeAssignment}
+        tNamespace={tNamespace}
         onExit={() => setActiveAssignmentId(null)}
         onViewWorksheet={() => setViewingWorksheetId(activeAssignment.id)}
       />
@@ -135,6 +142,7 @@ export function AssignmentsTab({
                                 assignment={assignment}
                                 scope={scope}
                                 now={now}
+                                tNamespace={tNamespace}
                                 onOpen={() => setActiveAssignmentId(assignment.id)}
                                 onViewWorksheet={() => setViewingWorksheetId(assignment.id)}
                                 onViewResult={() => setViewingResultId(assignment.id)}
@@ -166,6 +174,7 @@ export function AssignmentsTab({
                   assignment={assignment}
                   scope={scope}
                   now={now}
+                  tNamespace={tNamespace}
                   onOpen={() => setActiveAssignmentId(assignment.id)}
                   onViewWorksheet={() => setViewingWorksheetId(assignment.id)}
                   onViewResult={() => setViewingResultId(assignment.id)}
@@ -204,6 +213,7 @@ function AssignmentRow({
   assignment,
   scope,
   now,
+  tNamespace,
   onOpen,
   onViewWorksheet,
   onViewResult,
@@ -211,11 +221,12 @@ function AssignmentRow({
   assignment: StudentAssignmentRow;
   scope: "workspace" | "history";
   now: number;
+  tNamespace: string;
   onOpen: () => void;
   onViewWorksheet: () => void;
   onViewResult: () => void;
 }) {
-  const t = useTranslations("studentDashboard.assignments");
+  const t = useTranslations(tNamespace);
 
   return (
     <TableRow>
@@ -236,6 +247,7 @@ function AssignmentRow({
           assignment={assignment}
           scope={scope}
           now={now}
+          tNamespace={tNamespace}
           onOpen={onOpen}
           onViewWorksheet={onViewWorksheet}
           onViewResult={onViewResult}
@@ -253,6 +265,7 @@ function AssignmentActions({
   assignment,
   scope,
   now,
+  tNamespace,
   onOpen,
   onViewWorksheet,
   onViewResult,
@@ -260,11 +273,12 @@ function AssignmentActions({
   assignment: StudentAssignmentRow;
   scope: "workspace" | "history";
   now: number;
+  tNamespace: string;
   onOpen: () => void;
   onViewWorksheet: () => void;
   onViewResult: () => void;
 }) {
-  const t = useTranslations("studentDashboard.assignments");
+  const t = useTranslations(tNamespace);
   const isHistory = scope === "history";
   const isPastDue = assignment.dueAtIso !== null && new Date(assignment.dueAtIso).getTime() < now;
 
@@ -309,14 +323,16 @@ function AssignmentActions({
 
 function PhotoDropzone({
   files,
+  tNamespace,
   onAdd,
   onRemove,
 }: {
   files: File[];
+  tNamespace: string;
   onAdd: (files: FileList | null) => void;
   onRemove: (index: number) => void;
 }) {
-  const t = useTranslations("studentDashboard.assignments");
+  const t = useTranslations(tNamespace);
   const inputId = useId();
 
   return (
@@ -364,14 +380,16 @@ function PhotoDropzone({
 
 function SubmitWorkspace({
   assignment,
+  tNamespace,
   onExit,
   onViewWorksheet,
 }: {
   assignment: StudentAssignmentRow;
+  tNamespace: string;
   onExit: () => void;
   onViewWorksheet: () => void;
 }) {
-  const t = useTranslations("studentDashboard.assignments");
+  const t = useTranslations(tNamespace);
   const tc = useTranslations("studentDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [photos, setPhotos] = useState<File[]>([]);
@@ -448,7 +466,7 @@ function SubmitWorkspace({
           {t("viewWorksheet")}
         </Button>
         <p className="mb-2 text-xs text-muted-foreground">{t("submitInstructions")}</p>
-        <PhotoDropzone files={photos} onAdd={handleAdd} onRemove={handleRemove} />
+        <PhotoDropzone files={photos} tNamespace={tNamespace} onAdd={handleAdd} onRemove={handleRemove} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -464,8 +482,16 @@ function SubmitWorkspace({
   );
 }
 
-function AssignmentResultPanel({ assignment, onClose }: { assignment: StudentAssignmentRow; onClose: () => void }) {
-  const t = useTranslations("studentDashboard.assignments");
+function AssignmentResultPanel({
+  assignment,
+  tNamespace,
+  onClose,
+}: {
+  assignment: StudentAssignmentRow;
+  tNamespace: string;
+  onClose: () => void;
+}) {
+  const t = useTranslations(tNamespace);
   const tc = useTranslations("studentDashboard.common");
   const photoUrls = assignment.submission?.photoUrls ?? [];
 

@@ -716,6 +716,7 @@ export type Database = {
           title: string;
           file_path: string;
           due_at: string | null;
+          assignment_type: "assignment" | "homework";
           created_at: string;
           updated_at: string;
         };
@@ -728,6 +729,7 @@ export type Database = {
           title: string;
           file_path: string;
           due_at?: string | null;
+          assignment_type?: "assignment" | "homework";
           created_at?: string;
           updated_at?: string;
         };
@@ -740,6 +742,7 @@ export type Database = {
           title?: string;
           file_path?: string;
           due_at?: string | null;
+          assignment_type?: "assignment" | "homework";
           created_at?: string;
           updated_at?: string;
         };

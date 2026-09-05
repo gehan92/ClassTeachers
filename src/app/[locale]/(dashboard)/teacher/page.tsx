@@ -233,7 +233,7 @@ export default async function TeacherDashboardPage({
       .order("scheduled_at", { ascending: false }),
     supabase
       .from("assignments")
-      .select("id, title, batch_id, lesson_id, file_path, due_at")
+      .select("id, title, batch_id, lesson_id, file_path, due_at, assignment_type")
       .order("created_at", { ascending: false }),
     // Same RPC the public /teacher/[id] page uses to gate the phone number
     // — called here too so the dashboard's inline "view live page" shows
@@ -802,17 +802,27 @@ export default async function TeacherDashboardPage({
     if (entry.path && entry.signedUrl) assignmentFileUrlByPath.set(entry.path, entry.signedUrl);
   }
 
-  const assignments: TeacherAssignmentRow[] = (assignmentRows ?? []).map((a) => ({
-    id: a.id,
-    title: a.title,
-    batchId: a.batch_id,
-    batchTitle: a.batch_id ? (batchTitleById.get(a.batch_id) ?? null) : null,
-    lessonId: a.lesson_id,
-    lessonTitle: a.lesson_id ? (lessonTitleById.get(a.lesson_id) ?? null) : null,
-    dueAtIso: a.due_at,
-    dueLabel: a.due_at ? dateFormatter.format(new Date(a.due_at)) : null,
-    fileUrl: assignmentFileUrlByPath.get(a.file_path) ?? "",
-  }));
+  function mapAssignmentRow(a: NonNullable<typeof assignmentRows>[number]): TeacherAssignmentRow {
+    return {
+      id: a.id,
+      title: a.title,
+      batchId: a.batch_id,
+      batchTitle: a.batch_id ? (batchTitleById.get(a.batch_id) ?? null) : null,
+      lessonId: a.lesson_id,
+      lessonTitle: a.lesson_id ? (lessonTitleById.get(a.lesson_id) ?? null) : null,
+      dueAtIso: a.due_at,
+      dueLabel: a.due_at ? dateFormatter.format(new Date(a.due_at)) : null,
+      fileUrl: assignmentFileUrlByPath.get(a.file_path) ?? "",
+    };
+  }
+  // Homework is the same assignments table/upload flow (0113) — just its
+  // own dedicated tab, split by assignment_type.
+  const assignments: TeacherAssignmentRow[] = (assignmentRows ?? [])
+    .filter((a) => a.assignment_type === "assignment")
+    .map(mapAssignmentRow);
+  const homework: TeacherAssignmentRow[] = (assignmentRows ?? [])
+    .filter((a) => a.assignment_type === "homework")
+    .map(mapAssignmentRow);
 
   const assignmentPhotoUrlByPath = new Map<string, string>();
   for (const entry of signedPhotoUrls ?? []) {
@@ -974,6 +984,7 @@ export default async function TeacherDashboardPage({
             { key: "questionBank", label: t("tabs.questionBank"), count: questions.length },
             { key: "exams", label: t("tabs.exams"), count: examRows?.length ?? 0 },
             { key: "assignments", label: t("tabs.assignments"), count: assignments.length },
+            { key: "homework", label: t("tabs.homework"), count: homework.length },
           ],
         },
         {
@@ -1085,6 +1096,16 @@ export default async function TeacherDashboardPage({
             submissions={assignmentSubmissions}
             batches={contentTargetBatches}
             lessons={lessonOptions}
+          />
+        ),
+        homework: (
+          <AssignmentsTab
+            assignments={homework}
+            submissions={assignmentSubmissions}
+            batches={contentTargetBatches}
+            lessons={lessonOptions}
+            assignmentType="homework"
+            tNamespace="teacherDashboard.homework"
           />
         ),
         live: (

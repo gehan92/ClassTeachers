@@ -14,6 +14,7 @@ const createAssignmentSchema = z.object({
   // Must already be a UTC ISO string computed in the browser when present
   // — see the same note in live-classes-actions.ts's createLiveClassSchema.
   dueAt: z.iso.datetime().optional(),
+  assignmentType: z.enum(["assignment", "homework"]).default("assignment"),
 });
 
 export async function createAssignment(formData: FormData): Promise<ActionResult> {
@@ -30,6 +31,7 @@ export async function createAssignment(formData: FormData): Promise<ActionResult
     batchId: formData.get("batchId") || undefined,
     lessonId: formData.get("lessonId") || undefined,
     dueAt: formData.get("dueAt") || undefined,
+    assignmentType: formData.get("assignmentType") || undefined,
   });
   if (!parsed.success) {
     return { error: "Please add a title and choose a PDF file." };
@@ -68,6 +70,7 @@ export async function createAssignment(formData: FormData): Promise<ActionResult
     title: parsed.data.title,
     file_path: filePath,
     due_at: parsed.data.dueAt ?? null,
+    assignment_type: parsed.data.assignmentType,
   });
   if (insertError) {
     await supabase.storage.from("assignments").remove([filePath]);

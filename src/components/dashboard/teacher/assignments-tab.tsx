@@ -52,13 +52,22 @@ export function AssignmentsTab({
   submissions,
   batches,
   lessons,
+  assignmentType = "assignment",
+  tNamespace = "teacherDashboard.assignments",
 }: {
   assignments: TeacherAssignmentRow[];
   submissions: AssignmentSubmissionRow[];
   batches: TeacherBatchOption[];
   lessons: TeacherLessonOption[];
+  /** Which of the 2 kinds this tab creates as — implicit from the tab itself
+   * (Assignments/Homework are separate dashboard tabs), not a field the
+   * teacher picks. */
+  assignmentType?: "assignment" | "homework";
+  /** Lets Homework reuse this exact component with its own heading/labels
+   * instead of "Assignments" copy. */
+  tNamespace?: string;
 }) {
-  const t = useTranslations("teacherDashboard.assignments");
+  const t = useTranslations(tNamespace);
   const tc = useTranslations("teacherDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const fileInputId = useId();
@@ -100,6 +109,7 @@ export function AssignmentsTab({
     // live-classes-actions.ts's createLiveClassSchema for why.
     if (dueAt) formData.set("dueAt", new Date(dueAt).toISOString());
     formData.set("file", file);
+    formData.set("assignmentType", assignmentType);
 
     const result = await createAssignment(formData);
     setSaving(false);
@@ -500,6 +510,7 @@ export function AssignmentsTab({
         <GradingPanel
           assignment={selectedAssignment}
           submissions={assignmentSubs}
+          tNamespace={tNamespace}
           onClose={() => setSelectedAssignmentId(null)}
         />
       )}
@@ -510,13 +521,15 @@ export function AssignmentsTab({
 function GradingPanel({
   assignment,
   submissions,
+  tNamespace,
   onClose,
 }: {
   assignment: TeacherAssignmentRow;
   submissions: AssignmentSubmissionRow[];
+  tNamespace: string;
   onClose: () => void;
 }) {
-  const t = useTranslations("teacherDashboard.assignments");
+  const t = useTranslations(tNamespace);
   const tc = useTranslations("teacherDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
 
@@ -539,7 +552,7 @@ function GradingPanel({
       <div className="flex flex-col gap-4">
         {submissions.length === 0 && <p className="text-sm text-muted-foreground">{t("grading.noSubmissions")}</p>}
         {submissions.map((submission) => (
-          <SubmissionCard key={submission.id} submission={submission} onGraded={() => refresh()} />
+          <SubmissionCard key={submission.id} submission={submission} tNamespace={tNamespace} onGraded={() => refresh()} />
         ))}
       </div>
     </div>
@@ -548,12 +561,14 @@ function GradingPanel({
 
 function SubmissionCard({
   submission,
+  tNamespace,
   onGraded,
 }: {
   submission: AssignmentSubmissionRow;
+  tNamespace: string;
   onGraded: () => void;
 }) {
-  const t = useTranslations("teacherDashboard.assignments");
+  const t = useTranslations(tNamespace);
   const tc = useTranslations("teacherDashboard.common");
 
   const [editing, setEditing] = useState(submission.status === "pending");

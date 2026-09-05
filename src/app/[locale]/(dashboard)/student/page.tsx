@@ -144,7 +144,7 @@ export default async function StudentDashboardPage({
     // scopes which assignment rows come back.
     supabase
       .from("assignments")
-      .select("id, owner_type, owner_id, batch_id, lesson_id, title, file_path, due_at")
+      .select("id, owner_type, owner_id, batch_id, lesson_id, title, file_path, due_at, assignment_type")
       .order("created_at", { ascending: false }),
     supabase
       .from("assignment_submissions")
@@ -751,7 +751,7 @@ export default async function StudentDashboardPage({
     (a) => !a.batch_id || enrolledBatchIds.has(a.batch_id),
   );
 
-  const assignments: StudentAssignmentRow[] = visibleAssignmentRows.map((a) => {
+  function mapAssignmentRow(a: (typeof visibleAssignmentRows)[number]): StudentAssignmentRow {
     const submission = assignmentSubmissionByAssignmentId.get(a.id);
     return {
       id: a.id,
@@ -777,9 +777,20 @@ export default async function StudentDashboardPage({
           }
         : null,
     };
-  });
+  }
+  // Homework is the same assignments table/submit/grade flow as Assignments
+  // (0113) — just its own dedicated tab, split by assignment_type.
+  const assignments: StudentAssignmentRow[] = visibleAssignmentRows
+    .filter((a) => a.assignment_type === "assignment")
+    .map(mapAssignmentRow);
+  const homework: StudentAssignmentRow[] = visibleAssignmentRows
+    .filter((a) => a.assignment_type === "homework")
+    .map(mapAssignmentRow);
   const assignmentsDueCount = visibleAssignmentRows.filter(
-    (a) => assignmentSubmissionByAssignmentId.get(a.id)?.status !== "graded",
+    (a) => a.assignment_type === "assignment" && assignmentSubmissionByAssignmentId.get(a.id)?.status !== "graded",
+  ).length;
+  const homeworkDueCount = visibleAssignmentRows.filter(
+    (a) => a.assignment_type === "homework" && assignmentSubmissionByAssignmentId.get(a.id)?.status !== "graded",
   ).length;
 
   // Overview's quick-action cards need real content, not just counts — the
@@ -913,6 +924,7 @@ export default async function StudentDashboardPage({
             { key: "pastPapers", label: t("tabs.pastPapers") },
             { key: "exams", label: t("tabs.exams"), count: examsDueCount, hasNew: hasNewExams },
             { key: "assignments", label: t("tabs.assignments"), count: assignmentsDueCount, hasNew: hasNewAssignments },
+            { key: "homework", label: t("tabs.homework"), count: homeworkDueCount },
           ],
         },
         {
@@ -959,6 +971,7 @@ export default async function StudentDashboardPage({
             pastPapers={studentPastPapers}
             exams={exams}
             assignments={assignments}
+            homework={homework}
             liveClasses={liveClasses}
             reminderClassIds={reminderClassIds}
             studentName={fullName}
@@ -1002,6 +1015,13 @@ export default async function StudentDashboardPage({
         ),
         exams: <ExamsTab exams={exams} scope="history" />,
         assignments: <AssignmentsTab assignments={assignments} scope="history" />,
+        homework: (
+          <AssignmentsTab
+            assignments={homework}
+            scope="history"
+            tNamespace="studentDashboard.homework"
+          />
+        ),
         reviews: <ReviewsTab targets={reviewTargets} initialReviews={myReviews} />,
         profile: (
           <ProfileTab

@@ -116,6 +116,7 @@ export function ClassesTab({
   pastPapers,
   exams,
   assignments,
+  homework,
   liveClasses,
   reminderClassIds,
   studentName,
@@ -129,6 +130,7 @@ export function ClassesTab({
   pastPapers: StudentNoteRow[];
   exams: StudentExamRow[];
   assignments: StudentAssignmentRow[];
+  homework: StudentAssignmentRow[];
   liveClasses: StudentLiveClassRow[];
   reminderClassIds: string[];
   studentName: string;
@@ -185,6 +187,7 @@ export function ClassesTab({
           pastPapers={pastPapers}
           exams={exams}
           assignments={assignments}
+          homework={homework}
           liveClasses={liveClasses}
           reminderClassIds={reminderClassIds}
           studentName={studentName}
@@ -360,6 +363,7 @@ function ClassWorkspace({
   pastPapers,
   exams,
   assignments,
+  homework,
   liveClasses,
   reminderClassIds,
   studentName,
@@ -374,6 +378,7 @@ function ClassWorkspace({
   pastPapers: StudentNoteRow[];
   exams: StudentExamRow[];
   assignments: StudentAssignmentRow[];
+  homework: StudentAssignmentRow[];
   liveClasses: StudentLiveClassRow[];
   reminderClassIds: string[];
   studentName: string;
@@ -386,6 +391,7 @@ function ClassWorkspace({
   const tLive = useTranslations("studentDashboard.live");
   const tExams = useTranslations("studentDashboard.exams");
   const tAssignments = useTranslations("studentDashboard.assignments");
+  const tHomework = useTranslations("studentDashboard.homework");
   const tNotes = useTranslations("studentDashboard.notes");
   const tShortNotes = useTranslations("studentDashboard.shortNotes");
   const tPastPapers = useTranslations("studentDashboard.pastPapers");
@@ -398,6 +404,10 @@ function ClassWorkspace({
   const classAssignments = useMemo(
     () => assignments.filter((row) => belongsToClass(row, classRow)),
     [assignments, classRow],
+  );
+  const classHomework = useMemo(
+    () => homework.filter((row) => belongsToClass(row, classRow)),
+    [homework, classRow],
   );
   const classNotes = useMemo(() => notes.filter((row) => belongsToClass(row, classRow)), [notes, classRow]);
   const classShortNotes = useMemo(
@@ -424,10 +434,12 @@ function ClassWorkspace({
   const hasActionableAssignments = classAssignments.some(
     (assignment) => assignment.submission?.status !== "graded",
   );
+  const hasActionableHomework = classHomework.some((item) => item.submission?.status !== "graded");
   const defaultOpenSections = [
     hasActionableLive && "live",
     hasActionableExams && "exams",
     hasActionableAssignments && "assignments",
+    hasActionableHomework && "homework",
   ].filter((value): value is string => Boolean(value));
 
   return (
@@ -500,6 +512,21 @@ function ClassWorkspace({
           </AccordionTrigger>
           <AccordionPanel>
             <AssignmentsTab assignments={classAssignments} hideHeading />
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem value="homework">
+          <AccordionTrigger className="text-base font-semibold text-foreground">
+            <span className="flex items-center gap-2">
+              {tHomework("title")}
+              {hasActionableHomework && <span className="size-1.5 shrink-0 rounded-full bg-cta" />}
+            </span>
+          </AccordionTrigger>
+          <AccordionPanel>
+            <AssignmentsTab
+              assignments={classHomework}
+              hideHeading
+              tNamespace="studentDashboard.homework"
+            />
           </AccordionPanel>
         </AccordionItem>
         <AccordionItem value="notes">

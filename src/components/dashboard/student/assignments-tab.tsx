@@ -30,6 +30,7 @@ export type StudentAssignmentRow = {
   batchTitle: string | null;
   lessonTitle: string | null;
   dueLabel: string | null;
+  dueAtIso: string | null;
   fileUrl: string;
   submission: {
     status: "pending" | "graded";
@@ -43,12 +44,19 @@ export type StudentAssignmentRow = {
 export function AssignmentsTab({
   assignments,
   hideHeading,
+  scope = "workspace",
 }: {
   assignments: StudentAssignmentRow[];
   hideHeading?: boolean;
+  /** "workspace" (default) is the full submit/resubmit view, used inside one
+   * opened class's Accordion. "history" is the flat, top-level sidebar tab —
+   * records and marks only; uploading an answer only happens inside My
+   * Classes, per Gehan's explicit split. */
+  scope?: "workspace" | "history";
 }) {
   const t = useTranslations("studentDashboard.assignments");
   const tc = useTranslations("studentDashboard.common");
+  const [now] = useState(() => Date.now());
   const [activeAssignmentId, setActiveAssignmentId] = useState<string | null>(null);
   const [viewingWorksheetId, setViewingWorksheetId] = useState<string | null>(null);
   const [viewingResultId, setViewingResultId] = useState<string | null>(null);
@@ -115,6 +123,8 @@ export function AssignmentsTab({
                 <AssignmentRow
                   key={assignment.id}
                   assignment={assignment}
+                  scope={scope}
+                  now={now}
                   onOpen={() => setActiveAssignmentId(assignment.id)}
                   onViewWorksheet={() => setViewingWorksheetId(assignment.id)}
                   onViewResult={() => setViewingResultId(assignment.id)}
@@ -151,16 +161,22 @@ export function AssignmentsTab({
  */
 function AssignmentRow({
   assignment,
+  scope,
+  now,
   onOpen,
   onViewWorksheet,
   onViewResult,
 }: {
   assignment: StudentAssignmentRow;
+  scope: "workspace" | "history";
+  now: number;
   onOpen: () => void;
   onViewWorksheet: () => void;
   onViewResult: () => void;
 }) {
   const t = useTranslations("studentDashboard.assignments");
+  const isHistory = scope === "history";
+  const isPastDue = assignment.dueAtIso !== null && new Date(assignment.dueAtIso).getTime() < now;
 
   return (
     <TableRow>
@@ -194,10 +210,18 @@ function AssignmentRow({
               <Button type="button" variant="ghost" size="sm" onClick={onViewResult}>
                 {t("viewSubmission")}
               </Button>
-              <Button size="sm" variant="outline" onClick={onOpen}>
-                {t("resubmit")}
-              </Button>
+              {!isHistory && (
+                <Button size="sm" variant="outline" onClick={onOpen}>
+                  {t("resubmit")}
+                </Button>
+              )}
             </>
+          ) : isHistory ? (
+            isPastDue ? (
+              <StatusBadge variant="flagged">{t("missed")}</StatusBadge>
+            ) : (
+              <StatusBadge variant="closed">{t("notSubmitted")}</StatusBadge>
+            )
           ) : (
             <Button size="sm" onClick={onOpen}>
               {t("submitAnswer")}

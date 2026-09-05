@@ -1548,7 +1548,7 @@
     },
     "live": {
       "title": "Live Classes",
-      "subtitle": "Scheduled online and physical classes from your teachers.",
+      "subtitle": "Attendance history for classes that have ended. Open a class under My Classes to join one that's starting.",
       "empty": "No live classes scheduled yet.",
       "colTitle": "Title",
       "colTeacher": "Teacher",
@@ -1722,7 +1722,7 @@
     },
     "assignments": {
       "title": "Assignments",
-      "subtitle": "Download the worksheet, do it, and upload a photo of your answer.",
+      "subtitle": "Records and marks for every assignment. Open a class under My Classes to submit an answer.",
       "empty": "No assignments yet.",
       "colAssignment": "Assignment",
       "tableTeacher": "Teacher",
@@ -1730,6 +1730,8 @@
       "colAction": "Action",
       "viewResult": "View",
       "pendingGrading": "Pending grading",
+      "notSubmitted": "Not submitted",
+      "missed": "Missed",
       "dueLabel": "Due {date}",
       "viewWorksheet": "View worksheet",
       "viewSubmission": "View my answer",

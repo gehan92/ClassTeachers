@@ -15,6 +15,7 @@ import {
 import { useLiveCall } from "@/components/dashboard/live-call-context";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { usePagination } from "@/lib/hooks/use-pagination";
+import { groupByClass } from "@/lib/dashboard/group-by-class";
 import { markAttendance, dismissLiveClassReminder } from "@/lib/dashboard/live-classes-actions";
 
 export type StudentLiveClassRow = {
@@ -24,6 +25,7 @@ export type StudentLiveClassRow = {
   ownerId: string;
   ownerType: "teacher" | "class";
   batchId: string | null;
+  batchTitle: string | null;
   scheduledAtIso: string;
   scheduledLabel: string;
   durationMinutes: number;
@@ -50,6 +52,7 @@ export function LiveClassesTab({
   studentName,
   reminderClassIds,
   hideHeading,
+  scope = "workspace",
 }: {
   classes: StudentLiveClassRow[];
   studentName: string;
@@ -58,6 +61,11 @@ export function LiveClassesTab({
    * per-class workspace's Accordion) already renders an equivalent heading
    * of its own, so the section doesn't show two. */
   hideHeading?: boolean;
+  /** "workspace" (default) is the full join-a-live-class view, used inside
+   * one opened class's Accordion. "history" is the flat, top-level sidebar
+   * tab — attendance records grouped by class, ended sessions only; a class
+   * only ever "starts" from inside My Classes, per Gehan's explicit split. */
+  scope?: "workspace" | "history";
 }) {
   const t = useTranslations("studentDashboard.live");
   const tc = useTranslations("studentDashboard.common");
@@ -65,8 +73,9 @@ export function LiveClassesTab({
   const [markedId, setMarkedId] = useState<string | null>(null);
   const [dismissedReminderIds, setDismissedReminderIds] = useState<Set<string>>(new Set());
   const { activeCall, startCall, restoreCall } = useLiveCall();
-  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(classes.length);
-  const pagedClasses = classes.slice(offset, offset + pageSize);
+  const sourceRows = scope === "history" ? classes.filter((row) => classState(row, now) === "ended") : classes;
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(sourceRows.length);
+  const pagedClasses = sourceRows.slice(offset, offset + pageSize);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30000);
@@ -95,9 +104,14 @@ export function LiveClassesTab({
     void dismissLiveClassReminder({ liveClassId });
   }
 
-  const activeReminders = classes.filter(
-    (c) => reminderClassIds.includes(c.id) && !dismissedReminderIds.has(c.id) && classState(c, now) !== "ended",
-  );
+  // History scope never joins a class from here (that only happens inside My
+  // Classes), so it never shows the join reminder banner either.
+  const activeReminders =
+    scope === "history"
+      ? []
+      : classes.filter(
+          (c) => reminderClassIds.includes(c.id) && !dismissedReminderIds.has(c.id) && classState(c, now) !== "ended",
+        );
 
   return (
     <div>
@@ -149,8 +163,37 @@ export function LiveClassesTab({
       )}
 
       <div className="rounded-lg border border-border bg-white">
-        {classes.length === 0 ? (
+        {sourceRows.length === 0 ? (
           <p className="p-5 text-sm text-muted-foreground">{t("empty")}</p>
+        ) : scope === "history" ? (
+          <div className="flex flex-col gap-5 p-4">
+            {groupByClass(pagedClasses.map((row) => ({ ...row, ownerName: row.teacherName }))).map((group) => (
+              <div key={group.key}>
+                <h3 className="mb-2 text-sm font-semibold text-foreground">{group.heading}</h3>
+                <div className="flex flex-col divide-y divide-border rounded-md border border-border">
+                  {group.rows.map((row) => (
+                    <div key={row.id} className="flex flex-wrap items-center justify-between gap-3 p-3.5">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium text-foreground">{row.title}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {row.scheduledLabel} · {row.mode === "online" ? t("modeOnline") : t("modePhysical")}
+                        </div>
+                      </div>
+                      {row.attendanceStatus === "present" ? (
+                        <StatusBadge variant="active">{t("attendancePresent")}</StatusBadge>
+                      ) : row.attendanceStatus === "late" ? (
+                        <StatusBadge variant="pending">{t("attendanceLate")}</StatusBadge>
+                      ) : row.attendanceStatus === "absent" ? (
+                        <StatusBadge variant="flagged">{t("attendanceAbsent")}</StatusBadge>
+                      ) : (
+                        <StatusBadge variant="closed">{t("stateEnded")}</StatusBadge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <Table>
             <TableHeader>
@@ -178,12 +221,12 @@ export function LiveClassesTab({
             </TableBody>
           </Table>
         )}
-        {classes.length > 0 && (
+        {sourceRows.length > 0 && (
           <PaginationFooter
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setPage}
-            showingLabel={tc("pagination.showingCount", { shown: pagedClasses.length, total: classes.length })}
+            showingLabel={tc("pagination.showingCount", { shown: pagedClasses.length, total: sourceRows.length })}
             previousLabel={tc("pagination.previous")}
             nextLabel={tc("pagination.next")}
             pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}

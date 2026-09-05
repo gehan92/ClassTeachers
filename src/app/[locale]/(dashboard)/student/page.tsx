@@ -563,6 +563,8 @@ export default async function StudentDashboardPage({
   const attendanceRatePercent =
     attendanceHistory.length > 0 ? Math.round((presentCount / attendanceHistory.length) * 100) : null;
 
+  const batchById = new Map((allBatches ?? []).map((b) => [b.id, b]));
+
   const liveClasses: StudentLiveClassRow[] = liveClassRows.map((row) => ({
     id: row.id,
     title: row.title,
@@ -570,6 +572,7 @@ export default async function StudentDashboardPage({
     ownerId: row.owner_id,
     ownerType: row.ownerType,
     batchId: row.batch_id,
+    batchTitle: row.batch_id ? (batchById.get(row.batch_id)?.title ?? null) : null,
     scheduledAtIso: row.scheduled_at,
     scheduledLabel: scheduleFormatter.format(new Date(row.scheduled_at)),
     durationMinutes: row.duration_minutes,
@@ -577,8 +580,6 @@ export default async function StudentDashboardPage({
     joinLink: joinLinkByClassId.get(row.id) ?? null,
     attendanceStatus: attendanceStatusByLiveClassId.get(row.id) ?? null,
   }));
-
-  const batchById = new Map((allBatches ?? []).map((b) => [b.id, b]));
   // A declined enrollment must not count as "already joined" (or the
   // teacher's class becomes permanently unrequestable — see
   // rejoin_after_decline, 0066) and must not unlock batch-scoped content —
@@ -755,6 +756,7 @@ export default async function StudentDashboardPage({
       batchTitle: a.batch_id ? (batchById.get(a.batch_id)?.title ?? null) : null,
       lessonTitle: a.lesson_id ? (lessonTitleById.get(a.lesson_id) ?? null) : null,
       dueLabel: a.due_at ? dateFormatter.format(new Date(a.due_at)) : null,
+      dueAtIso: a.due_at,
       fileUrl: assignmentFileUrlByPath.get(a.file_path) ?? "",
       submission: submission
         ? {
@@ -953,7 +955,14 @@ export default async function StudentDashboardPage({
             instituteProfiles={instituteProfiles}
           />
         ),
-        live: <LiveClassesTab classes={liveClasses} studentName={fullName} reminderClassIds={reminderClassIds} />,
+        live: (
+          <LiveClassesTab
+            classes={liveClasses}
+            studentName={fullName}
+            reminderClassIds={reminderClassIds}
+            scope="history"
+          />
+        ),
         wantedAds: (
           <WantedAdsTab
             wantedAds={wantedAds}
@@ -965,7 +974,7 @@ export default async function StudentDashboardPage({
         inquiries: <SentInquiriesTab inquiries={myInquiries} />,
         notes: <NotesTab notes={studentNotes} studentName={fullName} />,
         exams: <ExamsTab exams={exams} />,
-        assignments: <AssignmentsTab assignments={assignments} />,
+        assignments: <AssignmentsTab assignments={assignments} scope="history" />,
         reviews: <ReviewsTab targets={reviewTargets} initialReviews={myReviews} />,
         profile: (
           <ProfileTab

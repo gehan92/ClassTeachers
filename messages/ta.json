@@ -1463,9 +1463,9 @@
   },
   "studentDashboard": {
     "logout": "வெளியேறு",
-    "groupClasses": "வகுப்புகள்",
-    "groupContent": "உள்ளடக்கம்",
-    "groupMore": "மேலும்",
+    "groupClasses": "எனது கற்றல்",
+    "groupContent": "கல்விப் பணிகள்",
+    "groupMore": "கணக்கு",
     "tabs": {
       "overview": "கண்ணோட்டம்",
       "progress": "முன்னேற்றம்",

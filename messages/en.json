@@ -1463,9 +1463,9 @@
   },
   "studentDashboard": {
     "logout": "Log out",
-    "groupClasses": "Classes",
-    "groupContent": "Content",
-    "groupMore": "More",
+    "groupClasses": "My Learning",
+    "groupContent": "Coursework",
+    "groupMore": "Account",
     "tabs": {
       "overview": "Overview",
       "progress": "Progress",

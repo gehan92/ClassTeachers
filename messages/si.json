@@ -1463,9 +1463,9 @@
   },
   "studentDashboard": {
     "logout": "පිටවන්න",
-    "groupClasses": "පන්ති",
-    "groupContent": "අන්තර්ගතය",
-    "groupMore": "තවත්",
+    "groupClasses": "මගේ ඉගෙනීම",
+    "groupContent": "අධ්‍යයන කටයුතු",
+    "groupMore": "ගිණුම",
     "tabs": {
       "overview": "දළ විශ්ලේෂණය",
       "progress": "ප්‍රගතිය",

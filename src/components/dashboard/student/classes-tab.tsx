@@ -35,7 +35,9 @@ export type MyClassRow = {
 export type AvailableBatchRow = {
   id: string;
   title: string;
+  ownerId: string;
   ownerName: string;
+  ownerType: "teacher" | "class";
   mode: "online" | "physical";
   location: string | null;
   scheduleNote: string | null;
@@ -302,23 +304,43 @@ export function ClassesTab({
                   key={batch.id}
                   className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4.5 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="min-w-0">
-                    <div className="mb-0.5 flex flex-wrap items-center gap-2">
-                      <div className="font-semibold text-foreground">
-                        {batch.courseCode && <span className="text-muted-foreground">{batch.courseCode} · </span>}
+                  <div className="flex min-w-0 items-center gap-3">
+                    <OwnerAvatar
+                      ownerType={batch.ownerType}
+                      ownerId={batch.ownerId}
+                      photoUrl={getPhotoUrl(batch.ownerType, batch.ownerId)}
+                      hasQuickView={
+                        batch.ownerType === "teacher"
+                          ? teacherProfileById.has(batch.ownerId)
+                          : instituteProfileById.has(batch.ownerId)
+                      }
+                      onOpenQuickView={() => openQuickView(batch.ownerType, batch.ownerId)}
+                    />
+                    <div className="min-w-0">
+                      <div className="mb-1 flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-foreground">{batch.ownerName}</span>
+                        <span className="rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                          {batch.isCampusLecturer
+                            ? t("typeCampusLecturer")
+                            : batch.ownerType === "teacher"
+                              ? t("typeTeacher")
+                              : t("typeClass")}
+                        </span>
+                        {batch.isOpenEnrollment && (
+                          <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success">
+                            {t("openEnrollmentBadge")}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {batch.courseCode && <span>{batch.courseCode} · </span>}
                         {batch.title}
                       </div>
-                      {batch.isOpenEnrollment && (
-                        <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success">
-                          {t("openEnrollmentBadge")}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm text-muted-foreground">{batch.ownerName}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {batch.mode === "online" ? t("modeOnline") : t("modePhysical")}
-                      {batch.location ? ` · ${batch.location}` : ""}
-                      {batch.scheduleNote ? ` · ${batch.scheduleNote}` : ""}
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {batch.mode === "online" ? t("modeOnline") : t("modePhysical")}
+                        {batch.location ? ` · ${batch.location}` : ""}
+                        {batch.scheduleNote ? ` · ${batch.scheduleNote}` : ""}
+                      </div>
                     </div>
                   </div>
                   <Button

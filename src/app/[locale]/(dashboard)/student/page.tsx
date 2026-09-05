@@ -642,7 +642,9 @@ export default async function StudentDashboardPage({
     .map((b) => ({
       id: b.id,
       title: b.title,
+      ownerId: b.owner_id,
       ownerName: ownerName(b.owner_type, b.owner_id),
+      ownerType: b.owner_type,
       mode: b.mode,
       location: b.location,
       scheduleNote: b.schedule_note,

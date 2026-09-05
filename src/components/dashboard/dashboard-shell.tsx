@@ -178,44 +178,115 @@ function NavList({
     );
   }
 
+  return <VerticalNavList groups={groups} activeTab={activeTab} onSelect={onSelect} />;
+}
+
+function groupKeyFor(group: DashboardNavGroup, index: number) {
+  return group.label ?? `group-${index}`;
+}
+
+/**
+ * Labeled groups (Content, More, ...) collapse/expand independently — not an
+ * accordion, more than one can be open at once — defaulting to closed except
+ * whichever group holds the active tab. That group also auto-opens if the
+ * active tab later moves into it (e.g. a notification-bell jump lands on a
+ * tab inside a group the viewer never manually opened), so the highlighted
+ * item is never left hidden inside a collapsed section. The one ungrouped
+ * row (no `label`, just Overview/Progress at the top) always renders with no
+ * toggle — unchanged from before this existed.
+ */
+function VerticalNavList({
+  groups,
+  activeTab,
+  onSelect,
+}: {
+  groups: DashboardNavGroup[];
+  activeTab: string;
+  onSelect: (tab: string) => void;
+}) {
+  function activeGroupKey() {
+    const index = groups.findIndex((g) => g.items.some((item) => item.key === activeTab));
+    return index === -1 ? null : groupKeyFor(groups[index], index);
+  }
+
+  const [expanded, setExpanded] = useState<Set<string>>(() => {
+    const key = activeGroupKey();
+    return new Set(key ? [key] : []);
+  });
+
+  useEffect(() => {
+    const key = activeGroupKey();
+    if (!key) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing collapse state to an externally-driven activeTab change (URL param, notification jump), not derived render state
+    setExpanded((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run only when the active tab (or the groups it could belong to) changes, not on every expanded-state update
+  }, [activeTab, groups]);
+
+  function toggleGroup(key: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
   return (
     <nav className="flex flex-col gap-5 p-4">
-      {groups.map((group, i) => (
-        <div key={group.label ?? `group-${i}`}>
-          {group.label && (
-            <div className="mb-1.5 px-2.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-              {group.label}
-            </div>
-          )}
-          <div className="flex flex-col gap-0.5">
-            {group.items.map((item) => {
-              const Icon = TAB_ICONS[item.key];
-              return (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => onSelect(item.key)}
-                  className={cn(
-                    "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors",
-                    activeTab === item.key
-                      ? "bg-secondary text-secondary-foreground"
-                      : "text-foreground/80 hover:bg-muted",
+      {groups.map((group, i) => {
+        const key = groupKeyFor(group, i);
+        const isOpen = !group.label || expanded.has(key);
+        const groupHasNew = group.items.some((item) => item.hasNew);
+        return (
+          <div key={key}>
+            {group.label && (
+              <button
+                type="button"
+                onClick={() => toggleGroup(key)}
+                aria-expanded={isOpen}
+                className="mb-1.5 flex w-full items-center justify-between gap-1.5 rounded-md px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <span className="flex items-center gap-1.5">
+                  {group.label}
+                  {!isOpen && groupHasNew && (
+                    <span className="size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />
                   )}
-                >
-                  {Icon && <Icon className="size-4 shrink-0" />}
-                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                  {item.hasNew && <span className="size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />}
-                  {item.count !== undefined && (
-                    <span className="shrink-0 rounded-full bg-background px-1.5 py-0.25 font-mono text-[11px] text-muted-foreground">
-                      {item.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                </span>
+                <ChevronDown className={cn("size-3 shrink-0 transition-transform", isOpen && "rotate-180")} />
+              </button>
+            )}
+            {isOpen && (
+              <div className="flex flex-col gap-0.5">
+                {group.items.map((item) => {
+                  const Icon = TAB_ICONS[item.key];
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => onSelect(item.key)}
+                      className={cn(
+                        "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors",
+                        activeTab === item.key
+                          ? "bg-secondary text-secondary-foreground"
+                          : "text-foreground/80 hover:bg-muted",
+                      )}
+                    >
+                      {Icon && <Icon className="size-4 shrink-0" />}
+                      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                      {item.hasNew && <span className="size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />}
+                      {item.count !== undefined && (
+                        <span className="shrink-0 rounded-full bg-background px-1.5 py-0.25 font-mono text-[11px] text-muted-foreground">
+                          {item.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </nav>
   );
 }

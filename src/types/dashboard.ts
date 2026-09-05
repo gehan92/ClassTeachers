@@ -7,6 +7,11 @@ export type DashboardTabDef = {
    * `count`, which on Exams/Assignments already means something else (items
    * still due), not "unseen." */
   hasNew?: boolean;
+  /** Gives this tab a permanent accent (cta-colored) treatment instead of the
+   * plain nav-item look, regardless of active/inactive state — for a
+   * featured action sitting outside its usual group (e.g. "Post an Ad"),
+   * not a status indicator like `hasNew`/`count`. */
+  highlight?: boolean;
 };
 
 export type DashboardNavGroup = {

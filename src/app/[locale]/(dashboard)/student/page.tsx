@@ -908,6 +908,8 @@ export default async function StudentDashboardPage({
           items: [
             { key: "overview", label: t("tabs.overview") },
             { key: "progress", label: t("tabs.progress") },
+            { key: "inquiries", label: t("tabs.inquiries") },
+            { key: "wantedAds", label: t("tabs.wantedAds"), count: unreadResponsesCount, highlight: true },
           ],
         },
         {
@@ -931,12 +933,10 @@ export default async function StudentDashboardPage({
           ],
         },
         {
-          key: "more",
+          key: "account",
           label: t("groupMore"),
           items: [
             { key: "reviews", label: t("tabs.reviews") },
-            { key: "inquiries", label: t("tabs.inquiries") },
-            { key: "wantedAds", label: t("tabs.wantedAds"), count: unreadResponsesCount },
             { key: "profile", label: t("tabs.profile") },
             { key: "settings", label: t("tabs.settings") },
           ],

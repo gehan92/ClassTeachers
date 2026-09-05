@@ -152,6 +152,7 @@ const GROUP_ICONS: Partial<Record<string, LucideIcon>> = {
   classes: BookOpen,
   content: FolderOpen,
   more: MoreHorizontal,
+  account: UserCircle,
   teaching: Presentation,
   community: Users,
   institute: Building2,
@@ -183,6 +184,7 @@ function NavList({
       <nav className="flex gap-1.5 overflow-x-auto px-4 py-2.5">
         {groups.flatMap((g) => g.items).map((item) => {
           const Icon = TAB_ICONS[item.key];
+          const isActive = activeTab === item.key;
           return (
             <button
               key={item.key}
@@ -190,12 +192,16 @@ function NavList({
               onClick={() => onSelect(item.key)}
               className={cn(
                 "flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.75 text-[13px] font-medium whitespace-nowrap transition-colors",
-                activeTab === item.key
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-white text-muted-foreground hover:bg-secondary",
+                isActive
+                  ? item.highlight
+                    ? "bg-cta text-cta-foreground"
+                    : "bg-primary text-primary-foreground"
+                  : item.highlight
+                    ? "bg-cta/15 text-foreground hover:bg-cta/25"
+                    : "bg-white text-muted-foreground hover:bg-secondary",
               )}
             >
-              {Icon && <Icon className="size-3.5" />}
+              {Icon && <Icon className={cn("size-3.5", item.highlight && !isActive && "text-cta")} />}
               {item.label}
               {item.hasNew && <span className="size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />}
               {item.count !== undefined && <span className="ml-1.5 opacity-70">{item.count}</span>}
@@ -287,6 +293,7 @@ function VerticalNavList({
               <div className={cn("flex flex-col gap-0.5", group.label && "mt-0.5 pl-1")}>
                 {group.items.map((item) => {
                   const Icon = TAB_ICONS[item.key];
+                  const isActive = activeTab === item.key;
                   return (
                     <button
                       key={item.key}
@@ -294,12 +301,16 @@ function VerticalNavList({
                       onClick={() => onSelect(item.key)}
                       className={cn(
                         "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors",
-                        activeTab === item.key
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground",
+                        isActive
+                          ? item.highlight
+                            ? "bg-cta text-cta-foreground"
+                            : "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : item.highlight
+                            ? "bg-cta/10 text-sidebar-foreground hover:bg-cta/20"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground",
                       )}
                     >
-                      {Icon && <Icon className="size-4 shrink-0" />}
+                      {Icon && <Icon className={cn("size-4 shrink-0", item.highlight && !isActive && "text-cta")} />}
                       <span className="min-w-0 flex-1 truncate">{item.label}</span>
                       {item.hasNew && <span className="size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />}
                       {item.count !== undefined && (

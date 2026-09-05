@@ -364,6 +364,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
       realtimeWatch={[{ table: "notifications", filter: `recipient_id=eq.${user!.id}` }]}
       groups={[
         {
+          key: "platform",
           label: t("groupPlatform"),
           items: [
             { key: "overview", label: t("tabs.overview") },
@@ -372,6 +373,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
           ],
         },
         {
+          key: "monetization",
           label: t("groupMonetization"),
           items: [
             { key: "subscriptions", label: t("tabs.subscriptions") },
@@ -384,6 +386,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
           ],
         },
         {
+          key: "trust",
           label: t("groupTrust"),
           items: [
             { key: "flagged", label: t("tabs.flagged"), count: flaggedReviews.length },

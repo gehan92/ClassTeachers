@@ -98,13 +98,18 @@
   --chart-4: #b8511f;
   --chart-5: #69796f;
   --radius: 0.5rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #17241f;
-  --sidebar-primary: #0e4c45;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #fbe2d2;
-  --sidebar-accent-foreground: #b8511f;
-  --sidebar-border: #dce6e0;
+  /* The sidebar stays on its own dark palette regardless of the app's
+     (currently unused, no toggle wired up anywhere) .dark theme — these are
+     the exact values that block already carries for --sidebar-*, borrowed
+     here so the sidebar-specific tokens work standalone. See
+     dashboard-shell.tsx's <aside>, which is the only consumer. */
+  --sidebar: #0a332e;
+  --sidebar-foreground: #eef1ee;
+  --sidebar-primary: #e2703a;
+  --sidebar-primary-foreground: #26190a;
+  --sidebar-accent: #164039;
+  --sidebar-accent-foreground: #fbe2d2;
+  --sidebar-border: color-mix(in oklab, white 12%, transparent);
   --sidebar-ring: #e2703a;
 
   --font-display: var(--font-fraunces), "Iowan Old Style", Georgia, serif;

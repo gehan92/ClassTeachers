@@ -12,6 +12,8 @@ export type DashboardTabDef = {
 export type DashboardNavGroup = {
   /** Omit to render this group's items with no section header — used for a standalone "Overview" entry at the top of the sidebar. */
   label?: string;
+  /** Stable, untranslated id for this group — looked up in dashboard-shell.tsx's GROUP_ICONS map and used as the collapse-state key. Required whenever `label` is set (the label alone can't key anything since it's translated text that differs per locale); leave both unset for the top standalone-items group. */
+  key?: string;
   items: DashboardTabDef[];
 };
 

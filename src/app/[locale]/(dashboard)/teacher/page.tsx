@@ -965,6 +965,7 @@ export default async function TeacherDashboardPage({
           items: [{ key: "overview", label: t("tabs.overview") }],
         },
         {
+          key: "teaching",
           label: t("groupTeaching"),
           items: [
             { key: "profile", label: t("tabs.profile") },
@@ -977,6 +978,7 @@ export default async function TeacherDashboardPage({
           ],
         },
         {
+          key: "content",
           label: t("groupContent"),
           items: [
             { key: "notes", label: t("tabs.notes"), count: notes.length },
@@ -989,6 +991,7 @@ export default async function TeacherDashboardPage({
           ],
         },
         {
+          key: "community",
           label: t("groupStudents"),
           items: [
             { key: "students", label: t("tabs.students"), count: studentsCount ?? 0 },
@@ -1008,6 +1011,7 @@ export default async function TeacherDashboardPage({
           ],
         },
         {
+          key: "more",
           label: t("groupMore"),
           items: [
             { key: "ads", label: t("tabs.ads") },

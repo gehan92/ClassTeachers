@@ -911,12 +911,14 @@ export default async function StudentDashboardPage({
           ],
         },
         {
+          key: "classes",
           label: t("groupClasses"),
           items: [
             { key: "classes", label: t("tabs.classes") },
           ],
         },
         {
+          key: "content",
           label: t("groupContent"),
           items: [
             { key: "live", label: t("tabs.live"), hasNew: hasNewLive },
@@ -929,6 +931,7 @@ export default async function StudentDashboardPage({
           ],
         },
         {
+          key: "more",
           label: t("groupMore"),
           items: [
             { key: "reviews", label: t("tabs.reviews") },

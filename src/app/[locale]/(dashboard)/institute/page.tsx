@@ -701,6 +701,7 @@ export default async function InstituteDashboardPage({
       }
       groups={[
         {
+          key: "institute",
           label: t("groupInstitute"),
           items: [
             { key: "overview", label: t("tabs.overview") },
@@ -712,6 +713,7 @@ export default async function InstituteDashboardPage({
           ],
         },
         {
+          key: "manage",
           label: t("groupManage"),
           items: [
             {

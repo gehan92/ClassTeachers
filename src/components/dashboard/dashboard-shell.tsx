@@ -33,6 +33,14 @@ import {
   BellRing,
   TrendingUp,
   HelpCircle,
+  FolderOpen,
+  MoreHorizontal,
+  Presentation,
+  Building2,
+  Layers,
+  LayoutGrid,
+  Wallet,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -133,6 +141,26 @@ const TAB_ICONS: Partial<Record<string, LucideIcon>> = {
   announcements: BellRing,
 };
 
+/**
+ * Icons for the group headers themselves (Content, More, ...) — keyed by
+ * each group's stable `key` (see types/dashboard.ts), never its translated
+ * `label`, for the same reason TAB_ICONS above is keyed by `key` and not by
+ * the tab's label. Covers every group key set by every role's page.tsx; an
+ * unmatched key just renders without an icon (same fallback as TAB_ICONS).
+ */
+const GROUP_ICONS: Partial<Record<string, LucideIcon>> = {
+  classes: BookOpen,
+  content: FolderOpen,
+  more: MoreHorizontal,
+  teaching: Presentation,
+  community: Users,
+  institute: Building2,
+  manage: Layers,
+  platform: LayoutGrid,
+  monetization: Wallet,
+  trust: ShieldCheck,
+};
+
 function updateTabParam(tab: string) {
   const url = new URL(window.location.href);
   url.searchParams.set("tab", tab);
@@ -182,7 +210,7 @@ function NavList({
 }
 
 function groupKeyFor(group: DashboardNavGroup, index: number) {
-  return group.label ?? `group-${index}`;
+  return group.key ?? group.label ?? `group-${index}`;
 }
 
 /**
@@ -232,11 +260,12 @@ function VerticalNavList({
   }
 
   return (
-    <nav className="flex flex-col gap-5 p-4">
+    <nav className="flex flex-col gap-2 p-4">
       {groups.map((group, i) => {
         const key = groupKeyFor(group, i);
         const isOpen = !group.label || expanded.has(key);
         const groupHasNew = group.items.some((item) => item.hasNew);
+        const GroupIcon = group.key ? GROUP_ICONS[group.key] : undefined;
         return (
           <div key={key}>
             {group.label && (
@@ -244,19 +273,18 @@ function VerticalNavList({
                 type="button"
                 onClick={() => toggleGroup(key)}
                 aria-expanded={isOpen}
-                className="mb-1.5 flex w-full items-center justify-between gap-1.5 rounded-md px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
               >
-                <span className="flex items-center gap-1.5">
-                  {group.label}
-                  {!isOpen && groupHasNew && (
-                    <span className="size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />
-                  )}
-                </span>
-                <ChevronDown className={cn("size-3 shrink-0 transition-transform", isOpen && "rotate-180")} />
+                {GroupIcon && <GroupIcon className="size-4 shrink-0" />}
+                <span className="min-w-0 flex-1 truncate">{group.label}</span>
+                {!isOpen && groupHasNew && (
+                  <span className="size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />
+                )}
+                <ChevronDown className={cn("size-3.5 shrink-0 transition-transform", isOpen && "rotate-180")} />
               </button>
             )}
             {isOpen && (
-              <div className="flex flex-col gap-0.5">
+              <div className={cn("flex flex-col gap-0.5", group.label && "mt-0.5 pl-1")}>
                 {group.items.map((item) => {
                   const Icon = TAB_ICONS[item.key];
                   return (
@@ -267,15 +295,15 @@ function VerticalNavList({
                       className={cn(
                         "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors",
                         activeTab === item.key
-                          ? "bg-secondary text-secondary-foreground"
-                          : "text-foreground/80 hover:bg-muted",
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground",
                       )}
                     >
                       {Icon && <Icon className="size-4 shrink-0" />}
                       <span className="min-w-0 flex-1 truncate">{item.label}</span>
                       {item.hasNew && <span className="size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />}
                       {item.count !== undefined && (
-                        <span className="shrink-0 rounded-full bg-background px-1.5 py-0.25 font-mono text-[11px] text-muted-foreground">
+                        <span className="shrink-0 rounded-full bg-sidebar-border px-1.5 py-0.25 font-mono text-[11px] text-sidebar-foreground/70">
                           {item.count}
                         </span>
                       )}
@@ -606,7 +634,7 @@ function DashboardShellInner({
          "only main scrolls" behavior these three overflow-y-auto's exist
          for. */}
       <div className="flex min-h-0 w-full flex-1">
-        <aside className="hidden w-60 shrink-0 overflow-y-auto border-r border-border bg-white md:block">
+        <aside className="hidden w-60 shrink-0 overflow-y-auto border-r border-sidebar-border bg-sidebar md:block">
           <NavList groups={groups} activeTab={activeTab} onSelect={select} orientation="vertical" />
         </aside>
         <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-7">

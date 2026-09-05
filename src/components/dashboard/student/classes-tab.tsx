@@ -6,6 +6,7 @@ import { ArrowLeft, GraduationCap, School } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from "@/components/ui/accordion";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { requestToJoin, joinOpenBatch } from "@/lib/dashboard/batches-actions";
@@ -372,6 +373,10 @@ function ClassWorkspace({
   onBack: () => void;
 }) {
   const t = useTranslations("studentDashboard.classes");
+  const tLive = useTranslations("studentDashboard.live");
+  const tExams = useTranslations("studentDashboard.exams");
+  const tAssignments = useTranslations("studentDashboard.assignments");
+  const tNotes = useTranslations("studentDashboard.notes");
 
   const classLiveClasses = useMemo(
     () => liveClasses.filter((row) => belongsToClass(row, classRow)),
@@ -383,6 +388,27 @@ function ClassWorkspace({
     [assignments, classRow],
   );
   const classNotes = useMemo(() => notes.filter((row) => belongsToClass(row, classRow)), [notes, classRow]);
+
+  // Sections open by default only when they hold something actionable —
+  // an accordion where every section starts collapsed would hide exactly
+  // the "something new happened" signal the sidebar's own unread dots are
+  // trying to surface. Notes has no due/undue concept (view-only reference
+  // material), so it always starts collapsed. A snapshot, not a ticking
+  // clock, is all this needs — it only ever feeds the accordion's
+  // uncontrolled defaultValue, never re-evaluated after mount.
+  const [nowForDefaults] = useState(() => Date.now());
+  const hasActionableLive = classLiveClasses.some(
+    (lc) => new Date(lc.scheduledAtIso).getTime() + lc.durationMinutes * 60000 > nowForDefaults,
+  );
+  const hasActionableExams = classExams.some((exam) => exam.submission?.status !== "graded");
+  const hasActionableAssignments = classAssignments.some(
+    (assignment) => assignment.submission?.status !== "graded",
+  );
+  const defaultOpenSections = [
+    hasActionableLive && "live",
+    hasActionableExams && "exams",
+    hasActionableAssignments && "assignments",
+  ].filter((value): value is string => Boolean(value));
 
   return (
     <div>
@@ -417,18 +443,52 @@ function ClassWorkspace({
         </div>
       </div>
 
-      <div className="flex flex-col gap-8">
-        <LiveClassesTab classes={classLiveClasses} studentName={studentName} reminderClassIds={reminderClassIds} />
-        <div className="border-t border-dashed border-border pt-8">
-          <ExamsTab exams={classExams} />
-        </div>
-        <div className="border-t border-dashed border-border pt-8">
-          <AssignmentsTab assignments={classAssignments} />
-        </div>
-        <div className="border-t border-dashed border-border pt-8">
-          <NotesTab notes={classNotes} studentName={studentName} />
-        </div>
-      </div>
+      <Accordion multiple defaultValue={defaultOpenSections} className="rounded-lg border border-border bg-white px-4.5">
+        <AccordionItem value="live">
+          <AccordionTrigger className="text-base font-semibold text-foreground">
+            <span className="flex items-center gap-2">
+              {tLive("title")}
+              {hasActionableLive && <span className="size-1.5 shrink-0 rounded-full bg-cta" />}
+            </span>
+          </AccordionTrigger>
+          <AccordionPanel>
+            <LiveClassesTab
+              classes={classLiveClasses}
+              studentName={studentName}
+              reminderClassIds={reminderClassIds}
+              hideHeading
+            />
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem value="exams">
+          <AccordionTrigger className="text-base font-semibold text-foreground">
+            <span className="flex items-center gap-2">
+              {tExams("title")}
+              {hasActionableExams && <span className="size-1.5 shrink-0 rounded-full bg-cta" />}
+            </span>
+          </AccordionTrigger>
+          <AccordionPanel>
+            <ExamsTab exams={classExams} hideHeading />
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem value="assignments">
+          <AccordionTrigger className="text-base font-semibold text-foreground">
+            <span className="flex items-center gap-2">
+              {tAssignments("title")}
+              {hasActionableAssignments && <span className="size-1.5 shrink-0 rounded-full bg-cta" />}
+            </span>
+          </AccordionTrigger>
+          <AccordionPanel>
+            <AssignmentsTab assignments={classAssignments} hideHeading />
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem value="notes">
+          <AccordionTrigger className="text-base font-semibold text-foreground">{tNotes("title")}</AccordionTrigger>
+          <AccordionPanel>
+            <NotesTab notes={classNotes} studentName={studentName} hideHeading />
+          </AccordionPanel>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 }

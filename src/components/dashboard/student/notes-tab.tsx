@@ -19,7 +19,15 @@ export type StudentNoteRow = {
   pageCount: number | null;
 };
 
-export function NotesTab({ notes, studentName }: { notes: StudentNoteRow[]; studentName: string }) {
+export function NotesTab({
+  notes,
+  studentName,
+  hideHeading,
+}: {
+  notes: StudentNoteRow[];
+  studentName: string;
+  hideHeading?: boolean;
+}) {
   const t = useTranslations("studentDashboard.notes");
   const tc = useTranslations("studentDashboard.common");
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
@@ -30,10 +38,12 @@ export function NotesTab({ notes, studentName }: { notes: StudentNoteRow[]; stud
 
   return (
     <div>
-      <div className="mb-5">
-        <h1 className="mb-1 text-2xl">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-      </div>
+      {!hideHeading && (
+        <div className="mb-5">
+          <h1 className="mb-1 text-2xl">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+        </div>
+      )}
 
       {openNote ? (
         <NoteViewer note={openNote} studentName={studentName} onClose={() => setOpenNoteId(null)} />

@@ -73,7 +73,7 @@ export type StudentExamRow = {
   reviewAnswers: { mcqAnswers: Record<string, string[]>; codeAnswers: Record<string, string> } | null;
 };
 
-export function ExamsTab({ exams }: { exams: StudentExamRow[] }) {
+export function ExamsTab({ exams, hideHeading }: { exams: StudentExamRow[]; hideHeading?: boolean }) {
   const t = useTranslations("studentDashboard.exams");
   const tc = useTranslations("studentDashboard.common");
   const [activeExamId, setActiveExamId] = useState<string | null>(null);
@@ -93,10 +93,12 @@ export function ExamsTab({ exams }: { exams: StudentExamRow[] }) {
 
   return (
     <div>
-      <div className="mb-5">
-        <h1 className="mb-1 text-2xl">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-      </div>
+      {!hideHeading && (
+        <div className="mb-5">
+          <h1 className="mb-1 text-2xl">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+        </div>
+      )}
 
       <div className="rounded-lg border border-border bg-white">
         {exams.length === 0 ? (

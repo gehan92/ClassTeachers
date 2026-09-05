@@ -40,7 +40,13 @@ export type StudentAssignmentRow = {
   } | null;
 };
 
-export function AssignmentsTab({ assignments }: { assignments: StudentAssignmentRow[] }) {
+export function AssignmentsTab({
+  assignments,
+  hideHeading,
+}: {
+  assignments: StudentAssignmentRow[];
+  hideHeading?: boolean;
+}) {
   const t = useTranslations("studentDashboard.assignments");
   const tc = useTranslations("studentDashboard.common");
   const [activeAssignmentId, setActiveAssignmentId] = useState<string | null>(null);
@@ -84,10 +90,12 @@ export function AssignmentsTab({ assignments }: { assignments: StudentAssignment
 
   return (
     <div>
-      <div className="mb-5">
-        <h1 className="mb-1 text-2xl">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-      </div>
+      {!hideHeading && (
+        <div className="mb-5">
+          <h1 className="mb-1 text-2xl">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+        </div>
+      )}
 
       <div className="rounded-lg border border-border bg-white">
         {assignments.length === 0 ? (

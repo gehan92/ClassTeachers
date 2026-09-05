@@ -49,10 +49,15 @@ export function LiveClassesTab({
   classes,
   studentName,
   reminderClassIds,
+  hideHeading,
 }: {
   classes: StudentLiveClassRow[];
   studentName: string;
   reminderClassIds: string[];
+  /** Skips this component's own title/subtitle — set when a caller (the
+   * per-class workspace's Accordion) already renders an equivalent heading
+   * of its own, so the section doesn't show two. */
+  hideHeading?: boolean;
 }) {
   const t = useTranslations("studentDashboard.live");
   const tc = useTranslations("studentDashboard.common");
@@ -96,10 +101,12 @@ export function LiveClassesTab({
 
   return (
     <div>
-      <div className="mb-5">
-        <h1 className="mb-1 text-2xl">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-      </div>
+      {!hideHeading && (
+        <div className="mb-5">
+          <h1 className="mb-1 text-2xl">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+        </div>
+      )}
 
       {activeReminders.length > 0 && (
         <div className="mb-5 flex flex-col gap-2">

@@ -310,7 +310,9 @@ function VerticalNavList({
                             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground",
                       )}
                     >
-                      {Icon && <Icon className={cn("size-4 shrink-0", item.highlight && !isActive && "text-cta")} />}
+                      {!group.label && Icon && (
+                        <Icon className={cn("size-4 shrink-0", item.highlight && !isActive && "text-cta")} />
+                      )}
                       <span className="min-w-0 flex-1 truncate">{item.label}</span>
                       {item.hasNew && <span className="size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />}
                       {item.count !== undefined && (

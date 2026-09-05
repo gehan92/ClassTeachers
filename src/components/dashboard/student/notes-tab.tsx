@@ -25,6 +25,7 @@ export function NotesTab({
   studentName,
   hideHeading,
   scope = "workspace",
+  tNamespace = "studentDashboard.notes",
 }: {
   notes: StudentNoteRow[];
   studentName: string;
@@ -34,8 +35,11 @@ export function NotesTab({
    * "history" is the flat, top-level sidebar tab, spanning every class —
    * each class's group becomes its own collapsible Accordion item there. */
   scope?: "workspace" | "history";
+  /** Lets Short Notes/Past Papers reuse this exact component with their own
+   * heading/labels instead of "Tutes & Notes" copy. */
+  tNamespace?: string;
 }) {
-  const t = useTranslations("studentDashboard.notes");
+  const t = useTranslations(tNamespace);
   const tc = useTranslations("studentDashboard.common");
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
   const openNote = notes.find((note) => note.id === openNoteId) ?? null;
@@ -53,7 +57,7 @@ export function NotesTab({
       )}
 
       {openNote ? (
-        <NoteViewer note={openNote} studentName={studentName} onClose={() => setOpenNoteId(null)} />
+        <NoteViewer note={openNote} studentName={studentName} tNamespace={tNamespace} onClose={() => setOpenNoteId(null)} />
       ) : notes.length === 0 ? (
         <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
           {t("emptyState")}
@@ -67,7 +71,7 @@ export function NotesTab({
                 <AccordionPanel>
                   <div className="flex flex-col divide-y divide-border rounded-md border border-border">
                     {group.rows.map((note) => (
-                      <NoteRow key={note.id} note={note} onOpen={() => setOpenNoteId(note.id)} />
+                      <NoteRow key={note.id} note={note} tNamespace={tNamespace} onOpen={() => setOpenNoteId(note.id)} />
                     ))}
                   </div>
                 </AccordionPanel>
@@ -91,7 +95,7 @@ export function NotesTab({
               <h3 className="mb-2 text-sm font-semibold text-foreground">{group.heading}</h3>
               <div className="divide-y divide-border rounded-lg border border-border bg-white">
                 {group.rows.map((note) => (
-                  <NoteRow key={note.id} note={note} onOpen={() => setOpenNoteId(note.id)} />
+                  <NoteRow key={note.id} note={note} tNamespace={tNamespace} onOpen={() => setOpenNoteId(note.id)} />
                 ))}
               </div>
             </div>
@@ -111,8 +115,16 @@ export function NotesTab({
   );
 }
 
-function NoteRow({ note, onOpen }: { note: StudentNoteRow; onOpen: () => void }) {
-  const t = useTranslations("studentDashboard.notes");
+function NoteRow({
+  note,
+  onOpen,
+  tNamespace,
+}: {
+  note: StudentNoteRow;
+  onOpen: () => void;
+  tNamespace: string;
+}) {
+  const t = useTranslations(tNamespace);
   return (
     <div className="flex items-center gap-3 p-4">
       <FileText className="size-4 shrink-0 text-primary" />
@@ -133,12 +145,14 @@ function NoteViewer({
   note,
   studentName,
   onClose,
+  tNamespace,
 }: {
   note: StudentNoteRow;
   studentName: string;
   onClose: () => void;
+  tNamespace: string;
 }) {
-  const t = useTranslations("studentDashboard.notes");
+  const t = useTranslations(tNamespace);
   const locale = useLocale();
   const todayLabel = new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date());
 

@@ -1462,6 +1462,8 @@
       "classes": "මගේ පන්ති",
       "live": "සජීවී පන්ති",
       "notes": "ටියුට් සහ සටහන්",
+      "shortNotes": "කෙටි සටහන්",
+      "pastPapers": "පසුගිය ප්‍රශ්න පත්‍ර",
       "exams": "විභාග",
       "reviews": "මගේ සමාලෝචන",
       "profile": "පැතිකඩ",
@@ -1574,6 +1576,26 @@
       "title": "ටියුට් සහ සටහන්",
       "subtitle": "ඔබ එකතු වූ ගුරුවරුන් සහ පන්තිවලින් බැලීමට පමණි වූ සටහන්.",
       "emptyState": "ඔබ සමඟ තවම කිසිදු සටහනක් බෙදාගෙන නැත.",
+      "pagesLabel": "පිටු {pages}",
+      "openViewer": "දර්ශකය විවෘත කරන්න",
+      "closeViewer": "දර්ශකය වසන්න",
+      "viewerDisabledNote": "මෙම ලේඛනය සඳහා බාගැනීම සහ මුද්‍රණය අබල කර ඇත.",
+      "viewerPageContent": "මෙය බැලීමට පමණි වූ ලේඛනයේ තැන්පත් පිටුවකි. ඔබේ ගුරුවරයා විසින් උඩුගත කළ පරිදිම අන්තර්ගතය මෙහි දිස්වේ."
+    },
+    "shortNotes": {
+      "title": "කෙටි සටහන්",
+      "subtitle": "ඔබ එකතු වූ ගුරුවරුන් සහ පන්තිවලින් ඉක්මන් පුනරීක්ෂණ සටහන්.",
+      "emptyState": "ඔබ සමඟ තවම කිසිදු කෙටි සටහනක් බෙදාගෙන නැත.",
+      "pagesLabel": "පිටු {pages}",
+      "openViewer": "දර්ශකය විවෘත කරන්න",
+      "closeViewer": "දර්ශකය වසන්න",
+      "viewerDisabledNote": "මෙම ලේඛනය සඳහා බාගැනීම සහ මුද්‍රණය අබල කර ඇත.",
+      "viewerPageContent": "මෙය බැලීමට පමණි වූ ලේඛනයේ තැන්පත් පිටුවකි. ඔබේ ගුරුවරයා විසින් උඩුගත කළ පරිදිම අන්තර්ගතය මෙහි දිස්වේ."
+    },
+    "pastPapers": {
+      "title": "පසුගිය ප්‍රශ්න පත්‍ර",
+      "subtitle": "ඔබ එකතු වූ ගුරුවරුන් සහ පන්තිවලින් පසුගිය විභාග ප්‍රශ්න පත්‍ර.",
+      "emptyState": "ඔබ සමඟ තවම කිසිදු ප්‍රශ්න පත්‍රයක් බෙදාගෙන නැත.",
       "pagesLabel": "පිටු {pages}",
       "openViewer": "දර්ශකය විවෘත කරන්න",
       "closeViewer": "දර්ශකය වසන්න",
@@ -1888,6 +1910,8 @@
       "overview": "දළ විශ්ලේෂණය",
       "profile": "පැතිකඩ",
       "notes": "සටහන්",
+      "shortNotes": "කෙටි සටහන්",
+      "pastPapers": "පසුගිය ප්‍රශ්න පත්‍ර",
       "classes": "පන්ති",
       "classesCampus": "පාඨමාලා",
       "questionBank": "ප්‍රශ්න බැංකුව",
@@ -2053,6 +2077,102 @@
         "next": "ඊළඟ"
       },
       "freePreviewCount": "ඔබේ දැන්වීමේ නොමිලේ පෙරදසුන් ලෙස සටහන් {count} ක් (උපරිම {max}) පෙන්වා ඇත — ගිණුමක් ඇති ඕනෑම කෙනෙකුට ඔබේ පන්තියට සම්බන්ධ නොවී එය බැලිය හැක.",
+      "view": "බලන්න",
+      "closeViewer": "දර්ශකය වසන්න"
+    },
+    "shortNotes": {
+      "heading": "කෙටි සටහන්",
+      "uploadNote": "+ කෙටි සටහනක් උඩුගත කරන්න",
+      "emptyState": "ඔබ තවම කෙටි සටහන් උඩුගත කර නැත.",
+      "columns": {
+        "title": "මාතෘකාව",
+        "subject": "විෂය",
+        "batch": "කණ්ඩායම",
+        "date": "දිනය",
+        "pages": "පිටු",
+        "views": "බැලීම්",
+        "protection": "ආරක්ෂණය",
+        "actions": "ක්‍රියා",
+        "freePreview": "නොමිලේ පෙරදසුන"
+      },
+      "watermarked": "Watermark සහිත",
+      "edit": "සංස්කරණය කරන්න",
+      "delete": "මකන්න",
+      "titlePlaceholder": "කෙටි සටහන් මාතෘකාව",
+      "subjectPlaceholder": "විෂය",
+      "form": {
+        "titleLabel": "මාතෘකාව",
+        "batchLabel": "කණ්ඩායම",
+        "batchGeneral": "සාමාන්‍ය (සියලුම සිසුන්)",
+        "fileLabel": "PDF ගොනුව",
+        "missingFields": "කරුණාකර මාතෘකාවක් එක් කර PDF ගොනුවක් තෝරන්න."
+      },
+      "filters": {
+        "searchLabel": "සොයන්න",
+        "searchPlaceholder": "කෙටි සටහන් හෝ කණ්ඩායම සොයන්න...",
+        "batchLabel": "කණ්ඩායම",
+        "allBatches": "සියලු පන්ති",
+        "sortLabel": "දිනය අනුව අනුපිළිවෙල",
+        "sortNewest": "අලුත්ම මුලින්",
+        "sortOldest": "පැරණිම මුලින්",
+        "clearFilters": "පෙරහන් ඉවත් කරන්න",
+        "noResults": "ඔබේ පෙරහන්වලට ගැලපෙන කෙටි සටහන් නැත."
+      },
+      "pagination": {
+        "showingCount": "{total} න් {shown} පෙන්වයි",
+        "pageInfo": "පිටුව {page} න් {totalPages}",
+        "previous": "පෙර",
+        "next": "ඊළඟ"
+      },
+      "freePreviewCount": "ඔබේ දැන්වීමේ නොමිලේ පෙරදසුන් ලෙස කෙටි සටහන් {count} ක් (උපරිම {max}) පෙන්වා ඇත — ගිණුමක් ඇති ඕනෑම කෙනෙකුට ඔබේ පන්තියට සම්බන්ධ නොවී එය බැලිය හැක.",
+      "view": "බලන්න",
+      "closeViewer": "දර්ශකය වසන්න"
+    },
+    "pastPapers": {
+      "heading": "පසුගිය ප්‍රශ්න පත්‍ර",
+      "uploadNote": "+ පසුගිය ප්‍රශ්න පත්‍රයක් උඩුගත කරන්න",
+      "emptyState": "ඔබ තවම පසුගිය ප්‍රශ්න පත්‍ර උඩුගත කර නැත.",
+      "columns": {
+        "title": "මාතෘකාව",
+        "subject": "විෂය",
+        "batch": "කණ්ඩායම",
+        "date": "දිනය",
+        "pages": "පිටු",
+        "views": "බැලීම්",
+        "protection": "ආරක්ෂණය",
+        "actions": "ක්‍රියා",
+        "freePreview": "නොමිලේ පෙරදසුන"
+      },
+      "watermarked": "Watermark සහිත",
+      "edit": "සංස්කරණය කරන්න",
+      "delete": "මකන්න",
+      "titlePlaceholder": "ප්‍රශ්න පත්‍ර මාතෘකාව (උදා: 2023 ආදර්ශ ප්‍රශ්න පත්‍රය)",
+      "subjectPlaceholder": "විෂය",
+      "form": {
+        "titleLabel": "මාතෘකාව",
+        "batchLabel": "කණ්ඩායම",
+        "batchGeneral": "සාමාන්‍ය (සියලුම සිසුන්)",
+        "fileLabel": "PDF ගොනුව",
+        "missingFields": "කරුණාකර මාතෘකාවක් එක් කර PDF ගොනුවක් තෝරන්න."
+      },
+      "filters": {
+        "searchLabel": "සොයන්න",
+        "searchPlaceholder": "ප්‍රශ්න පත්‍ර හෝ කණ්ඩායම සොයන්න...",
+        "batchLabel": "කණ්ඩායම",
+        "allBatches": "සියලු පන්ති",
+        "sortLabel": "දිනය අනුව අනුපිළිවෙල",
+        "sortNewest": "අලුත්ම මුලින්",
+        "sortOldest": "පැරණිම මුලින්",
+        "clearFilters": "පෙරහන් ඉවත් කරන්න",
+        "noResults": "ඔබේ පෙරහන්වලට ගැලපෙන ප්‍රශ්න පත්‍ර නැත."
+      },
+      "pagination": {
+        "showingCount": "{total} න් {shown} පෙන්වයි",
+        "pageInfo": "පිටුව {page} න් {totalPages}",
+        "previous": "පෙර",
+        "next": "ඊළඟ"
+      },
+      "freePreviewCount": "ඔබේ දැන්වීමේ නොමිලේ පෙරදසුන් ලෙස ප්‍රශ්න පත්‍ර {count} ක් (උපරිම {max}) පෙන්වා ඇත — ගිණුමක් ඇති ඕනෑම කෙනෙකුට ඔබේ පන්තියට සම්බන්ධ නොවී එය බැලිය හැක.",
       "view": "බලන්න",
       "closeViewer": "දර්ශකය වසන්න"
     },

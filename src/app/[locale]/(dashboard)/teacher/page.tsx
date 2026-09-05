@@ -199,7 +199,7 @@ export default async function TeacherDashboardPage({
     // this filter — same trust-RLS pattern used throughout this codebase).
     supabase
       .from("notes")
-      .select("id, title, batch_id, page_count, is_public, created_at")
+      .select("id, title, batch_id, page_count, is_public, note_type, created_at")
       .order("created_at", { ascending: false }),
     supabase.from("subject_links").select("subject_id").eq("owner_type", "teacher").eq("owner_id", userId),
     // Batch-scoped "search results" ads (0039) — one per batch, distinct
@@ -591,16 +591,23 @@ export default async function TeacherDashboardPage({
     (rosterByBatch[enrollment.batch_id] ??= []).push(entry);
   }
 
-  const notes: TeacherNoteRow[] = (noteRows ?? []).map((n) => ({
-    id: n.id,
-    title: n.title,
-    batchId: n.batch_id,
-    batchTitle: n.batch_id ? (batchTitleById.get(n.batch_id) ?? null) : null,
-    pageCount: n.page_count,
-    isPublic: n.is_public,
-    createdAtIso: n.created_at,
-    createdLabel: dateFormatter.format(new Date(n.created_at)),
-  }));
+  function mapNoteRow(n: NonNullable<typeof noteRows>[number]): TeacherNoteRow {
+    return {
+      id: n.id,
+      title: n.title,
+      batchId: n.batch_id,
+      batchTitle: n.batch_id ? (batchTitleById.get(n.batch_id) ?? null) : null,
+      pageCount: n.page_count,
+      isPublic: n.is_public,
+      createdAtIso: n.created_at,
+      createdLabel: dateFormatter.format(new Date(n.created_at)),
+    };
+  }
+  // Short Notes and Past Papers are the same `notes` table/upload flow as
+  // Tutes & Notes (0112) — just their own dedicated tab, split by note_type.
+  const notes: TeacherNoteRow[] = (noteRows ?? []).filter((n) => n.note_type === "tute").map(mapNoteRow);
+  const shortNotes: TeacherNoteRow[] = (noteRows ?? []).filter((n) => n.note_type === "short_note").map(mapNoteRow);
+  const pastPapers: TeacherNoteRow[] = (noteRows ?? []).filter((n) => n.note_type === "past_paper").map(mapNoteRow);
 
   const students: TeacherStudentRow[] = acceptedEnrollments.map((enrollment) => {
     const student = studentById.get(enrollment.student_id);
@@ -851,8 +858,8 @@ export default async function TeacherDashboardPage({
     monthlyRate: priceRow?.monthly_rate ?? undefined,
     adHeadline: adRow?.title ?? undefined,
     adText: adRow?.content ?? undefined,
-    notesCount: notes.length,
-    notes: notes.map((n) => ({ id: n.id, title: n.title, pageCount: n.pageCount })),
+    notesCount: notes.length + shortNotes.length + pastPapers.length,
+    notes: [...notes, ...shortNotes, ...pastPapers].map((n) => ({ id: n.id, title: n.title, pageCount: n.pageCount })),
     schedule: (batchRows ?? [])
       .filter((b) => b.status === "active")
       .map((b) => {
@@ -962,6 +969,8 @@ export default async function TeacherDashboardPage({
           label: t("groupContent"),
           items: [
             { key: "notes", label: t("tabs.notes"), count: notes.length },
+            { key: "shortNotes", label: t("tabs.shortNotes"), count: shortNotes.length },
+            { key: "pastPapers", label: t("tabs.pastPapers"), count: pastPapers.length },
             { key: "questionBank", label: t("tabs.questionBank"), count: questions.length },
             { key: "exams", label: t("tabs.exams"), count: examRows?.length ?? 0 },
             { key: "assignments", label: t("tabs.assignments"), count: assignments.length },
@@ -1031,6 +1040,22 @@ export default async function TeacherDashboardPage({
           />
         ),
         notes: <NotesTab notes={notes} batches={contentTargetBatches} />,
+        shortNotes: (
+          <NotesTab
+            notes={shortNotes}
+            batches={contentTargetBatches}
+            noteType="short_note"
+            tNamespace="teacherDashboard.shortNotes"
+          />
+        ),
+        pastPapers: (
+          <NotesTab
+            notes={pastPapers}
+            batches={contentTargetBatches}
+            noteType="past_paper"
+            tNamespace="teacherDashboard.pastPapers"
+          />
+        ),
         classes: (
           <ClassesTab
             batches={batches}

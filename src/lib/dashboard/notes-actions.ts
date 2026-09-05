@@ -14,6 +14,7 @@ const MAX_PUBLIC_NOTES = 3;
 const uploadNoteSchema = z.object({
   title: z.string().trim().min(2),
   batchId: z.string().uuid().optional(),
+  noteType: z.enum(["tute", "short_note", "past_paper"]).default("tute"),
 });
 
 export async function uploadNote(formData: FormData): Promise<ActionResult> {
@@ -28,6 +29,7 @@ export async function uploadNote(formData: FormData): Promise<ActionResult> {
   const parsed = uploadNoteSchema.safeParse({
     title: formData.get("title"),
     batchId: formData.get("batchId") || undefined,
+    noteType: formData.get("noteType") || undefined,
   });
   if (!parsed.success) {
     return { error: "Please check the title and try again." };
@@ -68,6 +70,7 @@ export async function uploadNote(formData: FormData): Promise<ActionResult> {
     batch_id: target.batchId,
     title: parsed.data.title,
     file_path: filePath,
+    note_type: parsed.data.noteType,
   });
   if (insertError) {
     await supabase.storage.from("notes").remove([filePath]);

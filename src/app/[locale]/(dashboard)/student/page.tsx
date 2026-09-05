@@ -127,7 +127,7 @@ export default async function StudentDashboardPage({
       .eq("id", userId)
       .single(),
     supabase.from("enrollments").select("id, owner_type, owner_id, batch_id, joined_at, status"),
-    supabase.from("notes").select("id, owner_type, owner_id, batch_id, title, page_count"),
+    supabase.from("notes").select("id, owner_type, owner_id, batch_id, title, page_count, note_type"),
     supabase
       .from("exams")
       .select("id, owner_type, owner_id, batch_id, title, question_ids, duration_minutes, scheduled_at, reveal_answers")
@@ -650,9 +650,9 @@ export default async function StudentDashboardPage({
       isOpenEnrollment: b.is_open_enrollment,
     }));
 
-  const studentNotes: StudentNoteRow[] = (noteRows ?? [])
-    .filter((n) => !n.batch_id || enrolledBatchIds.has(n.batch_id))
-    .map((n) => ({
+  const visibleNoteRows = (noteRows ?? []).filter((n) => !n.batch_id || enrolledBatchIds.has(n.batch_id));
+  function mapNoteRow(n: (typeof visibleNoteRows)[number]): StudentNoteRow {
+    return {
       id: n.id,
       title: n.title,
       batchId: n.batch_id,
@@ -661,7 +661,13 @@ export default async function StudentDashboardPage({
       ownerId: n.owner_id,
       ownerType: n.owner_type,
       pageCount: n.page_count,
-    }));
+    };
+  }
+  // Short Notes and Past Papers are the same `notes` table/upload flow as
+  // Tutes & Notes (0112) — just their own dedicated tab, split by note_type.
+  const studentNotes: StudentNoteRow[] = visibleNoteRows.filter((n) => n.note_type === "tute").map(mapNoteRow);
+  const studentShortNotes: StudentNoteRow[] = visibleNoteRows.filter((n) => n.note_type === "short_note").map(mapNoteRow);
+  const studentPastPapers: StudentNoteRow[] = visibleNoteRows.filter((n) => n.note_type === "past_paper").map(mapNoteRow);
 
   const questionImageUrlByPath = new Map<string, string>();
   for (const entry of signedQuestionImages ?? []) {
@@ -903,6 +909,8 @@ export default async function StudentDashboardPage({
           items: [
             { key: "live", label: t("tabs.live"), hasNew: hasNewLive },
             { key: "notes", label: t("tabs.notes"), hasNew: hasNewNotes },
+            { key: "shortNotes", label: t("tabs.shortNotes") },
+            { key: "pastPapers", label: t("tabs.pastPapers") },
             { key: "exams", label: t("tabs.exams"), count: examsDueCount, hasNew: hasNewExams },
             { key: "assignments", label: t("tabs.assignments"), count: assignmentsDueCount, hasNew: hasNewAssignments },
           ],
@@ -930,7 +938,7 @@ export default async function StudentDashboardPage({
               nextLiveLabel={nextLiveLabel}
               examsDueCount={examsDueCount}
               dueExamTitles={dueExamTitles}
-              notesCount={studentNotes.length}
+              notesCount={studentNotes.length + studentShortNotes.length + studentPastPapers.length}
             />
           </>
         ),
@@ -947,6 +955,8 @@ export default async function StudentDashboardPage({
             myClasses={myClasses}
             availableBatches={availableBatches}
             notes={studentNotes}
+            shortNotes={studentShortNotes}
+            pastPapers={studentPastPapers}
             exams={exams}
             assignments={assignments}
             liveClasses={liveClasses}
@@ -974,6 +984,22 @@ export default async function StudentDashboardPage({
         ),
         inquiries: <SentInquiriesTab inquiries={myInquiries} />,
         notes: <NotesTab notes={studentNotes} studentName={fullName} scope="history" />,
+        shortNotes: (
+          <NotesTab
+            notes={studentShortNotes}
+            studentName={fullName}
+            scope="history"
+            tNamespace="studentDashboard.shortNotes"
+          />
+        ),
+        pastPapers: (
+          <NotesTab
+            notes={studentPastPapers}
+            studentName={fullName}
+            scope="history"
+            tNamespace="studentDashboard.pastPapers"
+          />
+        ),
         exams: <ExamsTab exams={exams} scope="history" />,
         assignments: <AssignmentsTab assignments={assignments} scope="history" />,
         reviews: <ReviewsTab targets={reviewTargets} initialReviews={myReviews} />,

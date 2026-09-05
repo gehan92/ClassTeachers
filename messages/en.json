@@ -1462,6 +1462,8 @@
       "classes": "My Classes",
       "live": "Live Classes",
       "notes": "Tutes & Notes",
+      "shortNotes": "Short Notes",
+      "pastPapers": "Past Papers",
       "exams": "Exams",
       "assignments": "Assignments",
       "reviews": "My Reviews",
@@ -1574,6 +1576,26 @@
       "title": "Tutes & Notes",
       "subtitle": "View-only notes from the teachers and classes you've joined.",
       "emptyState": "No notes have been shared with you yet.",
+      "pagesLabel": "{pages} pages",
+      "openViewer": "Open viewer",
+      "closeViewer": "Close viewer",
+      "viewerDisabledNote": "Download and print are disabled for this document.",
+      "viewerPageContent": "This is a placeholder page of the view-only document. Content renders here exactly as uploaded by your teacher."
+    },
+    "shortNotes": {
+      "title": "Short Notes",
+      "subtitle": "Quick revision notes from the teachers and classes you've joined.",
+      "emptyState": "No short notes have been shared with you yet.",
+      "pagesLabel": "{pages} pages",
+      "openViewer": "Open viewer",
+      "closeViewer": "Close viewer",
+      "viewerDisabledNote": "Download and print are disabled for this document.",
+      "viewerPageContent": "This is a placeholder page of the view-only document. Content renders here exactly as uploaded by your teacher."
+    },
+    "pastPapers": {
+      "title": "Past Papers",
+      "subtitle": "Past exam papers from the teachers and classes you've joined.",
+      "emptyState": "No past papers have been shared with you yet.",
       "pagesLabel": "{pages} pages",
       "openViewer": "Open viewer",
       "closeViewer": "Close viewer",
@@ -1888,6 +1910,8 @@
       "overview": "Overview",
       "profile": "Profile",
       "notes": "Notes",
+      "shortNotes": "Short Notes",
+      "pastPapers": "Past Papers",
       "classes": "Classes",
       "classesCampus": "Courses",
       "questionBank": "Question bank",
@@ -2048,6 +2072,102 @@
         "sortOldest": "Oldest first",
         "clearFilters": "Clear filters",
         "noResults": "No notes match your filters."
+      },
+      "pagination": {
+        "showingCount": "Showing {shown} of {total}",
+        "pageInfo": "Page {page} of {totalPages}",
+        "previous": "Previous",
+        "next": "Next"
+      }
+    },
+    "shortNotes": {
+      "heading": "Short notes",
+      "uploadNote": "+ Upload short note",
+      "emptyState": "You haven't uploaded any short notes yet.",
+      "freePreviewCount": "{count} of {max} short notes featured as free previews on your ad — visible to anyone with an account, without needing to join your class.",
+      "columns": {
+        "title": "Title",
+        "subject": "Subject",
+        "batch": "Batch",
+        "date": "Date",
+        "pages": "Pages",
+        "views": "Views",
+        "protection": "Protection",
+        "freePreview": "Free preview",
+        "actions": "Actions"
+      },
+      "watermarked": "Watermarked",
+      "view": "View",
+      "closeViewer": "Close viewer",
+      "edit": "Edit",
+      "delete": "Delete",
+      "titlePlaceholder": "Short note title",
+      "subjectPlaceholder": "Subject",
+      "form": {
+        "titleLabel": "Title",
+        "batchLabel": "Batch",
+        "batchGeneral": "General (all students)",
+        "fileLabel": "PDF file",
+        "missingFields": "Please add a title and choose a PDF file."
+      },
+      "filters": {
+        "searchLabel": "Search",
+        "searchPlaceholder": "Search short notes or batch...",
+        "batchLabel": "Batch",
+        "allBatches": "All classes",
+        "sortLabel": "Sort by date",
+        "sortNewest": "Newest first",
+        "sortOldest": "Oldest first",
+        "clearFilters": "Clear filters",
+        "noResults": "No short notes match your filters."
+      },
+      "pagination": {
+        "showingCount": "Showing {shown} of {total}",
+        "pageInfo": "Page {page} of {totalPages}",
+        "previous": "Previous",
+        "next": "Next"
+      }
+    },
+    "pastPapers": {
+      "heading": "Past papers",
+      "uploadNote": "+ Upload past paper",
+      "emptyState": "You haven't uploaded any past papers yet.",
+      "freePreviewCount": "{count} of {max} past papers featured as free previews on your ad — visible to anyone with an account, without needing to join your class.",
+      "columns": {
+        "title": "Title",
+        "subject": "Subject",
+        "batch": "Batch",
+        "date": "Date",
+        "pages": "Pages",
+        "views": "Views",
+        "protection": "Protection",
+        "freePreview": "Free preview",
+        "actions": "Actions"
+      },
+      "watermarked": "Watermarked",
+      "view": "View",
+      "closeViewer": "Close viewer",
+      "edit": "Edit",
+      "delete": "Delete",
+      "titlePlaceholder": "Past paper title (e.g. 2023 Model Paper)",
+      "subjectPlaceholder": "Subject",
+      "form": {
+        "titleLabel": "Title",
+        "batchLabel": "Batch",
+        "batchGeneral": "General (all students)",
+        "fileLabel": "PDF file",
+        "missingFields": "Please add a title and choose a PDF file."
+      },
+      "filters": {
+        "searchLabel": "Search",
+        "searchPlaceholder": "Search past papers or batch...",
+        "batchLabel": "Batch",
+        "allBatches": "All classes",
+        "sortLabel": "Sort by date",
+        "sortNewest": "Newest first",
+        "sortOldest": "Oldest first",
+        "clearFilters": "Clear filters",
+        "noResults": "No past papers match your filters."
       },
       "pagination": {
         "showingCount": "Showing {shown} of {total}",

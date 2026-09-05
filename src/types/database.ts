@@ -394,6 +394,7 @@ export type Database = {
           page_count: number | null;
           watermark_settings: Json;
           is_public: boolean;
+          note_type: "tute" | "short_note" | "past_paper";
           created_at: string;
           updated_at: string;
         };
@@ -409,6 +410,7 @@ export type Database = {
           page_count?: number | null;
           watermark_settings?: Json;
           is_public?: boolean;
+          note_type?: "tute" | "short_note" | "past_paper";
           created_at?: string;
           updated_at?: string;
         };
@@ -424,6 +426,7 @@ export type Database = {
           page_count?: number | null;
           watermark_settings?: Json;
           is_public?: boolean;
+          note_type?: "tute" | "short_note" | "past_paper";
           created_at?: string;
           updated_at?: string;
         };

@@ -112,6 +112,8 @@ export function ClassesTab({
   myClasses,
   availableBatches,
   notes,
+  shortNotes,
+  pastPapers,
   exams,
   assignments,
   liveClasses,
@@ -123,6 +125,8 @@ export function ClassesTab({
   myClasses: MyClassRow[];
   availableBatches: AvailableBatchRow[];
   notes: StudentNoteRow[];
+  shortNotes: StudentNoteRow[];
+  pastPapers: StudentNoteRow[];
   exams: StudentExamRow[];
   assignments: StudentAssignmentRow[];
   liveClasses: StudentLiveClassRow[];
@@ -177,6 +181,8 @@ export function ClassesTab({
         <ClassWorkspace
           classRow={openClass}
           notes={notes}
+          shortNotes={shortNotes}
+          pastPapers={pastPapers}
           exams={exams}
           assignments={assignments}
           liveClasses={liveClasses}
@@ -350,6 +356,8 @@ export function ClassesTab({
 function ClassWorkspace({
   classRow,
   notes,
+  shortNotes,
+  pastPapers,
   exams,
   assignments,
   liveClasses,
@@ -362,6 +370,8 @@ function ClassWorkspace({
 }: {
   classRow: MyClassRow;
   notes: StudentNoteRow[];
+  shortNotes: StudentNoteRow[];
+  pastPapers: StudentNoteRow[];
   exams: StudentExamRow[];
   assignments: StudentAssignmentRow[];
   liveClasses: StudentLiveClassRow[];
@@ -377,6 +387,8 @@ function ClassWorkspace({
   const tExams = useTranslations("studentDashboard.exams");
   const tAssignments = useTranslations("studentDashboard.assignments");
   const tNotes = useTranslations("studentDashboard.notes");
+  const tShortNotes = useTranslations("studentDashboard.shortNotes");
+  const tPastPapers = useTranslations("studentDashboard.pastPapers");
 
   const classLiveClasses = useMemo(
     () => liveClasses.filter((row) => belongsToClass(row, classRow)),
@@ -388,6 +400,14 @@ function ClassWorkspace({
     [assignments, classRow],
   );
   const classNotes = useMemo(() => notes.filter((row) => belongsToClass(row, classRow)), [notes, classRow]);
+  const classShortNotes = useMemo(
+    () => shortNotes.filter((row) => belongsToClass(row, classRow)),
+    [shortNotes, classRow],
+  );
+  const classPastPapers = useMemo(
+    () => pastPapers.filter((row) => belongsToClass(row, classRow)),
+    [pastPapers, classRow],
+  );
 
   // Sections open by default only when they hold something actionable —
   // an accordion where every section starts collapsed would hide exactly
@@ -486,6 +506,28 @@ function ClassWorkspace({
           <AccordionTrigger className="text-base font-semibold text-foreground">{tNotes("title")}</AccordionTrigger>
           <AccordionPanel>
             <NotesTab notes={classNotes} studentName={studentName} hideHeading />
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem value="shortNotes">
+          <AccordionTrigger className="text-base font-semibold text-foreground">{tShortNotes("title")}</AccordionTrigger>
+          <AccordionPanel>
+            <NotesTab
+              notes={classShortNotes}
+              studentName={studentName}
+              hideHeading
+              tNamespace="studentDashboard.shortNotes"
+            />
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem value="pastPapers">
+          <AccordionTrigger className="text-base font-semibold text-foreground">{tPastPapers("title")}</AccordionTrigger>
+          <AccordionPanel>
+            <NotesTab
+              notes={classPastPapers}
+              studentName={studentName}
+              hideHeading
+              tNamespace="studentDashboard.pastPapers"
+            />
           </AccordionPanel>
         </AccordionItem>
       </Accordion>

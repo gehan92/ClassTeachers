@@ -30,8 +30,23 @@ const ALL_BATCHES_FILTER = "all";
 const MAX_PUBLIC_NOTES = 3;
 const PAGE_SIZE = 10;
 
-export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches: TeacherBatchOption[] }) {
-  const t = useTranslations("teacherDashboard.notes");
+export function NotesTab({
+  notes,
+  batches,
+  noteType = "tute",
+  tNamespace = "teacherDashboard.notes",
+}: {
+  notes: TeacherNoteRow[];
+  batches: TeacherBatchOption[];
+  /** Which of the 3 note kinds this tab uploads as — implicit from the tab
+   * itself (Notes/Short Notes/Past Papers are separate dashboard tabs), not
+   * a field the teacher picks. */
+  noteType?: "tute" | "short_note" | "past_paper";
+  /** Lets Short Notes/Past Papers reuse this exact component with their own
+   * heading/labels instead of "Notes & tutorials" copy. */
+  tNamespace?: string;
+}) {
+  const t = useTranslations(tNamespace);
   const tc = useTranslations("teacherDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const locale = useLocale();
@@ -105,6 +120,7 @@ export function NotesTab({ notes, batches }: { notes: TeacherNoteRow[]; batches:
     formData.set("title", title.trim());
     if (batchId !== GENERAL_BATCH) formData.set("batchId", batchId);
     formData.set("file", file);
+    formData.set("noteType", noteType);
 
     const result = await uploadNote(formData);
     setUploading(false);

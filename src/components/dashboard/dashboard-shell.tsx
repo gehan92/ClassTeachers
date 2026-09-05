@@ -220,14 +220,14 @@ function groupKeyFor(group: DashboardNavGroup, index: number) {
 }
 
 /**
- * Labeled groups (Content, More, ...) collapse/expand independently — not an
- * accordion, more than one can be open at once — defaulting to closed except
- * whichever group holds the active tab. That group also auto-opens if the
- * active tab later moves into it (e.g. a notification-bell jump lands on a
- * tab inside a group the viewer never manually opened), so the highlighted
- * item is never left hidden inside a collapsed section. The one ungrouped
- * row (no `label`, just Overview/Progress at the top) always renders with no
- * toggle — unchanged from before this existed.
+ * Labeled groups (Content, More, ...) are a true accordion — opening one
+ * closes whichever other group was open, at most one at a time. Defaults to
+ * whichever group holds the active tab; that group also auto-opens (closing
+ * any other) if the active tab later moves into it (e.g. a notification-bell
+ * jump lands on a tab inside a group the viewer never manually opened), so
+ * the highlighted item is never left hidden inside a collapsed section. The
+ * one ungrouped row (no `label`, just Home at the top / Messages+Post an Ad
+ * at the bottom) always renders with no toggle — unaffected either way.
  */
 function VerticalNavList({
   groups,
@@ -243,33 +243,25 @@ function VerticalNavList({
     return index === -1 ? null : groupKeyFor(groups[index], index);
   }
 
-  const [expanded, setExpanded] = useState<Set<string>>(() => {
-    const key = activeGroupKey();
-    return new Set(key ? [key] : []);
-  });
+  const [expanded, setExpanded] = useState<string | null>(() => activeGroupKey());
 
   useEffect(() => {
     const key = activeGroupKey();
     if (!key) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing collapse state to an externally-driven activeTab change (URL param, notification jump), not derived render state
-    setExpanded((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
+    setExpanded(key);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run only when the active tab (or the groups it could belong to) changes, not on every expanded-state update
   }, [activeTab, groups]);
 
   function toggleGroup(key: string) {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+    setExpanded((prev) => (prev === key ? null : key));
   }
 
   return (
     <nav className="flex flex-col gap-2 p-4">
       {groups.map((group, i) => {
         const key = groupKeyFor(group, i);
-        const isOpen = !group.label || expanded.has(key);
+        const isOpen = !group.label || expanded === key;
         const groupHasNew = group.items.some((item) => item.hasNew);
         const GroupIcon = group.key ? GROUP_ICONS[group.key] : undefined;
         return (

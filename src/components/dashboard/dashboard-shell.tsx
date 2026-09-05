@@ -290,7 +290,12 @@ function VerticalNavList({
               </button>
             )}
             {isOpen && (
-              <div className={cn("flex flex-col gap-0.5", group.label && "mt-0.5 pl-1")}>
+              <div
+                className={cn(
+                  "flex flex-col gap-0.5",
+                  group.label && "mt-0.5 ml-2.5 border-l border-sidebar-border pl-3",
+                )}
+              >
                 {group.items.map((item) => {
                   const Icon = TAB_ICONS[item.key];
                   const isActive = activeTab === item.key;
@@ -300,7 +305,13 @@ function VerticalNavList({
                       type="button"
                       onClick={() => onSelect(item.key)}
                       className={cn(
-                        "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors",
+                        "relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors",
+                        // The connector tick to the group's vertical rail — a
+                        // short line from the rail (at -left-3, the container's
+                        // border-l) to this row's own left edge, vertically
+                        // centered on the row.
+                        group.label &&
+                          "before:absolute before:-left-3 before:top-1/2 before:h-px before:w-3 before:-translate-y-1/2 before:bg-sidebar-border before:content-['']",
                         isActive
                           ? item.highlight
                             ? "bg-cta text-cta-foreground"

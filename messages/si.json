@@ -1469,19 +1469,19 @@
     "tabs": {
       "overview": "මුල් පිටුව",
       "progress": "ප්‍රගතිය",
-      "classes": "මගේ පන්ති",
+      "classes": "පන්ති",
       "live": "සජීවී පන්ති",
       "notes": "ටියුට් සහ සටහන්",
       "shortNotes": "කෙටි සටහන්",
       "pastPapers": "පසුගිය ප්‍රශ්න පත්‍ර",
       "exams": "විභාග",
-      "reviews": "මගේ සමාලෝචන",
+      "reviews": "සමාලෝචන",
       "profile": "පැතිකඩ",
       "assignments": "පැවරුම්",
       "homework": "ගෙදර වැඩ",
       "settings": "සැකසුම්",
       "wantedAds": "දැන්වීමක් පළ කරන්න",
-      "inquiries": "මගේ පණිවිඩ"
+      "inquiries": "පණිවිඩ"
     },
     "announcements": {
       "heading": "නිවේදන"

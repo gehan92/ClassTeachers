@@ -1469,7 +1469,7 @@
     "tabs": {
       "overview": "Home",
       "progress": "Progress",
-      "classes": "My Classes",
+      "classes": "Classes",
       "live": "Live Classes",
       "notes": "Tutes & Notes",
       "shortNotes": "Short Notes",
@@ -1477,11 +1477,11 @@
       "exams": "Exams",
       "assignments": "Assignments",
       "homework": "Homework",
-      "reviews": "My Reviews",
+      "reviews": "Reviews",
       "profile": "Profile",
       "settings": "Settings",
       "wantedAds": "Post an Ad",
-      "inquiries": "My Messages"
+      "inquiries": "Messages"
     },
     "announcements": {
       "heading": "Announcements"

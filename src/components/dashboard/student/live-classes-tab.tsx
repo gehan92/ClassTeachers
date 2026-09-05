@@ -29,6 +29,9 @@ export type StudentLiveClassRow = {
   durationMinutes: number;
   mode: "online" | "physical";
   joinLink: string | null;
+  /** From attendance_records, keyed to this student — null means nobody
+   * (teacher or the student joining) ever recorded one, not "absent". */
+  attendanceStatus: "present" | "absent" | "late" | null;
 };
 
 type LiveState = "not_open" | "starting_soon" | "live" | "ended";
@@ -214,7 +217,16 @@ function LiveClassRow({
       <TableCell>
         {state === "not_open" && <StatusBadge variant="pending">{t("stateNotOpen")}</StatusBadge>}
         {state === "starting_soon" && <StatusBadge variant="upcoming">{t("stateStartingSoon")}</StatusBadge>}
-        {state === "ended" && <StatusBadge variant="active">{t("stateEnded")}</StatusBadge>}
+        {state === "ended" &&
+          (row.attendanceStatus === "present" ? (
+            <StatusBadge variant="active">{t("attendancePresent")}</StatusBadge>
+          ) : row.attendanceStatus === "late" ? (
+            <StatusBadge variant="pending">{t("attendanceLate")}</StatusBadge>
+          ) : row.attendanceStatus === "absent" ? (
+            <StatusBadge variant="flagged">{t("attendanceAbsent")}</StatusBadge>
+          ) : (
+            <StatusBadge variant="closed">{t("stateEnded")}</StatusBadge>
+          ))}
         {state === "live" && row.joinLink && (
           <div className="flex items-center gap-2">
             {justMarked && <span className="text-xs font-medium text-success">{t("markedPresent")}</span>}

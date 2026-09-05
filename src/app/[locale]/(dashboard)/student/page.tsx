@@ -545,6 +545,7 @@ export default async function StudentDashboardPage({
   // below — attendance is a historical record, a past session shouldn't
   // disappear from it just because it's no longer "upcoming".
   const liveClassInfoById = new Map(allLiveClassRows.map((r) => [r.id, r]));
+  const attendanceStatusByLiveClassId = new Map((attendanceRows ?? []).map((r) => [r.live_class_id, r.status]));
   const attendanceHistory: ProgressAttendanceRow[] = (attendanceRows ?? []).flatMap((row) => {
     const session = liveClassInfoById.get(row.live_class_id);
     if (!session) return [];
@@ -574,6 +575,7 @@ export default async function StudentDashboardPage({
     durationMinutes: row.duration_minutes,
     mode: row.mode,
     joinLink: joinLinkByClassId.get(row.id) ?? null,
+    attendanceStatus: attendanceStatusByLiveClassId.get(row.id) ?? null,
   }));
 
   const batchById = new Map((allBatches ?? []).map((b) => [b.id, b]));
@@ -891,12 +893,12 @@ export default async function StudentDashboardPage({
           label: t("groupClasses"),
           items: [
             { key: "classes", label: t("tabs.classes") },
-            { key: "live", label: t("tabs.live"), hasNew: hasNewLive },
           ],
         },
         {
           label: t("groupContent"),
           items: [
+            { key: "live", label: t("tabs.live"), hasNew: hasNewLive },
             { key: "notes", label: t("tabs.notes"), hasNew: hasNewNotes },
             { key: "exams", label: t("tabs.exams"), count: examsDueCount, hasNew: hasNewExams },
             { key: "assignments", label: t("tabs.assignments"), count: assignmentsDueCount, hasNew: hasNewAssignments },

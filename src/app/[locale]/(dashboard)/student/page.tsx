@@ -18,6 +18,7 @@ import { ProgressTab } from "@/components/dashboard/student/progress-tab";
 import type { ProgressAttendanceRow } from "@/components/dashboard/student/progress-tab";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
+import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 import type { MyClassRow, AvailableBatchRow } from "@/components/dashboard/student/classes-tab";
 import type { StudentNoteRow } from "@/components/dashboard/student/notes-tab";
 import type { ReviewTarget, StudentPostedReview } from "@/components/dashboard/student/reviews-tab";
@@ -819,7 +820,7 @@ export default async function StudentDashboardPage({
     medium: ad.medium,
     classType: ad.class_type,
     title: ad.title,
-    description: ad.description,
+    description: sanitizeRichTextNullable(ad.description),
     status: ad.status,
   }));
 
@@ -851,7 +852,7 @@ export default async function StudentDashboardPage({
       medium: row.medium as "english" | "sinhala" | "tamil" | "other",
       classType: row.class_type as "new" | "revision",
       title: row.title,
-      description: row.description,
+      description: sanitizeRichTextNullable(row.description),
       createdLabel: dateFormatter.format(new Date(row.created_at)),
     }));
 

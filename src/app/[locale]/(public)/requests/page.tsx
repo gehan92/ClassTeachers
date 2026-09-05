@@ -4,6 +4,7 @@ import { WantedAdsBoard } from "@/components/features/wanted-ads-board";
 import type { PublicWantedAd } from "@/components/features/wanted-ads-board";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter } from "@/lib/format-date";
+import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/requests">): Promise<Metadata> {
   const { locale } = await params;
@@ -29,7 +30,7 @@ export default async function RequestsPage({ params }: PageProps<"/[locale]/requ
     medium: row.medium as "english" | "sinhala" | "tamil" | "other",
     classType: row.class_type as "new" | "revision",
     title: row.title,
-    description: row.description,
+    description: sanitizeRichTextNullable(row.description),
     createdLabel: dateFormatter.format(new Date(row.created_at)),
   }));
 

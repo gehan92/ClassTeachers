@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { respondToWantedAd } from "@/lib/dashboard/wanted-ads-actions";
+import { hasRichText, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
 
 export type WantedAdBrowseRow = {
   id: string;
@@ -100,7 +101,12 @@ function RequestItem({ request }: { request: WantedAdBrowseRow }) {
           .filter(Boolean)
           .join(" · ")}
       </p>
-      {request.description && <p className="text-sm text-foreground/80">{request.description}</p>}
+      {hasRichText(request.description) && (
+        <div
+          className={`text-sm text-foreground/80 ${RICH_TEXT_DISPLAY_CLASS}`}
+          dangerouslySetInnerHTML={{ __html: request.description ?? "" }}
+        />
+      )}
 
       {myResponse ? (
         <div className="mt-1 rounded-md bg-secondary/60 px-3 py-2">

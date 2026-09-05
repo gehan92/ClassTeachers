@@ -377,6 +377,16 @@
       "declined": "நிராகரிக்கப்பட்டது"
     }
   },
+  "richTextEditor": {
+    "bold": "தடிமன்",
+    "italic": "சாய்வு",
+    "underline": "அடிக்கோடு",
+    "bulletList": "புள்ளி பட்டியல்",
+    "orderedList": "எண் பட்டியல்",
+    "alignLeft": "இடது சீரமைப்பு",
+    "alignCenter": "நடு சீரமைப்பு",
+    "alignRight": "வலது சீரமைப்பு"
+  },
   "wantedAdsBrowseTab": {
     "heading": "மாணவர் கோரிக்கைகள்",
     "subtitle": "உங்களைப் போன்ற ஆசிரியர் அல்லது நிறுவனத்தைத் தேடும் மாணவர்கள்.",

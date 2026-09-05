@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { notify } from "@/lib/dashboard/notify";
+import { sanitizeRichText } from "@/lib/dashboard/sanitize-rich-text";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -22,8 +23,9 @@ const wantedAdSchema = z.object({
   // The word limits shown in the composer (60 words each for the drafted
   // description and the additional-details box, combined client-side into
   // this one field) are a UX guardrail, not exact security here — this is
-  // just a generous backstop against abuse/junk.
-  description: z.string().trim().max(3000).optional(),
+  // just a generous backstop against abuse/junk. Sized up from the old plain-
+  // text limit to leave room for the HTML markup formatting adds.
+  description: z.string().trim().max(6000).optional(),
 });
 
 export async function createWantedAd(input: {
@@ -44,7 +46,7 @@ export async function createWantedAd(input: {
     medium: input.medium,
     classType: input.classType,
     title: input.title,
-    description: input.description,
+    description: input.description ? sanitizeRichText(input.description) : undefined,
   });
   if (!parsed.success) {
     return { error: "Please fill in a title and what you're looking for, then try again." };
@@ -96,7 +98,7 @@ export async function updateWantedAd(
     medium: input.medium,
     classType: input.classType,
     title: input.title,
-    description: input.description,
+    description: input.description ? sanitizeRichText(input.description) : undefined,
   });
   if (!parsed.success) {
     return { error: "Please fill in a title and what you're looking for, then try again." };

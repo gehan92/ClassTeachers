@@ -10,9 +10,11 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/features/status-badge";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { getSubjectIcon } from "@/lib/subject-icon";
+import { hasRichText, countRichTextWords, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
 import {
   createWantedAd,
   updateWantedAd,
@@ -21,9 +23,6 @@ import {
   markWantedAdResponseRead,
 } from "@/lib/dashboard/wanted-ads-actions";
 import type { PublicWantedAd } from "@/components/features/wanted-ads-board";
-
-const textareaClass =
-  "min-h-24 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm";
 
 type LookingFor = "teacher" | "institute";
 const LOOKING_FOR_OPTIONS: LookingFor[] = ["teacher", "institute"];
@@ -37,9 +36,12 @@ const CLASS_TYPE_OPTIONS: ClassType[] = ["new", "revision"];
 const DESCRIPTION_WORD_LIMIT = 60;
 const ADDITIONAL_DETAILS_WORD_LIMIT = 60;
 
-function countWords(text: string): number {
-  const trimmed = text.trim();
-  return trimmed ? trimmed.split(/\s+/).length : 0;
+// Auto-drafted description/additional-details text (built from plain
+// translation strings, see buildSuggestedDescription below) gets wrapped in
+// a <p> before being handed to RichTextEditor as its HTML value — escape it
+// first so a free-typed grade level like "10 < 11" can't be parsed as a tag.
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function WordCounter({ count, limit }: { count: number; limit: number }) {
@@ -313,15 +315,14 @@ function WantedAdFields({
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor={`${idPrefix}-description`}>{t("descriptionLabel")}</Label>
-        <textarea
+        <RichTextEditor
           id={`${idPrefix}-description`}
-          className={textareaClass}
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={setDescription}
           placeholder={t("descriptionPlaceholder")}
         />
         {descriptionHint && <p className="text-xs text-muted-foreground">{descriptionHint}</p>}
-        <WordCounter count={countWords(description)} limit={DESCRIPTION_WORD_LIMIT} />
+        <WordCounter count={countRichTextWords(description)} limit={DESCRIPTION_WORD_LIMIT} />
       </div>
     </div>
   );
@@ -456,7 +457,12 @@ function WantedAdPreviewCard({
             .filter(Boolean)
             .join(" · ")}
         </div>
-        {description.trim() && <p className="mb-3.5 line-clamp-2 text-[12.5px] text-muted-foreground">{description}</p>}
+        {hasRichText(description) && (
+          <div
+            className={`mb-3.5 line-clamp-2 text-[12.5px] text-muted-foreground ${RICH_TEXT_DISPLAY_CLASS}`}
+            dangerouslySetInnerHTML={{ __html: description }}
+          />
+        )}
 
         <div className="mt-auto flex items-center border-t border-dashed border-border pt-3.5">
           <span className="rounded-sm border border-input px-3.5 py-1.5 text-[13px] font-semibold text-primary">
@@ -532,8 +538,9 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
   useEffect(() => {
     if (descriptionTouched) return;
     const subjectName = subjectOptions.find((s) => s.id === subjectId)?.name;
+    const draft = buildSuggestedDescription(t, lookingFor, subjectName, mode, medium, classType, gradeLevel);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- drafting a suggestion from other field state, not derived render state
-    setDescription(buildSuggestedDescription(t, lookingFor, subjectName, mode, medium, classType, gradeLevel));
+    setDescription(`<p>${escapeHtml(draft)}</p>`);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- t/subjectOptions are stable for this component's lifetime; only the actual field values should retrigger the draft
   }, [lookingFor, subjectId, mode, medium, classType, gradeLevel, descriptionTouched]);
 
@@ -552,17 +559,17 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
       setError(t("titleRequired"));
       return;
     }
-    if (countWords(description) > DESCRIPTION_WORD_LIMIT) {
+    if (countRichTextWords(description) > DESCRIPTION_WORD_LIMIT) {
       setError(t("descriptionTooLong", { limit: DESCRIPTION_WORD_LIMIT }));
       return;
     }
-    if (countWords(additionalDetails) > ADDITIONAL_DETAILS_WORD_LIMIT) {
+    if (countRichTextWords(additionalDetails) > ADDITIONAL_DETAILS_WORD_LIMIT) {
       setError(t("additionalDetailsTooLong", { limit: ADDITIONAL_DETAILS_WORD_LIMIT }));
       return;
     }
     setSaving(true);
     setError(null);
-    const finalDescription = [description.trim(), additionalDetails.trim()].filter(Boolean).join("\n\n");
+    const finalDescription = [description, additionalDetails].filter(hasRichText).join("");
     const result = await createWantedAd({
       lookingFor,
       subjectId,
@@ -640,14 +647,13 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
       />
       <div className="mt-4 grid gap-1.5">
         <Label htmlFor={`${idPrefix}-additional-details`}>{t("additionalDetailsLabel")}</Label>
-        <textarea
+        <RichTextEditor
           id={`${idPrefix}-additional-details`}
-          className={textareaClass}
           value={additionalDetails}
-          onChange={(e) => setAdditionalDetails(e.target.value)}
+          onChange={setAdditionalDetails}
           placeholder={t("additionalDetailsPlaceholder")}
         />
-        <WordCounter count={countWords(additionalDetails)} limit={ADDITIONAL_DETAILS_WORD_LIMIT} />
+        <WordCounter count={countRichTextWords(additionalDetails)} limit={ADDITIONAL_DETAILS_WORD_LIMIT} />
       </div>
       <div className="mt-4 flex items-center gap-3">
         <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
@@ -672,7 +678,7 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
         classType={classType}
         gradeLevel={gradeLevel}
         title={title}
-        description={[description.trim(), additionalDetails.trim()].filter(Boolean).join("\n\n")}
+        description={[description, additionalDetails].filter(hasRichText).join("")}
       />
     </div>
   );
@@ -713,7 +719,7 @@ function WantedAdCard({
       setError(t("titleRequired"));
       return;
     }
-    if (countWords(description) > DESCRIPTION_WORD_LIMIT) {
+    if (countRichTextWords(description) > DESCRIPTION_WORD_LIMIT) {
       setError(t("descriptionTooLong", { limit: DESCRIPTION_WORD_LIMIT }));
       return;
     }
@@ -781,7 +787,12 @@ function WantedAdCard({
 
       {!editing && (
         <div>
-          {ad.description && <p className="mb-3 text-sm text-muted-foreground">{ad.description}</p>}
+          {hasRichText(ad.description) && (
+            <div
+              className={`mb-3 text-sm text-muted-foreground ${RICH_TEXT_DISPLAY_CLASS}`}
+              dangerouslySetInnerHTML={{ __html: ad.description ?? "" }}
+            />
+          )}
 
           {responses.length > 0 && (
             <div className="mb-3 flex flex-col gap-2 border-t border-border pt-3">

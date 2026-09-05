@@ -9,6 +9,7 @@ import { usePagination } from "@/lib/hooks/use-pagination";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { getSubjectIcon } from "@/lib/subject-icon";
 import { cn } from "@/lib/utils";
+import { hasRichText, stripRichText, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
 
 export type PublicWantedAd = {
   id: string;
@@ -80,7 +81,12 @@ function RequestCard({ ad, index }: { ad: PublicWantedAd; index?: number }) {
             .filter(Boolean)
             .join(" · ")}
         </div>
-        {ad.description && <p className="mb-3.5 line-clamp-2 text-[12.5px] text-muted-foreground">{ad.description}</p>}
+        {hasRichText(ad.description) && (
+          <div
+            className={`mb-3.5 line-clamp-2 text-[12.5px] text-muted-foreground ${RICH_TEXT_DISPLAY_CLASS}`}
+            dangerouslySetInnerHTML={{ __html: ad.description ?? "" }}
+          />
+        )}
 
         <div className="mt-auto flex items-center border-t border-dashed border-border pt-3.5">
           <span className="rounded-sm border border-input px-3.5 py-1.5 text-[13px] font-semibold text-primary">
@@ -105,7 +111,7 @@ export function WantedAdsBoard({ ads }: { ads: PublicWantedAd[] }) {
       return (
         ad.title.toLowerCase().includes(q) ||
         (ad.subject ?? "").toLowerCase().includes(q) ||
-        (ad.description ?? "").toLowerCase().includes(q)
+        stripRichText(ad.description ?? "").toLowerCase().includes(q)
       );
     });
   }, [ads, query, filter]);

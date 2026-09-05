@@ -10,6 +10,8 @@ import { createDateFormatter } from "@/lib/format-date";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { getSubjectIcon } from "@/lib/subject-icon";
 import { getWantedAdRespondHref, resolveWantedAdResponder } from "@/lib/wanted-ad-respond-href";
+import { sanitizeRichText } from "@/lib/dashboard/sanitize-rich-text";
+import { hasRichText, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
 
 async function loadAd(id: string) {
   const supabase = await createClient();
@@ -120,8 +122,11 @@ export default async function RequestDetailPage({ params }: PageProps<"/[locale]
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
           <h3 className="mb-3 text-lg">{td("aboutHeading")}</h3>
-          {ad.description ? (
-            <p className="whitespace-pre-line text-sm text-foreground/85">{ad.description}</p>
+          {hasRichText(ad.description) ? (
+            <div
+              className={`text-sm text-foreground/85 ${RICH_TEXT_DISPLAY_CLASS}`}
+              dangerouslySetInnerHTML={{ __html: sanitizeRichText(ad.description ?? "") }}
+            />
           ) : (
             <p className="text-sm text-muted-foreground">{td("noDescription")}</p>
           )}

@@ -27,6 +27,7 @@ import { SettingsTab, type InstituteInviteRow } from "@/components/dashboard/tea
 import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { TeacherOnboardingWizard } from "@/components/onboarding/teacher-onboarding-wizard";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import type { TeacherProfileDetail } from "@/types/teacher-profile";
 import type { ReferralRow } from "@/components/dashboard/refer-earn-panel";
@@ -445,7 +446,7 @@ export default async function TeacherDashboardPage({
     medium: row.medium as "english" | "sinhala" | "tamil" | "other",
     classType: row.class_type as "new" | "revision",
     title: row.title,
-    description: row.description,
+    description: sanitizeRichTextNullable(row.description),
     createdLabel: dateFormatter.format(new Date(row.created_at)),
     myResponse: row.my_response,
   }));

@@ -24,6 +24,7 @@ import { ClassProfileView } from "@/components/features/class-profile-view";
 import { InstituteOnboardingWizard } from "@/components/onboarding/institute-onboarding-wizard";
 import { loadClassProfile } from "@/lib/load-class-profile";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 import { createDateFormatter } from "@/lib/format-date";
 import type { TeachersAtGlance } from "@/types/dashboard-institute";
 import type { InstituteBatchRow, InstituteBatchRosterEntry } from "@/components/dashboard/institute/batches-tab";
@@ -489,7 +490,7 @@ export default async function InstituteDashboardPage({
     medium: row.medium as "english" | "sinhala" | "tamil" | "other",
     classType: row.class_type as "new" | "revision",
     title: row.title,
-    description: row.description,
+    description: sanitizeRichTextNullable(row.description),
     createdLabel: dateFormatter.format(new Date(row.created_at)),
     myResponse: row.my_response,
   }));

@@ -377,6 +377,16 @@
       "declined": "ප්‍රතික්ෂේප කරන ලදී"
     }
   },
+  "richTextEditor": {
+    "bold": "තදකුරු",
+    "italic": "ඇල අකුරු",
+    "underline": "යටින් ඉරි",
+    "bulletList": "බුලට් ලැයිස්තුව",
+    "orderedList": "අංකිත ලැයිස්තුව",
+    "alignLeft": "වම් පස ගැලපීම",
+    "alignCenter": "මැද ගැලපීම",
+    "alignRight": "දකුණු පස ගැලපීම"
+  },
   "wantedAdsBrowseTab": {
     "heading": "සිසුන්ගේ ඉල්ලීම්",
     "subtitle": "ඔබ වැනි ගුරුවරයෙකු හෝ ආයතනයක් සොයන සිසුන්.",

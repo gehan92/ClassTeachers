@@ -149,7 +149,7 @@ export function LiveClassesTab({
                 <TableHead>{t("colTeacher")}</TableHead>
                 <TableHead>{t("colSchedule")}</TableHead>
                 <TableHead>{t("colMode")}</TableHead>
-                <TableHead className="text-right">{t("colAction")}</TableHead>
+                <TableHead>{t("colAction")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -211,12 +211,12 @@ function LiveClassRow({
       <TableCell className="whitespace-normal text-muted-foreground">
         {row.mode === "online" ? t("modeOnline") : t("modePhysical")}
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell>
         {state === "not_open" && <StatusBadge variant="pending">{t("stateNotOpen")}</StatusBadge>}
         {state === "starting_soon" && <StatusBadge variant="upcoming">{t("stateStartingSoon")}</StatusBadge>}
         {state === "ended" && <StatusBadge variant="active">{t("stateEnded")}</StatusBadge>}
         {state === "live" && row.joinLink && (
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center gap-2">
             {justMarked && <span className="text-xs font-medium text-success">{t("markedPresent")}</span>}
             {isThisCallActive ? (
               <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90" onClick={onReturn}>

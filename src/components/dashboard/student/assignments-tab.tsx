@@ -17,6 +17,8 @@ import { PdfViewerPanel } from "@/components/dashboard/inline-file-viewer";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { usePagination } from "@/lib/hooks/use-pagination";
+import { groupByClass } from "@/lib/dashboard/group-by-class";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from "@/components/ui/accordion";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { submitAssignment } from "@/lib/dashboard/assignments-actions";
 
@@ -108,6 +110,45 @@ export function AssignmentsTab({
       <div className="rounded-lg border border-border bg-white">
         {assignments.length === 0 ? (
           <p className="p-5 text-sm text-muted-foreground">{t("empty")}</p>
+        ) : scope === "history" ? (
+          <div className="p-4">
+            {(() => {
+              const groups = groupByClass(
+                pagedAssignments.map((assignment) => ({ ...assignment, ownerName: assignment.teacherName })),
+              );
+              return (
+                <Accordion multiple defaultValue={groups.map((g) => g.key)}>
+                  {groups.map((group) => (
+                    <AccordionItem key={group.key} value={group.key}>
+                      <AccordionTrigger className="text-sm font-semibold text-foreground">{group.heading}</AccordionTrigger>
+                      <AccordionPanel>
+                        <div className="flex flex-col divide-y divide-border rounded-md border border-border">
+                          {group.rows.map((assignment) => (
+                            <div key={assignment.id} className="flex flex-wrap items-center justify-between gap-3 p-3.5">
+                              <div className="min-w-0">
+                                <div className="truncate text-sm font-medium text-foreground">{assignment.title}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {assignment.dueLabel ? t("dueLabel", { date: assignment.dueLabel }) : "—"}
+                                </div>
+                              </div>
+                              <AssignmentActions
+                                assignment={assignment}
+                                scope={scope}
+                                now={now}
+                                onOpen={() => setActiveAssignmentId(assignment.id)}
+                                onViewWorksheet={() => setViewingWorksheetId(assignment.id)}
+                                onViewResult={() => setViewingResultId(assignment.id)}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </AccordionPanel>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              );
+            })()}
+          </div>
         ) : (
           <Table>
             <TableHeader>
@@ -175,8 +216,6 @@ function AssignmentRow({
   onViewResult: () => void;
 }) {
   const t = useTranslations("studentDashboard.assignments");
-  const isHistory = scope === "history";
-  const isPastDue = assignment.dueAtIso !== null && new Date(assignment.dueAtIso).getTime() < now;
 
   return (
     <TableRow>
@@ -193,43 +232,78 @@ function AssignmentRow({
         {assignment.dueLabel ? t("dueLabel", { date: assignment.dueLabel }) : "—"}
       </TableCell>
       <TableCell>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={onViewWorksheet}>
-            {t("viewWorksheet")}
-          </Button>
-          {assignment.submission?.status === "graded" ? (
-            <>
-              <StatusBadge variant="graded">{assignment.submission.grade ?? "—"}</StatusBadge>
-              <Button type="button" variant="ghost" size="sm" onClick={onViewResult}>
-                {t("viewResult")}
-              </Button>
-            </>
-          ) : assignment.submission?.status === "pending" ? (
-            <>
-              <StatusBadge variant="pending">{t("pendingGrading")}</StatusBadge>
-              <Button type="button" variant="ghost" size="sm" onClick={onViewResult}>
-                {t("viewSubmission")}
-              </Button>
-              {!isHistory && (
-                <Button size="sm" variant="outline" onClick={onOpen}>
-                  {t("resubmit")}
-                </Button>
-              )}
-            </>
-          ) : isHistory ? (
-            isPastDue ? (
-              <StatusBadge variant="flagged">{t("missed")}</StatusBadge>
-            ) : (
-              <StatusBadge variant="closed">{t("notSubmitted")}</StatusBadge>
-            )
-          ) : (
-            <Button size="sm" onClick={onOpen}>
-              {t("submitAnswer")}
-            </Button>
-          )}
-        </div>
+        <AssignmentActions
+          assignment={assignment}
+          scope={scope}
+          now={now}
+          onOpen={onOpen}
+          onViewWorksheet={onViewWorksheet}
+          onViewResult={onViewResult}
+        />
       </TableCell>
     </TableRow>
+  );
+}
+
+/** The assignment row's action cell — worksheet/result links plus either the
+ * submit flow (workspace scope) or a records-only status badge (history
+ * scope) — shared between the flat table (AssignmentRow) and the grouped
+ * Accordion rows (history scope). */
+function AssignmentActions({
+  assignment,
+  scope,
+  now,
+  onOpen,
+  onViewWorksheet,
+  onViewResult,
+}: {
+  assignment: StudentAssignmentRow;
+  scope: "workspace" | "history";
+  now: number;
+  onOpen: () => void;
+  onViewWorksheet: () => void;
+  onViewResult: () => void;
+}) {
+  const t = useTranslations("studentDashboard.assignments");
+  const isHistory = scope === "history";
+  const isPastDue = assignment.dueAtIso !== null && new Date(assignment.dueAtIso).getTime() < now;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button type="button" variant="ghost" size="sm" onClick={onViewWorksheet}>
+        {t("viewWorksheet")}
+      </Button>
+      {assignment.submission?.status === "graded" ? (
+        <>
+          <StatusBadge variant="graded">{assignment.submission.grade ?? "—"}</StatusBadge>
+          <Button type="button" variant="ghost" size="sm" onClick={onViewResult}>
+            {t("viewResult")}
+          </Button>
+        </>
+      ) : assignment.submission?.status === "pending" ? (
+        <>
+          <StatusBadge variant="pending">{t("pendingGrading")}</StatusBadge>
+          <Button type="button" variant="ghost" size="sm" onClick={onViewResult}>
+            {t("viewSubmission")}
+          </Button>
+          {!isHistory && (
+            <Button size="sm" variant="outline" onClick={onOpen}>
+              {t("resubmit")}
+            </Button>
+          )}
+        </>
+      ) : isHistory ? (
+        isPastDue ? (
+          <StatusBadge variant="flagged">{t("missed")}</StatusBadge>
+        ) : (
+          <StatusBadge variant="closed">{t("notSubmitted")}</StatusBadge>
+        )
+      ) : (
+        <Button size="sm" onClick={onOpen}>
+          {t("submitAnswer")}
+        </Button>
+      )}
+    </div>
   );
 }
 

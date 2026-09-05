@@ -16,6 +16,7 @@ import { useLiveCall } from "@/components/dashboard/live-call-context";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { usePagination } from "@/lib/hooks/use-pagination";
 import { groupByClass } from "@/lib/dashboard/group-by-class";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from "@/components/ui/accordion";
 import { markAttendance, dismissLiveClassReminder } from "@/lib/dashboard/live-classes-actions";
 
 export type StudentLiveClassRow = {
@@ -166,33 +167,42 @@ export function LiveClassesTab({
         {sourceRows.length === 0 ? (
           <p className="p-5 text-sm text-muted-foreground">{t("empty")}</p>
         ) : scope === "history" ? (
-          <div className="flex flex-col gap-5 p-4">
-            {groupByClass(pagedClasses.map((row) => ({ ...row, ownerName: row.teacherName }))).map((group) => (
-              <div key={group.key}>
-                <h3 className="mb-2 text-sm font-semibold text-foreground">{group.heading}</h3>
-                <div className="flex flex-col divide-y divide-border rounded-md border border-border">
-                  {group.rows.map((row) => (
-                    <div key={row.id} className="flex flex-wrap items-center justify-between gap-3 p-3.5">
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium text-foreground">{row.title}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {row.scheduledLabel} · {row.mode === "online" ? t("modeOnline") : t("modePhysical")}
+          <div className="p-4">
+            {(() => {
+              const groups = groupByClass(pagedClasses.map((row) => ({ ...row, ownerName: row.teacherName })));
+              return (
+                <Accordion multiple defaultValue={groups.map((g) => g.key)}>
+                  {groups.map((group) => (
+                    <AccordionItem key={group.key} value={group.key}>
+                      <AccordionTrigger className="text-sm font-semibold text-foreground">{group.heading}</AccordionTrigger>
+                      <AccordionPanel>
+                        <div className="flex flex-col divide-y divide-border rounded-md border border-border">
+                          {group.rows.map((row) => (
+                            <div key={row.id} className="flex flex-wrap items-center justify-between gap-3 p-3.5">
+                              <div className="min-w-0">
+                                <div className="truncate text-sm font-medium text-foreground">{row.title}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {row.scheduledLabel} · {row.mode === "online" ? t("modeOnline") : t("modePhysical")}
+                                </div>
+                              </div>
+                              {row.attendanceStatus === "present" ? (
+                                <StatusBadge variant="active">{t("attendancePresent")}</StatusBadge>
+                              ) : row.attendanceStatus === "late" ? (
+                                <StatusBadge variant="pending">{t("attendanceLate")}</StatusBadge>
+                              ) : row.attendanceStatus === "absent" ? (
+                                <StatusBadge variant="flagged">{t("attendanceAbsent")}</StatusBadge>
+                              ) : (
+                                <StatusBadge variant="closed">{t("stateEnded")}</StatusBadge>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                      {row.attendanceStatus === "present" ? (
-                        <StatusBadge variant="active">{t("attendancePresent")}</StatusBadge>
-                      ) : row.attendanceStatus === "late" ? (
-                        <StatusBadge variant="pending">{t("attendanceLate")}</StatusBadge>
-                      ) : row.attendanceStatus === "absent" ? (
-                        <StatusBadge variant="flagged">{t("attendanceAbsent")}</StatusBadge>
-                      ) : (
-                        <StatusBadge variant="closed">{t("stateEnded")}</StatusBadge>
-                      )}
-                    </div>
+                      </AccordionPanel>
+                    </AccordionItem>
                   ))}
-                </div>
-              </div>
-            ))}
+                </Accordion>
+              );
+            })()}
           </div>
         ) : (
           <Table>

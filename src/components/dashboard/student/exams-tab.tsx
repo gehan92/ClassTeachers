@@ -19,6 +19,8 @@ import {
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { usePagination } from "@/lib/hooks/use-pagination";
+import { groupByClass } from "@/lib/dashboard/group-by-class";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from "@/components/ui/accordion";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { useIsMounted } from "@/lib/hooks/use-is-mounted";
 import { submitExam } from "@/lib/dashboard/exams-actions";
@@ -57,6 +59,7 @@ export type StudentExamRow = {
   ownerId: string;
   ownerType: "teacher" | "class";
   batchId: string | null;
+  batchTitle: string | null;
   durationMinutes: number;
   scheduledLabel: string;
   isOpen: boolean;
@@ -73,7 +76,19 @@ export type StudentExamRow = {
   reviewAnswers: { mcqAnswers: Record<string, string[]>; codeAnswers: Record<string, string> } | null;
 };
 
-export function ExamsTab({ exams, hideHeading }: { exams: StudentExamRow[]; hideHeading?: boolean }) {
+export function ExamsTab({
+  exams,
+  hideHeading,
+  scope = "workspace",
+}: {
+  exams: StudentExamRow[];
+  hideHeading?: boolean;
+  /** "workspace" (default) is the per-class Accordion panel — already scoped
+   * to one class, so a flat table is enough. "history" is the flat,
+   * top-level sidebar tab, spanning every class — grouped into a collapsible
+   * Accordion item per class instead. */
+  scope?: "workspace" | "history";
+}) {
   const t = useTranslations("studentDashboard.exams");
   const tc = useTranslations("studentDashboard.common");
   const [activeExamId, setActiveExamId] = useState<string | null>(null);
@@ -103,6 +118,40 @@ export function ExamsTab({ exams, hideHeading }: { exams: StudentExamRow[]; hide
       <div className="rounded-lg border border-border bg-white">
         {exams.length === 0 ? (
           <p className="p-5 text-sm text-muted-foreground">{t("empty")}</p>
+        ) : scope === "history" ? (
+          <div className="p-4">
+            {(() => {
+              const groups = groupByClass(pagedExams.map((exam) => ({ ...exam, ownerName: exam.teacherName })));
+              return (
+                <Accordion multiple defaultValue={groups.map((g) => g.key)}>
+                  {groups.map((group) => (
+                    <AccordionItem key={group.key} value={group.key}>
+                      <AccordionTrigger className="text-sm font-semibold text-foreground">{group.heading}</AccordionTrigger>
+                      <AccordionPanel>
+                        <div className="flex flex-col divide-y divide-border rounded-md border border-border">
+                          {group.rows.map((exam) => (
+                            <div key={exam.id} className="flex flex-wrap items-center justify-between gap-3 p-3.5">
+                              <div className="min-w-0">
+                                <div className="truncate text-sm font-medium text-foreground">{exam.title}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {exam.scheduledLabel} · {t("durationLabel", { minutes: exam.durationMinutes })}
+                                </div>
+                              </div>
+                              <ExamActions
+                                exam={exam}
+                                onStart={() => setActiveExamId(exam.id)}
+                                onViewResult={() => setResultExamId(exam.id)}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </AccordionPanel>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              );
+            })()}
+          </div>
         ) : (
           <Table>
             <TableHeader>
@@ -166,24 +215,41 @@ function ExamRow({
         {exam.scheduledLabel} · {t("durationLabel", { minutes: exam.durationMinutes })}
       </TableCell>
       <TableCell>
-        {exam.submission?.status === "graded" ? (
-          <div className="flex items-center gap-2">
-            <StatusBadge variant="graded">{exam.submission.grade ?? "—"}</StatusBadge>
-            <Button type="button" variant="ghost" size="sm" onClick={onViewResult}>
-              {t("viewResult")}
-            </Button>
-          </div>
-        ) : exam.submission?.status === "pending" ? (
-          <StatusBadge variant="pending">{t("pendingGrading")}</StatusBadge>
-        ) : !exam.isOpen ? (
-          <StatusBadge variant="closed">{t("notOpenYet")}</StatusBadge>
-        ) : (
-          <Button size="sm" onClick={onStart}>
-            {t("startExam")}
-          </Button>
-        )}
+        <ExamActions exam={exam} onStart={onStart} onViewResult={onViewResult} />
       </TableCell>
     </TableRow>
+  );
+}
+
+/** The exam row's action cell — grade/status badge or the Start/View-result
+ * button, shared between the flat table (ExamRow) and the grouped Accordion
+ * rows (history scope). */
+function ExamActions({
+  exam,
+  onStart,
+  onViewResult,
+}: {
+  exam: StudentExamRow;
+  onStart: () => void;
+  onViewResult: () => void;
+}) {
+  const t = useTranslations("studentDashboard.exams");
+
+  return exam.submission?.status === "graded" ? (
+    <div className="flex items-center gap-2">
+      <StatusBadge variant="graded">{exam.submission.grade ?? "—"}</StatusBadge>
+      <Button type="button" variant="ghost" size="sm" onClick={onViewResult}>
+        {t("viewResult")}
+      </Button>
+    </div>
+  ) : exam.submission?.status === "pending" ? (
+    <StatusBadge variant="pending">{t("pendingGrading")}</StatusBadge>
+  ) : !exam.isOpen ? (
+    <StatusBadge variant="closed">{t("notOpenYet")}</StatusBadge>
+  ) : (
+    <Button size="sm" onClick={onStart}>
+      {t("startExam")}
+    </Button>
   );
 }
 

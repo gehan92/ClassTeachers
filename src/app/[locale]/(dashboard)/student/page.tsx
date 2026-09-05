@@ -681,6 +681,7 @@ export default async function StudentDashboardPage({
       ownerId: e.owner_id,
       ownerType: e.owner_type,
       batchId: e.batch_id,
+      batchTitle: e.batch_id ? (batchById.get(e.batch_id)?.title ?? null) : null,
       durationMinutes: e.duration_minutes,
       scheduledLabel: e.scheduled_at ? scheduleFormatter.format(new Date(e.scheduled_at)) : "—",
       isOpen: !e.scheduled_at || !isFuture(e.scheduled_at),
@@ -972,8 +973,8 @@ export default async function StudentDashboardPage({
           />
         ),
         inquiries: <SentInquiriesTab inquiries={myInquiries} />,
-        notes: <NotesTab notes={studentNotes} studentName={fullName} />,
-        exams: <ExamsTab exams={exams} />,
+        notes: <NotesTab notes={studentNotes} studentName={fullName} scope="history" />,
+        exams: <ExamsTab exams={exams} scope="history" />,
         assignments: <AssignmentsTab assignments={assignments} scope="history" />,
         reviews: <ReviewsTab targets={reviewTargets} initialReviews={myReviews} />,
         profile: (

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { usePagination } from "@/lib/hooks/use-pagination";
 import { groupByClass } from "@/lib/dashboard/group-by-class";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from "@/components/ui/accordion";
 
 export type StudentNoteRow = {
   id: string;
@@ -23,10 +24,16 @@ export function NotesTab({
   notes,
   studentName,
   hideHeading,
+  scope = "workspace",
 }: {
   notes: StudentNoteRow[];
   studentName: string;
   hideHeading?: boolean;
+  /** "workspace" (default) is the per-class Accordion panel — already scoped
+   * to one class, so its class-grouping is static (nothing to collapse).
+   * "history" is the flat, top-level sidebar tab, spanning every class —
+   * each class's group becomes its own collapsible Accordion item there. */
+  scope?: "workspace" | "history";
 }) {
   const t = useTranslations("studentDashboard.notes");
   const tc = useTranslations("studentDashboard.common");
@@ -51,27 +58,40 @@ export function NotesTab({
         <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
           {t("emptyState")}
         </div>
+      ) : scope === "history" ? (
+        <div className="flex flex-col gap-3">
+          <Accordion multiple defaultValue={groupedNotes.map((g) => g.key)} className="rounded-lg border border-border bg-white px-4">
+            {groupedNotes.map((group) => (
+              <AccordionItem key={group.key} value={group.key}>
+                <AccordionTrigger className="text-sm font-semibold text-foreground">{group.heading}</AccordionTrigger>
+                <AccordionPanel>
+                  <div className="flex flex-col divide-y divide-border rounded-md border border-border">
+                    {group.rows.map((note) => (
+                      <NoteRow key={note.id} note={note} onOpen={() => setOpenNoteId(note.id)} />
+                    ))}
+                  </div>
+                </AccordionPanel>
+              </AccordionItem>
+            ))}
+          </Accordion>
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            showingLabel={tc("pagination.showingCount", { shown: pagedNotes.length, total: notes.length })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+          />
+        </div>
       ) : (
         <div className="flex flex-col gap-5">
           {groupedNotes.map((group) => (
             <div key={group.key}>
               <h3 className="mb-2 text-sm font-semibold text-foreground">{group.heading}</h3>
-              <div className="rounded-lg border border-border bg-white">
+              <div className="divide-y divide-border rounded-lg border border-border bg-white">
                 {group.rows.map((note) => (
-                  <div key={note.id} className="flex items-center gap-3 border-b border-border p-4 last:border-b-0">
-                    <FileText className="size-4 shrink-0 text-primary" />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium text-foreground">{note.title}</div>
-                      {note.pageCount && (
-                        <div className="text-xs text-muted-foreground">
-                          {t("pagesLabel", { pages: note.pageCount })}
-                        </div>
-                      )}
-                    </div>
-                    <Button size="sm" variant="outline" onClick={() => setOpenNoteId(note.id)}>
-                      {t("openViewer")}
-                    </Button>
-                  </div>
+                  <NoteRow key={note.id} note={note} onOpen={() => setOpenNoteId(note.id)} />
                 ))}
               </div>
             </div>
@@ -87,6 +107,24 @@ export function NotesTab({
           />
         </div>
       )}
+    </div>
+  );
+}
+
+function NoteRow({ note, onOpen }: { note: StudentNoteRow; onOpen: () => void }) {
+  const t = useTranslations("studentDashboard.notes");
+  return (
+    <div className="flex items-center gap-3 p-4">
+      <FileText className="size-4 shrink-0 text-primary" />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-medium text-foreground">{note.title}</div>
+        {note.pageCount && (
+          <div className="text-xs text-muted-foreground">{t("pagesLabel", { pages: note.pageCount })}</div>
+        )}
+      </div>
+      <Button size="sm" variant="outline" onClick={onOpen}>
+        {t("openViewer")}
+      </Button>
     </div>
   );
 }

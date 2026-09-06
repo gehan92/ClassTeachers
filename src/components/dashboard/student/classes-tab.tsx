@@ -64,6 +64,16 @@ function belongsToClass(row: Owned, target: MyClassRow) {
   );
 }
 
+// A missed assignment/homework (never submitted, due time already passed)
+// is closed, not "due" — nothing left to act on. Used both to keep it out
+// of the My Classes due count and, in ClassWorkspace, to keep it out of the
+// per-class Assignments/Homework sections entirely once it's missed — the
+// flat top-level Coursework tab (scope="history") is where a missed item
+// stays visible as a record, per Gehan's explicit split.
+function isAssignmentMissed(row: StudentAssignmentRow, nowMs: number): boolean {
+  return !row.submission && row.dueAtIso !== null && new Date(row.dueAtIso).getTime() < nowMs;
+}
+
 /**
  * Clickable avatar sitting next to the owner's name — opens the
  * credentials-only quick-view popup when one is available (it always should
@@ -179,16 +189,6 @@ export function ClassesTab({
   }
 
   const NEW_ACTIVITY_TYPES = ["new_note", "new_exam", "new_assignment", "new_live_class", "live_class_started"];
-
-  // A missed assignment/homework (never submitted, due time already passed)
-  // is closed, not "due" — nothing left to act on, so it shouldn't inflate
-  // the card's due count the way a still-open one does. Exams have no such
-  // state to exclude: unlike assignments/homework, they don't lock at a due
-  // time (only the countdown once an attempt is actually started), so an
-  // unstarted exam stays genuinely actionable however old it is.
-  function isAssignmentMissed(row: StudentAssignmentRow, nowMs: number): boolean {
-    return !row.submission && row.dueAtIso !== null && new Date(row.dueAtIso).getTime() < nowMs;
-  }
 
   /** At-a-glance signals for one enrolled class's own card, so a student can
    * tell what needs attention before opening it — same underlying data
@@ -526,18 +526,27 @@ function ClassWorkspace({
   const tShortNotes = useTranslations("studentDashboard.shortNotes");
   const tPastPapers = useTranslations("studentDashboard.pastPapers");
 
+  // A snapshot, not a ticking clock — it only ever feeds the accordion's
+  // uncontrolled defaultValue and the once-per-open missed-item filter
+  // below, neither of which needs to be re-evaluated after mount.
+  const [nowForDefaults] = useState(() => Date.now());
+
   const classLiveClasses = useMemo(
     () => liveClasses.filter((row) => belongsToClass(row, classRow)),
     [liveClasses, classRow],
   );
   const classExams = useMemo(() => exams.filter((row) => belongsToClass(row, classRow)), [exams, classRow]);
+  // A missed assignment/homework drops out of this per-class workspace
+  // entirely — it's closed, nothing left to act on here, and it stays
+  // visible as a record only in the flat top-level Coursework tab
+  // (scope="history"), per Gehan's explicit split.
   const classAssignments = useMemo(
-    () => assignments.filter((row) => belongsToClass(row, classRow)),
-    [assignments, classRow],
+    () => assignments.filter((row) => belongsToClass(row, classRow) && !isAssignmentMissed(row, nowForDefaults)),
+    [assignments, classRow, nowForDefaults],
   );
   const classHomework = useMemo(
-    () => homework.filter((row) => belongsToClass(row, classRow)),
-    [homework, classRow],
+    () => homework.filter((row) => belongsToClass(row, classRow) && !isAssignmentMissed(row, nowForDefaults)),
+    [homework, classRow, nowForDefaults],
   );
   const classNotes = useMemo(() => notes.filter((row) => belongsToClass(row, classRow)), [notes, classRow]);
   const classShortNotes = useMemo(
@@ -586,10 +595,7 @@ function ClassWorkspace({
   // an accordion where every section starts collapsed would hide exactly
   // the "something new happened" signal the sidebar's own unread dots are
   // trying to surface. Notes has no due/undue concept (view-only reference
-  // material), so it always starts collapsed. A snapshot, not a ticking
-  // clock, is all this needs — it only ever feeds the accordion's
-  // uncontrolled defaultValue, never re-evaluated after mount.
-  const [nowForDefaults] = useState(() => Date.now());
+  // material), so it always starts collapsed.
   const hasActionableLive = classLiveClasses.some(
     (lc) => new Date(lc.scheduledAtIso).getTime() + lc.durationMinutes * 60000 > nowForDefaults,
   );

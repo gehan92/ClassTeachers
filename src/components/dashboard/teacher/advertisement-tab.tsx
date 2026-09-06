@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { AdSlot } from "@/components/features/ad-slot";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
@@ -69,6 +70,39 @@ function buildAdDescription(
   if (classType === "revision") sentences.push(t("descriptionRevisionSentence"));
   sentences.push(t("descriptionClosingSentence"));
   return sentences.join(" ");
+}
+
+/**
+ * Mirrors wanted-ads-tab.tsx's WantedAdPreviewDialog — a "Preview" button
+ * opens this instead of the preview sitting inline in the form all the
+ * time, matching the student "Post an ad" composer's Post ad/Preview/Close
+ * button row (Gehan asked for parity after comparing the two dashboards).
+ */
+function AdPreviewDialog({
+  open,
+  onOpenChange,
+  dialogTitle,
+  dialogSubtitle,
+  ...cardProps
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  dialogTitle: string;
+  dialogSubtitle: string;
+} & Parameters<typeof AdPreviewCard>[0]) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogSubtitle}</DialogDescription>
+        </DialogHeader>
+        <div className="overflow-y-auto px-4 pb-4">
+          <AdPreviewCard {...cardProps} />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export type TeacherAdBatchRow = {
@@ -212,11 +246,13 @@ function BatchAdCard({
   defaultMonthlyRate?: number | null;
 }) {
   const t = useTranslations("teacherDashboard.ads.classAds");
+  const tp = useTranslations("teacherDashboard.ads.classAds.preview");
   const td = useTranslations("teacherDashboard.ads.autoDraft");
   const tr = useTranslations("requestsPage");
   const tc = useTranslations("teacherDashboard.common");
 
   const [editing, setEditing] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [subjectId, setSubjectId] = useState(batch.subjectId ?? subjectOptions[0]?.id ?? "");
   const [medium, setMedium] = useState<Medium>(batch.medium ?? "sinhala");
   const [classType, setClassType] = useState<ClassType>(batch.classType ?? "new");
@@ -502,7 +538,23 @@ function BatchAdCard({
             </div>
           </div>
           <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
-          <AdPreviewCard
+          <div className="flex items-center gap-3">
+            <Button type="button" size="sm" onClick={handleSave} disabled={saving || subjectOptions.length === 0}>
+              {t("save")}
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+              {tp("button")}
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setEditing(false)}>
+              {tc("close")}
+            </Button>
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+          </div>
+          <AdPreviewDialog
+            open={previewOpen}
+            onOpenChange={setPreviewOpen}
+            dialogTitle={tp("dialogTitle")}
+            dialogSubtitle={tp("dialogSubtitle")}
             badgeLabel={t("previewBadge")}
             emptyLabel={t("previewEmpty")}
             title={title}
@@ -512,15 +564,6 @@ function BatchAdCard({
               (v): v is string => Boolean(v),
             )}
           />
-          <div className="flex items-center gap-3">
-            <Button type="button" size="sm" onClick={handleSave} disabled={saving || subjectOptions.length === 0}>
-              {t("save")}
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => setEditing(false)}>
-              {tc("cancel")}
-            </Button>
-            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
-          </div>
         </div>
       )}
     </div>
@@ -546,6 +589,7 @@ function IndividualAdCreator({
   defaultMonthlyRate?: number | null;
 }) {
   const t = useTranslations("teacherDashboard.ads.individualAd");
+  const tp = useTranslations("teacherDashboard.ads.individualAd.preview");
   const td = useTranslations("teacherDashboard.ads.autoDraft");
   const tr = useTranslations("requestsPage");
   const tc = useTranslations("teacherDashboard.common");
@@ -553,6 +597,7 @@ function IndividualAdCreator({
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
 
   const [open, setOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [subjectId, setSubjectId] = useState(subjectOptions[0]?.id ?? "");
   const [mode, setMode] = useState<"online" | "physical">("online");
   const [gradeBand, setGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>("12-13");
@@ -815,7 +860,23 @@ function IndividualAdCreator({
             </div>
           </div>
           <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
-          <AdPreviewCard
+          <div className="flex items-center gap-3">
+            <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
+              {t("save")}
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+              {tp("button")}
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setOpen(false)}>
+              {tc("close")}
+            </Button>
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+          </div>
+          <AdPreviewDialog
+            open={previewOpen}
+            onOpenChange={setPreviewOpen}
+            dialogTitle={tp("dialogTitle")}
+            dialogSubtitle={tp("dialogSubtitle")}
             badgeLabel={t("previewBadge")}
             emptyLabel={t("previewEmpty")}
             title={title}
@@ -828,15 +889,6 @@ function IndividualAdCreator({
               classType === "revision" ? tr("classTypeOptions.revision") : null,
             ].filter((v): v is string => Boolean(v))}
           />
-          <div className="flex items-center gap-3">
-            <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
-              {t("save")}
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => setOpen(false)}>
-              {tc("cancel")}
-            </Button>
-            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
-          </div>
         </div>
       )}
     </div>

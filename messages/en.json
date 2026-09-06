@@ -2710,7 +2710,12 @@
         "deleteAd": "Delete ad",
         "confirmDelete": "Delete this ad? It will no longer show in search results. You can restore it later from Ad history.",
         "previewBadge": "Preview",
-        "previewEmpty": "Fill in the title and details above to see a live preview here."
+        "previewEmpty": "Fill in the title and details above to see a live preview here.",
+        "preview": {
+          "button": "Preview",
+          "dialogTitle": "How your ad will look",
+          "dialogSubtitle": "This is what students will see when they browse search results."
+        }
       },
       "individualAd": {
         "heading": "Advertise individual tutoring",
@@ -2739,9 +2744,14 @@
         "ratePlaceholderNone": "Rs.",
         "rateMaxPlaceholder": "Up to (optional)",
         "rateHelper": "Leave blank to use your default rate from Profile. Set one here to charge differently for individual tutoring than your group classes. Add an upper amount too to show a range instead of one fixed price.",
-        "save": "Save ad",
+        "save": "Post ad",
         "previewBadge": "Preview",
-        "previewEmpty": "Fill in the title and details above to see a live preview here."
+        "previewEmpty": "Fill in the title and details above to see a live preview here.",
+        "preview": {
+          "button": "Preview",
+          "dialogTitle": "How your ad will look",
+          "dialogSubtitle": "This is what students will see when they browse search results."
+        }
       },
       "promotionHeading": "Promotion text",
       "promotionLabel": "Promotion text",

@@ -1560,7 +1560,10 @@
       "requestToEnroll": "பதிவு செய்ய கோரிக்கை அனுப்பு",
       "joinNow": "இப்போதே சேரவும்",
       "openEnrollmentBadge": "திறந்தது — உடனடியாக சேரவும்",
-      "justSharedHeading": "இந்த வகுப்பின் போது பகிரப்பட்டவை"
+      "justSharedHeading": "இந்த வகுப்பின் போது பகிரப்பட்டவை",
+      "liveNowBadge": "இப்போது நேரலை",
+      "newActivityBadge": "புதியது",
+      "dueSoonBadge": "{count} நிலுவையில்"
     },
     "live": {
       "title": "நேரடி வகுப்புகள்",

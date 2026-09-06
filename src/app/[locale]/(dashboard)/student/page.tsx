@@ -995,6 +995,7 @@ export default async function StudentDashboardPage({
             studentName={fullName}
             teacherProfiles={teacherProfiles}
             instituteProfiles={instituteProfiles}
+            notifications={notifications}
           />
         ),
         live: (

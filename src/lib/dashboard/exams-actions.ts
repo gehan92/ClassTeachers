@@ -129,7 +129,7 @@ export async function setExamPublished(examId: string, published: boolean): Prom
       { ownerType: exam.owner_type as "teacher" | "class", ownerId: exam.owner_id, batchId: exam.batch_id },
       participants && participants.length > 0 ? participants.map((p) => p.student_id) : null,
       "new_exam",
-      { title: exam.title },
+      { title: exam.title, ownerId: exam.owner_id, ownerType: exam.owner_type, batchId: exam.batch_id },
       "exams",
       "newClassContent",
     );

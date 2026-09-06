@@ -82,7 +82,7 @@ export async function createAssignment(formData: FormData): Promise<ActionResult
     { ownerType: target.ownerType, ownerId: target.ownerId, batchId: target.batchId },
     null,
     "new_assignment",
-    { title: parsed.data.title },
+    { title: parsed.data.title, ownerId: target.ownerId, ownerType: target.ownerType, batchId: target.batchId },
     "assignments",
     "newClassContent",
   );

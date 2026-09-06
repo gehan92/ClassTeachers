@@ -1560,7 +1560,10 @@
       "requestToEnroll": "Request to enroll",
       "joinNow": "Join now",
       "openEnrollmentBadge": "Open — join instantly",
-      "justSharedHeading": "Shared during this class"
+      "justSharedHeading": "Shared during this class",
+      "liveNowBadge": "Live now",
+      "newActivityBadge": "New",
+      "dueSoonBadge": "{count} due"
     },
     "live": {
       "title": "Live Classes",

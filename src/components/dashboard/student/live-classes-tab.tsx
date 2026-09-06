@@ -37,9 +37,9 @@ export type StudentLiveClassRow = {
   attendanceStatus: "present" | "absent" | "late" | null;
 };
 
-type LiveState = "not_open" | "starting_soon" | "live" | "ended";
+export type LiveState = "not_open" | "starting_soon" | "live" | "ended";
 
-function classState(row: StudentLiveClassRow, nowMs: number): LiveState {
+export function classState(row: StudentLiveClassRow, nowMs: number): LiveState {
   const start = new Date(row.scheduledAtIso).getTime();
   const end = start + row.durationMinutes * 60 * 1000;
   if (nowMs >= start && nowMs <= end) return "live";

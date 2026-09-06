@@ -10,7 +10,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from "@/co
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { requestToJoin, joinOpenBatch } from "@/lib/dashboard/batches-actions";
-import { LiveClassesTab, type StudentLiveClassRow } from "@/components/dashboard/student/live-classes-tab";
+import { LiveClassesTab, classState, type StudentLiveClassRow } from "@/components/dashboard/student/live-classes-tab";
 import { useLiveCall } from "@/components/dashboard/live-call-context";
 import { ExamsTab, type StudentExamRow } from "@/components/dashboard/student/exams-tab";
 import { AssignmentsTab, type StudentAssignmentRow } from "@/components/dashboard/student/assignments-tab";
@@ -18,6 +18,7 @@ import { NotesTab, type StudentNoteRow } from "@/components/dashboard/student/no
 import { TeacherQuickProfile } from "@/components/features/institute-teacher-quick-view";
 import { InstituteQuickProfile } from "@/components/features/institute-quick-view";
 import type { InstituteTeacherCard, InstituteQuickView } from "@/types/class-profile";
+import type { NotificationRow } from "@/components/dashboard/notification-bell";
 
 export type MyClassRow = {
   enrollmentId: string;
@@ -125,6 +126,7 @@ export function ClassesTab({
   studentName,
   teacherProfiles,
   instituteProfiles,
+  notifications,
 }: {
   myClasses: MyClassRow[];
   availableBatches: AvailableBatchRow[];
@@ -139,6 +141,7 @@ export function ClassesTab({
   studentName: string;
   teacherProfiles: InstituteTeacherCard[];
   instituteProfiles: InstituteQuickView[];
+  notifications: NotificationRow[];
 }) {
   const t = useTranslations("studentDashboard.classes");
   const tc = useTranslations("studentDashboard.common");
@@ -149,6 +152,15 @@ export function ClassesTab({
   const [forceOpenSection, setForceOpenSection] = useState<string | null>(null);
   const [quickViewTeacherId, setQuickViewTeacherId] = useState<string | null>(null);
   const [quickViewInstituteId, setQuickViewInstituteId] = useState<string | null>(null);
+
+  // Ticking (not a one-time snapshot) so a card's "Live now" badge actually
+  // turns on/off as a class starts and ends while this list is left open,
+  // same 30s cadence LiveClassesTab already uses for the same reason.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   const teacherProfileById = useMemo(() => new Map(teacherProfiles.map((p) => [p.id, p])), [teacherProfiles]);
   const instituteProfileById = useMemo(() => new Map(instituteProfiles.map((p) => [p.id, p])), [instituteProfiles]);
@@ -163,6 +175,33 @@ export function ClassesTab({
   function getPhotoUrl(ownerType: "teacher" | "class", ownerId: string): string | null {
     if (ownerType === "teacher") return teacherProfileById.get(ownerId)?.photoUrl ?? null;
     return instituteProfileById.get(ownerId)?.photoUrl ?? null;
+  }
+
+  const NEW_ACTIVITY_TYPES = ["new_note", "new_exam", "new_assignment", "new_live_class", "live_class_started"];
+
+  /** At-a-glance signals for one enrolled class's own card, so a student can
+   * tell what needs attention before opening it — same underlying data
+   * ClassWorkspace already computes per section, just rolled up to the
+   * card level. "New activity" reuses the same unread-notification signal
+   * the sidebar dots use (see hasNewLive et al. in page.tsx), matched to
+   * this specific class via the ownerId/ownerType/batchId every relevant
+   * notify() call now carries in its data payload. */
+  function classStatsFor(classRow: MyClassRow) {
+    const isLiveNow = liveClasses.some((lc) => belongsToClass(lc, classRow) && classState(lc, now) === "live");
+    const dueSoonCount =
+      exams.filter((e) => belongsToClass(e, classRow) && e.submission?.status !== "graded").length +
+      assignments.filter((a) => belongsToClass(a, classRow) && a.submission?.status !== "graded").length +
+      homework.filter((h) => belongsToClass(h, classRow) && h.submission?.status !== "graded").length;
+    const hasNewActivity = notifications.some((n) => {
+      if (n.readAt || !NEW_ACTIVITY_TYPES.includes(n.type)) return false;
+      const data = n.data ?? {};
+      return (
+        data.ownerId === classRow.ownerId &&
+        data.ownerType === classRow.ownerType &&
+        (data.batchId === null || data.batchId === classRow.batchId)
+      );
+    });
+    return { isLiveNow, dueSoonCount, hasNewActivity };
   }
 
   async function handleJoin(batchId: string, isOpenEnrollment: boolean) {
@@ -280,41 +319,61 @@ export function ClassesTab({
             </div>
           ) : (
             <div className="mb-8 flex flex-col gap-4">
-              {acceptedClasses.map((item) => (
-                <div
-                  key={item.enrollmentId}
-                  className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4.5 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <OwnerAvatar
-                      ownerType={item.ownerType}
-                      ownerId={item.ownerId}
-                      photoUrl={getPhotoUrl(item.ownerType, item.ownerId)}
-                      hasQuickView={
-                        item.ownerType === "teacher"
-                          ? teacherProfileById.has(item.ownerId)
-                          : instituteProfileById.has(item.ownerId)
-                      }
-                      onOpenQuickView={() => openQuickView(item.ownerType, item.ownerId)}
-                    />
-                    <div className="min-w-0">
-                      <div className="mb-1 flex flex-wrap items-center gap-2">
-                        <span className="font-semibold text-foreground">{item.ownerName}</span>
-                        <span className="rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-                          {item.ownerType === "teacher" ? t("typeTeacher") : t("typeClass")}
-                        </span>
+              {acceptedClasses.map((item) => {
+                const stats = classStatsFor(item);
+                return (
+                  <div
+                    key={item.enrollmentId}
+                    className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4.5 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <OwnerAvatar
+                        ownerType={item.ownerType}
+                        ownerId={item.ownerId}
+                        photoUrl={getPhotoUrl(item.ownerType, item.ownerId)}
+                        hasQuickView={
+                          item.ownerType === "teacher"
+                            ? teacherProfileById.has(item.ownerId)
+                            : instituteProfileById.has(item.ownerId)
+                        }
+                        onOpenQuickView={() => openQuickView(item.ownerType, item.ownerId)}
+                      />
+                      <div className="min-w-0">
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-foreground">{item.ownerName}</span>
+                          <span className="rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                            {item.ownerType === "teacher" ? t("typeTeacher") : t("typeClass")}
+                          </span>
+                          {stats.isLiveNow && (
+                            <span className="flex items-center gap-1.5 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive">
+                              <span className="size-1.5 animate-pulse rounded-full bg-destructive" />
+                              {t("liveNowBadge")}
+                            </span>
+                          )}
+                          {stats.hasNewActivity && (
+                            <span className="flex items-center gap-1.5 rounded-full bg-cta/10 px-2 py-0.5 text-[11px] font-semibold text-cta">
+                              <span className="size-1.5 rounded-full bg-cta" />
+                              {t("newActivityBadge")}
+                            </span>
+                          )}
+                          {stats.dueSoonCount > 0 && (
+                            <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-foreground">
+                              {t("dueSoonBadge", { count: stats.dueSoonCount })}
+                            </span>
+                          )}
+                        </div>
+                        {item.batchTitle && <div className="text-sm text-muted-foreground">{item.batchTitle}</div>}
+                        {item.scheduleNote && <div className="mt-1 text-xs text-muted-foreground">{item.scheduleNote}</div>}
                       </div>
-                      {item.batchTitle && <div className="text-sm text-muted-foreground">{item.batchTitle}</div>}
-                      {item.scheduleNote && <div className="mt-1 text-xs text-muted-foreground">{item.scheduleNote}</div>}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-4">
+                      <Button size="sm" onClick={() => setOpenClassId(item.enrollmentId)}>
+                        {t("openClass")}
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-4">
-                    <Button size="sm" onClick={() => setOpenClassId(item.enrollmentId)}>
-                      {t("openClass")}
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 

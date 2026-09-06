@@ -71,7 +71,14 @@ export function LiveClassesTab({
   const [markedId, setMarkedId] = useState<string | null>(null);
   const [dismissedReminderIds, setDismissedReminderIds] = useState<Set<string>>(new Set());
   const { activeCall, startCall, restoreCall } = useLiveCall();
-  const sourceRows = scope === "history" ? classes.filter((row) => classState(row, now) === "ended") : classes;
+  // Same split Gehan asked for on missed assignments/homework: once a
+  // session has ended, it's a record, not something to act on here — it
+  // belongs only in the flat Coursework -> Live Classes tab (scope="history"
+  // above), not lingering inside this specific class's own workspace.
+  const sourceRows =
+    scope === "history"
+      ? classes.filter((row) => classState(row, now) === "ended")
+      : classes.filter((row) => classState(row, now) !== "ended");
   const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(sourceRows.length);
   const pagedClasses = sourceRows.slice(offset, offset + pageSize);
 

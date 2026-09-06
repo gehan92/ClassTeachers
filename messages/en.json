@@ -425,6 +425,23 @@
     "responseStatusAccepted": "The student accepted your response",
     "responseStatusDeclined": "The student declined your response"
   },
+  "scheduleSlotEditor": {
+    "label": "Weekly schedule",
+    "empty": "No weekly time slots set yet — add one so students can see this class on their timetable.",
+    "days": {
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday"
+    },
+    "startTime": "Start time",
+    "endTime": "End time",
+    "removeSlot": "Remove this slot",
+    "addSlot": "Add a time slot"
+  },
   "comingSoon": {
     "badge": "Coming soon",
     "backHome": "Back to home"
@@ -1491,6 +1508,7 @@
       "profile": "Profile",
       "settings": "Settings",
       "requests": "Requests",
+      "calendar": "Calendar",
       "wantedAds": "Post an Ad",
       "wantedAdResponses": "Responses",
       "inquiries": "Messages"
@@ -1585,6 +1603,21 @@
       "declineReasonLabel": "Reason given",
       "cancelRequest": "Cancel request",
       "cancelling": "Cancelling…"
+    },
+    "calendar": {
+      "title": "Calendar",
+      "subtitle": "Your weekly class timetable, plus what's coming up next.",
+      "timetableHeading": "Weekly timetable",
+      "timetableEmpty": "No classes have a weekly schedule set yet.",
+      "noClasses": "—",
+      "agendaHeading": "Coming up",
+      "agendaEmpty": "Nothing due or scheduled in the next two weeks.",
+      "itemType": {
+        "live": "Live class",
+        "exam": "Exam",
+        "assignment": "Assignment",
+        "homework": "Homework"
+      }
     },
     "live": {
       "title": "Live Classes",

@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
-import { createBatch, updateBatch, deleteBatch } from "@/lib/dashboard/batches-actions";
+import { createBatch, updateBatch, deleteBatch, setBatchScheduleSlots } from "@/lib/dashboard/batches-actions";
+import { ScheduleSlotEditor, type ScheduleSlotDraft } from "@/components/dashboard/schedule-slot-editor";
 import { GRADE_BAND_SELECT_VALUES, OPEN_GRADE_VALUE } from "@/lib/grade-band-options";
 import type { GradeBand } from "@/types/grade-band";
 
@@ -58,6 +59,10 @@ export type InstituteBatchRow = {
    * optional cap; null means unlimited. */
   isOpenEnrollment: boolean;
   capacity: number | null;
+  /** This class's weekly recurring meeting slots (0118) — powers the
+   * student-side Calendar tab's timetable grid. Empty until an institute
+   * sets one up via the edit form below. */
+  scheduleSlots: ScheduleSlotDraft[];
 };
 
 export type InstituteRosterTeacherOption = {
@@ -106,6 +111,7 @@ export function BatchesTab({
   const [editSchedule, setEditSchedule] = useState("");
   const [editIsOpenEnrollment, setEditIsOpenEnrollment] = useState(false);
   const [editCapacity, setEditCapacity] = useState("");
+  const [editScheduleSlots, setEditScheduleSlots] = useState<ScheduleSlotDraft[]>([]);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -170,6 +176,7 @@ export function BatchesTab({
     setEditSchedule(batch.scheduleNote ?? "");
     setEditIsOpenEnrollment(batch.isOpenEnrollment);
     setEditCapacity(batch.capacity !== null ? String(batch.capacity) : "");
+    setEditScheduleSlots(batch.scheduleSlots);
     setEditError(null);
   }
 
@@ -197,6 +204,11 @@ export function BatchesTab({
     setEditSaving(false);
     if (result.error) {
       setEditError(result.error);
+      return;
+    }
+    const scheduleResult = await setBatchScheduleSlots(batchId, "class", editScheduleSlots);
+    if (scheduleResult.error) {
+      setEditError(scheduleResult.error);
       return;
     }
     setEditingBatchId(null);
@@ -596,6 +608,11 @@ export function BatchesTab({
                                 />
                               )}
                             </div>
+                            <ScheduleSlotEditor
+                              idPrefix={`edit-schedule-slots-${batch.id}`}
+                              slots={editScheduleSlots}
+                              onChange={setEditScheduleSlots}
+                            />
                           </div>
                           <div className="mt-3 flex flex-wrap items-center gap-2.5">
                             <Button size="sm" onClick={() => handleSaveEdit(batch.id)} disabled={editSaving}>

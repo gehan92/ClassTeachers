@@ -425,6 +425,23 @@
     "responseStatusAccepted": "ශිෂ්‍යයා ඔබේ පිළිතුර පිළිගත්තා",
     "responseStatusDeclined": "ශිෂ්‍යයා ඔබේ පිළිතුර ප්‍රතික්ෂේප කළා"
   },
+  "scheduleSlotEditor": {
+    "label": "සතිපතා කාලසටහන",
+    "empty": "තවම සතිපතා වේලාවන් සකසා නැත — ශිෂ්‍යයන්ට මෙම පන්තිය ඔවුන්ගේ කාලසටහනේ පෙනෙන ලෙස එකක් එකතු කරන්න.",
+    "days": {
+      "sunday": "ඉරිදා",
+      "monday": "සඳුදා",
+      "tuesday": "අඟහරුවාදා",
+      "wednesday": "බදාදා",
+      "thursday": "බ්‍රහස්පතින්දා",
+      "friday": "සිකුරාදා",
+      "saturday": "සෙනසුරාදා"
+    },
+    "startTime": "ආරම්භ වේලාව",
+    "endTime": "අවසන් වේලාව",
+    "removeSlot": "මෙම වේලාව ඉවත් කරන්න",
+    "addSlot": "වේලාවක් එකතු කරන්න"
+  },
   "comingSoon": {
     "badge": "ඉක්මනින්",
     "backHome": "මුල් පිටුවට"
@@ -1491,6 +1508,7 @@
       "homework": "ගෙදර වැඩ",
       "settings": "සැකසුම්",
       "requests": "ඉල්ලීම්",
+      "calendar": "දින දර්ශනය",
       "wantedAds": "දැන්වීමක් පළ කරන්න",
       "wantedAdResponses": "පිළිතුරු",
       "inquiries": "පණිවිඩ"
@@ -1585,6 +1603,21 @@
       "declineReasonLabel": "දෙන ලද හේතුව",
       "cancelRequest": "ඉල්ලීම අවලංගු කරන්න",
       "cancelling": "අවලංගු කරමින්…"
+    },
+    "calendar": {
+      "title": "දින දර්ශනය",
+      "subtitle": "ඔබේ සතිපතා පන්ති කාලසටහන, සහ ඉදිරියේදී එළඹෙන දේ.",
+      "timetableHeading": "සතිපතා කාලසටහන",
+      "timetableEmpty": "තවම කිසිදු පන්තියකට සතිපතා කාලසටහනක් සකසා නැත.",
+      "noClasses": "—",
+      "agendaHeading": "ඉදිරියේදී එළඹෙන දේ",
+      "agendaEmpty": "ඉදිරි සති දෙක තුළ නියමිත හෝ සැලසුම් කළ කිසිවක් නැත.",
+      "itemType": {
+        "live": "සජීවී පන්තිය",
+        "exam": "විභාගය",
+        "assignment": "පැවරුම",
+        "homework": "ගෙදර වැඩ"
+      }
     },
     "live": {
       "title": "සජීවී පන්ති",

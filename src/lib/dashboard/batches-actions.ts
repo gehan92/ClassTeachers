@@ -485,6 +485,83 @@ export async function cancelJoinRequest(enrollmentId: string): Promise<ActionRes
  * which is always batch-scoped. The institute assigns a batch later, if it
  * wants to, when accepting (see respondToJoinRequest's batchId param).
  */
+const scheduleSlotSchema = z.object({
+  dayOfWeek: z.number().int().min(0).max(6),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/),
+});
+
+/**
+ * Replace-all, not a diff — the editor always sends its whole current list,
+ * same "delete then re-insert the full set" shape as this app already uses
+ * for exam/live-class participants when a teacher edits an existing list.
+ * Nothing else references a schedule slot by id, so there's no downstream
+ * data that a full replace could orphan.
+ */
+export async function setBatchScheduleSlots(
+  batchId: string,
+  ownerType: "teacher" | "class",
+  slots: { dayOfWeek: number; startTime: string; endTime: string }[],
+): Promise<ActionResult> {
+  if (!batchId) {
+    return { error: "Invalid class." };
+  }
+  const parsed = z.array(scheduleSlotSchema).safeParse(slots);
+  if (!parsed.success) {
+    return { error: "Please check the schedule times and try again." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  let ownerId = user.id;
+  if (ownerType === "class") {
+    const { data: classProfile } = await supabase
+      .from("class_profiles")
+      .select("id")
+      .eq("owner_id", user.id)
+      .maybeSingle();
+    if (!classProfile) {
+      return { error: "No institute profile found for this account." };
+    }
+    ownerId = classProfile.id;
+  }
+
+  const { error: deleteError } = await supabase
+    .from("batch_schedule_slots")
+    .delete()
+    .eq("batch_id", batchId)
+    .eq("owner_type", ownerType)
+    .eq("owner_id", ownerId);
+  if (deleteError) {
+    return { error: "Couldn't save the weekly schedule. Please try again." };
+  }
+
+  if (parsed.data.length === 0) {
+    return {};
+  }
+
+  const { error: insertError } = await supabase.from("batch_schedule_slots").insert(
+    parsed.data.map((slot) => ({
+      batch_id: batchId,
+      owner_type: ownerType,
+      owner_id: ownerId,
+      day_of_week: slot.dayOfWeek,
+      start_time: slot.startTime,
+      end_time: slot.endTime,
+    })),
+  );
+  if (insertError) {
+    return { error: "Couldn't save the weekly schedule. Please try again." };
+  }
+  return {};
+}
+
 export async function requestToJoinClass(classId: string): Promise<ActionResult> {
   if (!classId) {
     return { error: "Invalid institute." };

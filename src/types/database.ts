@@ -507,6 +507,40 @@ export type Database = {
         Relationships: [];
       };
 
+      batch_schedule_slots: {
+        Row: {
+          id: string;
+          batch_id: string;
+          owner_type: OwnerType;
+          owner_id: string;
+          day_of_week: number;
+          start_time: string;
+          end_time: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          batch_id: string;
+          owner_type: OwnerType;
+          owner_id: string;
+          day_of_week: number;
+          start_time: string;
+          end_time: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          batch_id?: string;
+          owner_type?: OwnerType;
+          owner_id?: string;
+          day_of_week?: number;
+          start_time?: string;
+          end_time?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+
       question_bank_items: {
         Row: {
           id: string;

@@ -15,6 +15,8 @@ import { WantedAdsTab } from "@/components/dashboard/student/wanted-ads-tab";
 import { WantedAdResponsesTab } from "@/components/dashboard/student/wanted-ad-responses-tab";
 import { JoinRequestsTab } from "@/components/dashboard/student/join-requests-tab";
 import type { JoinRequestRow } from "@/components/dashboard/student/join-requests-tab";
+import { CalendarTab } from "@/components/dashboard/student/calendar-tab";
+import type { StudentScheduleSlotRow } from "@/components/dashboard/student/calendar-tab";
 import { SentInquiriesTab } from "@/components/dashboard/student/sent-inquiries-tab";
 import type { SentInquiryRow, SentInquiryMessage } from "@/components/dashboard/student/sent-inquiries-tab";
 import { ProgressTab } from "@/components/dashboard/student/progress-tab";
@@ -118,6 +120,7 @@ export default async function StudentDashboardPage({
     { data: examRows },
     { data: submissionRows },
     { data: allBatches },
+    { data: scheduleSlotRows },
     { data: assignmentRows },
     { data: assignmentSubmissionRows },
     { data: myReviewRows },
@@ -152,6 +155,9 @@ export default async function StudentDashboardPage({
       .from("batches")
       .select("id, owner_type, owner_id, title, mode, location, schedule_note, course_code, is_open_enrollment")
       .order("created_at", { ascending: false }),
+    // No explicit owner filter — RLS (is_owner/is_enrolled/is_admin, 0118)
+    // already scopes this to slots for batches this student is enrolled in.
+    supabase.from("batch_schedule_slots").select("id, batch_id, day_of_week, start_time, end_time"),
     // No explicit owner filter here — RLS (is_enrolled, 0047) already
     // scopes which assignment rows come back.
     supabase
@@ -674,6 +680,28 @@ export default async function StudentDashboardPage({
     });
   const pendingRequestsCount = joinRequests.filter((r) => r.status === "pending").length;
 
+  // Weekly timetable grid (Calendar tab) — only this student's own accepted,
+  // batch-scoped classes get a row here; a general (batch-less) institute
+  // join has nothing to show since a schedule is always set per-batch.
+  const acceptedClassByBatchId = new Map(
+    myClasses.filter((c) => c.status === "accepted" && c.batchId).map((c) => [c.batchId as string, c]),
+  );
+  const scheduleSlots: StudentScheduleSlotRow[] = (scheduleSlotRows ?? [])
+    .filter((s) => acceptedClassByBatchId.has(s.batch_id))
+    .map((s) => {
+      const cls = acceptedClassByBatchId.get(s.batch_id)!;
+      return {
+        id: s.id,
+        batchId: s.batch_id,
+        dayOfWeek: s.day_of_week,
+        startTime: s.start_time.slice(0, 5),
+        endTime: s.end_time.slice(0, 5),
+        title: cls.batchTitle ?? cls.ownerName,
+        ownerName: cls.ownerName,
+      };
+    })
+    .sort((a, b) => a.dayOfWeek - b.dayOfWeek || a.startTime.localeCompare(b.startTime));
+
   const availableBatches: AvailableBatchRow[] = (allBatches ?? [])
     .filter((b) =>
       b.owner_type === "teacher"
@@ -734,6 +762,7 @@ export default async function StudentDashboardPage({
       batchId: e.batch_id,
       batchTitle: e.batch_id ? (batchById.get(e.batch_id)?.title ?? null) : null,
       durationMinutes: e.duration_minutes,
+      scheduledAtIso: e.scheduled_at,
       scheduledLabel: e.scheduled_at ? scheduleFormatter.format(new Date(e.scheduled_at)) : "—",
       isOpen: !e.scheduled_at || !isFuture(e.scheduled_at),
       questions: e.question_ids
@@ -961,6 +990,7 @@ export default async function StudentDashboardPage({
           label: t("groupClasses"),
           items: [
             { key: "classes", label: t("tabs.classes"), hasNew: hasNewLive },
+            { key: "calendar", label: t("tabs.calendar") },
             { key: "requests", label: t("tabs.requests"), count: pendingRequestsCount, hasNew: hasNewJoinDecline },
             { key: "reviews", label: t("tabs.reviews") },
           ],
@@ -1051,6 +1081,15 @@ export default async function StudentDashboardPage({
           />
         ),
         requests: <JoinRequestsTab requests={joinRequests} />,
+        calendar: (
+          <CalendarTab
+            scheduleSlots={scheduleSlots}
+            liveClasses={liveClasses}
+            exams={exams}
+            assignments={assignments}
+            homework={homework}
+          />
+        ),
         wantedAds: (
           <WantedAdsTab wantedAds={wantedAds} subjectOptions={subjectOptions} sampleAds={sampleWantedAds} />
         ),

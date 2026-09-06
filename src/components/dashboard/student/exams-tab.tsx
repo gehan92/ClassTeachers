@@ -61,6 +61,7 @@ export type StudentExamRow = {
   batchId: string | null;
   batchTitle: string | null;
   durationMinutes: number;
+  scheduledAtIso: string | null;
   scheduledLabel: string;
   isOpen: boolean;
   questions: StudentExamQuestion[];

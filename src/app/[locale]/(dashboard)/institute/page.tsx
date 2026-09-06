@@ -28,6 +28,7 @@ import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 import { createDateFormatter } from "@/lib/format-date";
 import type { TeachersAtGlance } from "@/types/dashboard-institute";
 import type { InstituteBatchRow, InstituteBatchRosterEntry } from "@/components/dashboard/institute/batches-tab";
+import type { ScheduleSlotDraft } from "@/components/dashboard/schedule-slot-editor";
 import type { ReferralRow } from "@/components/dashboard/refer-earn-panel";
 
 export default async function InstituteDashboardPage({
@@ -122,6 +123,7 @@ export default async function InstituteDashboardPage({
     { data: wantedAdRows },
     { data: myReviewRows },
     { data: batchRows },
+    { data: scheduleSlotRows },
     { data: classAdRows },
   ] = await Promise.all([
     instituteId
@@ -214,6 +216,15 @@ export default async function InstituteDashboardPage({
             is_open_enrollment: boolean;
             capacity: number | null;
           }[],
+        }),
+    instituteId
+      ? supabase
+          .from("batch_schedule_slots")
+          .select("batch_id, day_of_week, start_time, end_time")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+      : Promise.resolve({
+          data: [] as { batch_id: string; day_of_week: number; start_time: string; end_time: string }[],
         }),
     // Class-wise ads (0103) — one row per batch that already has a
     // search_results ad; batches with none just render "no ad yet" below.
@@ -511,6 +522,13 @@ export default async function InstituteDashboardPage({
   const activeAdBatchIds = new Set(
     (classAdRows ?? []).filter((ad) => ad.status === "active" && ad.batch_id).map((ad) => ad.batch_id as string),
   );
+  const scheduleSlotsByBatchId = new Map<string, ScheduleSlotDraft[]>();
+  for (const s of scheduleSlotRows ?? []) {
+    const list = scheduleSlotsByBatchId.get(s.batch_id) ?? [];
+    list.push({ dayOfWeek: s.day_of_week, startTime: s.start_time.slice(0, 5), endTime: s.end_time.slice(0, 5) });
+    scheduleSlotsByBatchId.set(s.batch_id, list);
+  }
+
   const batches: InstituteBatchRow[] = (batchRows ?? []).map((b) => ({
     id: b.id,
     title: b.title,
@@ -527,6 +545,7 @@ export default async function InstituteDashboardPage({
     hasActiveAd: activeAdBatchIds.has(b.id),
     isOpenEnrollment: b.is_open_enrollment,
     capacity: b.capacity,
+    scheduleSlots: scheduleSlotsByBatchId.get(b.id) ?? [],
   }));
 
   // Class-wise ads (0103, multiple per class since 0104) — mirrors the

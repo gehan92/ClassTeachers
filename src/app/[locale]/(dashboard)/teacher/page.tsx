@@ -5,6 +5,7 @@ import { OverviewTab } from "@/components/dashboard/teacher/overview-tab";
 import { ProfileTab } from "@/components/dashboard/teacher/profile-tab";
 import { NotesTab } from "@/components/dashboard/teacher/notes-tab";
 import { ClassesTab } from "@/components/dashboard/teacher/classes-tab";
+import type { ScheduleSlotDraft } from "@/components/dashboard/schedule-slot-editor";
 import { QuestionBankTab } from "@/components/dashboard/teacher/question-bank-tab";
 import { ExamsTab } from "@/components/dashboard/teacher/exams-tab";
 import { AssignmentsTab } from "@/components/dashboard/teacher/assignments-tab";
@@ -129,6 +130,7 @@ export default async function TeacherDashboardPage({
     { data: wantedAdRows },
     { data: myReviewRows },
     { data: batchRows },
+    { data: scheduleSlotRows },
     { data: enrollmentRows },
     { data: noteRows },
     { data: subjectLinkRows },
@@ -186,6 +188,11 @@ export default async function TeacherDashboardPage({
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("batch_schedule_slots")
+      .select("batch_id, day_of_week, start_time, end_time")
+      .eq("owner_type", "teacher")
+      .eq("owner_id", userId),
     supabase
       .from("enrollments")
       .select("id, student_id, batch_id, joined_at, status")
@@ -481,6 +488,13 @@ export default async function TeacherDashboardPage({
     (batchAdRows ?? []).filter((a) => a.batch_id && a.status === "active").map((a) => a.batch_id as string),
   );
 
+  const scheduleSlotsByBatchId = new Map<string, ScheduleSlotDraft[]>();
+  for (const s of scheduleSlotRows ?? []) {
+    const list = scheduleSlotsByBatchId.get(s.batch_id) ?? [];
+    list.push({ dayOfWeek: s.day_of_week, startTime: s.start_time.slice(0, 5), endTime: s.end_time.slice(0, 5) });
+    scheduleSlotsByBatchId.set(s.batch_id, list);
+  }
+
   const batches: TeacherBatchRow[] = (batchRows ?? []).map((b) => ({
     id: b.id,
     title: b.title,
@@ -493,6 +507,7 @@ export default async function TeacherDashboardPage({
     hasActiveAd: activeAdBatchIds.has(b.id),
     isOpenEnrollment: b.is_open_enrollment,
     capacity: b.capacity,
+    scheduleSlots: scheduleSlotsByBatchId.get(b.id) ?? [],
   }));
 
   // Institute Blueprint step 3b — every assigned institute batch, labeled

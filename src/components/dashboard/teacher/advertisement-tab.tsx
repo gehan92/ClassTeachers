@@ -28,6 +28,7 @@ const textareaClass =
 export type TeacherAdBatchRow = {
   id: string;
   title: string;
+  courseCode: string | null;
   subjectId: string | null;
   subjectName: string | null;
   hourlyRate: number | null;
@@ -227,7 +228,10 @@ function BatchAdCard({
     <div className="rounded-lg border border-border bg-white p-5">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h4 className="text-base font-medium text-foreground">{batch.title}</h4>
+          <h4 className="text-base font-medium text-foreground">
+            {batch.courseCode && <span className="text-muted-foreground">{batch.courseCode} · </span>}
+            {batch.title}
+          </h4>
           <p className="text-sm text-muted-foreground">
             {batch.subjectName ? t("batchSubject", { subject: batch.subjectName }) : t("noSubjectYet")}
           </p>
@@ -351,7 +355,9 @@ function BatchAdCard({
             emptyLabel={t("previewEmpty")}
             title={title}
             content={content}
-            meta={subjectOptions.find((s) => s.id === subjectId) ? [subjectOptions.find((s) => s.id === subjectId)!.name] : []}
+            meta={[batch.courseCode, subjectOptions.find((s) => s.id === subjectId)?.name].filter(
+              (v): v is string => Boolean(v),
+            )}
           />
           <div className="flex items-center gap-3">
             <Button type="button" size="sm" onClick={handleSave} disabled={saving || subjectOptions.length === 0}>

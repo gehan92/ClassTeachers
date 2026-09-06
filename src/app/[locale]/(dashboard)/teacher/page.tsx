@@ -542,6 +542,7 @@ export default async function TeacherDashboardPage({
     return {
       id: b.id,
       title: b.title,
+      courseCode: b.course_code,
       subjectId: b.subject_id,
       subjectName: b.subject_id ? (subjectNameById.get(b.subject_id) ?? null) : null,
       hourlyRate: b.hourly_rate,

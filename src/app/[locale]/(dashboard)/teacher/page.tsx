@@ -260,12 +260,7 @@ export default async function TeacherDashboardPage({
     // manages (0101), the piece get_roster_student_info (0032) never
     // covered since it only opens up for the institute's own owner.
     supabase.rpc("get_managed_batch_student_info"),
-    supabase
-      .from("notifications")
-      .select("id, type, data, tab, read_at, created_at")
-      .eq("recipient_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(30),
+    supabase.rpc("list_my_notifications"),
   ]);
 
   const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({

@@ -1791,6 +1791,17 @@ export type Database = {
           created_at: string;
         }[];
       };
+      list_my_notifications: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          type: string;
+          data: Json;
+          tab: string | null;
+          read_at: string | null;
+          created_at: string;
+        }[];
+      };
       get_my_question_answers: {
         Args: Record<string, never>;
         Returns: { id: string; correct_option_id: string | null; correct_option_ids: string[]; sample_answer: string | null }[];

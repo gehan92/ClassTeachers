@@ -2,14 +2,19 @@
 
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { markNotificationRead, markAllNotificationsRead } from "@/lib/dashboard/notifications-actions";
+import {
+  markNotificationRead,
+  markAllNotificationsRead,
+  dismissNotification,
+  clearAllNotifications,
+} from "@/lib/dashboard/notifications-actions";
 import { cn } from "@/lib/utils";
 
 export type NotificationRow = {
@@ -107,8 +112,14 @@ export function NotificationBell({
   const locale = useLocale();
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [markingAll, setMarkingAll] = useState(false);
+  // Optimistic, same idea as readIds — a notification's actual deletion
+  // only shows up on the next full page load (this list isn't refetched
+  // live), so clearing it has to hide it locally right away too.
+  const [clearedIds, setClearedIds] = useState<Set<string>>(new Set());
+  const [clearingAll, setClearingAll] = useState(false);
 
-  const unreadCount = notifications.filter((n) => !n.readAt && !readIds.has(n.id)).length;
+  const visible = notifications.filter((n) => !clearedIds.has(n.id));
+  const unreadCount = visible.filter((n) => !n.readAt && !readIds.has(n.id)).length;
   const dateFormatter = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
   function handleClickItem(n: NotificationRow) {
@@ -124,6 +135,21 @@ export function NotificationBell({
     setReadIds(new Set(notifications.map((n) => n.id)));
     await markAllNotificationsRead();
     setMarkingAll(false);
+  }
+
+  // Stops the click from also bubbling into the item's own onClick (which
+  // would otherwise navigate away right as the item disappears).
+  function handleDismiss(e: React.MouseEvent, id: string) {
+    e.stopPropagation();
+    setClearedIds((prev) => new Set(prev).add(id));
+    dismissNotification(id);
+  }
+
+  async function handleClearAll() {
+    setClearingAll(true);
+    setClearedIds(new Set(notifications.map((n) => n.id)));
+    await clearAllNotifications();
+    setClearingAll(false);
   }
 
   return (
@@ -150,22 +176,34 @@ export function NotificationBell({
       <DropdownMenuContent align="end" className="w-80 max-w-[90vw] p-0">
         <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5">
           <span className="text-sm font-semibold text-foreground">{t("heading")}</span>
-          {unreadCount > 0 && (
-            <button
-              type="button"
-              onClick={handleMarkAllRead}
-              disabled={markingAll}
-              className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
-            >
-              {t("markAllRead")}
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={handleMarkAllRead}
+                disabled={markingAll}
+                className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+              >
+                {t("markAllRead")}
+              </button>
+            )}
+            {visible.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearAll}
+                disabled={clearingAll}
+                className="text-xs font-medium text-muted-foreground hover:underline disabled:opacity-50"
+              >
+                {t("clearAll")}
+              </button>
+            )}
+          </div>
         </div>
-        {notifications.length === 0 ? (
+        {visible.length === 0 ? (
           <p className="px-3 py-6 text-center text-sm text-muted-foreground">{t("empty")}</p>
         ) : (
           <div className="max-h-96 overflow-y-auto py-1">
-            {notifications.map((n, i) => {
+            {visible.map((n, i) => {
               const isUnread = !n.readAt && !readIds.has(n.id);
               return (
                 <DropdownMenuItem
@@ -173,7 +211,7 @@ export function NotificationBell({
                   onClick={() => handleClickItem(n)}
                   style={{ animationDelay: `${Math.min(i, 8) * 25}ms` }}
                   className={cn(
-                    "flex-col items-start gap-0.5 whitespace-normal rounded-md px-3 py-2 animate-in fade-in-0 slide-in-from-top-1 fill-mode-both duration-200",
+                    "group/notification flex-col items-start gap-0.5 whitespace-normal rounded-md px-3 py-2 animate-in fade-in-0 slide-in-from-top-1 fill-mode-both duration-200",
                     isUnread && "bg-primary/5",
                   )}
                 >
@@ -182,6 +220,14 @@ export function NotificationBell({
                     <span className={cn("flex-1 text-[13px] leading-snug text-foreground", !isUnread && "text-muted-foreground")}>
                       {messageFor(t, n)}
                     </span>
+                    <button
+                      type="button"
+                      aria-label={t("clear")}
+                      onClick={(e) => handleDismiss(e, n.id)}
+                      className="shrink-0 rounded p-0.5 text-muted-foreground opacity-0 group-hover/notification:opacity-100 hover:bg-muted hover:text-foreground"
+                    >
+                      <X className="size-3.5" />
+                    </button>
                   </div>
                   <span className="pl-3.5 font-mono text-[11px] text-muted-foreground">
                     {dateFormatter.format(new Date(n.createdAt))}

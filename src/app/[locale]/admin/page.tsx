@@ -139,12 +139,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
       .from("referrals")
       .select("id, referrer_id, referred_id, reward_status, created_at")
       .order("created_at", { ascending: false }),
-    supabase
-      .from("notifications")
-      .select("id, type, data, tab, read_at, created_at")
-      .eq("recipient_id", user!.id)
-      .order("created_at", { ascending: false })
-      .limit(30),
+    supabase.rpc("list_my_notifications"),
   ]);
 
   const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({

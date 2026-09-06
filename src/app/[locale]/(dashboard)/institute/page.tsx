@@ -60,12 +60,7 @@ export default async function InstituteDashboardPage({
     // time it's asked for (referrals, 0089), nothing to backfill up front.
     supabase.rpc("ensure_referral_code"),
     supabase.rpc("list_my_referrals"),
-    supabase
-      .from("notifications")
-      .select("id, type, data, tab, read_at, created_at")
-      .eq("recipient_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(30),
+    supabase.rpc("list_my_notifications"),
   ]);
 
   const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({

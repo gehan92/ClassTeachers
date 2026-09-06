@@ -199,12 +199,7 @@ export default async function StudentDashboardPage({
       .select("id, live_class_id, status, marked_at")
       .eq("student_id", userId)
       .order("marked_at", { ascending: false }),
-    supabase
-      .from("notifications")
-      .select("id, type, data, tab, read_at, created_at")
-      .eq("recipient_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(30),
+    supabase.rpc("list_my_notifications"),
   ]);
 
   const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({

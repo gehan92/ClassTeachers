@@ -65,6 +65,8 @@
   "notifications": {
     "heading": "දැනුම්දීම්",
     "markAllRead": "සියල්ල කියවූ ලෙස සලකුණු කරන්න",
+    "clearAll": "සියල්ල හිස් කරන්න",
+    "clear": "හිස් කරන්න",
     "empty": "තවම දැනුම්දීම් නැත.",
     "types": {
       "join_request_received": "{studentName} {batchTitle} ට එකතු වීමට ඉල්ලීමක් කර ඇත.",

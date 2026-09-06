@@ -65,6 +65,8 @@
   "notifications": {
     "heading": "Notifications",
     "markAllRead": "Mark all as read",
+    "clearAll": "Clear all",
+    "clear": "Clear",
     "empty": "No notifications yet.",
     "types": {
       "join_request_received": "{studentName} requested to join {batchTitle}.",

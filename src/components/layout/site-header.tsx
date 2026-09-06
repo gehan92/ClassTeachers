@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 // promoted to the top nav as "Post your ad" since it's a primary
 // business-facing CTA.
 const searchItems = [
+  { href: { pathname: "/teachers", query: { category: "all" } }, key: "searchAll" },
   { href: { pathname: "/teachers", query: { category: "teacher" } }, key: "searchTeachers" },
   { href: { pathname: "/teachers", query: { category: "class" } }, key: "searchInstitutes" },
   { href: { pathname: "/teachers", query: { category: "campus" } }, key: "searchCampusLecturers" },

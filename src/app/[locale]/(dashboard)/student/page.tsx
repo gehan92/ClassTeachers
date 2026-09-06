@@ -215,7 +215,12 @@ export default async function StudentDashboardPage({
   const hasNewNotes = hasUnreadOfType("new_note");
   const hasNewExams = hasUnreadOfType("new_exam");
   const hasNewAssignments = hasUnreadOfType("new_assignment");
-  const hasNewLive = hasUnreadOfType("new_live_class");
+  // All three live-class notifications (scheduled/started/ended) now deep-link
+  // into My Classes -> Open class -> Live Classes, never the flat history tab
+  // (see live-classes-actions.ts) -- so this dot belongs on "classes", not
+  // "live", or it'd point at a tab the click doesn't actually land on.
+  const hasNewLive =
+    hasUnreadOfType("new_live_class") || hasUnreadOfType("live_class_started") || hasUnreadOfType("live_class_ended");
 
   const fullName = profile?.full_name ?? user!.email ?? "Student";
   const userInitial = fullName.charAt(0).toUpperCase();
@@ -918,7 +923,7 @@ export default async function StudentDashboardPage({
           key: "classes",
           label: t("groupClasses"),
           items: [
-            { key: "classes", label: t("tabs.classes") },
+            { key: "classes", label: t("tabs.classes"), hasNew: hasNewLive },
             { key: "reviews", label: t("tabs.reviews") },
           ],
         },
@@ -926,7 +931,7 @@ export default async function StudentDashboardPage({
           key: "content",
           label: t("groupContent"),
           items: [
-            { key: "live", label: t("tabs.live"), hasNew: hasNewLive },
+            { key: "live", label: t("tabs.live") },
             { key: "notes", label: t("tabs.notes"), hasNew: hasNewNotes },
             { key: "shortNotes", label: t("tabs.shortNotes") },
             { key: "pastPapers", label: t("tabs.pastPapers") },

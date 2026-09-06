@@ -18,6 +18,7 @@ import { usePagination } from "@/lib/hooks/use-pagination";
 import { groupByClass } from "@/lib/dashboard/group-by-class";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from "@/components/ui/accordion";
 import { markAttendance, dismissLiveClassReminder } from "@/lib/dashboard/live-classes-actions";
+import { classState, type LiveState } from "@/lib/dashboard/live-class-state";
 
 export type StudentLiveClassRow = {
   id: string;
@@ -43,24 +44,6 @@ export type StudentLiveClassRow = {
    * a class that's never actually been started via the app yet. */
   status: "scheduled" | "live" | "completed" | "cancelled";
 };
-
-export type LiveState = "not_open" | "starting_soon" | "live" | "ended";
-
-export function classState(row: StudentLiveClassRow, nowMs: number): LiveState {
-  const start = new Date(row.scheduledAtIso).getTime();
-  const end = start + row.durationMinutes * 60 * 1000;
-  if (row.status === "completed" || row.status === "cancelled") return "ended";
-  if (row.status === "live") {
-    // Trust the host's own "still going"/"I ended it" signal first; the
-    // time check here is only a safety net for a session that crashed or
-    // closed without cleanly leaving, so it doesn't read as live forever.
-    return nowMs > end ? "ended" : "live";
-  }
-  if (nowMs >= start && nowMs <= end) return "live";
-  if (nowMs > end) return "ended";
-  if (start - nowMs <= 15 * 60 * 1000) return "starting_soon";
-  return "not_open";
-}
 
 export function LiveClassesTab({
   classes,

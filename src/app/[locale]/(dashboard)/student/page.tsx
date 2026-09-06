@@ -29,6 +29,7 @@ import type { WantedAdRow, WantedAdResponseRow } from "@/components/dashboard/st
 import type { PublicWantedAd } from "@/components/features/wanted-ads-board";
 import { StudentOnboardingWizard } from "@/components/onboarding/student-onboarding-wizard";
 import type { InstituteTeacherCard, InstituteQuickView } from "@/types/class-profile";
+import { classState } from "@/lib/dashboard/live-class-state";
 
 type RawQuestionOption = { id: string; text: string; imagePath?: string };
 type RawLiveClassRow = {
@@ -44,6 +45,10 @@ type RawLiveClassRow = {
 
 function isFuture(iso: string): boolean {
   return new Date(iso).getTime() >= Date.now();
+}
+
+function isEndedLiveClass(lc: StudentLiveClassRow): boolean {
+  return classState(lc, Date.now()) === "ended";
 }
 
 export default async function StudentDashboardPage({
@@ -590,6 +595,11 @@ export default async function StudentDashboardPage({
     attendanceStatus: attendanceStatusByLiveClassId.get(row.id) ?? null,
     status: row.status,
   }));
+  // The flat Live Classes tab (scope="history") only ever lists sessions
+  // that have actually ended — this count should match what that list
+  // actually shows, not every live class on record (which would include
+  // ones still upcoming).
+  const endedLiveClassesCount = liveClasses.filter(isEndedLiveClass).length;
   // A declined enrollment must not count as "already joined" (or the
   // teacher's class becomes permanently unrequestable — see
   // rejoin_after_decline, 0066) and must not unlock batch-scoped content —
@@ -933,10 +943,10 @@ export default async function StudentDashboardPage({
           key: "content",
           label: t("groupContent"),
           items: [
-            { key: "live", label: t("tabs.live") },
-            { key: "notes", label: t("tabs.notes"), hasNew: hasNewNotes },
-            { key: "shortNotes", label: t("tabs.shortNotes") },
-            { key: "pastPapers", label: t("tabs.pastPapers") },
+            { key: "live", label: t("tabs.live"), count: endedLiveClassesCount },
+            { key: "notes", label: t("tabs.notes"), count: studentNotes.length, hasNew: hasNewNotes },
+            { key: "shortNotes", label: t("tabs.shortNotes"), count: studentShortNotes.length },
+            { key: "pastPapers", label: t("tabs.pastPapers"), count: studentPastPapers.length },
             { key: "exams", label: t("tabs.exams"), count: examsDueCount, hasNew: hasNewExams },
             { key: "assignments", label: t("tabs.assignments"), count: assignmentsDueCount, hasNew: hasNewAssignments },
             { key: "homework", label: t("tabs.homework"), count: homeworkDueCount },

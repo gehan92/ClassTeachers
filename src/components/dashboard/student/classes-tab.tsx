@@ -10,7 +10,8 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from "@/co
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { requestToJoin, joinOpenBatch } from "@/lib/dashboard/batches-actions";
-import { LiveClassesTab, classState, type StudentLiveClassRow } from "@/components/dashboard/student/live-classes-tab";
+import { LiveClassesTab, type StudentLiveClassRow } from "@/components/dashboard/student/live-classes-tab";
+import { classState } from "@/lib/dashboard/live-class-state";
 import { useLiveCall } from "@/components/dashboard/live-call-context";
 import { ExamsTab, type StudentExamRow } from "@/components/dashboard/student/exams-tab";
 import { AssignmentsTab, type StudentAssignmentRow } from "@/components/dashboard/student/assignments-tab";

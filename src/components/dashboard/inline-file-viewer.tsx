@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 /**
  * Shared "open inside the app" viewer for PDFs and submitted photos —
@@ -130,6 +131,7 @@ export function VideoCallPanel({
   onApiReady,
   onAudioMuteChange,
   onVideoMuteChange,
+  compact = false,
 }: {
   title: string;
   subtitle?: string;
@@ -144,10 +146,12 @@ export function VideoCallPanel({
   displayName?: string;
   /** Enables the lobby (waiting room) once this client joins, so later joiners need to be admitted by name instead of just having the link. */
   isHost?: boolean;
-  /** Hands the parent a way to mute/unmute mic and camera from outside this component — used for the persistent "camera/mic still on" warning bar shown while minimized, so a viewer who's forgotten about the call can kill the feed without restoring the full view. Fires once per connection (roomUrl change), and with `null` on teardown. */
+  /** Hands the parent a way to mute/unmute mic and camera from outside this component — used by the floating mini-player's own controls, so a viewer can mute without restoring the full view. Fires once per connection (roomUrl change), and with `null` on teardown. */
   onApiReady?: (controls: { toggleAudio: () => void; toggleVideo: () => void } | null) => void;
   onAudioMuteChange?: (muted: boolean) => void;
   onVideoMuteChange?: (muted: boolean) => void;
+  /** Renders as a bare video filling its parent, with this panel's own header hidden (via CSS, not left out of the tree) — used for the floating mini-player, whose parent (dashboard-shell.tsx) draws its own compact header instead. Keeping the header in the tree means the video container below it never changes position, so toggling this never remounts — and never reconnects — the Jitsi iframe. */
+  compact?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
@@ -211,7 +215,7 @@ export function VideoCallPanel({
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between">
+      <div className={cn("mb-3 flex items-center justify-between", compact && "hidden")}>
         <div>
           <div className="text-sm font-semibold text-foreground">{title}</div>
           {subtitle && <div className="text-xs text-muted-foreground">{subtitle}</div>}
@@ -229,7 +233,11 @@ export function VideoCallPanel({
       </div>
       <div
         ref={containerRef}
-        className="mx-auto h-[80vh] max-w-5xl overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]"
+        className={
+          compact
+            ? "aspect-video w-full overflow-hidden bg-black"
+            : "mx-auto h-[80vh] max-w-5xl overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]"
+        }
       />
     </div>
   );

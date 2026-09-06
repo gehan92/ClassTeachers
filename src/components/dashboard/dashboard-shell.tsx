@@ -41,11 +41,12 @@ import {
   LayoutGrid,
   Wallet,
   ShieldCheck,
+  Maximize2,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import {
   DropdownMenu,
@@ -392,11 +393,8 @@ function DashboardShellInner({
   const t = useTranslations("nav");
   const { activeCall, minimizeCall, restoreCall, leaveCall } = useLiveCall();
 
-  // Jitsi defaults to camera+mic on, so a minimized call keeps recording
-  // until the viewer explicitly mutes or leaves — easy to forget once it's
-  // out of sight. These track live mute state so the minimized bar can warn
-  // when something is still capturing, with one-click controls to kill it
-  // without restoring the full call view.
+  // Live mute state, tracked so the floating mini-player's own mic/camera
+  // buttons show the right icon and work without restoring the full call.
   const [micMuted, setMicMuted] = useState(false);
   const [camMuted, setCamMuted] = useState(false);
   const jitsiControlsRef = useRef<{ toggleAudio: () => void; toggleVideo: () => void } | null>(null);
@@ -408,18 +406,6 @@ function DashboardShellInner({
       setCamMuted(false);
     }
   }, [activeCall]);
-
-  // Minimizing (whether the viewer clicks Minimize, or just navigates to
-  // another tab) mutes on their behalf by default — nobody should end up
-  // broadcasting audio/video from a call they can no longer see just
-  // because they went to check Notes. The mic/camera buttons on the
-  // minimized bar are how they turn either back on if they actually want
-  // to stay live while multitasking.
-  function minimizeAndMute() {
-    minimizeCall();
-    if (!micMuted) jitsiControlsRef.current?.toggleAudio();
-    if (!camMuted) jitsiControlsRef.current?.toggleVideo();
-  }
 
   useEffect(() => {
     // Only read the URL once, on mount — after that, tab state is owned
@@ -438,7 +424,7 @@ function DashboardShellInner({
     // Switching tabs while the call is in the foreground would otherwise
     // hide it with no way back — minimize it instead of losing it.
     if (activeCall && !activeCall.minimized && tab !== activeTab) {
-      minimizeAndMute();
+      minimizeCall();
     }
     setActiveTab(tab);
     updateTabParam(tab);
@@ -577,62 +563,6 @@ function DashboardShellInner({
         </div>
       </header>
 
-      {activeCall?.minimized &&
-        (() => {
-          // Jitsi defaults to camera+mic on — anything not explicitly
-          // muted is still capturing, minimized or not. Only downgrade to
-          // the calmer "in call" styling once both are actually off, so
-          // the warning doesn't cry wolf after the viewer's already muted.
-          const isExposed = !camMuted || !micMuted;
-          return (
-            <div
-              className={cn(
-                "z-40 flex shrink-0 flex-wrap items-center justify-between gap-2.5 border-b-2 bg-white px-5 py-2 shadow-[0_1px_2px_rgba(14,33,29,0.07)] animate-in fade-in-0 slide-in-from-top-2 duration-200",
-                isExposed ? "border-b-destructive" : "border-b-success",
-              )}
-            >
-              <span className={cn("flex items-center gap-2 text-sm font-medium", isExposed ? "text-destructive" : "text-foreground")}>
-                <Video className={cn("size-4 shrink-0", isExposed ? "text-destructive" : "text-success")} />
-                {isExposed ? t("stillExposedBanner", { title: activeCall.title }) : t("inCallBanner", { title: activeCall.title })}
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => jitsiControlsRef.current?.toggleAudio()}
-                  title={micMuted ? t("unmuteMic") : t("muteMic")}
-                  className={cn(
-                    "flex size-8 items-center justify-center rounded-md border transition-colors",
-                    micMuted
-                      ? "border-border bg-white text-muted-foreground"
-                      : "border-destructive/30 bg-white text-destructive hover:bg-destructive/10",
-                  )}
-                >
-                  {micMuted ? <MicOff className="size-4" /> : <Mic className="size-4" />}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => jitsiControlsRef.current?.toggleVideo()}
-                  title={camMuted ? t("turnOnCamera") : t("turnOffCamera")}
-                  className={cn(
-                    "flex size-8 items-center justify-center rounded-md border transition-colors",
-                    camMuted
-                      ? "border-border bg-white text-muted-foreground"
-                      : "border-destructive/30 bg-white text-destructive hover:bg-destructive/10",
-                  )}
-                >
-                  {camMuted ? <VideoOff className="size-4" /> : <Video className="size-4" />}
-                </button>
-                <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90" onClick={restoreCall}>
-                  {t("returnToCall")}
-                </Button>
-                <Button size="sm" variant="ghost" onClick={leaveCall}>
-                  {t("leaveCall")}
-                </Button>
-              </div>
-            </div>
-          );
-        })()}
-
       <div className="shrink-0 overflow-x-auto border-b border-border bg-white md:hidden">
         <NavList groups={groups} activeTab={activeTab} onSelect={select} orientation="horizontal" />
       </div>
@@ -658,11 +588,63 @@ function DashboardShellInner({
             {/* The call, once started, stays mounted here regardless of
                which tab is active or whether it's minimized — only
                `leaveCall` (never a tab switch) ever unmounts it, which is
-               what actually disconnects from Jitsi. Visibility is a plain
-               CSS toggle, not conditional rendering, so minimizing never
-               forces a reconnect. */}
+               what actually disconnects from Jitsi. Minimizing swaps this
+               same wrapper into a floating corner mini-player instead of
+               hiding it outright, so the class stays visible (and audible)
+               while the viewer reads a note or assignment on the tab
+               underneath. Both the wrapper and VideoCallPanel's own header
+               only ever change className/hidden state, never leave the
+               tree, so the video container's DOM node — and the Jitsi
+               iframe inside it — is never remounted by any of this. */}
             {activeCall && (
-              <div style={{ display: activeCall.minimized ? "none" : "block" }}>
+              <div
+                className={cn(
+                  activeCall.minimized &&
+                    "fixed bottom-4 right-4 z-40 w-72 overflow-hidden rounded-lg border border-border bg-white shadow-[0_8px_24px_-8px_rgba(14,33,29,0.35)] animate-in fade-in-0 slide-in-from-bottom-2 duration-200 sm:w-80",
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex items-center justify-between gap-2 bg-white px-3 py-2",
+                    !activeCall.minimized && "hidden",
+                  )}
+                >
+                  <span className="truncate text-xs font-medium text-foreground">{activeCall.title}</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => jitsiControlsRef.current?.toggleAudio()}
+                      title={micMuted ? t("unmuteMic") : t("muteMic")}
+                      className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+                    >
+                      {micMuted ? <MicOff className="size-3.5" /> : <Mic className="size-3.5" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => jitsiControlsRef.current?.toggleVideo()}
+                      title={camMuted ? t("turnOnCamera") : t("turnOffCamera")}
+                      className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+                    >
+                      {camMuted ? <VideoOff className="size-3.5" /> : <Video className="size-3.5" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={restoreCall}
+                      title={t("returnToCall")}
+                      className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+                    >
+                      <Maximize2 className="size-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={leaveCall}
+                      title={t("leaveCall")}
+                      className="flex size-7 shrink-0 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                </div>
                 <VideoCallPanel
                   title={activeCall.title}
                   subtitle={activeCall.subtitle}
@@ -672,12 +654,13 @@ function DashboardShellInner({
                   closeLabel={t("leaveCall")}
                   minimizeLabel={t("minimizeCall")}
                   onClose={leaveCall}
-                  onMinimize={minimizeAndMute}
+                  onMinimize={minimizeCall}
                   onApiReady={(controls) => {
                     jitsiControlsRef.current = controls;
                   }}
                   onAudioMuteChange={setMicMuted}
                   onVideoMuteChange={setCamMuted}
+                  compact={activeCall.minimized}
                 />
               </div>
             )}

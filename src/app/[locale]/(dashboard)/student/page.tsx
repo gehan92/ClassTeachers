@@ -39,6 +39,7 @@ type RawLiveClassRow = {
   scheduled_at: string;
   duration_minutes: number;
   batch_id: string | null;
+  status: "scheduled" | "live" | "completed" | "cancelled";
 };
 
 function isFuture(iso: string): boolean {
@@ -297,7 +298,7 @@ export default async function StudentDashboardPage({
     teacherIds.length
       ? supabase
           .from("live_classes")
-          .select("id, owner_id, title, mode, scheduled_at, duration_minutes, batch_id")
+          .select("id, owner_id, title, mode, scheduled_at, duration_minutes, batch_id, status")
           .eq("owner_type", "teacher")
           .in("owner_id", teacherIds)
           .neq("status", "cancelled")
@@ -306,7 +307,7 @@ export default async function StudentDashboardPage({
     classIds.length
       ? supabase
           .from("live_classes")
-          .select("id, owner_id, title, mode, scheduled_at, duration_minutes, batch_id")
+          .select("id, owner_id, title, mode, scheduled_at, duration_minutes, batch_id, status")
           .eq("owner_type", "class")
           .in("owner_id", classIds)
           .neq("status", "cancelled")
@@ -587,6 +588,7 @@ export default async function StudentDashboardPage({
     mode: row.mode,
     joinLink: joinLinkByClassId.get(row.id) ?? null,
     attendanceStatus: attendanceStatusByLiveClassId.get(row.id) ?? null,
+    status: row.status,
   }));
   // A declined enrollment must not count as "already joined" (or the
   // teacher's class becomes permanently unrequestable — see

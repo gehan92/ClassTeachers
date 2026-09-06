@@ -231,20 +231,26 @@ export async function dismissLiveClassReminder(input: { liveClassId: string }): 
   return {};
 }
 
-/** Shared lookup for the two notifications below — both need the same
- * owner/batch/participant audience, just a different `type`. Tab is
- * "classes", same as new_live_class above now uses: the point of all three
- * is to land the student inside the specific class's own Live Class section
+/** Shared for the two functions below — both need to flip live_classes'
+ * own `status` column to the real, host-driven state (it's sat unused at
+ * its 'scheduled' default since 0012; the student dashboard used to guess
+ * "live"/"ended" purely from scheduled_at + duration_minutes, which meant a
+ * class the teacher ended early stayed "live" until that original window
+ * ran out). Then notifies the same owner/batch/participant audience,
+ * matching notifyContentAudience's own broadcast rule, tab always
+ * "classes" so the click lands inside that class's own Live Class section
  * (My Learning → Open class), never the flat history tab. */
-async function notifyLiveClassAudience(
+async function updateLiveClassStatus(
   supabase: SupabaseClient<Database>,
   liveClassId: string,
+  status: "live" | "completed",
   type: "live_class_started" | "live_class_ended",
 ): Promise<void> {
   const { data: liveClass } = await supabase
     .from("live_classes")
-    .select("owner_type, owner_id, batch_id, title")
+    .update({ status })
     .eq("id", liveClassId)
+    .select("owner_type, owner_id, batch_id, title")
     .maybeSingle();
   if (!liveClass) return;
   const { data: participants } = await supabase
@@ -265,25 +271,28 @@ async function notifyLiveClassAudience(
 /** Fired the moment the teacher actually starts the call (see
  * handleStartCall in the teacher Live Classes tab) — distinct from
  * new_live_class above, which fires at scheduling time, often well before
- * the class is actually about to happen. */
+ * the class is actually about to happen. Also flips status to 'live'. */
 export async function notifyLiveClassStarted(liveClassId: string): Promise<ActionResult> {
   if (!liveClassId) {
     return { error: "Invalid class." };
   }
   const supabase = await createClient();
-  await notifyLiveClassAudience(supabase, liveClassId, "live_class_started");
+  await updateLiveClassStatus(supabase, liveClassId, "live", "live_class_started");
   return {};
 }
 
 /** Fired when the host (teacher) leaves the call — see the shared
  * handleLeaveCall wrapper in dashboard-shell.tsx, the only place this is
  * called from. A student leaving never fires this; only the host actually
- * ending the session for everyone counts as "class ended". */
+ * ending the session for everyone counts as "class ended". Also flips
+ * status to 'completed', so an early end shows up in the student's Live
+ * Classes history immediately instead of waiting out the original
+ * scheduled duration (see classState in the student Live Classes tab). */
 export async function notifyLiveClassEnded(liveClassId: string): Promise<ActionResult> {
   if (!liveClassId) {
     return { error: "Invalid class." };
   }
   const supabase = await createClient();
-  await notifyLiveClassAudience(supabase, liveClassId, "live_class_ended");
+  await updateLiveClassStatus(supabase, liveClassId, "completed", "live_class_ended");
   return {};
 }

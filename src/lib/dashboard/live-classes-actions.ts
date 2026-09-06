@@ -1,9 +1,11 @@
 "use server";
 
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBatchOwner } from "@/lib/dashboard/resolve-batch-owner";
 import { notifyContentAudience } from "@/lib/dashboard/notify";
+import type { Database } from "@/types/database";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -110,8 +112,8 @@ export async function createLiveClass(input: {
     target,
     parsed.data.participantStudentIds ?? null,
     "new_live_class",
-    { title: parsed.data.title },
-    "live",
+    { title: parsed.data.title, liveClassId: liveClass.id },
+    "classes",
     "newClassContent",
   );
 
@@ -226,5 +228,62 @@ export async function dismissLiveClassReminder(input: { liveClassId: string }): 
   if (error) {
     return { error: "Couldn't dismiss the reminder." };
   }
+  return {};
+}
+
+/** Shared lookup for the two notifications below — both need the same
+ * owner/batch/participant audience, just a different `type`. Tab is
+ * "classes", same as new_live_class above now uses: the point of all three
+ * is to land the student inside the specific class's own Live Class section
+ * (My Learning → Open class), never the flat history tab. */
+async function notifyLiveClassAudience(
+  supabase: SupabaseClient<Database>,
+  liveClassId: string,
+  type: "live_class_started" | "live_class_ended",
+): Promise<void> {
+  const { data: liveClass } = await supabase
+    .from("live_classes")
+    .select("owner_type, owner_id, batch_id, title")
+    .eq("id", liveClassId)
+    .maybeSingle();
+  if (!liveClass) return;
+  const { data: participants } = await supabase
+    .from("live_class_participants")
+    .select("student_id")
+    .eq("live_class_id", liveClassId);
+  await notifyContentAudience(
+    supabase,
+    { ownerType: liveClass.owner_type as "teacher" | "class", ownerId: liveClass.owner_id, batchId: liveClass.batch_id },
+    participants && participants.length > 0 ? participants.map((p) => p.student_id) : null,
+    type,
+    { title: liveClass.title, liveClassId },
+    "classes",
+    "newClassContent",
+  );
+}
+
+/** Fired the moment the teacher actually starts the call (see
+ * handleStartCall in the teacher Live Classes tab) — distinct from
+ * new_live_class above, which fires at scheduling time, often well before
+ * the class is actually about to happen. */
+export async function notifyLiveClassStarted(liveClassId: string): Promise<ActionResult> {
+  if (!liveClassId) {
+    return { error: "Invalid class." };
+  }
+  const supabase = await createClient();
+  await notifyLiveClassAudience(supabase, liveClassId, "live_class_started");
+  return {};
+}
+
+/** Fired when the host (teacher) leaves the call — see the shared
+ * handleLeaveCall wrapper in dashboard-shell.tsx, the only place this is
+ * called from. A student leaving never fires this; only the host actually
+ * ending the session for everyone counts as "class ended". */
+export async function notifyLiveClassEnded(liveClassId: string): Promise<ActionResult> {
+  if (!liveClassId) {
+    return { error: "Invalid class." };
+  }
+  const supabase = await createClient();
+  await notifyLiveClassAudience(supabase, liveClassId, "live_class_ended");
   return {};
 }

@@ -10,7 +10,13 @@ import { StatusBadge } from "@/components/features/status-badge";
 import { useLiveCall } from "@/components/dashboard/live-call-context";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
-import { createLiveClass, deleteLiveClass, setAttendanceStatus, sendLiveClassReminder } from "@/lib/dashboard/live-classes-actions";
+import {
+  createLiveClass,
+  deleteLiveClass,
+  setAttendanceStatus,
+  sendLiveClassReminder,
+  notifyLiveClassStarted,
+} from "@/lib/dashboard/live-classes-actions";
 import { cn } from "@/lib/utils";
 
 export type TeacherLiveClassBatchOption = { id: string; title: string; studentCount: number };
@@ -183,6 +189,10 @@ export function LiveClassesTab({
       displayName: hostName,
       isHost: true,
     });
+    // Fire-and-forget: students get a "class started" notification the
+    // moment the teacher actually starts it, not when it was scheduled
+    // (that's the separate, much-earlier new_live_class notification).
+    notifyLiveClassStarted(c.id);
   }
 
   const viewingRoster = classes.find((c) => c.id === viewingRosterId) ?? null;

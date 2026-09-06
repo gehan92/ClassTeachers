@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ArrowLeft, GraduationCap, Megaphone, School } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -146,6 +146,7 @@ export function ClassesTab({
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [openClassId, setOpenClassId] = useState<string | null>(null);
+  const [forceOpenSection, setForceOpenSection] = useState<string | null>(null);
   const [quickViewTeacherId, setQuickViewTeacherId] = useState<string | null>(null);
   const [quickViewInstituteId, setQuickViewInstituteId] = useState<string | null>(null);
 
@@ -180,6 +181,27 @@ export function ClassesTab({
   const pendingClasses = myClasses.filter((item) => item.status === "pending");
   const openClass = openClassId ? (acceptedClasses.find((c) => c.enrollmentId === openClassId) ?? null) : null;
 
+  // Landing here from a "class started"/"class ended" notification (see
+  // dashboard-shell.tsx's select/navNonce) — the notification only carries a
+  // liveClassId (it's broadcast to every enrolled student, so it can't carry
+  // any one student's own enrollmentId), so this resolves it to the matching
+  // class the same way ClassWorkspace already matches its own content: same
+  // owner + batch. navNonce forces this component to remount on every such
+  // navigation, even a repeat click while already on this tab, so reading
+  // the URL once on mount is enough — no need to watch for later changes.
+  useEffect(() => {
+    const liveClassId = new URLSearchParams(window.location.search).get("liveClass");
+    if (!liveClassId) return;
+    const liveClass = liveClasses.find((row) => row.id === liveClassId);
+    if (!liveClass) return;
+    const match = acceptedClasses.find((c) => belongsToClass(liveClass, c));
+    if (!match) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from the URL, not derived render state
+    setOpenClassId(match.enrollmentId);
+    setForceOpenSection("live");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reads the URL once on mount only; this component remounts fresh for every notification-driven navigation here (see navNonce in dashboard-shell.tsx)
+  }, []);
+
   return (
     <div>
       {openClass ? (
@@ -194,6 +216,7 @@ export function ClassesTab({
           liveClasses={liveClasses}
           reminderClassIds={reminderClassIds}
           studentName={studentName}
+          forceOpenSection={forceOpenSection}
           hasQuickView={
             openClass.ownerType === "teacher"
               ? teacherProfileById.has(openClass.ownerId)
@@ -201,7 +224,10 @@ export function ClassesTab({
           }
           photoUrl={getPhotoUrl(openClass.ownerType, openClass.ownerId)}
           onOpenQuickView={() => openQuickView(openClass.ownerType, openClass.ownerId)}
-          onBack={() => setOpenClassId(null)}
+          onBack={() => {
+            setOpenClassId(null);
+            setForceOpenSection(null);
+          }}
         />
       ) : (
         <>
@@ -390,6 +416,7 @@ function ClassWorkspace({
   liveClasses,
   reminderClassIds,
   studentName,
+  forceOpenSection,
   hasQuickView,
   photoUrl,
   onOpenQuickView,
@@ -405,6 +432,12 @@ function ClassWorkspace({
   liveClasses: StudentLiveClassRow[];
   reminderClassIds: string[];
   studentName: string;
+  /** Arriving from a "class started"/"class ended" notification forces this
+   * section open regardless of whether it's actionable — e.g. an ended
+   * class's Live Class section wouldn't normally auto-open since nothing's
+   * left to do there, but the whole point of clicking that notification is
+   * to land on exactly that section. */
+  forceOpenSection?: string | null;
   hasQuickView: boolean;
   photoUrl: string | null;
   onOpenQuickView: () => void;
@@ -491,12 +524,17 @@ function ClassWorkspace({
     (assignment) => assignment.submission?.status !== "graded",
   );
   const hasActionableHomework = classHomework.some((item) => item.submission?.status !== "graded");
-  const defaultOpenSections = [
-    hasActionableLive && "live",
-    hasActionableExams && "exams",
-    hasActionableAssignments && "assignments",
-    hasActionableHomework && "homework",
-  ].filter((value): value is string => Boolean(value));
+  const defaultOpenSections = Array.from(
+    new Set(
+      [
+        hasActionableLive && "live",
+        hasActionableExams && "exams",
+        hasActionableAssignments && "assignments",
+        hasActionableHomework && "homework",
+        forceOpenSection,
+      ].filter((value): value is string => Boolean(value)),
+    ),
+  );
 
   return (
     <div>

@@ -77,6 +77,8 @@
       "new_exam": "නව විභාගයක් විවෘතයි: \"{title}\".",
       "new_assignment": "නව පැවරුමක් පළ කරන ලදී: \"{title}\".",
       "new_live_class": "නව සජීවී පන්තියක් සැලසුම් කරන ලදී: \"{title}\".",
+      "live_class_started": "{title} දැන් ආරම්භ විය — දැන් එකතු වන්න.",
+      "live_class_ended": "{title} අවසන් වී ඇත.",
       "review_posted": "ඔබට තරු {rating} ක නව සමාලෝචනයක් ලැබී ඇත.",
       "review_replied": "ඔබේ සමාලෝචනයට පිළිතුරක් ලැබී ඇත.",
       "new_inquiry": "{senderName} ඔබට විමසීමක් එව්වා.",

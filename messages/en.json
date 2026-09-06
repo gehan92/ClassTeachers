@@ -77,6 +77,8 @@
       "new_exam": "A new exam is open: \"{title}\".",
       "new_assignment": "A new assignment was posted: \"{title}\".",
       "new_live_class": "A new live class was scheduled: \"{title}\".",
+      "live_class_started": "{title} just started — join now.",
+      "live_class_ended": "{title} has ended.",
       "review_posted": "You received a new {rating}-star review.",
       "review_replied": "You got a reply to your review.",
       "new_inquiry": "{senderName} sent you an inquiry.",

@@ -47,6 +47,10 @@ function messageFor(t: Translator, n: NotificationRow): string {
       return t("types.new_assignment", { title: str(data.title) });
     case "new_live_class":
       return t("types.new_live_class", { title: str(data.title) });
+    case "live_class_started":
+      return t("types.live_class_started", { title: str(data.title) });
+    case "live_class_ended":
+      return t("types.live_class_ended", { title: str(data.title) });
     case "review_posted":
       return t("types.review_posted", { rating: str(data.rating) });
     case "review_replied":
@@ -87,7 +91,11 @@ export function NotificationBell({
   onNavigate,
 }: {
   notifications: NotificationRow[];
-  onNavigate: (tab: string) => void;
+  /** `data` is the notification's own payload, passed through as-is — lets a
+   * caller pull out a deep-link id (e.g. live_class_started/ended's
+   * liveClassId) without this component knowing anything about individual
+   * notification types. */
+  onNavigate: (tab: string, data: Record<string, unknown>) => void;
 }) {
   const t = useTranslations("notifications") as unknown as Translator;
   const locale = useLocale();
@@ -102,7 +110,7 @@ export function NotificationBell({
       setReadIds((prev) => new Set(prev).add(n.id));
       markNotificationRead(n.id);
     }
-    if (n.tab) onNavigate(n.tab);
+    if (n.tab) onNavigate(n.tab, n.data ?? {});
   }
 
   async function handleMarkAllRead() {

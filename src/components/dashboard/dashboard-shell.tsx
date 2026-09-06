@@ -61,6 +61,7 @@ import { RealtimeRefresh, type RealtimeWatch } from "@/components/dashboard/real
 import { NotificationBell, type NotificationRow } from "@/components/dashboard/notification-bell";
 import { LiveCallProvider, useLiveCall } from "@/components/dashboard/live-call-context";
 import { VideoCallPanel } from "@/components/dashboard/inline-file-viewer";
+import { notifyLiveClassEnded } from "@/lib/dashboard/live-classes-actions";
 import type { DashboardNavGroup, DemoRole } from "@/types/dashboard";
 
 /** Same picker as the public SiteHeader's "Search" dropdown — kept as its own small copy here since the dashboard header's dark theme needs different trigger/item styling, not because the destinations differ. */
@@ -163,9 +164,11 @@ const GROUP_ICONS: Partial<Record<string, LucideIcon>> = {
   trust: ShieldCheck,
 };
 
-function updateTabParam(tab: string) {
+function updateTabParam(tab: string, liveClassId?: string) {
   const url = new URL(window.location.href);
   url.searchParams.set("tab", tab);
+  if (liveClassId) url.searchParams.set("liveClass", liveClassId);
+  else url.searchParams.delete("liveClass");
   window.history.replaceState(null, "", url);
 }
 
@@ -420,14 +423,32 @@ function DashboardShellInner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function select(tab: string) {
+  // Bumped only for a notification's deep link (see select's liveClassId
+  // param) so the target panel remounts and re-reads the URL even when the
+  // viewer is already sitting on that same tab — an ordinary tab switch
+  // already remounts on its own via the `${activeTab}-${navNonce}` key
+  // changing, so this only needs to force the issue in that one edge case.
+  const [navNonce, setNavNonce] = useState(0);
+
+  function select(tab: string, liveClassId?: string) {
     // Switching tabs while the call is in the foreground would otherwise
     // hide it with no way back — minimize it instead of losing it.
     if (activeCall && !activeCall.minimized && tab !== activeTab) {
       minimizeCall();
     }
     setActiveTab(tab);
-    updateTabParam(tab);
+    updateTabParam(tab, liveClassId);
+    if (liveClassId) setNavNonce((n) => n + 1);
+  }
+
+  // Only the host actually ending the call counts as "class ended" — a
+  // student leaving their own view of it never fires this. Fire-and-forget,
+  // same as the "started" notification in the teacher Live Classes tab.
+  function handleLeaveCall() {
+    if (activeCall?.isHost) {
+      notifyLiveClassEnded(activeCall.liveClassId);
+    }
+    leaveCall();
   }
 
   const navKeys = navKeysByRole[demoRole];
@@ -498,7 +519,10 @@ function DashboardShellInner({
           >
             <HelpCircle className="size-4.5" />
           </Link>
-          <NotificationBell notifications={notifications} onNavigate={select} />
+          <NotificationBell
+            notifications={notifications}
+            onNavigate={(tab, data) => select(tab, typeof data.liveClassId === "string" ? data.liveClassId : undefined)}
+          />
           <LocaleSwitcher className="text-white/70 hover:bg-white/10 hover:text-white" />
           {userPhotoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- public Supabase Storage URL, not a local/optimizable asset
@@ -637,7 +661,7 @@ function DashboardShellInner({
                     </button>
                     <button
                       type="button"
-                      onClick={leaveCall}
+                      onClick={handleLeaveCall}
                       title={t("leaveCall")}
                       className="flex size-7 shrink-0 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
                     >
@@ -653,7 +677,7 @@ function DashboardShellInner({
                   isHost={activeCall.isHost}
                   closeLabel={t("leaveCall")}
                   minimizeLabel={t("minimizeCall")}
-                  onClose={leaveCall}
+                  onClose={handleLeaveCall}
                   onMinimize={minimizeCall}
                   onApiReady={(controls) => {
                     jitsiControlsRef.current = controls;
@@ -665,7 +689,7 @@ function DashboardShellInner({
               </div>
             )}
             <div
-              key={activeTab}
+              key={`${activeTab}-${navNonce}`}
               style={{ display: activeCall && !activeCall.minimized ? "none" : "block" }}
               className="animate-in fade-in-0 slide-in-from-bottom-1 duration-200"
             >

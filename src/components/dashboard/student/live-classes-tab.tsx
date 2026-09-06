@@ -163,11 +163,11 @@ export function LiveClassesTab({
         </div>
       )}
 
-      <div className="rounded-lg border border-border bg-white">
+      <div className="rounded-lg border border-border bg-white p-5">
         {sourceRows.length === 0 ? (
-          <p className="p-5 text-sm text-muted-foreground">{t("empty")}</p>
+          <p className="text-sm text-muted-foreground">{t("empty")}</p>
         ) : scope === "history" ? (
-          <div className="p-4">
+          <div>
             {(() => {
               const groups = groupByClass(pagedClasses.map((row) => ({ ...row, ownerName: row.teacherName })));
               return (

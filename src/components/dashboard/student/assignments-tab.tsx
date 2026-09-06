@@ -114,11 +114,11 @@ export function AssignmentsTab({
         </div>
       )}
 
-      <div className="rounded-lg border border-border bg-white">
+      <div className="rounded-lg border border-border bg-white p-5">
         {assignments.length === 0 ? (
-          <p className="p-5 text-sm text-muted-foreground">{t("empty")}</p>
+          <p className="text-sm text-muted-foreground">{t("empty")}</p>
         ) : scope === "history" ? (
-          <div className="p-4">
+          <div>
             {(() => {
               const groups = groupByClass(
                 pagedAssignments.map((assignment) => ({ ...assignment, ownerName: assignment.teacherName })),

@@ -28,7 +28,7 @@ export function PaginationFooter({
   pageInfoLabel: string;
 }) {
   return (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
       <p className="text-sm text-muted-foreground">{showingLabel}</p>
       {totalPages > 1 && (
         <div className="flex items-center gap-3">

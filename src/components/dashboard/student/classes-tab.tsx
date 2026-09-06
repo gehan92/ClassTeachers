@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, GraduationCap, School } from "lucide-react";
+import { ArrowLeft, GraduationCap, Megaphone, School } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -11,6 +11,7 @@ import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { requestToJoin, joinOpenBatch } from "@/lib/dashboard/batches-actions";
 import { LiveClassesTab, type StudentLiveClassRow } from "@/components/dashboard/student/live-classes-tab";
+import { useLiveCall } from "@/components/dashboard/live-call-context";
 import { ExamsTab, type StudentExamRow } from "@/components/dashboard/student/exams-tab";
 import { AssignmentsTab, type StudentAssignmentRow } from "@/components/dashboard/student/assignments-tab";
 import { NotesTab, type StudentNoteRow } from "@/components/dashboard/student/notes-tab";
@@ -441,6 +442,39 @@ function ClassWorkspace({
     [pastPapers, classRow],
   );
 
+  // Surfaces what the teacher shares *during* a live session right where the
+  // student can actually see it (the point of the floating mini-player is
+  // that they're still watching the class while browsing other sections) —
+  // otherwise it just sits quietly in its own accordion section until they
+  // happen to open it. Only live while this class's own call is active, and
+  // only content newer than the moment they joined it; it naturally empties
+  // out once the call ends, since activeCall goes null then.
+  const { activeCall } = useLiveCall();
+  const activeClassCall =
+    activeCall && classLiveClasses.some((lc) => lc.id === activeCall.liveClassId) ? activeCall : null;
+  const justShared = useMemo(() => {
+    if (!activeClassCall) return [];
+    const joinedAt = activeClassCall.joinedAt;
+    const isNew = (iso: string) => new Date(iso).getTime() > joinedAt;
+    return [
+      ...classExams.filter((row) => isNew(row.sharedAtIso)).map((row) => ({ type: tExams("title"), title: row.title })),
+      ...classAssignments
+        .filter((row) => isNew(row.createdAtIso))
+        .map((row) => ({ type: tAssignments("title"), title: row.title })),
+      ...classHomework
+        .filter((row) => isNew(row.createdAtIso))
+        .map((row) => ({ type: tHomework("title"), title: row.title })),
+      ...classNotes.filter((row) => isNew(row.createdAtIso)).map((row) => ({ type: tNotes("title"), title: row.title })),
+      ...classShortNotes
+        .filter((row) => isNew(row.createdAtIso))
+        .map((row) => ({ type: tShortNotes("title"), title: row.title })),
+      ...classPastPapers
+        .filter((row) => isNew(row.createdAtIso))
+        .map((row) => ({ type: tPastPapers("title"), title: row.title })),
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the t* functions are stable per render and re-included on every render anyway; listing them would just churn this memo on every locale-unrelated re-render
+  }, [activeClassCall, classExams, classAssignments, classHomework, classNotes, classShortNotes, classPastPapers]);
+
   // Sections open by default only when they hold something actionable —
   // an accordion where every section starts collapsed would hide exactly
   // the "something new happened" signal the sidebar's own unread dots are
@@ -496,6 +530,22 @@ function ClassWorkspace({
           </div>
         </div>
       </div>
+
+      {justShared.length > 0 && (
+        <div className="mb-6 rounded-lg border border-cta/30 bg-cta/5 p-4">
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Megaphone className="size-4 shrink-0 text-cta" />
+            {t("justSharedHeading")}
+          </div>
+          <ul className="flex flex-col gap-1">
+            {justShared.map((item, index) => (
+              <li key={index} className="text-sm text-foreground">
+                <span className="font-medium">{item.type}</span> — {item.title}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <Accordion multiple defaultValue={defaultOpenSections} className="rounded-lg border border-border bg-white px-4.5">
         <AccordionItem value="live">

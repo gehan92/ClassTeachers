@@ -10,9 +10,14 @@ export type ActiveLiveCall = {
   displayName?: string;
   isHost?: boolean;
   minimized: boolean;
+  /** When this client joined, in Date.now() epoch ms — lets a student-side
+   * view (ClassWorkspace's "shared during this class" banner) tell freshly
+   * shared content apart from stuff that was already there before they
+   * joined. Stamped by startCall itself, not passed in by callers. */
+  joinedAt: number;
 };
 
-type StartLiveCallInput = Omit<ActiveLiveCall, "minimized">;
+type StartLiveCallInput = Omit<ActiveLiveCall, "minimized" | "joinedAt">;
 
 type LiveCallContextValue = {
   activeCall: ActiveLiveCall | null;
@@ -47,7 +52,7 @@ export function LiveCallProvider({ children }: { children: ReactNode }) {
   const startCall = useCallback((call: StartLiveCallInput) => {
     setActiveCall((current) => {
       if (current && current.liveClassId !== call.liveClassId) return current;
-      return { ...call, minimized: false };
+      return { ...call, minimized: false, joinedAt: Date.now() };
     });
   }, []);
 

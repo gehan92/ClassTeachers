@@ -1557,7 +1557,8 @@
       "requestToJoin": "Request to join",
       "requestToEnroll": "Request to enroll",
       "joinNow": "Join now",
-      "openEnrollmentBadge": "Open — join instantly"
+      "openEnrollmentBadge": "Open — join instantly",
+      "justSharedHeading": "Shared during this class"
     },
     "live": {
       "title": "Live Classes",
@@ -1777,6 +1778,7 @@
       "resultNoAnswer": "No answer photos found.",
       "addPhotos": "Add photos",
       "submitInstructions": "Upload clear photos of your completed answer.",
+      "expiredNotice": "The due time for this assignment has passed — it can no longer be submitted.",
       "submittedTitle": "Submitted — your teacher will grade this soon",
       "submittedPendingNote": "We've received your answer photos. You'll see your grade and feedback here once it's ready.",
       "backToAssignments": "Back to assignments"
@@ -1805,6 +1807,7 @@
       "resultNoAnswer": "No answer photos found.",
       "addPhotos": "Add photos",
       "submitInstructions": "Upload clear photos of your completed answer.",
+      "expiredNotice": "The due time for this homework has passed — it can no longer be submitted.",
       "submittedTitle": "Submitted — your teacher will grade this soon",
       "submittedPendingNote": "We've received your answer photos. You'll see your grade and feedback here once it's ready.",
       "backToAssignments": "Back to homework"

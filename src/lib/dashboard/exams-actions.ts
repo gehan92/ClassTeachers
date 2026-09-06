@@ -109,7 +109,7 @@ export async function setExamPublished(examId: string, published: boolean): Prom
   const supabase = await createClient();
   const { data: exam, error } = await supabase
     .from("exams")
-    .update({ published })
+    .update(published ? { published, published_at: new Date().toISOString() } : { published })
     .eq("id", examId)
     .select("owner_type, owner_id, batch_id, title")
     .maybeSingle();

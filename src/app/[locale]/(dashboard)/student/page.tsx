@@ -128,10 +128,12 @@ export default async function StudentDashboardPage({
       .eq("id", userId)
       .single(),
     supabase.from("enrollments").select("id, owner_type, owner_id, batch_id, joined_at, status"),
-    supabase.from("notes").select("id, owner_type, owner_id, batch_id, title, page_count, note_type"),
+    supabase.from("notes").select("id, owner_type, owner_id, batch_id, title, page_count, note_type, created_at"),
     supabase
       .from("exams")
-      .select("id, owner_type, owner_id, batch_id, title, question_ids, duration_minutes, scheduled_at, reveal_answers")
+      .select(
+        "id, owner_type, owner_id, batch_id, title, question_ids, duration_minutes, scheduled_at, reveal_answers, published_at, created_at",
+      )
       .order("scheduled_at", { ascending: true }),
     supabase
       .from("exam_submissions")
@@ -145,7 +147,7 @@ export default async function StudentDashboardPage({
     // scopes which assignment rows come back.
     supabase
       .from("assignments")
-      .select("id, owner_type, owner_id, batch_id, lesson_id, title, file_path, due_at, assignment_type")
+      .select("id, owner_type, owner_id, batch_id, lesson_id, title, file_path, due_at, assignment_type, created_at")
       .order("created_at", { ascending: false }),
     supabase
       .from("assignment_submissions")
@@ -664,6 +666,7 @@ export default async function StudentDashboardPage({
       ownerId: n.owner_id,
       ownerType: n.owner_type,
       pageCount: n.page_count,
+      createdAtIso: n.created_at,
     };
   }
   // Short Notes and Past Papers are the same `notes` table/upload flow as
@@ -728,6 +731,7 @@ export default async function StudentDashboardPage({
       reviewAnswers: canReveal
         ? { mcqAnswers: submission!.mcq_answers ?? {}, codeAnswers: submission!.code_answers ?? {} }
         : null,
+      sharedAtIso: e.published_at ?? e.created_at,
     };
   });
 
@@ -767,6 +771,7 @@ export default async function StudentDashboardPage({
       lessonTitle: a.lesson_id ? (lessonTitleById.get(a.lesson_id) ?? null) : null,
       dueLabel: a.due_at ? dateFormatter.format(new Date(a.due_at)) : null,
       dueAtIso: a.due_at,
+      createdAtIso: a.created_at,
       fileUrl: assignmentFileUrlByPath.get(a.file_path) ?? "",
       submission: submission
         ? {

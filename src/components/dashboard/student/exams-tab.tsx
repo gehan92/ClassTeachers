@@ -74,6 +74,12 @@ export type StudentExamRow = {
    * populated when this exam is graded and reveal-gated (0079); null
    * otherwise, which also doubles as "no review available" for the UI. */
   reviewAnswers: { mcqAnswers: Record<string, string[]>; codeAnswers: Record<string, string> } | null;
+  /** When this actually went live for students (published_at, falling back
+   * to created_at for exams published before that column existed) — used by
+   * ClassWorkspace's "shared during this class" banner. Deliberately not
+   * created_at alone: a teacher can draft an exam long before publishing it
+   * live during class. */
+  sharedAtIso: string;
 };
 
 export function ExamsTab({

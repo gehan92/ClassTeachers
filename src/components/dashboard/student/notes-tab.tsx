@@ -18,6 +18,10 @@ export type StudentNoteRow = {
   ownerId: string;
   ownerType: "teacher" | "class";
   pageCount: number | null;
+  /** When this was shared — used by ClassWorkspace's "shared during this
+   * class" banner to tell freshly-shared content apart from what was
+   * already there before the student joined the live call. */
+  createdAtIso: string;
 };
 
 export function NotesTab({

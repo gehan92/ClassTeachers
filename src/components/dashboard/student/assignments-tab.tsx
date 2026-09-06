@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,10 @@ export type StudentAssignmentRow = {
   lessonTitle: string | null;
   dueLabel: string | null;
   dueAtIso: string | null;
+  /** When this was shared — used by ClassWorkspace's "shared during this
+   * class" banner to tell freshly-shared content apart from what was
+   * already there before the student joined the live call. */
+  createdAtIso: string;
   fileUrl: string;
   submission: {
     status: "pending" | "graded";
@@ -300,18 +304,16 @@ function AssignmentActions({
           <Button type="button" variant="ghost" size="sm" onClick={onViewResult}>
             {t("viewSubmission")}
           </Button>
-          {!isHistory && (
+          {!isHistory && !isPastDue && (
             <Button size="sm" variant="outline" onClick={onOpen}>
               {t("resubmit")}
             </Button>
           )}
         </>
+      ) : isPastDue ? (
+        <StatusBadge variant="flagged">{t("missed")}</StatusBadge>
       ) : isHistory ? (
-        isPastDue ? (
-          <StatusBadge variant="flagged">{t("missed")}</StatusBadge>
-        ) : (
-          <StatusBadge variant="closed">{t("notSubmitted")}</StatusBadge>
-        )
+        <StatusBadge variant="closed">{t("notSubmitted")}</StatusBadge>
       ) : (
         <Button size="sm" onClick={onOpen}>
           {t("submitAnswer")}
@@ -396,6 +398,16 @@ function SubmitWorkspace({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  // Ticking (not a one-time snapshot) so a due time that passes while this
+  // workspace is already open — mid-photo-selection, say — locks submission
+  // here too, not just on the next page load. A 30s tick is plenty since due
+  // dates are hours/days out, never seconds (unlike an exam's countdown).
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
+  const isPastDue = assignment.dueAtIso !== null && new Date(assignment.dueAtIso).getTime() < now;
 
   function handleAdd(fileList: FileList | null) {
     if (!fileList) return;
@@ -451,7 +463,9 @@ function SubmitWorkspace({
       <div className="mb-4">
         <h1 className="mb-1 text-2xl">{assignment.title}</h1>
         {assignment.dueLabel && (
-          <p className="text-sm text-muted-foreground">{t("dueLabel", { date: assignment.dueLabel })}</p>
+          <p className={isPastDue ? "text-sm font-medium text-destructive" : "text-sm text-muted-foreground"}>
+            {t("dueLabel", { date: assignment.dueLabel })}
+          </p>
         )}
       </div>
 
@@ -465,14 +479,24 @@ function SubmitWorkspace({
         >
           {t("viewWorksheet")}
         </Button>
-        <p className="mb-2 text-xs text-muted-foreground">{t("submitInstructions")}</p>
-        <PhotoDropzone files={photos} tNamespace={tNamespace} onAdd={handleAdd} onRemove={handleRemove} />
+        {isPastDue ? (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+            {t("expiredNotice")}
+          </div>
+        ) : (
+          <>
+            <p className="mb-2 text-xs text-muted-foreground">{t("submitInstructions")}</p>
+            <PhotoDropzone files={photos} tNamespace={tNamespace} onAdd={handleAdd} onRemove={handleRemove} />
+          </>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button onClick={handleSubmit} disabled={photos.length === 0 || saving}>
-          {t("submitAnswer")}
-        </Button>
+        {!isPastDue && (
+          <Button onClick={handleSubmit} disabled={photos.length === 0 || saving}>
+            {t("submitAnswer")}
+          </Button>
+        )}
         <Button variant="outline" onClick={onExit} disabled={saving}>
           {t("backToAssignments")}
         </Button>

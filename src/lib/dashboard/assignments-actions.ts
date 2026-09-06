@@ -150,6 +150,14 @@ export async function submitAssignment(formData: FormData): Promise<ActionResult
     return { error: "You need to be signed in." };
   }
 
+  const { data: assignment } = await supabase.from("assignments").select("due_at").eq("id", assignmentId).maybeSingle();
+  if (!assignment) {
+    return { error: "Assignment not found." };
+  }
+  if (assignment.due_at && new Date(assignment.due_at).getTime() < Date.now()) {
+    return { error: "This assignment's due time has passed — it can no longer be submitted." };
+  }
+
   const photoUrls: string[] = [];
   for (const [index, file] of files.entries()) {
     const extension = allowedPhotoTypes[file.type];

@@ -1739,10 +1739,19 @@
     "profile": {
       "photoHeading": "Profile photo",
       "uploadPhoto": "Upload new photo",
+      "photoHint": "JPG, PNG or WEBP",
       "profileTitle": "Profile",
       "editProfile": "Edit profile",
       "doneEditing": "Done",
       "classesJoinedLabel": "Classes joined",
+      "subjectsCountLabel": "Subjects",
+      "achievementsCountLabel": "Achievements",
+      "contactHeading": "Contact details",
+      "completeness": {
+        "heading": "Profile strength",
+        "percentLabel": "{percent}% complete",
+        "cta": "Complete your profile"
+      },
       "personalDetailsHeading": "Personal details",
       "nameLabel": "Name",
       "gradeLabel": "Grade / level",

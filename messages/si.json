@@ -1739,10 +1739,19 @@
     "profile": {
       "photoHeading": "පැතිකඩ ඡායාරූපය",
       "uploadPhoto": "නව ඡායාරූපයක් උඩුගත කරන්න",
+      "photoHint": "JPG, PNG හෝ WEBP",
       "profileTitle": "පැතිකඩ",
       "editProfile": "පැතිකඩ සංස්කරණය කරන්න",
       "doneEditing": "අවසන්",
       "classesJoinedLabel": "සම්බන්ධ වූ පන්ති",
+      "subjectsCountLabel": "විෂයයන්",
+      "achievementsCountLabel": "ජයග්‍රහණ",
+      "contactHeading": "සම්බන්ධතා විස්තර",
+      "completeness": {
+        "heading": "පැතිකඩ සම්පූර්ණත්වය",
+        "percentLabel": "{percent}% සම්පූර්ණයි",
+        "cta": "ඔබේ පැතිකඩ සම්පූර්ණ කරන්න"
+      },
       "personalDetailsHeading": "පුද්ගලික විස්තර",
       "nameLabel": "නම",
       "gradeLabel": "ශ්‍රේණිය / මට්ටම",

@@ -2,11 +2,30 @@
 
 import { useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Pencil, Check, Plus, X } from "lucide-react";
+import {
+  Pencil,
+  Check,
+  Plus,
+  X,
+  Camera,
+  User,
+  FileText,
+  GraduationCap,
+  Trophy,
+  Tags,
+  Clock,
+  Mail,
+  Phone,
+  MapPin,
+  BookOpen,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { StatCard } from "@/components/dashboard/stat-card";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { updateStudentProfile } from "@/lib/dashboard/actions";
@@ -32,6 +51,46 @@ function calculateAge(dateOfBirth: string | null): number | null {
   const monthDiff = today.getMonth() - dob.getMonth();
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
   return age;
+}
+
+// A light nudge (LinkedIn-style "profile strength") rather than a hard
+// requirement — every field here is optional, this just encourages filling
+// them in. Name/grade/email are excluded since those are set at signup.
+function computeCompleteness(input: {
+  photoUrl: string | null;
+  bio: string;
+  dateOfBirth: string | null;
+  location: string;
+  learningGoals: string;
+  educationLevel: EducationLevel | null;
+  institutionName: string;
+  qualifications: string[];
+  subjects: string[];
+  languages: string[];
+  achievements: string[];
+  interests: string[];
+  preferredMode: PreferredMode | null;
+  availability: string;
+  phone: string;
+}): number {
+  const checks = [
+    Boolean(input.photoUrl),
+    Boolean(input.bio),
+    Boolean(input.dateOfBirth),
+    Boolean(input.location),
+    Boolean(input.learningGoals),
+    Boolean(input.educationLevel),
+    Boolean(input.institutionName),
+    input.qualifications.length > 0,
+    input.subjects.length > 0,
+    input.languages.length > 0,
+    input.achievements.length > 0,
+    input.interests.length > 0,
+    Boolean(input.preferredMode),
+    Boolean(input.availability),
+    Boolean(input.phone),
+  ];
+  return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
 
 export function ProfileTab({
@@ -135,6 +194,7 @@ export function ProfileTab({
               achievements={initialAchievements}
               interests={initialInterests}
               availability={initialAvailability}
+              onEdit={() => setMode("edit")}
             />
           </div>
         </div>
@@ -170,6 +230,77 @@ function educationLabel(t: ReturnType<typeof useTranslations>, level: EducationL
   return t(`educationOptions.${level}`);
 }
 
+/** Shared section heading style (icon + label) for both view and edit panels. */
+function SectionHeading({
+  icon: Icon,
+  className = "mb-4",
+  children,
+}: {
+  icon: LucideIcon;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <h3 className={`${className} flex items-center gap-2 text-lg`}>
+      <Icon className="size-[18px] text-primary" />
+      {children}
+    </h3>
+  );
+}
+
+function ContactRow({
+  icon: Icon,
+  label,
+  value,
+  hint,
+  truncate,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  hint?: string;
+  truncate?: boolean;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <Icon className="size-4" />
+      </div>
+      <div className="min-w-0">
+        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className={`text-sm font-medium text-foreground ${truncate ? "truncate" : ""}`}>{value}</div>
+        {hint && <div className="mt-0.5 text-xs text-muted-foreground">{hint}</div>}
+      </div>
+    </div>
+  );
+}
+
+/** LinkedIn-style "profile strength" nudge — hidden once every optional field is filled in. */
+function CompletenessCard({ percent, onEdit }: { percent: number; onEdit: () => void }) {
+  const t = useTranslations("studentDashboard.profile");
+  if (percent >= 100) return null;
+
+  return (
+    <div className={panelClass}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Sparkles className="size-4 text-primary" />
+          <h3 className="text-sm font-semibold text-foreground">{t("completeness.heading")}</h3>
+        </div>
+        <span className="text-sm font-medium text-primary">{t("completeness.percentLabel", { percent })}</span>
+      </div>
+      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-secondary">
+        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${percent}%` }} />
+      </div>
+      <div className="mt-3 flex justify-end">
+        <Button type="button" variant="outline" size="sm" onClick={onEdit}>
+          {t("completeness.cta")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function ProfileCard({
   name,
   grade,
@@ -192,6 +323,7 @@ function ProfileCard({
   achievements,
   interests,
   availability,
+  onEdit,
 }: {
   name: string;
   grade: string;
@@ -214,10 +346,28 @@ function ProfileCard({
   achievements: string[];
   interests: string[];
   availability: string;
+  onEdit: () => void;
 }) {
   const t = useTranslations("studentDashboard.profile");
   const statusLabel = educationLabel(t, educationLevel);
   const age = calculateAge(dateOfBirth);
+  const percent = computeCompleteness({
+    photoUrl,
+    bio,
+    dateOfBirth,
+    location,
+    learningGoals,
+    educationLevel,
+    institutionName,
+    qualifications,
+    subjects,
+    languages,
+    achievements,
+    interests,
+    preferredMode,
+    availability,
+    phone,
+  });
 
   return (
     <>
@@ -253,38 +403,44 @@ function ProfileCard({
                   <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium">{statusLabel}</span>
                 )}
                 {age !== null && <span>{t("ageLabel", { age })}</span>}
-                {location && <span>{location}</span>}
+                {location && (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="size-3.5" />
+                    {location}
+                  </span>
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
 
+      <CompletenessCard percent={percent} onEdit={onEdit} />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard label={t("classesJoinedLabel")} value={classesCount} icon={BookOpen} tone="primary" />
+        <StatCard label={t("subjectsCountLabel")} value={subjects.length} icon={Tags} tone="success" />
+        <StatCard label={t("achievementsCountLabel")} value={achievements.length} icon={Trophy} tone="cta" />
+      </div>
+
       <div className={panelClass}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div>
-            <div className="text-xs text-muted-foreground">{t("classesJoinedLabel")}</div>
-            <div className="text-sm font-medium text-foreground">{classesCount}</div>
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">{t("emailLabel")}</div>
-            <div className="truncate text-sm font-medium text-foreground">{email}</div>
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">{t("phoneLabel")}</div>
-            <div className="text-sm font-medium text-foreground">{phone || "—"}</div>
-            {phone && (
-              <div className="mt-0.5 text-xs text-muted-foreground">
-                {sharePhoneWithTeachers ? t("phoneVisibleToTeachers") : t("phoneHiddenFromTeachers")}
-              </div>
-            )}
-          </div>
+        <SectionHeading icon={Mail}>{t("contactHeading")}</SectionHeading>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <ContactRow icon={Mail} label={t("emailLabel")} value={email} truncate />
+          <ContactRow
+            icon={Phone}
+            label={t("phoneLabel")}
+            value={phone || "—"}
+            hint={phone ? (sharePhoneWithTeachers ? t("phoneVisibleToTeachers") : t("phoneHiddenFromTeachers")) : undefined}
+          />
         </div>
       </div>
 
       {(bio || learningGoals) && (
         <div className={panelClass}>
-          <h3 className="mb-2 text-lg">{t("aboutHeading")}</h3>
+          <SectionHeading icon={FileText} className="mb-2">
+            {t("aboutHeading")}
+          </SectionHeading>
           {bio && <p className="text-sm whitespace-pre-line text-foreground/85">{bio}</p>}
           {learningGoals && (
             <div className={bio ? "mt-4" : ""}>
@@ -297,7 +453,7 @@ function ProfileCard({
 
       {(institutionName || qualifications.length > 0 || workExperience.length > 0) && (
         <div className={panelClass}>
-          <h3 className="mb-4 text-lg">{t("educationHeading")}</h3>
+          <SectionHeading icon={GraduationCap}>{t("educationHeading")}</SectionHeading>
           <div className="flex flex-col gap-4">
             {institutionName && (
               <div>
@@ -335,7 +491,9 @@ function ProfileCard({
 
       {achievements.length > 0 && (
         <div className={panelClass}>
-          <h3 className="mb-3 text-lg">{t("achievementsHeading")}</h3>
+          <SectionHeading icon={Trophy} className="mb-3">
+            {t("achievementsHeading")}
+          </SectionHeading>
           <ul className="flex flex-col gap-1">
             {achievements.map((achievement, i) => (
               <li key={i} className="text-sm font-medium text-foreground">
@@ -348,14 +506,14 @@ function ProfileCard({
 
       {(subjects.length > 0 || languages.length > 0 || interests.length > 0) && (
         <div className={panelClass}>
-          <h3 className="mb-4 text-lg">{t("tagsHeading")}</h3>
+          <SectionHeading icon={Tags}>{t("tagsHeading")}</SectionHeading>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {subjects.length > 0 && (
               <div>
                 <div className="mb-1.5 text-xs text-muted-foreground">{t("fields.subjects")}</div>
                 <div className="flex flex-wrap gap-1.5">
                   {subjects.map((subject, i) => (
-                    <span key={i} className="rounded-full bg-background px-2.5 py-1 text-xs text-foreground">
+                    <span key={i} className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                       {subject}
                     </span>
                   ))}
@@ -367,7 +525,7 @@ function ProfileCard({
                 <div className="mb-1.5 text-xs text-muted-foreground">{t("fields.languages")}</div>
                 <div className="flex flex-wrap gap-1.5">
                   {languages.map((language, i) => (
-                    <span key={i} className="rounded-full bg-background px-2.5 py-1 text-xs text-foreground">
+                    <span key={i} className="rounded-full bg-cta/15 px-2.5 py-1 text-xs font-medium text-accent-deep">
                       {language}
                     </span>
                   ))}
@@ -392,7 +550,7 @@ function ProfileCard({
 
       {(preferredMode || availability) && (
         <div className={panelClass}>
-          <h3 className="mb-4 text-lg">{t("preferencesHeading")}</h3>
+          <SectionHeading icon={Clock}>{t("preferencesHeading")}</SectionHeading>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {preferredMode && (
               <div>
@@ -453,18 +611,29 @@ function PhotoPanel({ initialPhotoUrl, studentName }: { initialPhotoUrl: string 
 
   return (
     <div className={panelClass}>
-      <h3 className="mb-4 text-lg">{t("photoHeading")}</h3>
+      <SectionHeading icon={Camera}>{t("photoHeading")}</SectionHeading>
       <div className="flex items-center gap-4">
-        {photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage public URL
-          <img src={photoUrl} alt="" className="size-[76px] shrink-0 rounded-full object-cover shadow-sm" />
-        ) : (
-          <div
-            className={`flex size-[76px] shrink-0 items-center justify-center rounded-full font-display text-2xl font-bold text-white shadow-sm ${avatarGradientClass(studentName)}`}
-          >
-            {studentName.charAt(0).toUpperCase()}
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={handleUploadClick}
+          disabled={uploading}
+          aria-label={t("uploadPhoto")}
+          className="group relative size-[76px] shrink-0 rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage public URL
+            <img src={photoUrl} alt="" className="size-[76px] shrink-0 rounded-full object-cover shadow-sm" />
+          ) : (
+            <div
+              className={`flex size-[76px] shrink-0 items-center justify-center rounded-full font-display text-2xl font-bold text-white shadow-sm ${avatarGradientClass(studentName)}`}
+            >
+              {studentName.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 text-white opacity-0 transition-all group-hover:bg-black/40 group-hover:opacity-100">
+            <Camera className="size-5" />
+          </span>
+        </button>
         <input
           ref={fileInputRef}
           type="file"
@@ -472,9 +641,12 @@ function PhotoPanel({ initialPhotoUrl, studentName }: { initialPhotoUrl: string 
           className="hidden"
           onChange={handlePhotoSelected}
         />
-        <Button type="button" variant="outline" onClick={handleUploadClick} disabled={uploading}>
-          {t("uploadPhoto")}
-        </Button>
+        <div className="flex flex-col gap-1.5">
+          <Button type="button" variant="outline" size="sm" className="self-start" onClick={handleUploadClick} disabled={uploading}>
+            {t("uploadPhoto")}
+          </Button>
+          <span className="text-xs text-muted-foreground">{t("photoHint")}</span>
+        </div>
         {saved && <span className="animate-in fade-in-0 text-sm font-medium text-success duration-200">{t("saved")}</span>}
         {error && <span className="text-sm font-medium text-destructive">{error}</span>}
       </div>
@@ -655,7 +827,7 @@ function EditForm({
   return (
     <>
       <div className={panelClass}>
-        <h3 className="mb-4 text-lg">{t("personalDetailsHeading")}</h3>
+        <SectionHeading icon={User}>{t("personalDetailsHeading")}</SectionHeading>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor={nameId} className="mb-1.5">
@@ -690,7 +862,7 @@ function EditForm({
       </div>
 
       <div className={panelClass}>
-        <h3 className="mb-4 text-lg">{t("aboutHeading")}</h3>
+        <SectionHeading icon={FileText}>{t("aboutHeading")}</SectionHeading>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={bioId}>{t("fields.bio")}</Label>
@@ -715,7 +887,7 @@ function EditForm({
       </div>
 
       <div className={panelClass}>
-        <h3 className="mb-4 text-lg">{t("educationHeading")}</h3>
+        <SectionHeading icon={GraduationCap}>{t("educationHeading")}</SectionHeading>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <Label>{t("fields.educationLevel")}</Label>
@@ -767,7 +939,7 @@ function EditForm({
       </div>
 
       <div className={panelClass}>
-        <h3 className="mb-4 text-lg">{t("achievementsHeading")}</h3>
+        <SectionHeading icon={Trophy}>{t("achievementsHeading")}</SectionHeading>
         <RepeatableListField
           label={t("fields.achievements")}
           items={achievements}
@@ -779,7 +951,7 @@ function EditForm({
       </div>
 
       <div className={panelClass}>
-        <h3 className="mb-4 text-lg">{t("tagsHeading")}</h3>
+        <SectionHeading icon={Tags}>{t("tagsHeading")}</SectionHeading>
         <div className="flex flex-col gap-5">
           <RepeatableListField
             label={t("fields.subjects")}
@@ -809,7 +981,7 @@ function EditForm({
       </div>
 
       <div className={panelClass}>
-        <h3 className="mb-4 text-lg">{t("preferencesHeading")}</h3>
+        <SectionHeading icon={Clock}>{t("preferencesHeading")}</SectionHeading>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <Label>{t("fields.preferredMode")}</Label>

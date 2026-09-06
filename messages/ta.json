@@ -1739,10 +1739,19 @@
     "profile": {
       "photoHeading": "சுயவிவரப் புகைப்படம்",
       "uploadPhoto": "புதிய புகைப்படத்தைப் பதிவேற்றவும்",
+      "photoHint": "JPG, PNG அல்லது WEBP",
       "profileTitle": "சுயவிவரம்",
       "editProfile": "சுயவிவரத்தைத் திருத்து",
       "doneEditing": "முடிந்தது",
       "classesJoinedLabel": "சேர்ந்த வகுப்புகள்",
+      "subjectsCountLabel": "பாடங்கள்",
+      "achievementsCountLabel": "சாதனைகள்",
+      "contactHeading": "தொடர்பு விவரங்கள்",
+      "completeness": {
+        "heading": "சுயவிவர முழுமை",
+        "percentLabel": "{percent}% முடிந்தது",
+        "cta": "உங்கள் சுயவிவரத்தை முழுமையாக்குங்கள்"
+      },
       "personalDetailsHeading": "தனிப்பட்ட விவரங்கள்",
       "nameLabel": "பெயர்",
       "gradeLabel": "தரம் / நிலை",

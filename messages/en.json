@@ -2491,6 +2491,8 @@
       "physical": "Physical",
       "physicalAt": "Physical — {location}",
       "scheduled": "Scheduled",
+      "statusLive": "Live now",
+      "statusEnded": "Class ended",
       "classTitlePlaceholder": "Class title",
       "locationPlaceholder": "Location (e.g. Room 4, Colombo 05)",
       "videoRoomAutoNote": "A video call room is created automatically for this class — no Zoom/Meet link needed. Students who join will wait in a lobby until you admit them.",

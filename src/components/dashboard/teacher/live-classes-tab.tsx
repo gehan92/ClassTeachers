@@ -39,6 +39,10 @@ export type TeacherLiveClassRow = {
   batchId: string | null;
   batchTitle: string | null;
   roster: LiveClassRosterEntry[];
+  /** Flipped to 'live'/'completed' by notifyLiveClassStarted/Ended, fired
+   * from handleStartCall below and dashboard-shell's handleLeaveCall — the
+   * real record of what happened, not a guess from the schedule. */
+  status: "scheduled" | "live" | "completed" | "cancelled";
 };
 
 const NO_BATCH = "all";
@@ -402,7 +406,9 @@ export function LiveClassesTab({
                     {c.mode === "online" ? t("online") : t("physicalAt", { location: c.location ?? "" })}
                   </TableCell>
                   <TableCell className="min-w-32">
-                    {c.mode === "online" && c.joinLink ? (
+                    {c.status === "completed" ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : c.mode === "online" && c.joinLink ? (
                       activeCall?.liveClassId === c.id ? (
                         <Button
                           type="button"
@@ -429,7 +435,13 @@ export function LiveClassesTab({
                     )}
                   </TableCell>
                   <TableCell>
-                    <StatusBadge variant="active">{t("scheduled")}</StatusBadge>
+                    {c.status === "live" ? (
+                      <StatusBadge variant="started">{t("statusLive")}</StatusBadge>
+                    ) : c.status === "completed" ? (
+                      <StatusBadge variant="closed">{t("statusEnded")}</StatusBadge>
+                    ) : (
+                      <StatusBadge variant="upcoming">{t("scheduled")}</StatusBadge>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap items-center gap-1">

@@ -2491,6 +2491,8 @@
       "physical": "භෞතික",
       "physicalAt": "භෞතික — {location}",
       "scheduled": "නියමිතයි",
+      "statusLive": "දැන් සජීවී",
+      "statusEnded": "පන්තිය අවසන් විය",
       "classTitlePlaceholder": "පන්ති මාතෘකාව",
       "locationPlaceholder": "ස්ථානය (උදා: කාමර 4, කොළඹ 05)",
       "videoRoomAutoNote": "මෙම පන්තිය සඳහා වීඩියෝ ඇමතුම් කාමරයක් ස්වයංක්‍රීයව සාදනු ලැබේ — Zoom/Meet සබැඳියක් අවශ්‍ය නැත. සම්බන්ධ වන සිසුන් ඔබ ඇතුළත් කරන තෙක් රැඳී සිටිනු ඇත.",

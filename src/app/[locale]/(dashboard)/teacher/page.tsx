@@ -229,7 +229,7 @@ export default async function TeacherDashboardPage({
       .order("scheduled_at", { ascending: false }),
     supabase
       .from("live_classes")
-      .select("id, title, mode, location, scheduled_at, duration_minutes, batch_id")
+      .select("id, title, mode, location, scheduled_at, duration_minutes, batch_id, status")
       .neq("status", "cancelled")
       .order("scheduled_at", { ascending: false }),
     supabase
@@ -793,6 +793,7 @@ export default async function TeacherDashboardPage({
     batchId: c.batch_id,
     batchTitle: c.batch_id ? (batchTitleById.get(c.batch_id) ?? null) : null,
     roster: rosterFor(c.id, c.batch_id),
+    status: c.status,
   }));
 
   const lessonOptions: TeacherLessonOption[] = (liveClassRows ?? []).map((c) => ({ id: c.id, title: c.title }));

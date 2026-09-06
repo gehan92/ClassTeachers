@@ -166,7 +166,6 @@ export function AssignmentsTab({
             <TableHeader>
               <TableRow>
                 <TableHead>{t("colAssignment")}</TableHead>
-                <TableHead>{t("tableTeacher")}</TableHead>
                 <TableHead>{t("colDue")}</TableHead>
                 <TableHead>{t("colAction")}</TableHead>
               </TableRow>
@@ -242,7 +241,6 @@ function AssignmentRow({
           </div>
         )}
       </TableCell>
-      <TableCell className="whitespace-normal text-muted-foreground">{assignment.teacherName}</TableCell>
       <TableCell className="whitespace-normal text-muted-foreground">
         {assignment.dueLabel ? t("dueLabel", { date: assignment.dueLabel }) : "—"}
       </TableCell>

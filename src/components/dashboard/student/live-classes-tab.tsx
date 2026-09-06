@@ -206,7 +206,6 @@ export function LiveClassesTab({
             <TableHeader>
               <TableRow>
                 <TableHead>{t("colTitle")}</TableHead>
-                <TableHead>{t("colTeacher")}</TableHead>
                 <TableHead>{t("colSchedule")}</TableHead>
                 <TableHead>{t("colMode")}</TableHead>
                 <TableHead>{t("colAction")}</TableHead>
@@ -266,7 +265,6 @@ function LiveClassRow({
   return (
     <TableRow>
       <TableCell className="font-medium whitespace-normal text-foreground">{row.title}</TableCell>
-      <TableCell className="whitespace-normal text-muted-foreground">{row.teacherName}</TableCell>
       <TableCell className="whitespace-normal text-muted-foreground">{row.scheduledLabel}</TableCell>
       <TableCell className="whitespace-normal text-muted-foreground">
         {row.mode === "online" ? t("modeOnline") : t("modePhysical")}

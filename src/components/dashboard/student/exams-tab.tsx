@@ -163,7 +163,6 @@ export function ExamsTab({
             <TableHeader>
               <TableRow>
                 <TableHead>{t("colExam")}</TableHead>
-                <TableHead>{t("tableTeacher")}</TableHead>
                 <TableHead>{t("colSchedule")}</TableHead>
                 <TableHead>{t("colAction")}</TableHead>
               </TableRow>
@@ -216,7 +215,6 @@ function ExamRow({
   return (
     <TableRow>
       <TableCell className="font-medium whitespace-normal text-foreground">{exam.title}</TableCell>
-      <TableCell className="whitespace-normal text-muted-foreground">{exam.teacherName}</TableCell>
       <TableCell className="whitespace-normal text-muted-foreground">
         {exam.scheduledLabel} · {t("durationLabel", { minutes: exam.durationMinutes })}
       </TableCell>

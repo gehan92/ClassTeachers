@@ -17,6 +17,8 @@ export function JoinRequestBox({
   ownerId,
   hourlyRate,
   monthlyRate,
+  hourlyRateMax,
+  monthlyRateMax,
   loggedIn,
   isStudent,
   existingStatus,
@@ -30,6 +32,9 @@ export function JoinRequestBox({
   ownerId: string;
   hourlyRate?: number;
   monthlyRate?: number;
+  /** Optional upper end of the rate (0120, teacher ads only) — shown as "Rs. {amount}–{max}" instead of a single number. */
+  hourlyRateMax?: number;
+  monthlyRateMax?: number;
   loggedIn: boolean;
   isStudent: boolean;
   existingStatus: "pending" | "accepted" | "declined" | null;
@@ -45,6 +50,7 @@ export function JoinRequestBox({
   const tp = useTranslations("priceBox");
   const [interval, setInterval] = useState<"hr" | "mo">(hourlyRate !== undefined ? "hr" : "mo");
   const amount = interval === "hr" ? hourlyRate : monthlyRate;
+  const maxAmount = interval === "hr" ? hourlyRateMax : monthlyRateMax;
   const [joinedNow, setJoinedNow] = useState(false);
   const spotsLeft = capacity !== undefined ? Math.max(0, capacity - spotsTaken) : undefined;
   const isFull = spotsLeft === 0;
@@ -89,6 +95,7 @@ export function JoinRequestBox({
           )}
           <div className="font-mono text-3xl font-semibold text-primary">
             Rs. {amount?.toLocaleString()}
+            {maxAmount && `–${maxAmount.toLocaleString()}`}
             <span className="ml-1 text-sm font-normal text-muted-foreground">/{interval}</span>
           </div>
         </div>

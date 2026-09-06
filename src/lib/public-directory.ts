@@ -15,10 +15,35 @@ function gradeChip(gradeBand: string | null, subjects: string[], tPage: Translat
   return tPage("allSubjects");
 }
 
-/** Prefer hourly over monthly for the card's headline price; a listing with neither isn't ready to compare, so it's left out of search entirely (see getPublicListings). */
-function priceFrom(hourlyRate: number | null, monthlyRate: number | null): Listing["price"] | null {
-  if (hourlyRate != null) return { amount: Number(hourlyRate), currency: "LKR", interval: "hr" };
-  if (monthlyRate != null) return { amount: Number(monthlyRate), currency: "LKR", interval: "mo" };
+/**
+ * Prefer hourly over monthly for the card's headline price; a listing with
+ * neither isn't ready to compare, so it's left out of search entirely (see
+ * getPublicListings). hourlyRateMax/monthlyRateMax (0120) are optional and
+ * only ever passed for a teacher ad — institute listings simply omit them,
+ * leaving `maxAmount` undefined and the price rendering as a single number.
+ */
+function priceFrom(
+  hourlyRate: number | null,
+  monthlyRate: number | null,
+  hourlyRateMax?: number | null,
+  monthlyRateMax?: number | null,
+): Listing["price"] | null {
+  if (hourlyRate != null) {
+    return {
+      amount: Number(hourlyRate),
+      maxAmount: hourlyRateMax != null ? Number(hourlyRateMax) : undefined,
+      currency: "LKR",
+      interval: "hr",
+    };
+  }
+  if (monthlyRate != null) {
+    return {
+      amount: Number(monthlyRate),
+      maxAmount: monthlyRateMax != null ? Number(monthlyRateMax) : undefined,
+      currency: "LKR",
+      interval: "mo",
+    };
+  }
   return null;
 }
 
@@ -40,7 +65,7 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
   ]);
 
   const teacherListings: Listing[] = (adRows ?? []).flatMap((row) => {
-    const price = priceFrom(row.hourly_rate, row.monthly_rate);
+    const price = priceFrom(row.hourly_rate, row.monthly_rate, row.hourly_rate_max, row.monthly_rate_max);
     if (!price || !row.display_name) return [];
 
     const online = row.mode === "online";

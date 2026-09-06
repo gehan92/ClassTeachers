@@ -79,6 +79,8 @@ export type TeacherAdBatchRow = {
   subjectName: string | null;
   hourlyRate: number | null;
   monthlyRate: number | null;
+  hourlyRateMax: number | null;
+  monthlyRateMax: number | null;
   medium: Medium | null;
   classType: ClassType | null;
   ad: { id: string; title: string; content: string; status: "active" | "expired" | "removed" } | null;
@@ -227,6 +229,8 @@ function BatchAdCard({
   const [contentTouched, setContentTouched] = useState(Boolean(batch.ad));
   const [hourlyRate, setHourlyRate] = useState(batch.hourlyRate != null ? String(batch.hourlyRate) : "");
   const [monthlyRate, setMonthlyRate] = useState(batch.monthlyRate != null ? String(batch.monthlyRate) : "");
+  const [hourlyRateMax, setHourlyRateMax] = useState(batch.hourlyRateMax != null ? String(batch.hourlyRateMax) : "");
+  const [monthlyRateMax, setMonthlyRateMax] = useState(batch.monthlyRateMax != null ? String(batch.monthlyRateMax) : "");
   const [active, setActive] = useState(batch.ad?.status === "active");
   const [deleted, setDeleted] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -275,6 +279,8 @@ function BatchAdCard({
       classType,
       hourlyRate: hourlyRate.trim() ? Number(hourlyRate) : undefined,
       monthlyRate: monthlyRate.trim() ? Number(monthlyRate) : undefined,
+      hourlyRateMax: hourlyRateMax.trim() ? Number(hourlyRateMax) : undefined,
+      monthlyRateMax: monthlyRateMax.trim() ? Number(monthlyRateMax) : undefined,
     });
     setSaving(false);
     if (result.error) {
@@ -442,33 +448,57 @@ function BatchAdCard({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">
               <Label htmlFor={`ad-hourly-${batch.id}`}>{t("hourlyRateLabel")}</Label>
-              <Input
-                id={`ad-hourly-${batch.id}`}
-                type="number"
-                min="0"
-                inputMode="decimal"
-                placeholder={
-                  defaultHourlyRate != null ? t("ratePlaceholderDefault", { rate: defaultHourlyRate }) : t("ratePlaceholderNone")
-                }
-                value={hourlyRate}
-                onChange={(e) => setHourlyRate(e.target.value)}
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id={`ad-hourly-${batch.id}`}
+                  type="number"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder={
+                    defaultHourlyRate != null ? t("ratePlaceholderDefault", { rate: defaultHourlyRate }) : t("ratePlaceholderNone")
+                  }
+                  value={hourlyRate}
+                  onChange={(e) => setHourlyRate(e.target.value)}
+                />
+                <span className="shrink-0 text-muted-foreground">–</span>
+                <Input
+                  aria-label={t("hourlyRateMaxLabel")}
+                  type="number"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder={t("rateMaxPlaceholder")}
+                  value={hourlyRateMax}
+                  onChange={(e) => setHourlyRateMax(e.target.value)}
+                />
+              </div>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor={`ad-monthly-${batch.id}`}>{t("monthlyRateLabel")}</Label>
-              <Input
-                id={`ad-monthly-${batch.id}`}
-                type="number"
-                min="0"
-                inputMode="decimal"
-                placeholder={
-                  defaultMonthlyRate != null
-                    ? t("ratePlaceholderDefault", { rate: defaultMonthlyRate })
-                    : t("ratePlaceholderNone")
-                }
-                value={monthlyRate}
-                onChange={(e) => setMonthlyRate(e.target.value)}
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id={`ad-monthly-${batch.id}`}
+                  type="number"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder={
+                    defaultMonthlyRate != null
+                      ? t("ratePlaceholderDefault", { rate: defaultMonthlyRate })
+                      : t("ratePlaceholderNone")
+                  }
+                  value={monthlyRate}
+                  onChange={(e) => setMonthlyRate(e.target.value)}
+                />
+                <span className="shrink-0 text-muted-foreground">–</span>
+                <Input
+                  aria-label={t("monthlyRateMaxLabel")}
+                  type="number"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder={t("rateMaxPlaceholder")}
+                  value={monthlyRateMax}
+                  onChange={(e) => setMonthlyRateMax(e.target.value)}
+                />
+              </div>
             </div>
           </div>
           <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
@@ -534,6 +564,8 @@ function IndividualAdCreator({
   const [contentTouched, setContentTouched] = useState(false);
   const [hourlyRate, setHourlyRate] = useState("");
   const [monthlyRate, setMonthlyRate] = useState("");
+  const [hourlyRateMax, setHourlyRateMax] = useState("");
+  const [monthlyRateMax, setMonthlyRateMax] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -580,6 +612,8 @@ function IndividualAdCreator({
       classType,
       hourlyRate: hourlyRate.trim() ? Number(hourlyRate) : undefined,
       monthlyRate: monthlyRate.trim() ? Number(monthlyRate) : undefined,
+      hourlyRateMax: hourlyRateMax.trim() ? Number(hourlyRateMax) : undefined,
+      monthlyRateMax: monthlyRateMax.trim() ? Number(monthlyRateMax) : undefined,
     });
     setSaving(false);
     if (result.error) {
@@ -593,6 +627,8 @@ function IndividualAdCreator({
     setContentTouched(false);
     setHourlyRate("");
     setMonthlyRate("");
+    setHourlyRateMax("");
+    setMonthlyRateMax("");
     refresh();
   }
 
@@ -725,33 +761,57 @@ function IndividualAdCreator({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">
               <Label htmlFor="individual-hourly">{t("hourlyRateLabel")}</Label>
-              <Input
-                id="individual-hourly"
-                type="number"
-                min="0"
-                inputMode="decimal"
-                placeholder={
-                  defaultHourlyRate != null ? t("ratePlaceholderDefault", { rate: defaultHourlyRate }) : t("ratePlaceholderNone")
-                }
-                value={hourlyRate}
-                onChange={(e) => setHourlyRate(e.target.value)}
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="individual-hourly"
+                  type="number"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder={
+                    defaultHourlyRate != null ? t("ratePlaceholderDefault", { rate: defaultHourlyRate }) : t("ratePlaceholderNone")
+                  }
+                  value={hourlyRate}
+                  onChange={(e) => setHourlyRate(e.target.value)}
+                />
+                <span className="shrink-0 text-muted-foreground">–</span>
+                <Input
+                  aria-label={t("hourlyRateMaxLabel")}
+                  type="number"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder={t("rateMaxPlaceholder")}
+                  value={hourlyRateMax}
+                  onChange={(e) => setHourlyRateMax(e.target.value)}
+                />
+              </div>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="individual-monthly">{t("monthlyRateLabel")}</Label>
-              <Input
-                id="individual-monthly"
-                type="number"
-                min="0"
-                inputMode="decimal"
-                placeholder={
-                  defaultMonthlyRate != null
-                    ? t("ratePlaceholderDefault", { rate: defaultMonthlyRate })
-                    : t("ratePlaceholderNone")
-                }
-                value={monthlyRate}
-                onChange={(e) => setMonthlyRate(e.target.value)}
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="individual-monthly"
+                  type="number"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder={
+                    defaultMonthlyRate != null
+                      ? t("ratePlaceholderDefault", { rate: defaultMonthlyRate })
+                      : t("ratePlaceholderNone")
+                  }
+                  value={monthlyRate}
+                  onChange={(e) => setMonthlyRate(e.target.value)}
+                />
+                <span className="shrink-0 text-muted-foreground">–</span>
+                <Input
+                  aria-label={t("monthlyRateMaxLabel")}
+                  type="number"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder={t("rateMaxPlaceholder")}
+                  value={monthlyRateMax}
+                  onChange={(e) => setMonthlyRateMax(e.target.value)}
+                />
+              </div>
             </div>
           </div>
           <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>

@@ -33,6 +33,8 @@ export type Listing = {
   subjects: string[];
   price: {
     amount: number;
+    /** Set only for a teacher ad with an optional upper rate (0120) — renders as "Rs. {amount}–{maxAmount}" instead of a single number. Undefined everywhere else (institute listings have no range). */
+    maxAmount?: number;
     currency: "LKR";
     interval: "hr" | "mo";
     fromPrice?: boolean;

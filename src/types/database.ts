@@ -457,6 +457,8 @@ export type Database = {
           capacity: number | null;
           medium: "english" | "sinhala" | "tamil" | "other" | null;
           class_type: "new" | "revision" | null;
+          hourly_rate_max: number | null;
+          monthly_rate_max: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -481,6 +483,8 @@ export type Database = {
           capacity?: number | null;
           medium?: "english" | "sinhala" | "tamil" | "other" | null;
           class_type?: "new" | "revision" | null;
+          hourly_rate_max?: number | null;
+          monthly_rate_max?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -505,6 +509,8 @@ export type Database = {
           capacity?: number | null;
           medium?: "english" | "sinhala" | "tamil" | "other" | null;
           class_type?: "new" | "revision" | null;
+          hourly_rate_max?: number | null;
+          monthly_rate_max?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1745,6 +1751,8 @@ export type Database = {
           course_code: string | null;
           medium: string | null;
           class_type: string | null;
+          hourly_rate_max: number | null;
+          monthly_rate_max: number | null;
         }[];
       };
       get_public_ad: {
@@ -1774,6 +1782,8 @@ export type Database = {
           spots_taken: number;
           medium: string | null;
           class_type: string | null;
+          hourly_rate_max: number | null;
+          monthly_rate_max: number | null;
         }[];
       };
       list_public_wanted_ads: {

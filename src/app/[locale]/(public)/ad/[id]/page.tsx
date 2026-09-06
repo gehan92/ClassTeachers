@@ -49,6 +49,9 @@ type NormalizedAd = {
    * composer wasn't converted), so rendering must branch on ownerType. */
   medium: "english" | "sinhala" | "tamil" | "other" | null;
   classType: "new" | "revision" | null;
+  /** Optional upper end of the rate (0120, teacher ads only). */
+  hourlyRateMax: number | null;
+  monthlyRateMax: number | null;
 };
 
 async function loadAd(adId: string): Promise<NormalizedAd | null> {
@@ -83,6 +86,8 @@ async function loadAd(adId: string): Promise<NormalizedAd | null> {
       spotsTaken: r.spots_taken,
       medium: r.medium as "english" | "sinhala" | "tamil" | "other" | null,
       classType: r.class_type as "new" | "revision" | null,
+      hourlyRateMax: r.hourly_rate_max,
+      monthlyRateMax: r.monthly_rate_max,
     };
   }
 
@@ -115,6 +120,8 @@ async function loadAd(adId: string): Promise<NormalizedAd | null> {
       spotsTaken: r.spots_taken,
       medium: null,
       classType: null,
+      hourlyRateMax: null,
+      monthlyRateMax: null,
     };
   }
 
@@ -329,6 +336,8 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
             ownerId={ad.ownerId}
             hourlyRate={ad.hourlyRate ?? undefined}
             monthlyRate={ad.monthlyRate ?? undefined}
+            hourlyRateMax={ad.hourlyRateMax ?? undefined}
+            monthlyRateMax={ad.monthlyRateMax ?? undefined}
             loggedIn={Boolean(user)}
             isStudent={viewerRole === "student"}
             existingStatus={existingStatus}

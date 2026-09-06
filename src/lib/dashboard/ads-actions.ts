@@ -7,6 +7,20 @@ import { hasRichText } from "@/lib/rich-text";
 
 type ActionResult = { error: string } | { error?: undefined };
 
+/**
+ * A "max" rate only ever makes sense alongside its own "min" (the existing
+ * hourlyRate/monthlyRate field) -- a max with no min, or a max that isn't
+ * actually higher, is a malformed range rather than something to silently
+ * drop. Shared by upsertBatchAd and createIndividualAd, the two teacher ad
+ * forms that gained this optional range (0120).
+ */
+function validateRateRange(min: number | undefined, max: number | undefined): string | null {
+  if (max === undefined) return null;
+  if (min === undefined) return "Add a starting rate before setting an upper rate.";
+  if (max <= min) return "The upper rate must be higher than the starting rate.";
+  return null;
+}
+
 const updateOwnProfileAdSchema = z.object({
   ownerType: z.enum(["teacher", "class"]),
   content: z.string().trim().min(1),
@@ -81,6 +95,8 @@ const upsertBatchAdSchema = z.object({
   classType: z.enum(["new", "revision"]),
   hourlyRate: z.number().positive().optional(),
   monthlyRate: z.number().positive().optional(),
+  hourlyRateMax: z.number().positive().optional(),
+  monthlyRateMax: z.number().positive().optional(),
 });
 
 /**
@@ -90,6 +106,8 @@ const upsertBatchAdSchema = z.object({
  * this is the one place a teacher assigns a batch's subject. hourlyRate/
  * monthlyRate (0041) are per-batch overrides of the teacher's profile rate —
  * omitted/undefined clears the override back to "inherit the default".
+ * hourlyRateMax/monthlyRateMax (0120) turn that single rate into a range —
+ * only meaningful alongside their own min, validated below.
  */
 export async function upsertBatchAd(input: {
   batchId: string;
@@ -100,10 +118,18 @@ export async function upsertBatchAd(input: {
   classType: "new" | "revision";
   hourlyRate?: number;
   monthlyRate?: number;
+  hourlyRateMax?: number;
+  monthlyRateMax?: number;
 }): Promise<ActionResult> {
   const parsed = upsertBatchAdSchema.safeParse(input);
   if (!parsed.success) {
     return { error: "Please fill in the subject, title and details, then try again." };
+  }
+  const rangeError =
+    validateRateRange(parsed.data.hourlyRate, parsed.data.hourlyRateMax) ??
+    validateRateRange(parsed.data.monthlyRate, parsed.data.monthlyRateMax);
+  if (rangeError) {
+    return { error: rangeError };
   }
   const content = sanitizeRichText(parsed.data.content);
   if (!hasRichText(content)) {
@@ -146,6 +172,8 @@ export async function upsertBatchAd(input: {
       subject_id: parsed.data.subjectId,
       hourly_rate: parsed.data.hourlyRate ?? null,
       monthly_rate: parsed.data.monthlyRate ?? null,
+      hourly_rate_max: parsed.data.hourlyRateMax ?? null,
+      monthly_rate_max: parsed.data.monthlyRateMax ?? null,
       medium: parsed.data.medium,
       class_type: parsed.data.classType,
     })
@@ -564,6 +592,8 @@ const createIndividualAdSchema = z.object({
   classType: z.enum(["new", "revision"]),
   hourlyRate: z.number().positive().optional(),
   monthlyRate: z.number().positive().optional(),
+  hourlyRateMax: z.number().positive().optional(),
+  monthlyRateMax: z.number().positive().optional(),
 });
 
 /**
@@ -586,6 +616,8 @@ export async function createIndividualAd(input: {
   classType: "new" | "revision";
   hourlyRate?: number;
   monthlyRate?: number;
+  hourlyRateMax?: number;
+  monthlyRateMax?: number;
 }): Promise<ActionResult> {
   const parsed = createIndividualAdSchema.safeParse({
     ...input,
@@ -593,6 +625,12 @@ export async function createIndividualAd(input: {
   });
   if (!parsed.success) {
     return { error: "Please fill in the subject, mode, and title and details." };
+  }
+  const rangeError =
+    validateRateRange(parsed.data.hourlyRate, parsed.data.hourlyRateMax) ??
+    validateRateRange(parsed.data.monthlyRate, parsed.data.monthlyRateMax);
+  if (rangeError) {
+    return { error: rangeError };
   }
   const content = sanitizeRichText(parsed.data.content);
   if (!hasRichText(content)) {
@@ -636,6 +674,8 @@ export async function createIndividualAd(input: {
       subject_id: parsed.data.subjectId,
       hourly_rate: parsed.data.hourlyRate ?? null,
       monthly_rate: parsed.data.monthlyRate ?? null,
+      hourly_rate_max: parsed.data.hourlyRateMax ?? null,
+      monthly_rate_max: parsed.data.monthlyRateMax ?? null,
       class_size_type: "individual",
       medium: parsed.data.medium,
       class_type: parsed.data.classType,

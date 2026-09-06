@@ -123,6 +123,7 @@ export function ListingCard({ listing, index }: { listing: Listing; index?: numb
             {listing.price.fromPrice ? "From " : ""}
             {listing.price.currency === "LKR" ? "Rs. " : ""}
             {listing.price.amount.toLocaleString()}
+            {listing.price.maxAmount && `–${listing.price.maxAmount.toLocaleString()}`}
             <small className="ml-0.5 text-[11px] font-normal text-muted-foreground">
               /{listing.price.interval}
             </small>

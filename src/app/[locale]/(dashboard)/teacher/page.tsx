@@ -184,7 +184,7 @@ export default async function TeacherDashboardPage({
     supabase
       .from("batches")
       .select(
-        "id, title, mode, class_size_type, location, schedule_note, grade_band, status, subject_id, hourly_rate, monthly_rate, course_code, is_open_enrollment, capacity, medium, class_type",
+        "id, title, mode, class_size_type, location, schedule_note, grade_band, status, subject_id, hourly_rate, monthly_rate, course_code, is_open_enrollment, capacity, medium, class_type, hourly_rate_max, monthly_rate_max",
       )
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
@@ -548,6 +548,8 @@ export default async function TeacherDashboardPage({
       subjectName: b.subject_id ? (subjectNameById.get(b.subject_id) ?? null) : null,
       hourlyRate: b.hourly_rate,
       monthlyRate: b.monthly_rate,
+      hourlyRateMax: b.hourly_rate_max,
+      monthlyRateMax: b.monthly_rate_max,
       medium: b.medium,
       classType: b.class_type,
       ad: ad ? { id: ad.id, title: ad.title, content: sanitizeRichTextNullable(ad.content) ?? "", status: ad.status } : null,

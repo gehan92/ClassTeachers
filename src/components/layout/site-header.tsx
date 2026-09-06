@@ -32,8 +32,24 @@ const searchItems = [
     href: { pathname: "/teachers", query: { category: "teacher", online: "true" } },
     key: "searchOnlineLessons",
   },
-  { href: { pathname: "/requests", query: { category: undefined } }, key: "studentRequests" },
+  { href: { pathname: "/requests", query: { lookingFor: "teacher" } }, key: "studentRequestsTeacher" },
+  { href: { pathname: "/requests", query: { lookingFor: "institute" } }, key: "studentRequestsInstitute" },
 ] as const;
+
+// Every item's query keys map to a single string value, and pathname is
+// checked first — so an item is "active" exactly when every one of its own
+// query params (category, or category+online, or lookingFor) matches the
+// current URL. Handles both /teachers and /requests items generically
+// instead of hardcoding one pathname/param pair.
+function isSearchItemActive(
+  item: (typeof searchItems)[number],
+  pathname: string,
+  searchParams: URLSearchParams,
+): boolean {
+  if (pathname !== item.href.pathname) return false;
+  const query: Record<string, string> = item.href.query;
+  return Object.keys(query).every((key) => searchParams.get(key) === query[key]);
+}
 
 export function SiteHeader({
   user,
@@ -48,7 +64,7 @@ export function SiteHeader({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const isSearchActive = pathname === "/teachers";
+  const isSearchActive = pathname === "/teachers" || pathname === "/requests";
   // Students have no "inquiries" tab (they submit them, don't receive them)
   // — their equivalent inbound-message tab is Post an Ad's wanted-ad
   // responses.
@@ -96,8 +112,7 @@ export function SiteHeader({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
               {searchItems.map((item) => {
-                const active =
-                  pathname === "/teachers" && searchParams.get("category") === item.href.query.category;
+                const active = isSearchItemActive(item, pathname, searchParams);
                 return (
                   <DropdownMenuItem
                     key={item.key}
@@ -183,7 +198,7 @@ export function SiteHeader({
                   {t("search")}
                 </div>
                 {searchItems.map((item) => {
-                  const active = pathname === "/teachers" && searchParams.get("category") === item.href.query.category;
+                  const active = isSearchItemActive(item, pathname, searchParams);
                   return (
                     <Link
                       key={item.key}

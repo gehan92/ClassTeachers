@@ -1,7 +1,8 @@
 "use client";
 
-import { createElement, useMemo, useState } from "react";
+import { createElement, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { Input } from "@/components/ui/input";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
@@ -26,6 +27,10 @@ export type PublicWantedAd = {
 
 const lookingForFilters = ["all", "teacher", "institute"] as const;
 type LookingForFilter = (typeof lookingForFilters)[number];
+
+function isLookingForFilter(value: string): value is LookingForFilter {
+  return (lookingForFilters as readonly string[]).includes(value);
+}
 
 /**
  * Deliberately mirrors ListingCard's shape (same banner/avatar/footer-pill
@@ -102,6 +107,7 @@ export function WantedAdsBoard({ ads }: { ads: PublicWantedAd[] }) {
   const t = useTranslations("requestsPage");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<LookingForFilter>("all");
+  const searchParams = useSearchParams();
 
   const filteredAds = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -118,6 +124,18 @@ export function WantedAdsBoard({ ads }: { ads: PublicWantedAd[] }) {
 
   const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(filteredAds.length);
   const pagedAds = filteredAds.slice(offset, offset + pageSize);
+
+  useEffect(() => {
+    // Mirrors TeachersSearch's URL sync — the header's "Students looking for
+    // a teacher/institute" links land here with ?lookingFor=..., which should
+    // pre-select this board's own filter chip rather than always opening on
+    // "All".
+    const fromUrl = searchParams.get("lookingFor");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from the URL, not derived render state
+    setFilter(fromUrl && isLookingForFilter(fromUrl) ? fromUrl : "all");
+    setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setPage is a stable setState setter from usePagination, intentionally omitted like TeachersSearch's identical sync effect
+  }, [searchParams]);
 
   const hasFilters = query.length > 0 || filter !== "all";
 

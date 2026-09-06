@@ -36,7 +36,9 @@ function messageFor(t: Translator, n: NotificationRow): string {
     case "join_request_accepted":
       return t("types.join_request_accepted", { ownerName: str(data.ownerName) });
     case "join_request_declined":
-      return t("types.join_request_declined", { ownerName: str(data.ownerName) });
+      return data.reason
+        ? t("types.join_request_declined_with_reason", { ownerName: str(data.ownerName), reason: str(data.reason) })
+        : t("types.join_request_declined", { ownerName: str(data.ownerName) });
     case "exam_graded":
       return t("types.exam_graded", { examTitle: str(data.examTitle), grade: str(data.grade) });
     case "new_note":
@@ -65,6 +67,10 @@ function messageFor(t: Translator, n: NotificationRow): string {
       return t("types.wanted_ad_response", {
         responderType: t(data.responderType === "class" ? "responderTypes.class" : "responderTypes.teacher"),
       });
+    case "wanted_ad_response_accepted":
+      return t("types.wanted_ad_response_accepted");
+    case "wanted_ad_response_declined":
+      return t("types.wanted_ad_response_declined");
     case "listing_decision":
       return t("types.listing_decision", {
         decision: t(data.decision === "approved" ? "decisions.approved" : "decisions.rejected"),

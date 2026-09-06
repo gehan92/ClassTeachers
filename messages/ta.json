@@ -71,6 +71,7 @@
       "join_request_received_general": "{studentName} உங்கள் நிறுவனத்தில் சேர விண்ணப்பித்துள்ளார்.",
       "join_request_accepted": "{ownerName} உங்கள் சேர்க்கை கோரிக்கையை ஏற்றுக்கொண்டார்.",
       "join_request_declined": "{ownerName} உங்கள் சேர்க்கை கோரிக்கையை நிராகரித்தார்.",
+      "join_request_declined_with_reason": "{ownerName} உங்கள் சேர்க்கை கோரிக்கையை நிராகரித்தார்: \"{reason}\"",
       "open_batch_joined": "{studentName} உங்கள் திறந்த வகுப்பில் சேர்ந்தார்: \"{batchTitle}\".",
       "exam_graded": "உங்கள் \"{examTitle}\" தேர்வு மதிப்பிடப்பட்டது: {grade}.",
       "new_note": "புதிய குறிப்பு பகிரப்பட்டது: \"{title}\".",
@@ -85,6 +86,8 @@
       "inquiry_message": "ஒரு விசாரணையில் புதிய செய்தி.",
       "inquiry_reply": "உங்கள் செய்திக்கு பதில் கிடைத்துள்ளது.",
       "wanted_ad_response": "ஒரு {responderType} உங்கள் கோரிக்கைக்கு பதிலளித்தார்.",
+      "wanted_ad_response_accepted": "ஒரு மாணவர் உங்கள் பதிலை ஏற்றுக்கொண்டார்.",
+      "wanted_ad_response_declined": "ஒரு மாணவர் உங்கள் பதிலை நிராகரித்தார்.",
       "listing_decision": "உங்கள் பட்டியல் {decision}.",
       "listing_resubmitted": "ஒரு {kind} பட்டியல் மறுஆய்வுக்காக மீண்டும் சமர்ப்பிக்கப்பட்டது.",
       "review_flagged": "ஒரு மதிப்பாய்வு நிர்வாகக் கண்காணிப்புக்காகக் கொடியிடப்பட்டது.",
@@ -416,7 +419,9 @@
     "cancelReply": "ரத்துசெய்",
     "sendResponse": "பதிலை அனுப்பு",
     "responsePlaceholder": "உங்களை அறிமுகப்படுத்தி நீங்கள் எப்படி உதவ முடியும் என்று சொல்லுங்கள்...",
-    "yourResponse": "உங்கள் பதில்"
+    "yourResponse": "உங்கள் பதில்",
+    "responseStatusAccepted": "மாணவர் உங்கள் பதிலை ஏற்றுக்கொண்டார்",
+    "responseStatusDeclined": "மாணவர் உங்கள் பதிலை நிராகரித்தார்"
   },
   "comingSoon": {
     "badge": "விரைவில் வருகிறது",
@@ -1459,7 +1464,8 @@
         "heading": "சேர்க்கை கோரிக்கைகள்",
         "assignBatchPlaceholder": "ஒரு வகுப்பை ஒதுக்கவும் (விருப்பத்தேர்வு)",
         "accept": "ஏற்றுக்கொள்",
-        "decline": "நிராகரி"
+        "decline": "நிராகரி",
+        "declineReasonPlaceholder": "காரணம் (விருப்பத்தேர்வு)"
       }
     }
   },
@@ -1482,7 +1488,9 @@
       "assignments": "பணிகள்",
       "homework": "வீட்டுப்பாடம்",
       "settings": "அமைப்புகள்",
+      "requests": "கோரிக்கைகள்",
       "wantedAds": "விளம்பரம் இடு",
+      "wantedAdResponses": "பதில்கள்",
       "inquiries": "செய்திகள்"
     },
     "announcements": {
@@ -1550,8 +1558,6 @@
       "openClass": "வகுப்பைத் திற",
       "backToClasses": "என் வகுப்புகளுக்குத் திரும்பு",
       "emptyState": "நீங்கள் இன்னும் எந்த வகுப்பிலும் இணையவில்லை.",
-      "pendingTitle": "நிலுவையிலுள்ள கோரிக்கைகள்",
-      "pendingStatus": "ஆசிரியரின் பதிலுக்காக காத்திருக்கிறது",
       "browseTitle": "இணைய வகுப்புகளைத் தேடுங்கள்",
       "browseEmpty": "தற்போது இணைய வகுப்புகள் எதுவும் இல்லை.",
       "modeOnline": "ஆன்லைன்",
@@ -1564,6 +1570,19 @@
       "liveNowBadge": "இப்போது நேரலை",
       "newActivityBadge": "புதியது",
       "dueSoonBadge": "{count} நிலுவையில்"
+    },
+    "requests": {
+      "heading": "கோரிக்கைகள்",
+      "subtitle": "நீங்கள் இணைய அனுப்பிய கோரிக்கைகளைக் கண்காணிக்கவும்.",
+      "empty": "நீங்கள் இன்னும் எந்த இணைவு கோரிக்கையும் அனுப்பவில்லை.",
+      "typeTeacher": "ஆசிரியர்",
+      "typeClass": "வகுப்பு",
+      "typeCampusLecturer": "வளாக விரிவுரையாளர்",
+      "statusPending": "பதிலுக்காக காத்திருக்கிறது",
+      "statusDeclined": "நிராகரிக்கப்பட்டது",
+      "declineReasonLabel": "கொடுக்கப்பட்ட காரணம்",
+      "cancelRequest": "கோரிக்கையை ரத்து செய்",
+      "cancelling": "ரத்து செய்கிறது…"
     },
     "live": {
       "title": "நேரடி வகுப்புகள்",
@@ -1905,14 +1924,22 @@
       "statusOpen": "திறந்துள்ளது",
       "statusClosed": "மூடப்பட்டது",
       "editAd": "திருத்து",
-      "deleteAd": "நீக்கு",
+      "deleteAd": "நீக்கு"
+    },
+    "wantedAdResponses": {
+      "heading": "பதில்கள்",
+      "subtitle": "உங்கள் விளம்பரங்களுக்கு பதிலளித்த ஆசிரியர்கள் மற்றும் நிறுவனங்கள்.",
+      "empty": "உங்கள் விளம்பரங்களுக்கு இதுவரை யாரும் பதிலளிக்கவில்லை.",
       "responsesHeading": "{count} பதில்கள்",
       "responderTypeLabels": {
         "teacher": "ஆசிரியர்",
         "class": "நிறுவனம்"
       },
       "newResponseBadge": "புதியது",
-      "markResponseRead": "படித்ததாகக் குறி"
+      "acceptResponse": "ஏற்றுக்கொள்",
+      "declineResponse": "நிராகரி",
+      "statusAccepted": "ஏற்றுக்கொள்ளப்பட்டது",
+      "statusDeclined": "நிராகரிக்கப்பட்டது"
     },
     "common": {
       "save": "சேமி",
@@ -2520,7 +2547,8 @@
       "requests": {
         "heading": "சேர்க்கை கோரிக்கைகள்",
         "accept": "ஏற்றுக்கொள்",
-        "decline": "நிராகரி"
+        "decline": "நிராகரி",
+        "declineReasonPlaceholder": "காரணம் (விருப்பத்தேர்வு)"
       }
     },
     "analytics": {

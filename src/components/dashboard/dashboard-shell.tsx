@@ -30,6 +30,7 @@ import {
   GraduationCap,
   Calendar,
   Inbox,
+  Reply,
   BellRing,
   TrendingUp,
   HelpCircle,
@@ -133,7 +134,9 @@ const TAB_ICONS: Partial<Record<string, LucideIcon>> = {
   ads: Megaphone,
   settings: SettingsIcon,
   progress: TrendingUp,
+  requests: Inbox,
   wantedAds: Megaphone,
+  wantedAdResponses: Reply,
   // Institute-only tabs (studentRequests is shared with teacher, which had
   // the same gap).
   teachers: GraduationCap,

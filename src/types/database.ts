@@ -929,6 +929,7 @@ export type Database = {
           owner_id: string;
           batch_id: string | null;
           status: "pending" | "accepted" | "declined";
+          decline_reason: string | null;
           joined_at: string;
         };
         Insert: {
@@ -938,6 +939,7 @@ export type Database = {
           owner_id: string;
           batch_id?: string | null;
           status?: "pending" | "accepted" | "declined";
+          decline_reason?: string | null;
           joined_at?: string;
         };
         Update: {
@@ -947,6 +949,7 @@ export type Database = {
           owner_id?: string;
           batch_id?: string | null;
           status?: "pending" | "accepted" | "declined";
+          decline_reason?: string | null;
           joined_at?: string;
         };
         // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
@@ -1064,7 +1067,7 @@ export type Database = {
           responder_type: "teacher" | "class";
           responder_id: string;
           message: string;
-          status: "new" | "read";
+          status: "new" | "read" | "accepted" | "declined";
           created_at: string;
         };
         Insert: {
@@ -1073,7 +1076,7 @@ export type Database = {
           responder_type: "teacher" | "class";
           responder_id: string;
           message: string;
-          status?: "new" | "read";
+          status?: "new" | "read" | "accepted" | "declined";
           created_at?: string;
         };
         Update: {
@@ -1082,7 +1085,7 @@ export type Database = {
           responder_type?: "teacher" | "class";
           responder_id?: string;
           message?: string;
-          status?: "new" | "read";
+          status?: "new" | "read" | "accepted" | "declined";
           created_at?: string;
         };
         Relationships: [];
@@ -1773,6 +1776,7 @@ export type Database = {
           description: string | null;
           created_at: string;
           my_response: string | null;
+          my_response_status: string | null;
         }[];
       };
       list_wanted_ad_responses_for_student: {

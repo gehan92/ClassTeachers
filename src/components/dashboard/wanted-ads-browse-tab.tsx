@@ -18,6 +18,9 @@ export type WantedAdBrowseRow = {
   description: string | null;
   createdLabel: string;
   myResponse: string | null;
+  /** Whether the student has decided on this response yet — null until they
+   * do, and final once they have (see respondToWantedAdDecision). */
+  myResponseStatus: "new" | "read" | "accepted" | "declined" | null;
 };
 
 /**
@@ -112,6 +115,12 @@ function RequestItem({ request }: { request: WantedAdBrowseRow }) {
         <div className="mt-1 rounded-md bg-secondary/60 px-3 py-2">
           <p className="mb-0.5 text-xs font-semibold text-muted-foreground">{t("yourResponse")}</p>
           <p className="text-sm text-foreground/85">{myResponse}</p>
+          {request.myResponseStatus === "accepted" && (
+            <p className="mt-1 text-xs font-medium text-success">{t("responseStatusAccepted")}</p>
+          )}
+          {request.myResponseStatus === "declined" && (
+            <p className="mt-1 text-xs font-medium text-destructive">{t("responseStatusDeclined")}</p>
+          )}
         </div>
       ) : responding ? (
         <div className="mt-1 flex flex-col gap-2">

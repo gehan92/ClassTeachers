@@ -232,9 +232,14 @@ export async function respondToWantedAd(wantedAdId: string, message: string): Pr
   return {};
 }
 
-/** Mirrors markInquiryRead (0037) — same 'new'/'read' shape, scoped by RLS
- * (0073) to the student who posted the ad this response belongs to. */
-export async function markWantedAdResponseRead(responseId: string): Promise<ActionResult> {
+/**
+ * The student's decision on one response to their ad — Accept just marks it
+ * so (no automatic contact-info reveal; the student reaches out the same
+ * way they always would) and Decline closes it out, mirroring
+ * respondToJoinRequest's own accept/decline shape. Final either way, same
+ * as a join request: no "undo" action exists.
+ */
+export async function respondToWantedAdDecision(responseId: string, accepted: boolean): Promise<ActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -243,9 +248,36 @@ export async function markWantedAdResponseRead(responseId: string): Promise<Acti
     return { error: "You need to be signed in." };
   }
 
-  const { error } = await supabase.from("wanted_ad_responses").update({ status: "read" }).eq("id", responseId);
+  const { data: updated, error } = await supabase
+    .from("wanted_ad_responses")
+    .update({ status: accepted ? "accepted" : "declined" })
+    .eq("id", responseId)
+    .select("responder_type, responder_id")
+    .maybeSingle();
   if (error) {
     return { error: "Couldn't update this. Please try again." };
+  }
+
+  if (updated) {
+    let recipientId = updated.responder_id;
+    if (updated.responder_type === "class") {
+      const { data: cp } = await supabase
+        .from("class_profiles")
+        .select("owner_id")
+        .eq("id", updated.responder_id)
+        .maybeSingle();
+      recipientId = cp?.owner_id ?? updated.responder_id;
+    }
+    // No dedicated notification-preference toggle for this yet (unlike most
+    // other notify() call sites) — narrow enough, and infrequent enough,
+    // that it isn't worth its own Settings entry right now.
+    await notify(
+      supabase,
+      recipientId,
+      accepted ? "wanted_ad_response_accepted" : "wanted_ad_response_declined",
+      {},
+      "studentRequests",
+    );
   }
   return {};
 }

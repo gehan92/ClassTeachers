@@ -449,6 +449,7 @@ export default async function TeacherDashboardPage({
     description: sanitizeRichTextNullable(row.description),
     createdLabel: dateFormatter.format(new Date(row.created_at)),
     myResponse: row.my_response,
+    myResponseStatus: row.my_response_status as "new" | "read" | "accepted" | "declined" | null,
   }));
 
   const examIds = new Set((examRows ?? []).map((e) => e.id));

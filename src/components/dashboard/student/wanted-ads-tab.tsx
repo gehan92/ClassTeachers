@@ -8,20 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { StatusBadge } from "@/components/features/status-badge";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { getSubjectIcon } from "@/lib/subject-icon";
 import { hasRichText, countRichTextWords, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
-import {
-  createWantedAd,
-  updateWantedAd,
-  setWantedAdStatus,
-  deleteWantedAd,
-  markWantedAdResponseRead,
-} from "@/lib/dashboard/wanted-ads-actions";
+import { createWantedAd, updateWantedAd, setWantedAdStatus, deleteWantedAd } from "@/lib/dashboard/wanted-ads-actions";
 import type { PublicWantedAd } from "@/components/features/wanted-ads-board";
 
 type LookingFor = "teacher" | "institute";
@@ -73,7 +66,7 @@ export type WantedAdResponseRow = {
   responderType: "teacher" | "class";
   responderName: string | null;
   message: string;
-  status: "new" | "read";
+  status: "new" | "read" | "accepted" | "declined";
   createdLabel: string;
 };
 
@@ -82,12 +75,10 @@ type SubjectOption = { id: string; name: string };
 export function WantedAdsTab({
   wantedAds,
   subjectOptions,
-  responses,
   sampleAds,
 }: {
   wantedAds: WantedAdRow[];
   subjectOptions: SubjectOption[];
-  responses: WantedAdResponseRow[];
   sampleAds: PublicWantedAd[];
 }) {
   const t = useTranslations("studentDashboard.wantedAds");
@@ -109,14 +100,7 @@ export function WantedAdsTab({
             {t("emptyState")}
           </div>
         ) : (
-          wantedAds.map((ad) => (
-            <WantedAdCard
-              key={ad.id}
-              ad={ad}
-              subjectOptions={subjectOptions}
-              responses={responses.filter((r) => r.wantedAdId === ad.id)}
-            />
-          ))
+          wantedAds.map((ad) => <WantedAdCard key={ad.id} ad={ad} subjectOptions={subjectOptions} />)
         )}
       </div>
     </div>
@@ -687,11 +671,9 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
 function WantedAdCard({
   ad,
   subjectOptions,
-  responses,
 }: {
   ad: WantedAdRow;
   subjectOptions: SubjectOption[];
-  responses: WantedAdResponseRow[];
 }) {
   const t = useTranslations("studentDashboard.wantedAds");
   const tc = useTranslations("studentDashboard.common");
@@ -794,17 +776,6 @@ function WantedAdCard({
             />
           )}
 
-          {responses.length > 0 && (
-            <div className="mb-3 flex flex-col gap-2 border-t border-border pt-3">
-              <p className="text-xs font-semibold text-muted-foreground">
-                {t("responsesHeading", { count: responses.length })}
-              </p>
-              {responses.map((response) => (
-                <ResponseItem key={response.id} response={response} />
-              ))}
-            </div>
-          )}
-
           <div className="flex items-center gap-3">
             <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
               {t("editAd")}
@@ -866,44 +837,6 @@ function WantedAdCard({
         title={title}
         description={description}
       />
-    </div>
-  );
-}
-
-// Mirrors InquiryItem's new/read shape (inquiries-tab.tsx) — full page
-// refresh() rather than local list splicing, matching how the rest of this
-// tab already handles its own mutations (create/update/delete above).
-function ResponseItem({ response }: { response: WantedAdResponseRow }) {
-  const t = useTranslations("studentDashboard.wantedAds");
-  const { refresh } = useDashboardRefresh();
-  const [marking, setMarking] = useState(false);
-
-  async function handleMarkRead() {
-    setMarking(true);
-    await markWantedAdResponseRead(response.id);
-    setMarking(false);
-    refresh();
-  }
-
-  return (
-    <div className="rounded-md bg-secondary/60 px-3 py-2">
-      <div className="mb-0.5 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-foreground">
-            {response.responderName ?? t(`responderTypeLabels.${response.responderType}`)}
-            {" · "}
-            {t(`responderTypeLabels.${response.responderType}`)}
-          </span>
-          {response.status === "new" && <StatusBadge variant="pending">{t("newResponseBadge")}</StatusBadge>}
-        </div>
-        <span className="text-xs text-muted-foreground">{response.createdLabel}</span>
-      </div>
-      <p className="text-sm text-foreground/85">{response.message}</p>
-      {response.status === "new" && (
-        <Button type="button" variant="ghost" size="sm" className="mt-1 h-7 px-2" onClick={handleMarkRead} disabled={marking}>
-          {t("markResponseRead")}
-        </Button>
-      )}
     </div>
   );
 }

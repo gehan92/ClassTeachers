@@ -45,6 +45,7 @@ export function StudentsTab({
   const requests = initialRequests.filter((r) => !handledRequestIds.has(r.id));
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [declineReasonByRequestId, setDeclineReasonByRequestId] = useState<Record<string, string>>({});
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -60,7 +61,7 @@ export function StudentsTab({
   async function handleRespond(id: string, accept: boolean) {
     setRespondingId(id);
     setError(null);
-    const result = await respondToJoinRequest(id, accept);
+    const result = await respondToJoinRequest(id, accept, undefined, accept ? undefined : declineReasonByRequestId[id]);
     setRespondingId(null);
     if (result.error) {
       setError(result.error);
@@ -108,7 +109,15 @@ export function StudentsTab({
                     {request.batch} · {request.requestedAt}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    placeholder={t("requests.declineReasonPlaceholder")}
+                    value={declineReasonByRequestId[request.id] ?? ""}
+                    onChange={(e) =>
+                      setDeclineReasonByRequestId((prev) => ({ ...prev, [request.id]: e.target.value }))
+                    }
+                    className="h-8 w-44 text-xs"
+                  />
                   <Button
                     type="button"
                     size="sm"

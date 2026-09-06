@@ -388,11 +388,15 @@ export async function joinOpenBatch(batchId: string): Promise<ActionResult> {
  * request (requestToJoinClass) never had one chosen at apply time, unlike a
  * batch-scoped request (requestToJoin) which already picked its batch. Left
  * undefined, approval just flips status, same as before.
+ *
+ * declineReason is optional (Gehan: a decline shouldn't require an essay) —
+ * only ever written when accept is false; ignored otherwise.
  */
 export async function respondToJoinRequest(
   enrollmentId: string,
   accept: boolean,
   batchId?: string,
+  declineReason?: string,
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const {
@@ -407,6 +411,7 @@ export async function respondToJoinRequest(
     .update({
       status: accept ? "accepted" : "declined",
       ...(accept && batchId ? { batch_id: batchId } : {}),
+      ...(!accept ? { decline_reason: declineReason?.trim() || null } : {}),
     })
     .eq("id", enrollmentId)
     .select("student_id, owner_type, owner_id")
@@ -431,10 +436,45 @@ export async function respondToJoinRequest(
       supabase,
       updated.student_id,
       accept ? "join_request_accepted" : "join_request_declined",
-      { ownerName },
-      "classes",
+      accept ? { ownerName } : { ownerName, reason: declineReason?.trim() || null },
+      // Accepted requests land the student in My Classes; a decline stays
+      // visible (with its reason) in the Requests tab, not My Classes.
+      accept ? "classes" : "requests",
       "joinRequestUpdates",
     );
+  }
+  return {};
+}
+
+/**
+ * Lets a student withdraw their own not-yet-decided request — the owner
+ * hasn't acted on it, so there's nothing on their side to reverse, just the
+ * row itself to remove. Reuses the existing "a student can leave; admin can
+ * remove any enrollment" DELETE policy (0013, no status restriction there),
+ * with the status='pending' filter enforced here so a student can't delete
+ * an already-accepted or already-declined record through this action.
+ */
+export async function cancelJoinRequest(enrollmentId: string): Promise<ActionResult> {
+  if (!enrollmentId) {
+    return { error: "Invalid request." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error } = await supabase
+    .from("enrollments")
+    .delete()
+    .eq("id", enrollmentId)
+    .eq("student_id", user.id)
+    .eq("status", "pending");
+  if (error) {
+    return { error: "Couldn't cancel this request. Please try again." };
   }
   return {};
 }

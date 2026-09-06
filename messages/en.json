@@ -71,6 +71,7 @@
       "join_request_received_general": "{studentName} requested to join your institute.",
       "join_request_accepted": "{ownerName} accepted your request to join.",
       "join_request_declined": "{ownerName} declined your request to join.",
+      "join_request_declined_with_reason": "{ownerName} declined your request to join: \"{reason}\"",
       "open_batch_joined": "{studentName} joined your open class \"{batchTitle}\".",
       "exam_graded": "Your exam \"{examTitle}\" was graded: {grade}.",
       "new_note": "A new note was shared: \"{title}\".",
@@ -85,6 +86,8 @@
       "inquiry_message": "New message on an inquiry.",
       "inquiry_reply": "You got a reply to your message.",
       "wanted_ad_response": "A {responderType} responded to your request.",
+      "wanted_ad_response_accepted": "A student accepted your response to their request.",
+      "wanted_ad_response_declined": "A student declined your response to their request.",
       "listing_decision": "Your listing was {decision}.",
       "listing_resubmitted": "A {kind} listing was resubmitted for review.",
       "review_flagged": "A review was flagged for moderation.",
@@ -416,7 +419,9 @@
     "cancelReply": "Cancel",
     "sendResponse": "Send response",
     "responsePlaceholder": "Introduce yourself and how you can help...",
-    "yourResponse": "Your response"
+    "yourResponse": "Your response",
+    "responseStatusAccepted": "The student accepted your response",
+    "responseStatusDeclined": "The student declined your response"
   },
   "comingSoon": {
     "badge": "Coming soon",
@@ -1459,7 +1464,8 @@
         "heading": "Join requests",
         "assignBatchPlaceholder": "Assign a class (optional)",
         "accept": "Accept",
-        "decline": "Decline"
+        "decline": "Decline",
+        "declineReasonPlaceholder": "Reason (optional)"
       }
     }
   },
@@ -1482,7 +1488,9 @@
       "reviews": "Reviews",
       "profile": "Profile",
       "settings": "Settings",
+      "requests": "Requests",
       "wantedAds": "Post an Ad",
+      "wantedAdResponses": "Responses",
       "inquiries": "Messages"
     },
     "announcements": {
@@ -1550,8 +1558,6 @@
       "openClass": "Open class",
       "backToClasses": "Back to my classes",
       "emptyState": "You haven't joined any classes yet.",
-      "pendingTitle": "Pending requests",
-      "pendingStatus": "Waiting for the teacher to respond",
       "browseTitle": "Browse classes to join",
       "browseEmpty": "No classes are open to join right now.",
       "modeOnline": "Online",
@@ -1564,6 +1570,19 @@
       "liveNowBadge": "Live now",
       "newActivityBadge": "New",
       "dueSoonBadge": "{count} due"
+    },
+    "requests": {
+      "heading": "Requests",
+      "subtitle": "Track the classes you've asked to join.",
+      "empty": "You haven't sent any join requests yet.",
+      "typeTeacher": "Teacher",
+      "typeClass": "Class",
+      "typeCampusLecturer": "Campus Lecturer",
+      "statusPending": "Waiting for a response",
+      "statusDeclined": "Declined",
+      "declineReasonLabel": "Reason given",
+      "cancelRequest": "Cancel request",
+      "cancelling": "Cancelling…"
     },
     "live": {
       "title": "Live Classes",
@@ -1905,14 +1924,22 @@
       "statusOpen": "Open",
       "statusClosed": "Closed",
       "editAd": "Edit",
-      "deleteAd": "Delete",
+      "deleteAd": "Delete"
+    },
+    "wantedAdResponses": {
+      "heading": "Responses",
+      "subtitle": "Teachers and institutes who responded to your ads.",
+      "empty": "No one has responded to your ads yet.",
       "responsesHeading": "{count} responses",
       "responderTypeLabels": {
         "teacher": "Teacher",
         "class": "Institute"
       },
       "newResponseBadge": "New",
-      "markResponseRead": "Mark as read"
+      "acceptResponse": "Accept",
+      "declineResponse": "Decline",
+      "statusAccepted": "Accepted",
+      "statusDeclined": "Declined"
     },
     "common": {
       "save": "Save",
@@ -2520,7 +2547,8 @@
       "requests": {
         "heading": "Join requests",
         "accept": "Accept",
-        "decline": "Decline"
+        "decline": "Decline",
+        "declineReasonPlaceholder": "Reason (optional)"
       }
     },
     "analytics": {

@@ -71,6 +71,7 @@
       "join_request_received_general": "{studentName} ඔබේ ආයතනයට එකතු වීමට ඉල්ලීමක් කර ඇත.",
       "join_request_accepted": "{ownerName} ඔබේ එකතු වීමේ ඉල්ලීම පිළිගත්තා.",
       "join_request_declined": "{ownerName} ඔබේ එකතු වීමේ ඉල්ලීම ප්‍රතික්ෂේප කළා.",
+      "join_request_declined_with_reason": "{ownerName} ඔබේ එකතු වීමේ ඉල්ලීම ප්‍රතික්ෂේප කළා: \"{reason}\"",
       "open_batch_joined": "{studentName} ඔබේ විවෘත පන්තියට එකතු විය: \"{batchTitle}\".",
       "exam_graded": "ඔබේ \"{examTitle}\" විභාගය ලකුණු කරන ලදී: {grade}.",
       "new_note": "නව සටහනක් බෙදාගන්නා ලදී: \"{title}\".",
@@ -85,6 +86,8 @@
       "inquiry_message": "විමසීමකට නව පණිවිඩයක්.",
       "inquiry_reply": "ඔබේ පණිවිඩයට පිළිතුරක් ලැබී ඇත.",
       "wanted_ad_response": "{responderType} කෙනෙක් ඔබේ ඉල්ලීමට පිළිතුරු දුන්නා.",
+      "wanted_ad_response_accepted": "ශිෂ්‍යයෙක් ඔබේ පිළිතුරට එකඟ වුණා.",
+      "wanted_ad_response_declined": "ශිෂ්‍යයෙක් ඔබේ පිළිතුර ප්‍රතික්ෂේප කළා.",
       "listing_decision": "ඔබේ ලැයිස්තුව {decision}.",
       "listing_resubmitted": "{kind} ලැයිස්තුවක් සමාලෝචනය සඳහා යළි ඉදිරිපත් කරන ලදී.",
       "review_flagged": "සමාලෝචනයක් මධ්‍යස්ථභාවය සඳහා ලකුණු කරන ලදී.",
@@ -416,7 +419,9 @@
     "cancelReply": "අවලංගු කරන්න",
     "sendResponse": "පිළිතුර යවන්න",
     "responsePlaceholder": "ඔබව හඳුන්වා දී ඔබට උදව් කළ හැකි ආකාරය කියන්න...",
-    "yourResponse": "ඔබේ පිළිතුර"
+    "yourResponse": "ඔබේ පිළිතුර",
+    "responseStatusAccepted": "ශිෂ්‍යයා ඔබේ පිළිතුර පිළිගත්තා",
+    "responseStatusDeclined": "ශිෂ්‍යයා ඔබේ පිළිතුර ප්‍රතික්ෂේප කළා"
   },
   "comingSoon": {
     "badge": "ඉක්මනින්",
@@ -1459,7 +1464,8 @@
         "heading": "එකතු වීමේ ඉල්ලීම්",
         "assignBatchPlaceholder": "පන්තියක් පවරන්න (විකල්ප)",
         "accept": "පිළිගන්න",
-        "decline": "ප්‍රතික්ෂේප කරන්න"
+        "decline": "ප්‍රතික්ෂේප කරන්න",
+        "declineReasonPlaceholder": "හේතුව (විකල්ප)"
       }
     }
   },
@@ -1482,7 +1488,9 @@
       "assignments": "පැවරුම්",
       "homework": "ගෙදර වැඩ",
       "settings": "සැකසුම්",
+      "requests": "ඉල්ලීම්",
       "wantedAds": "දැන්වීමක් පළ කරන්න",
+      "wantedAdResponses": "පිළිතුරු",
       "inquiries": "පණිවිඩ"
     },
     "announcements": {
@@ -1550,8 +1558,6 @@
       "openClass": "පන්තිය විවෘත කරන්න",
       "backToClasses": "මගේ පන්ති වෙත ආපසු",
       "emptyState": "ඔබ තවම කිසිදු පන්තියකට එකතු වී නැත.",
-      "pendingTitle": "විසඳීමට ඇති ඉල්ලීම්",
-      "pendingStatus": "ගුරුවරයාගේ පිළිතුර එනතෙක් රැඳී සිටී",
       "browseTitle": "එකතු වීමට පන්ති සොයන්න",
       "browseEmpty": "දැනට එකතු විය හැකි පන්ති නොමැත.",
       "modeOnline": "මාර්ගගත",
@@ -1564,6 +1570,19 @@
       "liveNowBadge": "දැන් සජීවී",
       "newActivityBadge": "අලුත්",
       "dueSoonBadge": "{count} නියමිතයි"
+    },
+    "requests": {
+      "heading": "ඉල්ලීම්",
+      "subtitle": "ඔබ එකතු වීමට ඉල්ලූ පන්ති නිරීක්ෂණය කරන්න.",
+      "empty": "ඔබ තවම එකතු වීමේ ඉල්ලීමක් යවා නැත.",
+      "typeTeacher": "ගුරුවරයා",
+      "typeClass": "පන්තිය",
+      "typeCampusLecturer": "කැම්පස් කථිකාචාර්ය",
+      "statusPending": "පිළිතුරක් එනතෙක් රැඳී සිටී",
+      "statusDeclined": "ප්‍රතික්ෂේප කළා",
+      "declineReasonLabel": "දෙන ලද හේතුව",
+      "cancelRequest": "ඉල්ලීම අවලංගු කරන්න",
+      "cancelling": "අවලංගු කරමින්…"
     },
     "live": {
       "title": "සජීවී පන්ති",
@@ -1905,14 +1924,22 @@
       "statusOpen": "විවෘතයි",
       "statusClosed": "වසා ඇත",
       "editAd": "සංස්කරණය කරන්න",
-      "deleteAd": "මකන්න",
+      "deleteAd": "මකන්න"
+    },
+    "wantedAdResponses": {
+      "heading": "පිළිතුරු",
+      "subtitle": "ඔබේ දැන්වීම්වලට පිළිතුරු දුන් ගුරුවරුන් සහ ආයතන.",
+      "empty": "ඔබේ දැන්වීම්වලට තවම කිසිවෙකු පිළිතුරු දී නැත.",
       "responsesHeading": "පිළිතුරු {count}",
       "responderTypeLabels": {
         "teacher": "ගුරුවරයා",
         "class": "ආයතනය"
       },
       "newResponseBadge": "අලුත්",
-      "markResponseRead": "කියවූ බව සලකුණු කරන්න"
+      "acceptResponse": "පිළිගන්න",
+      "declineResponse": "ප්‍රතික්ෂේප කරන්න",
+      "statusAccepted": "පිළිගත්තා",
+      "statusDeclined": "ප්‍රතික්ෂේප කළා"
     },
     "common": {
       "save": "සුරකින්න",
@@ -2520,7 +2547,8 @@
       "requests": {
         "heading": "එකතු වීමේ ඉල්ලීම්",
         "accept": "පිළිගන්න",
-        "decline": "ප්‍රතික්ෂේප කරන්න"
+        "decline": "ප්‍රතික්ෂේප කරන්න",
+        "declineReasonPlaceholder": "හේතුව (විකල්ප)"
       }
     },
     "analytics": {

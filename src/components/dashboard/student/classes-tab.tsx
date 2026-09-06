@@ -232,7 +232,6 @@ export function ClassesTab({
   }
 
   const acceptedClasses = myClasses.filter((item) => item.status === "accepted");
-  const pendingClasses = myClasses.filter((item) => item.status === "pending");
   const openClass = openClassId ? (acceptedClasses.find((c) => c.enrollmentId === openClassId) ?? null) : null;
 
   // Landing here from a "class started"/"class ended" notification (see
@@ -298,35 +297,6 @@ export function ClassesTab({
             reloadLabel={tc("reloadPage")}
             className="mb-5"
           />
-
-          {pendingClasses.length > 0 && (
-            <div className="mb-8">
-              <h2 className="mb-3 text-lg font-semibold text-foreground">{t("pendingTitle")}</h2>
-              <div className="flex flex-col gap-4">
-                {pendingClasses.map((item) => (
-                  <div
-                    key={item.enrollmentId}
-                    className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4.5 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0">
-                      <div className="mb-1 flex flex-wrap items-center gap-2">
-                        <span className="font-semibold text-foreground">{item.ownerName}</span>
-                        <span className="rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-                          {item.isCampusLecturer
-                            ? t("typeCampusLecturer")
-                            : item.ownerType === "teacher"
-                              ? t("typeTeacher")
-                              : t("typeClass")}
-                        </span>
-                      </div>
-                      {item.batchTitle && <div className="text-sm text-muted-foreground">{item.batchTitle}</div>}
-                    </div>
-                    <span className="text-sm font-medium text-muted-foreground">{t("pendingStatus")}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {acceptedClasses.length === 0 ? (
             <div className="mb-8 rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">

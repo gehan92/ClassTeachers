@@ -12,6 +12,9 @@ import { ReviewsTab } from "@/components/dashboard/student/reviews-tab";
 import { ProfileTab } from "@/components/dashboard/student/profile-tab";
 import { SettingsTab } from "@/components/dashboard/student/settings-tab";
 import { WantedAdsTab } from "@/components/dashboard/student/wanted-ads-tab";
+import { WantedAdResponsesTab } from "@/components/dashboard/student/wanted-ad-responses-tab";
+import { JoinRequestsTab } from "@/components/dashboard/student/join-requests-tab";
+import type { JoinRequestRow } from "@/components/dashboard/student/join-requests-tab";
 import { SentInquiriesTab } from "@/components/dashboard/student/sent-inquiries-tab";
 import type { SentInquiryRow, SentInquiryMessage } from "@/components/dashboard/student/sent-inquiries-tab";
 import { ProgressTab } from "@/components/dashboard/student/progress-tab";
@@ -133,7 +136,7 @@ export default async function StudentDashboardPage({
       )
       .eq("id", userId)
       .single(),
-    supabase.from("enrollments").select("id, owner_type, owner_id, batch_id, joined_at, status"),
+    supabase.from("enrollments").select("id, owner_type, owner_id, batch_id, joined_at, status, decline_reason"),
     supabase.from("notes").select("id, owner_type, owner_id, batch_id, title, page_count, note_type, created_at"),
     supabase
       .from("exams")
@@ -227,6 +230,7 @@ export default async function StudentDashboardPage({
   // "live", or it'd point at a tab the click doesn't actually land on.
   const hasNewLive =
     hasUnreadOfType("new_live_class") || hasUnreadOfType("live_class_started") || hasUnreadOfType("live_class_ended");
+  const hasNewJoinDecline = hasUnreadOfType("join_request_declined");
 
   const fullName = profile?.full_name ?? user!.email ?? "Student";
   const userInitial = fullName.charAt(0).toUpperCase();
@@ -652,6 +656,29 @@ export default async function StudentDashboardPage({
       };
     });
 
+  // Its own tab (Requests), separate from My Classes — pending requests the
+  // student can still withdraw, plus declined ones kept as a record (with
+  // the owner's optional reason, 0115). Accepted ones already show up in
+  // My Classes above, so they're excluded here.
+  const joinRequests: JoinRequestRow[] = (enrollments ?? [])
+    .filter((e) => e.status === "pending" || e.status === "declined")
+    .map((e) => {
+      const batch = e.batch_id ? batchById.get(e.batch_id) : undefined;
+      return {
+        enrollmentId: e.id,
+        ownerId: e.owner_id,
+        ownerType: e.owner_type,
+        ownerName: ownerName(e.owner_type, e.owner_id),
+        batchId: e.batch_id,
+        batchTitle: batch?.title ?? null,
+        isCampusLecturer: e.owner_type === "teacher" && campusLecturerTeacherIds.has(e.owner_id),
+        status: e.status as "pending" | "declined",
+        declineReason: e.decline_reason,
+        requestedAtLabel: dateFormatter.format(new Date(e.joined_at)),
+      };
+    });
+  const pendingRequestsCount = joinRequests.filter((r) => r.status === "pending").length;
+
   const availableBatches: AvailableBatchRow[] = (allBatches ?? [])
     .filter((b) =>
       b.owner_type === "teacher"
@@ -854,10 +881,13 @@ export default async function StudentDashboardPage({
     responderType: r.responder_type as "teacher" | "class",
     responderName: r.responder_name,
     message: r.message,
-    status: r.status as "new" | "read",
+    status: r.status as "new" | "read" | "accepted" | "declined",
     createdLabel: dateFormatter.format(new Date(r.created_at)),
   }));
-  const unreadResponsesCount = wantedAdResponses.filter((r) => r.status === "new").length;
+  // "Awaiting your decision" — not yet accepted or declined, matching what
+  // the Responses tab actually asks the student to act on (see
+  // WantedAdResponsesTab's own !decided check).
+  const pendingResponsesCount = wantedAdResponses.filter((r) => r.status === "new" || r.status === "read").length;
 
   // A few, not many — just enough to show real activity and give writing
   // inspiration, not a full second copy of the /requests board. Excludes
@@ -936,6 +966,7 @@ export default async function StudentDashboardPage({
           label: t("groupClasses"),
           items: [
             { key: "classes", label: t("tabs.classes"), hasNew: hasNewLive },
+            { key: "requests", label: t("tabs.requests"), count: pendingRequestsCount, hasNew: hasNewJoinDecline },
             { key: "reviews", label: t("tabs.reviews") },
           ],
         },
@@ -964,7 +995,13 @@ export default async function StudentDashboardPage({
         {
           items: [
             { key: "inquiries", label: t("tabs.inquiries") },
-            { key: "wantedAds", label: t("tabs.wantedAds"), count: unreadResponsesCount, highlight: true },
+            { key: "wantedAds", label: t("tabs.wantedAds") },
+            {
+              key: "wantedAdResponses",
+              label: t("tabs.wantedAdResponses"),
+              count: pendingResponsesCount,
+              highlight: true,
+            },
           ],
         },
       ]}
@@ -1018,14 +1055,11 @@ export default async function StudentDashboardPage({
             scope="history"
           />
         ),
+        requests: <JoinRequestsTab requests={joinRequests} />,
         wantedAds: (
-          <WantedAdsTab
-            wantedAds={wantedAds}
-            subjectOptions={subjectOptions}
-            responses={wantedAdResponses}
-            sampleAds={sampleWantedAds}
-          />
+          <WantedAdsTab wantedAds={wantedAds} subjectOptions={subjectOptions} sampleAds={sampleWantedAds} />
         ),
+        wantedAdResponses: <WantedAdResponsesTab wantedAds={wantedAds} responses={wantedAdResponses} />,
         inquiries: <SentInquiriesTab inquiries={myInquiries} />,
         notes: <NotesTab notes={studentNotes} studentName={fullName} scope="history" />,
         shortNotes: (

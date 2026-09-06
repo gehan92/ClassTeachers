@@ -64,6 +64,7 @@ export function StudentsTab({
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedBatchByRequestId, setSelectedBatchByRequestId] = useState<Record<string, string>>({});
+  const [declineReasonByRequestId, setDeclineReasonByRequestId] = useState<Record<string, string>>({});
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -77,7 +78,12 @@ export function StudentsTab({
   async function handleRespond(id: string, accept: boolean) {
     setRespondingId(id);
     setError(null);
-    const result = await respondToJoinRequest(id, accept, accept ? selectedBatchByRequestId[id] : undefined);
+    const result = await respondToJoinRequest(
+      id,
+      accept,
+      accept ? selectedBatchByRequestId[id] : undefined,
+      accept ? undefined : declineReasonByRequestId[id],
+    );
     setRespondingId(null);
     if (result.error) {
       setError(result.error);
@@ -143,6 +149,14 @@ export function StudentsTab({
                       </SelectContent>
                     </Select>
                   )}
+                  <Input
+                    placeholder={t("requests.declineReasonPlaceholder")}
+                    value={declineReasonByRequestId[request.id] ?? ""}
+                    onChange={(e) =>
+                      setDeclineReasonByRequestId((prev) => ({ ...prev, [request.id]: e.target.value }))
+                    }
+                    className="h-8 w-44 text-xs"
+                  />
                   <Button
                     type="button"
                     size="sm"

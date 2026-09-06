@@ -179,6 +179,16 @@ export function ClassesTab({
 
   const NEW_ACTIVITY_TYPES = ["new_note", "new_exam", "new_assignment", "new_live_class", "live_class_started"];
 
+  // A missed assignment/homework (never submitted, due time already passed)
+  // is closed, not "due" — nothing left to act on, so it shouldn't inflate
+  // the card's due count the way a still-open one does. Exams have no such
+  // state to exclude: unlike assignments/homework, they don't lock at a due
+  // time (only the countdown once an attempt is actually started), so an
+  // unstarted exam stays genuinely actionable however old it is.
+  function isAssignmentMissed(row: StudentAssignmentRow, nowMs: number): boolean {
+    return !row.submission && row.dueAtIso !== null && new Date(row.dueAtIso).getTime() < nowMs;
+  }
+
   /** At-a-glance signals for one enrolled class's own card, so a student can
    * tell what needs attention before opening it — same underlying data
    * ClassWorkspace already computes per section, just rolled up to the
@@ -190,8 +200,12 @@ export function ClassesTab({
     const isLiveNow = liveClasses.some((lc) => belongsToClass(lc, classRow) && classState(lc, now) === "live");
     const dueSoonCount =
       exams.filter((e) => belongsToClass(e, classRow) && e.submission?.status !== "graded").length +
-      assignments.filter((a) => belongsToClass(a, classRow) && a.submission?.status !== "graded").length +
-      homework.filter((h) => belongsToClass(h, classRow) && h.submission?.status !== "graded").length;
+      assignments.filter(
+        (a) => belongsToClass(a, classRow) && a.submission?.status !== "graded" && !isAssignmentMissed(a, now),
+      ).length +
+      homework.filter(
+        (h) => belongsToClass(h, classRow) && h.submission?.status !== "graded" && !isAssignmentMissed(h, now),
+      ).length;
     const hasNewActivity = notifications.some((n) => {
       if (n.readAt || !NEW_ACTIVITY_TYPES.includes(n.type)) return false;
       const data = n.data ?? {};

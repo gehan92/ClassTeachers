@@ -1,5 +1,6 @@
 import type { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 import type { GradeBand } from "@/types/grade-band";
 import type { Listing } from "@/types/listing";
 
@@ -57,7 +58,10 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
       masked: true,
       roleLabel,
       headline: row.ad_title,
-      excerpt: row.ad_content ?? undefined,
+      excerpt: sanitizeRichTextNullable(row.ad_content) ?? undefined,
+      excerptIsRichText: true,
+      medium: (row.medium as Listing["medium"]) ?? undefined,
+      classType: (row.class_type as Listing["classType"]) ?? undefined,
       gradeChip: gradeChip(row.grade_band, subjects, tPage, tSearch),
       location: row.location ?? "",
       online,

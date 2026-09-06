@@ -29,6 +29,7 @@ import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { TeacherOnboardingWizard } from "@/components/onboarding/teacher-onboarding-wizard";
 import { createClient } from "@/lib/supabase/server";
 import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
+import { stripRichText } from "@/lib/rich-text";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import type { TeacherProfileDetail } from "@/types/teacher-profile";
 import type { ReferralRow } from "@/components/dashboard/refer-earn-panel";
@@ -183,7 +184,7 @@ export default async function TeacherDashboardPage({
     supabase
       .from("batches")
       .select(
-        "id, title, mode, class_size_type, location, schedule_note, grade_band, status, subject_id, hourly_rate, monthly_rate, course_code, is_open_enrollment, capacity",
+        "id, title, mode, class_size_type, location, schedule_note, grade_band, status, subject_id, hourly_rate, monthly_rate, course_code, is_open_enrollment, capacity, medium, class_type",
       )
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
@@ -547,14 +548,19 @@ export default async function TeacherDashboardPage({
       subjectName: b.subject_id ? (subjectNameById.get(b.subject_id) ?? null) : null,
       hourlyRate: b.hourly_rate,
       monthlyRate: b.monthly_rate,
-      ad: ad ? { id: ad.id, title: ad.title, content: ad.content ?? "", status: ad.status } : null,
+      medium: b.medium,
+      classType: b.class_type,
+      ad: ad ? { id: ad.id, title: ad.title, content: sanitizeRichTextNullable(ad.content) ?? "", status: ad.status } : null,
     };
   });
 
   const teacherAdHistory: AdHistoryRow[] = deletedBatchAdRows.map((ad) => ({
     id: ad.id,
     title: ad.title,
-    content: ad.content ?? "",
+    // AdHistoryList renders this as plain text (shared with institute's
+    // still-plain-text promotions) — strip the tags a teacher ad's content
+    // (0119, rich-text HTML) now carries rather than showing them raw.
+    content: stripRichText(ad.content ?? ""),
     meta: ad.batch_id ? (batchTitleById.get(ad.batch_id) ?? undefined) : undefined,
   }));
 

@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { AdSlot } from "@/components/features/ad-slot";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { AdPreviewCard } from "@/components/dashboard/ad-preview-card";
 import { AdHistoryList, type AdHistoryRow } from "@/components/dashboard/ad-history-list";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
+import { hasRichText, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
 import {
   updateOwnProfileAd,
   upsertBatchAd,
@@ -25,6 +27,50 @@ import { GRADE_BAND_SELECT_VALUES, OPEN_GRADE_VALUE } from "@/lib/grade-band-opt
 const textareaClass =
   "min-h-28 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40";
 
+type Medium = "english" | "sinhala" | "tamil" | "other";
+const MEDIUM_OPTIONS: Medium[] = ["english", "sinhala", "tamil", "other"];
+type ClassType = "new" | "revision";
+const CLASS_TYPE_OPTIONS: ClassType[] = ["new", "revision"];
+
+// Auto-drafted description text (built from plain translation strings, see
+// buildAdDescription below) gets wrapped in a <p> before being handed to
+// RichTextEditor as its HTML value — escape it first so a free-typed title
+// like "Grade 10 < 11" can't be parsed as a tag. Same helper as
+// wanted-ads-tab.tsx's own escapeHtml, duplicated locally rather than shared
+// since the two composers otherwise share nothing.
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function buildAdTitle(t: ReturnType<typeof useTranslations>, subjectName: string | undefined): string {
+  return subjectName ? t("titleWithSubject", { subject: subjectName }) : t("titleBase");
+}
+
+/**
+ * Mirrors wanted-ads-tab.tsx's buildSuggestedDescription — a handful of
+ * complete, independently-translated sentences joined with plain spaces,
+ * built from whatever fields this particular composer actually has
+ * (BatchAdCard has no mode/grade fields, IndividualAdCreator does).
+ */
+function buildAdDescription(
+  t: ReturnType<typeof useTranslations>,
+  subjectName: string | undefined,
+  mediumLabel: string,
+  classType: ClassType,
+  modeLabel?: string,
+  gradeLabel?: string,
+): string {
+  const sentences = [
+    subjectName ? t("descriptionSubjectSentence", { subject: subjectName }) : t("descriptionNoSubjectSentence"),
+  ];
+  if (gradeLabel) sentences.push(t("descriptionGradeSentence", { grade: gradeLabel }));
+  if (modeLabel) sentences.push(modeLabel);
+  sentences.push(t("descriptionMediumSentence", { medium: mediumLabel }));
+  if (classType === "revision") sentences.push(t("descriptionRevisionSentence"));
+  sentences.push(t("descriptionClosingSentence"));
+  return sentences.join(" ");
+}
+
 export type TeacherAdBatchRow = {
   id: string;
   title: string;
@@ -33,6 +79,8 @@ export type TeacherAdBatchRow = {
   subjectName: string | null;
   hourlyRate: number | null;
   monthlyRate: number | null;
+  medium: Medium | null;
+  classType: ClassType | null;
   ad: { id: string; title: string; content: string; status: "active" | "expired" | "removed" } | null;
 };
 
@@ -162,12 +210,21 @@ function BatchAdCard({
   defaultMonthlyRate?: number | null;
 }) {
   const t = useTranslations("teacherDashboard.ads.classAds");
+  const td = useTranslations("teacherDashboard.ads.autoDraft");
+  const tr = useTranslations("requestsPage");
   const tc = useTranslations("teacherDashboard.common");
 
   const [editing, setEditing] = useState(false);
   const [subjectId, setSubjectId] = useState(batch.subjectId ?? subjectOptions[0]?.id ?? "");
+  const [medium, setMedium] = useState<Medium>(batch.medium ?? "sinhala");
+  const [classType, setClassType] = useState<ClassType>(batch.classType ?? "new");
   const [title, setTitle] = useState(batch.ad?.title ?? "");
+  // Only a brand-new ad (no batch.ad yet) auto-drafts — editing an existing
+  // ad never overwrites its saved title/content, same split as wanted-ads'
+  // WantedAdCreator (drafts) vs WantedAdCard (doesn't).
+  const [titleTouched, setTitleTouched] = useState(Boolean(batch.ad));
   const [content, setContent] = useState(batch.ad?.content ?? "");
+  const [contentTouched, setContentTouched] = useState(Boolean(batch.ad));
   const [hourlyRate, setHourlyRate] = useState(batch.hourlyRate != null ? String(batch.hourlyRate) : "");
   const [monthlyRate, setMonthlyRate] = useState(batch.monthlyRate != null ? String(batch.monthlyRate) : "");
   const [active, setActive] = useState(batch.ad?.status === "active");
@@ -178,8 +235,35 @@ function BatchAdCard({
   const [deleting, setDeleting] = useState(false);
   const { refresh } = useDashboardRefresh();
 
+  const subjectName = subjectOptions.find((s) => s.id === subjectId)?.name;
+
+  useEffect(() => {
+    if (titleTouched) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- drafting a suggestion from other field state, not derived render state
+    setTitle(buildAdTitle(td, subjectName));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- td/subjectOptions are stable for this component's lifetime; only the actual field values should retrigger the draft
+  }, [subjectId, titleTouched]);
+
+  useEffect(() => {
+    if (contentTouched) return;
+    const draft = buildAdDescription(td, subjectName, tr(`mediumOptions.${medium}`), classType);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- drafting a suggestion from other field state, not derived render state
+    setContent(`<p>${escapeHtml(draft)}</p>`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- td/tr/subjectOptions are stable for this component's lifetime; only the actual field values should retrigger the draft
+  }, [subjectId, medium, classType, contentTouched]);
+
+  function handleTitleChange(value: string) {
+    setTitleTouched(true);
+    setTitle(value);
+  }
+
+  function handleContentChange(value: string) {
+    setContentTouched(true);
+    setContent(value);
+  }
+
   async function handleSave() {
-    if (!subjectId || !title.trim() || !content.trim()) return;
+    if (!subjectId || !title.trim() || !hasRichText(content)) return;
     setSaving(true);
     setError(null);
     const result = await upsertBatchAd({
@@ -187,6 +271,8 @@ function BatchAdCard({
       subjectId,
       title,
       content,
+      medium,
+      classType,
       hourlyRate: hourlyRate.trim() ? Number(hourlyRate) : undefined,
       monthlyRate: monthlyRate.trim() ? Number(monthlyRate) : undefined,
     });
@@ -251,7 +337,10 @@ function BatchAdCard({
           {batch.ad && !deleted ? (
             <div className="mb-3">
               <p className="text-sm font-medium text-foreground">{batch.ad.title}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{batch.ad.content}</p>
+              <div
+                className={`mt-1 text-sm text-muted-foreground ${RICH_TEXT_DISPLAY_CLASS}`}
+                dangerouslySetInnerHTML={{ __html: batch.ad.content }}
+              />
             </div>
           ) : (
             <p className="mb-3 text-sm text-muted-foreground">{t("noAdYet")}</p>
@@ -282,20 +371,52 @@ function BatchAdCard({
           {subjectOptions.length === 0 ? (
             <p className="text-sm text-destructive">{t("noSubjects")}</p>
           ) : (
-            <div className="grid gap-1.5">
-              <Label htmlFor={`subject-${batch.id}`}>{t("subjectLabel")}</Label>
-              <Select value={subjectId} onValueChange={(value) => setSubjectId(value ?? "")}>
-                <SelectTrigger id={`subject-${batch.id}`} className="w-full">
-                  <SelectValue placeholder={t("subjectPlaceholder")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {subjectOptions.map((subject) => (
-                    <SelectItem key={subject.id} value={subject.id}>
-                      {subject.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor={`subject-${batch.id}`}>{t("subjectLabel")}</Label>
+                <Select value={subjectId} onValueChange={(value) => setSubjectId(value ?? "")}>
+                  <SelectTrigger id={`subject-${batch.id}`} className="w-full">
+                    <SelectValue placeholder={t("subjectPlaceholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subjectOptions.map((subject) => (
+                      <SelectItem key={subject.id} value={subject.id}>
+                        {subject.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor={`medium-${batch.id}`}>{t("mediumLabel")}</Label>
+                <Select value={medium} onValueChange={(value) => setMedium((value as Medium) ?? "sinhala")}>
+                  <SelectTrigger id={`medium-${batch.id}`} className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MEDIUM_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {tr(`mediumOptions.${option}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor={`class-type-${batch.id}`}>{t("classTypeLabel")}</Label>
+                <Select value={classType} onValueChange={(value) => setClassType((value as ClassType) ?? "new")}>
+                  <SelectTrigger id={`class-type-${batch.id}`} className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CLASS_TYPE_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {tr(`classTypeOptions.${option}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           )}
           <div className="grid gap-1.5">
@@ -304,18 +425,19 @@ function BatchAdCard({
               id={`ad-title-${batch.id}`}
               placeholder={t("titlePlaceholder")}
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => handleTitleChange(e.target.value)}
             />
+            <p className="text-xs text-muted-foreground">{t("titleAutoDraftHint")}</p>
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor={`ad-content-${batch.id}`}>{t("contentLabel")}</Label>
-            <textarea
+            <RichTextEditor
               id={`ad-content-${batch.id}`}
-              className={textareaClass}
-              placeholder={t("contentPlaceholder")}
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={handleContentChange}
+              placeholder={t("contentPlaceholder")}
             />
+            <p className="text-xs text-muted-foreground">{t("descriptionAutoDraftHint")}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">
@@ -355,7 +477,8 @@ function BatchAdCard({
             emptyLabel={t("previewEmpty")}
             title={title}
             content={content}
-            meta={[batch.courseCode, subjectOptions.find((s) => s.id === subjectId)?.name].filter(
+            richContent
+            meta={[batch.courseCode, subjectName, tr(`mediumOptions.${medium}`), classType === "revision" ? tr("classTypeOptions.revision") : null].filter(
               (v): v is string => Boolean(v),
             )}
           />
@@ -393,6 +516,8 @@ function IndividualAdCreator({
   defaultMonthlyRate?: number | null;
 }) {
   const t = useTranslations("teacherDashboard.ads.individualAd");
+  const td = useTranslations("teacherDashboard.ads.autoDraft");
+  const tr = useTranslations("requestsPage");
   const tc = useTranslations("teacherDashboard.common");
   const tg = useTranslations("search");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
@@ -401,15 +526,48 @@ function IndividualAdCreator({
   const [subjectId, setSubjectId] = useState(subjectOptions[0]?.id ?? "");
   const [mode, setMode] = useState<"online" | "physical">("online");
   const [gradeBand, setGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>("12-13");
+  const [medium, setMedium] = useState<Medium>("sinhala");
+  const [classType, setClassType] = useState<ClassType>("new");
   const [title, setTitle] = useState("");
+  const [titleTouched, setTitleTouched] = useState(false);
   const [content, setContent] = useState("");
+  const [contentTouched, setContentTouched] = useState(false);
   const [hourlyRate, setHourlyRate] = useState("");
   const [monthlyRate, setMonthlyRate] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const subjectName = subjectOptions.find((s) => s.id === subjectId)?.name;
+
+  useEffect(() => {
+    if (titleTouched) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- drafting a suggestion from other field state, not derived render state
+    setTitle(buildAdTitle(td, subjectName));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- td/subjectOptions are stable for this component's lifetime; only the actual field values should retrigger the draft
+  }, [subjectId, titleTouched]);
+
+  useEffect(() => {
+    if (contentTouched) return;
+    const gradeLabel = gradeBand === OPEN_GRADE_VALUE ? undefined : tg(`grades.${gradeBand}`);
+    const modeLabel = mode === "online" ? td("descriptionModeSentenceOnline") : td("descriptionModeSentencePhysical");
+    const draft = buildAdDescription(td, subjectName, tr(`mediumOptions.${medium}`), classType, modeLabel, gradeLabel);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- drafting a suggestion from other field state, not derived render state
+    setContent(`<p>${escapeHtml(draft)}</p>`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- td/tr/tg/subjectOptions are stable for this component's lifetime; only the actual field values should retrigger the draft
+  }, [subjectId, mode, gradeBand, medium, classType, contentTouched]);
+
+  function handleTitleChange(value: string) {
+    setTitleTouched(true);
+    setTitle(value);
+  }
+
+  function handleContentChange(value: string) {
+    setContentTouched(true);
+    setContent(value);
+  }
+
   async function handleSave() {
-    if (!subjectId || !title.trim() || !content.trim()) return;
+    if (!subjectId || !title.trim() || !hasRichText(content)) return;
     setSaving(true);
     setError(null);
     const result = await createIndividualAd({
@@ -418,6 +576,8 @@ function IndividualAdCreator({
       gradeBand: gradeBand === OPEN_GRADE_VALUE ? undefined : gradeBand,
       title,
       content,
+      medium,
+      classType,
       hourlyRate: hourlyRate.trim() ? Number(hourlyRate) : undefined,
       monthlyRate: monthlyRate.trim() ? Number(monthlyRate) : undefined,
     });
@@ -428,7 +588,9 @@ function IndividualAdCreator({
     }
     setOpen(false);
     setTitle("");
+    setTitleTouched(false);
     setContent("");
+    setContentTouched(false);
     setHourlyRate("");
     setMonthlyRate("");
     refresh();
@@ -508,24 +670,57 @@ function IndividualAdCreator({
               </Select>
             </div>
           </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="individual-medium">{t("mediumLabel")}</Label>
+              <Select value={medium} onValueChange={(value) => setMedium((value as Medium) ?? "sinhala")}>
+                <SelectTrigger id="individual-medium" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MEDIUM_OPTIONS.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {tr(`mediumOptions.${option}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="individual-class-type">{t("classTypeLabel")}</Label>
+              <Select value={classType} onValueChange={(value) => setClassType((value as ClassType) ?? "new")}>
+                <SelectTrigger id="individual-class-type" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CLASS_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {tr(`classTypeOptions.${option}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="grid gap-1.5">
             <Label htmlFor="individual-title">{t("titleLabel")}</Label>
             <Input
               id="individual-title"
               placeholder={t("titlePlaceholder")}
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => handleTitleChange(e.target.value)}
             />
+            <p className="text-xs text-muted-foreground">{t("titleAutoDraftHint")}</p>
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="individual-content">{t("contentLabel")}</Label>
-            <textarea
+            <RichTextEditor
               id="individual-content"
-              className={textareaClass}
-              placeholder={t("contentPlaceholder")}
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={handleContentChange}
+              placeholder={t("contentPlaceholder")}
             />
+            <p className="text-xs text-muted-foreground">{t("descriptionAutoDraftHint")}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">
@@ -565,9 +760,12 @@ function IndividualAdCreator({
             emptyLabel={t("previewEmpty")}
             title={title}
             content={content}
+            richContent
             meta={[
-              subjectOptions.find((s) => s.id === subjectId)?.name,
+              subjectName,
               mode === "online" ? t("modeOnline") : t("modePhysical"),
+              tr(`mediumOptions.${medium}`),
+              classType === "revision" ? tr("classTypeOptions.revision") : null,
             ].filter((v): v is string => Boolean(v))}
           />
           <div className="flex items-center gap-3">

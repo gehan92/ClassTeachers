@@ -455,6 +455,8 @@ export type Database = {
           course_code: string | null;
           is_open_enrollment: boolean;
           capacity: number | null;
+          medium: "english" | "sinhala" | "tamil" | "other" | null;
+          class_type: "new" | "revision" | null;
           created_at: string;
           updated_at: string;
         };
@@ -477,6 +479,8 @@ export type Database = {
           course_code?: string | null;
           is_open_enrollment?: boolean;
           capacity?: number | null;
+          medium?: "english" | "sinhala" | "tamil" | "other" | null;
+          class_type?: "new" | "revision" | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -499,6 +503,8 @@ export type Database = {
           course_code?: string | null;
           is_open_enrollment?: boolean;
           capacity?: number | null;
+          medium?: "english" | "sinhala" | "tamil" | "other" | null;
+          class_type?: "new" | "revision" | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1737,6 +1743,8 @@ export type Database = {
           academic_title: string | null;
           institution_verified: boolean;
           course_code: string | null;
+          medium: string | null;
+          class_type: string | null;
         }[];
       };
       get_public_ad: {
@@ -1764,6 +1772,8 @@ export type Database = {
           is_open_enrollment: boolean;
           capacity: number | null;
           spots_taken: number;
+          medium: string | null;
+          class_type: string | null;
         }[];
       };
       list_public_wanted_ads: {

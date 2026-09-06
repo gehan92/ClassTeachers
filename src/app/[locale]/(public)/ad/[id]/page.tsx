@@ -7,6 +7,8 @@ import { JoinRequestBox } from "@/components/features/join-request-box";
 import { ShareButtons } from "@/components/features/share-buttons";
 import { createClient } from "@/lib/supabase/server";
 import { avatarGradientClass } from "@/lib/avatar-color";
+import { sanitizeRichText } from "@/lib/dashboard/sanitize-rich-text";
+import { hasRichText, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
 
 /**
  * A search-result ad can belong to a teacher (get_public_ad, 0040/0041/0076)
@@ -42,6 +44,11 @@ type NormalizedAd = {
   isOpenEnrollment: boolean;
   capacity: number | null;
   spotsTaken: number;
+  /** Only ever set for a teacher ad (0119) — content is sanitized rich-text
+   * HTML for this owner type, plain text for a class ad (institute's own
+   * composer wasn't converted), so rendering must branch on ownerType. */
+  medium: "english" | "sinhala" | "tamil" | "other" | null;
+  classType: "new" | "revision" | null;
 };
 
 async function loadAd(adId: string): Promise<NormalizedAd | null> {
@@ -74,6 +81,8 @@ async function loadAd(adId: string): Promise<NormalizedAd | null> {
       isOpenEnrollment: r.is_open_enrollment,
       capacity: r.capacity,
       spotsTaken: r.spots_taken,
+      medium: r.medium as "english" | "sinhala" | "tamil" | "other" | null,
+      classType: r.class_type as "new" | "revision" | null,
     };
   }
 
@@ -104,6 +113,8 @@ async function loadAd(adId: string): Promise<NormalizedAd | null> {
       isOpenEnrollment: r.is_open_enrollment,
       capacity: r.capacity,
       spotsTaken: r.spots_taken,
+      medium: null,
+      classType: null,
     };
   }
 
@@ -178,17 +189,25 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
   const t = await getTranslations("adPage");
   const tg = await getTranslations("search");
   const tl = await getTranslations("listing");
+  const tr = await getTranslations("requestsPage");
 
   const displayName = ad.name ?? (ad.ownerType === "class" ? t("classFallback") : t("teacherFallback"));
 
-  // Ad content is free text — written as one point per line (e.g. "Program
-  // Highlights:", "Interactive lessons...", ...). Rendered as a real list
-  // once there's more than one line; a single line (or none) stays a plain
-  // paragraph rather than showing one lonely bullet.
-  const contentLines = (ad.adContent ?? "")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
+  // A teacher ad's content is rich-text HTML (0119, sanitized again here per
+  // this app's read-time sanitize convention); an institute class ad's is
+  // still free text written one point per line (e.g. "Program Highlights:",
+  // "Interactive lessons...") — its own composer wasn't converted, so it
+  // keeps the older line-split rendering, one real bullet per line once
+  // there's more than one, a single line (or none) staying a plain paragraph
+  // rather than showing one lonely bullet.
+  const richContent = ad.ownerType === "teacher" ? sanitizeRichText(ad.adContent ?? "") : null;
+  const contentLines =
+    richContent === null
+      ? (ad.adContent ?? "")
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean)
+      : [];
 
   return (
     <div className="mx-auto max-w-[860px] px-7 py-10">
@@ -247,6 +266,16 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
               <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs">
                 {ad.mode === "online" ? t("online") : t("physical")}
               </span>
+              {ad.medium && (
+                <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs">
+                  {tr(`mediumOptions.${ad.medium}`)}
+                </span>
+              )}
+              {ad.classType === "revision" && (
+                <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs">
+                  {tr("classTypeOptions.revision")}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -260,7 +289,14 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
           <h3 className="mb-3 text-lg">{ad.isCampusLecturer ? t("aboutHeadingCampus") : t("aboutHeading")}</h3>
-          {contentLines.length > 1 ? (
+          {richContent !== null ? (
+            hasRichText(richContent) && (
+              <div
+                className={`text-sm text-foreground/85 ${RICH_TEXT_DISPLAY_CLASS}`}
+                dangerouslySetInnerHTML={{ __html: richContent }}
+              />
+            )
+          ) : contentLines.length > 1 ? (
             <ul className="list-disc space-y-1.5 pl-5 text-sm text-foreground/85">
               {contentLines.map((line, i) => (
                 <li key={i}>{line}</li>

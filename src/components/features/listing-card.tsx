@@ -3,10 +3,16 @@ import { BadgeCheck, BookOpen, GraduationCap, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { LockPill } from "./lock-pill";
 import { avatarGradientClass } from "@/lib/avatar-color";
+import { RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
 import type { Listing } from "@/types/listing";
 
 export function ListingCard({ listing, index }: { listing: Listing; index?: number }) {
   const t = useTranslations("listing");
+  // Reuses the requests board's own vocabulary for these two chips (same
+  // words: "Revision class", "Sinhala medium"...) instead of duplicating
+  // them under a second translation key, same reasoning as cross-referencing
+  // "search" for grade labels elsewhere in this file's siblings.
+  const tr = useTranslations("requestsPage");
 
   return (
     <Link
@@ -34,9 +40,16 @@ export function ListingCard({ listing, index }: { listing: Listing; index?: numb
           </div>
         )}
 
-        <span className="absolute left-3 top-3 rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white backdrop-blur-sm">
-          {listing.gradeChip}
-        </span>
+        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+          <span className="rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white backdrop-blur-sm">
+            {listing.gradeChip}
+          </span>
+          {listing.classType === "revision" && (
+            <span className="rounded-[3px] border border-white/30 bg-white/15 px-2 py-0.5 font-mono text-[11px] tracking-wide text-white backdrop-blur-sm">
+              {tr("classTypeOptions.revision")}
+            </span>
+          )}
+        </div>
 
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3.5 pb-3 pt-10">
           <div className="flex items-center gap-1.5 font-display text-lg font-semibold text-white">
@@ -61,9 +74,15 @@ export function ListingCard({ listing, index }: { listing: Listing; index?: numb
             {listing.headline}
           </div>
         )}
-        {listing.excerpt && (
-          <p className="mb-2.5 line-clamp-2 text-[12.5px] text-muted-foreground">{listing.excerpt}</p>
-        )}
+        {listing.excerpt &&
+          (listing.excerptIsRichText ? (
+            <div
+              className={`mb-2.5 line-clamp-2 text-[12.5px] text-muted-foreground ${RICH_TEXT_DISPLAY_CLASS}`}
+              dangerouslySetInnerHTML={{ __html: listing.excerpt }}
+            />
+          ) : (
+            <p className="mb-2.5 line-clamp-2 text-[12.5px] text-muted-foreground">{listing.excerpt}</p>
+          ))}
         <div className="mb-3 flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
           <span className="flex items-center gap-0.5 text-cta">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -85,6 +104,11 @@ export function ListingCard({ listing, index }: { listing: Listing; index?: numb
               {subject}
             </span>
           ))}
+          {listing.medium && (
+            <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11.5px] text-foreground/80">
+              {tr(`mediumOptions.${listing.medium}`)}
+            </span>
+          )}
         </div>
 
         <div className="mt-auto flex items-center justify-between border-t border-dashed border-border pt-3.5">

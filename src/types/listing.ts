@@ -11,6 +11,11 @@ export type Listing = {
   /** Ad title/excerpt — populated for ad-driven listings (teacher ads, 0040; institute class-wise ads, 0103); undefined for a whole-institute profile card, which has no single ad behind it. */
   headline?: string;
   excerpt?: string;
+  /** True only for a teacher ad (0119) — its excerpt is sanitized rich-text HTML and must be rendered with dangerouslySetInnerHTML, not as plain text. Institute class-wise ad excerpts stay plain text (their own composer wasn't converted), so this must never be inferred from `kind` alone. */
+  excerptIsRichText?: boolean;
+  /** Set only for a teacher ad (0119) — a wanted-ad-style medium/class-type fact pair, shown the same way a wanted-ad card shows them. Undefined for a class/institute listing, which has no such fields. */
+  medium?: "english" | "sinhala" | "tamil" | "other";
+  classType?: "new" | "revision";
   gradeChip: string;
   /** Structured filter fields for the /teachers search page — display strings above stay as the source of truth for card copy, these are just for matching. */
   location: string;

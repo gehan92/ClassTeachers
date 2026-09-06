@@ -2,6 +2,8 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeRichText } from "@/lib/dashboard/sanitize-rich-text";
+import { hasRichText } from "@/lib/rich-text";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -75,6 +77,8 @@ const upsertBatchAdSchema = z.object({
   subjectId: z.string().uuid(),
   title: z.string().trim().min(2),
   content: z.string().trim().min(1),
+  medium: z.enum(["english", "sinhala", "tamil", "other"]),
+  classType: z.enum(["new", "revision"]),
   hourlyRate: z.number().positive().optional(),
   monthlyRate: z.number().positive().optional(),
 });
@@ -92,11 +96,17 @@ export async function upsertBatchAd(input: {
   subjectId: string;
   title: string;
   content: string;
+  medium: "english" | "sinhala" | "tamil" | "other";
+  classType: "new" | "revision";
   hourlyRate?: number;
   monthlyRate?: number;
 }): Promise<ActionResult> {
   const parsed = upsertBatchAdSchema.safeParse(input);
   if (!parsed.success) {
+    return { error: "Please fill in the subject, title and details, then try again." };
+  }
+  const content = sanitizeRichText(parsed.data.content);
+  if (!hasRichText(content)) {
     return { error: "Please fill in the subject, title and details, then try again." };
   }
 
@@ -136,6 +146,8 @@ export async function upsertBatchAd(input: {
       subject_id: parsed.data.subjectId,
       hourly_rate: parsed.data.hourlyRate ?? null,
       monthly_rate: parsed.data.monthlyRate ?? null,
+      medium: parsed.data.medium,
+      class_type: parsed.data.classType,
     })
     .eq("id", batch.id);
   if (batchError) {
@@ -156,7 +168,7 @@ export async function upsertBatchAd(input: {
         .from("advertisements")
         .update({
           title: parsed.data.title,
-          content: parsed.data.content,
+          content,
           subject_id: parsed.data.subjectId,
           status: "active",
         })
@@ -167,7 +179,7 @@ export async function upsertBatchAd(input: {
         batch_id: batch.id,
         subject_id: parsed.data.subjectId,
         title: parsed.data.title,
-        content: parsed.data.content,
+        content,
         placement: "search_results",
         plan: "basic",
       });
@@ -548,6 +560,8 @@ const createIndividualAdSchema = z.object({
   gradeBand: z.enum(gradeBands).optional(),
   title: z.string().trim().min(2),
   content: z.string().trim().min(1),
+  medium: z.enum(["english", "sinhala", "tamil", "other"]),
+  classType: z.enum(["new", "revision"]),
   hourlyRate: z.number().positive().optional(),
   monthlyRate: z.number().positive().optional(),
 });
@@ -568,6 +582,8 @@ export async function createIndividualAd(input: {
   gradeBand?: string;
   title: string;
   content: string;
+  medium: "english" | "sinhala" | "tamil" | "other";
+  classType: "new" | "revision";
   hourlyRate?: number;
   monthlyRate?: number;
 }): Promise<ActionResult> {
@@ -576,6 +592,10 @@ export async function createIndividualAd(input: {
     gradeBand: input.gradeBand || undefined,
   });
   if (!parsed.success) {
+    return { error: "Please fill in the subject, mode, and title and details." };
+  }
+  const content = sanitizeRichText(parsed.data.content);
+  if (!hasRichText(content)) {
     return { error: "Please fill in the subject, mode, and title and details." };
   }
 
@@ -617,6 +637,8 @@ export async function createIndividualAd(input: {
       hourly_rate: parsed.data.hourlyRate ?? null,
       monthly_rate: parsed.data.monthlyRate ?? null,
       class_size_type: "individual",
+      medium: parsed.data.medium,
+      class_type: parsed.data.classType,
     })
     .select("id")
     .single();
@@ -630,7 +652,7 @@ export async function createIndividualAd(input: {
     batch_id: batch.id,
     subject_id: parsed.data.subjectId,
     title: parsed.data.title,
-    content: parsed.data.content,
+    content,
     placement: "search_results",
     plan: "basic",
   });

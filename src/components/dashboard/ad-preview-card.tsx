@@ -1,3 +1,5 @@
+import { hasRichText, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
+
 /**
  * Live "how this will actually look" preview, dropped inline under an ad/
  * promotion composer so the owner can see it before posting instead of only
@@ -6,21 +8,29 @@
  * takes already-translated label strings rather than calling useTranslations
  * itself, same reasoning as PaginationFooter: every dashboard/namespace that
  * uses this knows its own strings, this component shouldn't have to guess.
+ *
+ * `richContent` (0119): the teacher ad composer's content is now HTML from
+ * RichTextEditor — this is the caller's own unsaved draft, never persisted
+ * yet, so it's rendered as-is (no sanitize call) exactly like
+ * WantedAdPreviewCard renders its own live draft. Institute's composer is
+ * still plain text, so it keeps the old whitespace-pre-line paragraph.
  */
 export function AdPreviewCard({
   badgeLabel,
   emptyLabel,
   title,
   content,
+  richContent = false,
   meta = [],
 }: {
   badgeLabel: string;
   emptyLabel: string;
   title?: string;
   content: string;
+  richContent?: boolean;
   meta?: string[];
 }) {
-  const isEmpty = !content.trim() && !(title ?? "").trim();
+  const isEmpty = richContent ? !hasRichText(content) && !(title ?? "").trim() : !content.trim() && !(title ?? "").trim();
 
   return (
     <div className="rounded-lg border border-dashed border-input bg-background p-4">
@@ -32,7 +42,14 @@ export function AdPreviewCard({
       ) : (
         <div className="rounded-md border border-border bg-white p-3.5">
           {title && <p className="text-sm font-semibold text-foreground">{title}</p>}
-          {content && <p className="mt-1 text-sm whitespace-pre-line text-muted-foreground">{content}</p>}
+          {richContent
+            ? hasRichText(content) && (
+                <div
+                  className={`mt-1 text-sm text-muted-foreground ${RICH_TEXT_DISPLAY_CLASS}`}
+                  dangerouslySetInnerHTML={{ __html: content }}
+                />
+              )
+            : content && <p className="mt-1 text-sm whitespace-pre-line text-muted-foreground">{content}</p>}
           {meta.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {meta.map((item) => (

@@ -989,7 +989,6 @@ export default async function TeacherDashboardPage({
           key: "teaching",
           label: t("groupTeaching"),
           items: [
-            { key: "profile", label: t("tabs.profile") },
             {
               key: "classes",
               label: isCampusLecturer ? t("tabs.classesCampus") : t("tabs.classes"),
@@ -1035,6 +1034,7 @@ export default async function TeacherDashboardPage({
           key: "account",
           label: t("groupMore"),
           items: [
+            { key: "profile", label: t("tabs.profile") },
             { key: "ads", label: t("tabs.ads") },
             { key: "settings", label: t("tabs.settings") },
           ],

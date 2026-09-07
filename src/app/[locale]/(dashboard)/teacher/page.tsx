@@ -1035,9 +1035,11 @@ export default async function TeacherDashboardPage({
           label: t("groupMore"),
           items: [
             { key: "profile", label: t("tabs.profile") },
-            { key: "ads", label: t("tabs.ads") },
             { key: "settings", label: t("tabs.settings") },
           ],
+        },
+        {
+          items: [{ key: "ads", label: t("tabs.ads") }],
         },
       ]}
       panels={{

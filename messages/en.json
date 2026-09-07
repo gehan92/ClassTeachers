@@ -2006,9 +2006,9 @@
   "teacherDashboard": {
     "logout": "Log out",
     "groupTeaching": "Teaching",
-    "groupContent": "Content",
-    "groupStudents": "Community",
-    "groupMore": "More",
+    "groupContent": "Coursework",
+    "groupStudents": "Students",
+    "groupMore": "Account",
     "common": {
       "save": "Save",
       "saved": "Saved",

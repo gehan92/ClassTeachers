@@ -35,7 +35,6 @@ import {
   TrendingUp,
   HelpCircle,
   FolderOpen,
-  MoreHorizontal,
   Presentation,
   Building2,
   Layers,
@@ -147,8 +146,8 @@ const TAB_ICONS: Partial<Record<string, LucideIcon>> = {
 };
 
 /**
- * Icons for the group headers themselves (Content, More, ...) — keyed by
- * each group's stable `key` (see types/dashboard.ts), never its translated
+ * Icons for the group headers themselves (Coursework, Account, ...) — keyed
+ * by each group's stable `key` (see types/dashboard.ts), never its translated
  * `label`, for the same reason TAB_ICONS above is keyed by `key` and not by
  * the tab's label. Covers every group key set by every role's page.tsx; an
  * unmatched key just renders without an icon (same fallback as TAB_ICONS).
@@ -156,10 +155,9 @@ const TAB_ICONS: Partial<Record<string, LucideIcon>> = {
 const GROUP_ICONS: Partial<Record<string, LucideIcon>> = {
   classes: BookOpen,
   content: FolderOpen,
-  more: MoreHorizontal,
   account: UserCircle,
   teaching: Presentation,
-  community: Users,
+  students: Users,
   institute: Building2,
   manage: Layers,
   platform: LayoutGrid,

@@ -2006,9 +2006,9 @@
   "teacherDashboard": {
     "logout": "வெளியேறு",
     "groupTeaching": "கற்பித்தல்",
-    "groupContent": "உள்ளடக்கம்",
-    "groupStudents": "சமூகம்",
-    "groupMore": "மேலும்",
+    "groupContent": "கல்விப் பணிகள்",
+    "groupStudents": "மாணவர்கள்",
+    "groupMore": "கணக்கு",
     "common": {
       "save": "சேமி",
       "saved": "சேமிக்கப்பட்டது",

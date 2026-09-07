@@ -1012,7 +1012,7 @@ export default async function TeacherDashboardPage({
           ],
         },
         {
-          key: "community",
+          key: "students",
           label: t("groupStudents"),
           items: [
             { key: "students", label: t("tabs.students"), count: studentsCount ?? 0 },
@@ -1032,7 +1032,7 @@ export default async function TeacherDashboardPage({
           ],
         },
         {
-          key: "more",
+          key: "account",
           label: t("groupMore"),
           items: [
             { key: "ads", label: t("tabs.ads") },

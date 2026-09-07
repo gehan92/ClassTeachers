@@ -2006,9 +2006,9 @@
   "teacherDashboard": {
     "logout": "පිටවන්න",
     "groupTeaching": "ඉගැන්වීම",
-    "groupContent": "අන්තර්ගතය",
-    "groupStudents": "ප්‍රජාව",
-    "groupMore": "තවත්",
+    "groupContent": "අධ්‍යයන කටයුතු",
+    "groupStudents": "සිසුන්",
+    "groupMore": "ගිණුම",
     "common": {
       "save": "සුරකින්න",
       "saved": "සුරකින ලදී",

@@ -2052,7 +2052,6 @@
     "overview": {
       "greeting": "සුබ සන්ධ්‍යාවක්, {name}",
       "subtitle": "අද ඔබේ පන්තිවල සිදුවෙමින් පවතින දේ මෙන්න.",
-      "createExam": "+ විභාගයක් සාදන්න",
       "stats": {
         "activeStudents": "සක්‍රීය සිසුන්",
         "activeStudentsDelta": "+6 මෙම මාසයේ",

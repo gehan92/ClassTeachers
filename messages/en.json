@@ -2052,7 +2052,6 @@
     "overview": {
       "greeting": "Good evening, {name}",
       "subtitle": "Here's what's happening with your classes today.",
-      "createExam": "+ Create exam",
       "stats": {
         "activeStudents": "Active students",
         "activeStudentsDelta": "+6 this month",

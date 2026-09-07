@@ -2052,7 +2052,6 @@
     "overview": {
       "greeting": "மாலை வணக்கம், {name}",
       "subtitle": "இன்று உங்கள் வகுப்புகளில் என்ன நடக்கிறது என்பது இதோ.",
-      "createExam": "+ தேர்வை உருவாக்கவும்",
       "stats": {
         "activeStudents": "செயலிலுள்ள மாணவர்கள்",
         "activeStudentsDelta": "+6 இந்த மாதம்",

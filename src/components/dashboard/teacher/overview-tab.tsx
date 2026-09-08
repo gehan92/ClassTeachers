@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { Sparkles, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -10,6 +12,12 @@ import { messageFor, type NotificationRow, type Translator } from "@/components/
 const cardClass = "rounded-lg border border-border bg-white p-4.5";
 const linkButtonClass =
   "inline-flex w-fit items-center rounded-sm border border-input px-3.5 py-1.5 text-[13px] font-semibold text-primary hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60";
+
+// Device-local, not per-account — seeing the orientation card again on a
+// browser/profile that already dismissed it is a bigger papercut than one
+// teacher seeing it twice across two devices. No server round trip needed
+// for a one-time UI hint like this.
+const TIPS_DISMISSED_KEY = "cp_teacher_dashboard_tips_dismissed";
 
 export type NextLiveClass = {
   id: string;
@@ -46,6 +54,29 @@ export function OverviewTab({
   const router = useRouter();
   const dateFormatter = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
+  const [showTips, setShowTips] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(TIPS_DISMISSED_KEY)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from localStorage, not derived render state
+        setShowTips(true);
+      }
+    } catch {
+      // Storage blocked (private mode, locked-down browser) — just skip the
+      // one-time tip rather than fail the whole tab over it.
+    }
+  }, []);
+
+  function handleDismissTips() {
+    setShowTips(false);
+    try {
+      localStorage.setItem(TIPS_DISMISSED_KEY, "1");
+    } catch {
+      // Nothing to do if storage isn't available — it'll just show again next visit.
+    }
+  }
+
   function handleStartNextClass() {
     if (!nextLiveClass?.joinLink) return;
     startCall({
@@ -70,6 +101,30 @@ export function OverviewTab({
         <h1 className="text-2xl">{t("greeting", { name: teacherName.split(" ")[0] })}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
+
+      {showTips && (
+        <div className="relative rounded-lg border border-primary/20 bg-primary/5 p-4.5 pr-11">
+          <button
+            type="button"
+            onClick={handleDismissTips}
+            aria-label={t("tips.dismiss")}
+            className="absolute top-3 right-3 flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-foreground"
+          >
+            <X className="size-3.5" />
+          </button>
+          <div className="mb-2 flex items-center gap-2">
+            <Sparkles className="size-4 shrink-0 text-primary" />
+            <h3 className="font-semibold text-foreground">{t("tips.heading")}</h3>
+          </div>
+          <ul className="flex flex-col gap-1.5 text-sm text-muted-foreground">
+            <li>{t("tips.classes")}</li>
+            <li>{t("tips.content")}</li>
+            <li>{t("tips.students")}</li>
+            <li>{t("tips.ads")}</li>
+            <li>{t("tips.institute")}</li>
+          </ul>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Link href={{ pathname: "/teacher", query: { tab: "students" } }}>

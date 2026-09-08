@@ -2067,6 +2067,15 @@
       "subtitle": "Here's what's happening with your classes today.",
       "activityHeading": "Recent activity",
       "activityEmpty": "Nothing new yet — recent activity will show up here.",
+      "tips": {
+        "heading": "New here? A quick orientation",
+        "classes": "Classes & Live — manage your batches and start live video classes.",
+        "content": "Content — upload notes, create exams, assignments, and question banks.",
+        "students": "Students — see your roster, mark attendance, and track grades.",
+        "ads": "Promote — post ads so new students can find and join you.",
+        "institute": "Institute — connect with institutes that invite you to teach.",
+        "dismiss": "Dismiss"
+      },
       "stats": {
         "activeStudents": "Active students",
         "activeStudentsDelta": "+6 this month",

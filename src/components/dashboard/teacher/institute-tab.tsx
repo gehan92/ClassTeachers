@@ -5,7 +5,9 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { avatarGradientClass } from "@/lib/avatar-color";
 import { respondToRosterInvite, requestToJoinInstitute, searchInstitutes } from "@/lib/dashboard/institute-actions";
 import type { BatchRosterEntry } from "@/components/dashboard/teacher/classes-tab";
 
@@ -15,6 +17,7 @@ import type { BatchRosterEntry } from "@/components/dashboard/teacher/classes-ta
 export type TeacherInstituteLinkRow = {
   classId: string;
   instituteName: string;
+  photoUrl: string | null;
   status: "pending" | "accepted" | "declined";
   requestedBy: "institute" | "teacher";
   dateLabel: string;
@@ -174,9 +177,17 @@ export function InstituteTab({
             return (
               <div key={link.classId} className={panelClass}>
                 <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-lg text-foreground">{link.instituteName}</h3>
-                    <p className="mt-0.5 text-sm text-muted-foreground">{link.dateLabel}</p>
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      {link.photoUrl && <AvatarImage src={link.photoUrl} alt="" />}
+                      <AvatarFallback className={avatarGradientClass(link.instituteName)}>
+                        {link.instituteName.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-lg text-foreground">{link.instituteName}</h3>
+                      <p className="mt-0.5 text-sm text-muted-foreground">{link.dateLabel}</p>
+                    </div>
                   </div>
 
                   {status === "accepted" && (

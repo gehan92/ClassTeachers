@@ -26,9 +26,9 @@ export type NotificationRow = {
   createdAt: string;
 };
 
-type Translator = (key: string, params?: Record<string, string>) => string;
+export type Translator = (key: string, params?: Record<string, string>) => string;
 
-function messageFor(t: Translator, n: NotificationRow): string {
+export function messageFor(t: Translator, n: NotificationRow): string {
   const data = n.data ?? {};
   const str = (v: unknown, fallback = "—") => (v === null || v === undefined ? fallback : String(v));
   switch (n.type) {

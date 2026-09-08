@@ -1,10 +1,11 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { useLiveCall } from "@/components/dashboard/live-call-context";
 import { notifyLiveClassStarted } from "@/lib/dashboard/live-classes-actions";
+import { messageFor, type NotificationRow, type Translator } from "@/components/dashboard/notification-bell";
 
 const cardClass = "rounded-lg border border-border bg-white p-4.5";
 const linkButtonClass =
@@ -25,6 +26,7 @@ export function OverviewTab({
   pendingSubmissionsCount,
   upcomingClassesCount,
   nextLiveClass,
+  notifications,
 }: {
   teacherName: string;
   activeStudentsCount: number;
@@ -33,10 +35,16 @@ export function OverviewTab({
   pendingSubmissionsCount: number;
   upcomingClassesCount: number;
   nextLiveClass: NextLiveClass | null;
+  /** Same rows the header bell shows (0105) — reused here as a plain
+   * activity feed rather than queried again, newest first already. */
+  notifications: NotificationRow[];
 }) {
   const t = useTranslations("teacherDashboard.overview");
+  const tn = useTranslations("notifications") as unknown as Translator;
+  const locale = useLocale();
   const { startCall } = useLiveCall();
   const router = useRouter();
+  const dateFormatter = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
   function handleStartNextClass() {
     if (!nextLiveClass?.joinLink) return;
@@ -82,6 +90,26 @@ export function OverviewTab({
         <Link href={{ pathname: "/teacher", query: { tab: "exams" } }}>
           <StatCard label={t("stats.submissions")} value={pendingSubmissionsCount} />
         </Link>
+      </div>
+
+      <div>
+        <h3 className="mb-4 text-lg">{t("activityHeading")}</h3>
+        <div className={cardClass}>
+          {notifications.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("activityEmpty")}</p>
+          ) : (
+            <div className="flex flex-col divide-y divide-border">
+              {notifications.slice(0, 6).map((n) => (
+                <div key={n.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                  <p className="text-sm text-foreground">{messageFor(tn, n)}</p>
+                  <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                    {dateFormatter.format(new Date(n.createdAt))}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div>

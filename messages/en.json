@@ -2065,6 +2065,8 @@
     "overview": {
       "greeting": "Good evening, {name}",
       "subtitle": "Here's what's happening with your classes today.",
+      "activityHeading": "Recent activity",
+      "activityEmpty": "Nothing new yet — recent activity will show up here.",
       "stats": {
         "activeStudents": "Active students",
         "activeStudentsDelta": "+6 this month",
@@ -2317,6 +2319,8 @@
       "subtitle": "Your own batches and who's registered in each.",
       "viewList": "List",
       "viewCalendar": "Calendar",
+      "searchPlaceholder": "Search your classes...",
+      "noSearchResults": "No classes match your search.",
       "timetableEmpty": "No classes have a weekly schedule set yet — add one from a batch's edit form.",
       "timetableNoClasses": "No classes",
       "addBatch": "+ Add batch",
@@ -2606,7 +2610,8 @@
         "joined": "Joined",
         "contact": "Contact",
         "actions": "Actions",
-        "view": "View"
+        "view": "View",
+        "markAttendance": "Mark attendance"
       },
       "requests": {
         "heading": "Join requests",

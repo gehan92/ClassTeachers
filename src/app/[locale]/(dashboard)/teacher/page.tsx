@@ -407,8 +407,8 @@ export default async function TeacherDashboardPage({
           data: [] as { id: string; inquiry_id: string; sender_role: "owner" | "inquirer"; body: string; created_at: string }[],
         }),
     assignedInstituteIds.length
-      ? supabase.from("class_profiles").select("id, name").in("id", assignedInstituteIds)
-      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+      ? supabase.from("class_profiles").select("id, name, photo_url").in("id", assignedInstituteIds)
+      : Promise.resolve({ data: [] as { id: string; name: string; photo_url: string | null }[] }),
   ]);
 
   // Stage 3 — signed URLs for submission photos, only knowable once stage 2
@@ -532,6 +532,7 @@ export default async function TeacherDashboardPage({
   // content-target selectors, note/exam/live-class/assignment batch
   // labels, and the Classes tab's own "Teaching at institutes" list below.
   const assignedInstituteNameById = new Map((assignedInstituteRows ?? []).map((row) => [row.id, row.name]));
+  const assignedInstitutePhotoById = new Map((assignedInstituteRows ?? []).map((row) => [row.id, row.photo_url]));
   const instituteBatchLabelById = new Map(
     (assignedInstituteBatchRows ?? []).map((b) => [b.id, `${assignedInstituteNameById.get(b.owner_id) ?? "—"} — ${b.title}`]),
   );
@@ -977,6 +978,7 @@ export default async function TeacherDashboardPage({
   const teacherInstituteLinks: TeacherInstituteLinkRow[] = (instituteLinkRows ?? []).map((row) => ({
     classId: row.class_id,
     instituteName: assignedInstituteNameById.get(row.class_id) ?? "—",
+    photoUrl: assignedInstitutePhotoById.get(row.class_id) ?? null,
     status: row.status,
     requestedBy: row.requested_by,
     dateLabel: dateFormatter.format(new Date(row.joined_at)),
@@ -1099,6 +1101,7 @@ export default async function TeacherDashboardPage({
             pendingSubmissionsCount={pendingSubmissionsCount}
             upcomingClassesCount={upcomingClassesCount}
             nextLiveClass={nextLiveClass}
+            notifications={notifications}
           />
         ),
         profile: (

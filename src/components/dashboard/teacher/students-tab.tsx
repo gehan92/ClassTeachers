@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -188,13 +189,21 @@ export function StudentsTab({
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  <button
-                    type="button"
-                    className="text-sm font-medium text-primary hover:underline"
-                    onClick={() => setViewingStudent(student)}
-                  >
-                    {t("columns.view")}
-                  </button>
+                  <div className="flex items-center justify-end gap-3">
+                    <Link
+                      href={{ pathname: "/teacher", query: { tab: "live" } }}
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      {t("columns.markAttendance")}
+                    </Link>
+                    <button
+                      type="button"
+                      className="text-sm font-medium text-primary hover:underline"
+                      onClick={() => setViewingStudent(student)}
+                    >
+                      {t("columns.view")}
+                    </button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

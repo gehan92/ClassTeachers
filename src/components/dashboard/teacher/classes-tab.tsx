@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
@@ -87,6 +87,7 @@ export function ClassesTab({
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
 
   const [view, setView] = useState<"list" | "calendar">("list");
+  const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [mode, setMode] = useState<"online" | "physical">("physical");
@@ -232,6 +233,18 @@ export function ClassesTab({
 
   const batchPendingDelete = batches.find((b) => b.id === confirmDeleteId) ?? null;
 
+  const filteredBatches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return batches;
+    return batches.filter(
+      (b) =>
+        b.title.toLowerCase().includes(q) ||
+        (b.location ?? "").toLowerCase().includes(q) ||
+        (b.scheduleNote ?? "").toLowerCase().includes(q) ||
+        (b.courseCode ?? "").toLowerCase().includes(q),
+    );
+  }, [batches, query]);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -239,8 +252,14 @@ export function ClassesTab({
           <h1 className="font-display text-2xl text-primary">{isCampusLecturer ? t("headingCampus") : t("heading")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {added && <span className="animate-in fade-in-0 text-sm font-medium text-success duration-200">{tc("added")}</span>}
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("searchPlaceholder")}
+            className="w-full sm:w-56"
+          />
           <div className="flex rounded-sm border border-input p-0.5">
             <button
               type="button"
@@ -413,9 +432,13 @@ export function ClassesTab({
         <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
           {isCampusLecturer ? t("emptyStateCampus") : t("emptyState")}
         </div>
+      ) : filteredBatches.length === 0 ? (
+        <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
+          {t("noSearchResults")}
+        </div>
       ) : (
         <div className="flex flex-col gap-5">
-          {batches.map((batch) => {
+          {filteredBatches.map((batch) => {
             const roster = rosterByBatch[batch.id] ?? [];
             const isEditing = editingBatchId === batch.id;
             return (
@@ -637,7 +660,7 @@ export function ClassesTab({
         </div>
       ))}
 
-      {view === "calendar" && <ClassesWeeklyTimetable batches={batches} />}
+      {view === "calendar" && <ClassesWeeklyTimetable batches={filteredBatches} />}
 
       <AlertDialog
         open={confirmDeleteId !== null}

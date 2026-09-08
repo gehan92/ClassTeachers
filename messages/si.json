@@ -101,6 +101,7 @@
       "institute_join_request_received": "{teacherName} ඔබේ ආයතනයට ගුරුවරයෙකු ලෙස එකතු වීමට ඉල්ලීමක් කර ඇත.",
       "institute_join_request_accepted": "{instituteName} ඔබේ එකතු වීමේ ඉල්ලීම පිළිගත්තා.",
       "institute_join_request_declined": "{instituteName} ඔබේ එකතු වීමේ ඉල්ලීම ප්‍රතික්ෂේප කළා.",
+      "institute_batch_assigned": "ඔබට {instituteName} හි {batchTitle} ඉගැන්වීමට පවරා ඇත.",
       "generic": "ඔබට නව යාවත්කාලීනයක් ඇත."
     },
     "responderTypes": {

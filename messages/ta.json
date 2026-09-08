@@ -101,6 +101,7 @@
       "institute_join_request_received": "{teacherName} உங்கள் நிறுவனத்தில் ஆசிரியராக இணைய விண்ணப்பித்துள்ளார்.",
       "institute_join_request_accepted": "{instituteName} உங்கள் சேர்க்கை கோரிக்கையை ஏற்றுக்கொண்டது.",
       "institute_join_request_declined": "{instituteName} உங்கள் சேர்க்கை கோரிக்கையை நிராகரித்தது.",
+      "institute_batch_assigned": "{instituteName} இல் {batchTitle} கற்பிக்க உங்களுக்கு நியமிக்கப்பட்டுள்ளது.",
       "generic": "உங்களுக்கு புதிய புதுப்பிப்பு உள்ளது."
     },
     "responderTypes": {

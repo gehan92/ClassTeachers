@@ -99,6 +99,7 @@ export function ClassesTab({
   const [courseCode, setCourseCode] = useState("");
   const [isOpenEnrollment, setIsOpenEnrollment] = useState(false);
   const [capacity, setCapacity] = useState("");
+  const [newScheduleSlots, setNewScheduleSlots] = useState<ScheduleSlotDraft[]>([]);
   const [added, setAdded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -133,6 +134,7 @@ export function ClassesTab({
     setCourseCode("");
     setIsOpenEnrollment(false);
     setCapacity("");
+    setNewScheduleSlots([]);
   }
 
   async function handleAdd() {
@@ -152,11 +154,15 @@ export function ClassesTab({
       isOpenEnrollment,
       capacity: isOpenEnrollment && capacity.trim() ? Number(capacity) : undefined,
     });
-    setCreating(false);
     if (result.error) {
+      setCreating(false);
       setError(result.error);
       return;
     }
+    if (result.id && newScheduleSlots.length > 0) {
+      await setBatchScheduleSlots(result.id, "teacher", newScheduleSlots);
+    }
+    setCreating(false);
     resetForm();
     setShowForm(false);
     setAdded(true);
@@ -409,6 +415,7 @@ export function ClassesTab({
                 />
               )}
             </div>
+            <ScheduleSlotEditor idPrefix="new-schedule-slots" slots={newScheduleSlots} onChange={setNewScheduleSlots} />
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button onClick={handleAdd} disabled={creating}>

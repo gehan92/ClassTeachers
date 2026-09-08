@@ -51,7 +51,7 @@ export async function createBatch(input: {
    * means unlimited. */
   isOpenEnrollment?: boolean;
   capacity?: number;
-}): Promise<ActionResult> {
+}): Promise<ActionResult & { id?: string }> {
   const parsed = createBatchSchema.safeParse({
     ownerType: input.ownerType,
     title: input.title,
@@ -104,27 +104,35 @@ export async function createBatch(input: {
     subjectId = resolvedSubjectId;
   }
 
-  const { error } = await supabase.from("batches").insert({
-    owner_type: parsed.data.ownerType,
-    owner_id: ownerId,
-    title: parsed.data.title,
-    mode: parsed.data.mode,
-    class_size_type: parsed.data.classSizeType ?? "group",
-    location: parsed.data.location || null,
-    schedule_note: parsed.data.scheduleNote || null,
-    description: parsed.data.description || null,
-    teacher_label: parsed.data.ownerType === "class" ? parsed.data.teacherLabel || null : null,
-    taught_by_teacher_id: parsed.data.ownerType === "class" ? parsed.data.taughtByTeacherId ?? null : null,
-    grade_band: parsed.data.gradeBand ?? null,
-    course_code: parsed.data.courseCode ?? null,
-    subject_id: subjectId,
-    is_open_enrollment: parsed.data.isOpenEnrollment ?? false,
-    capacity: parsed.data.isOpenEnrollment ? (parsed.data.capacity ?? null) : null,
-  });
+  const { data: inserted, error } = await supabase
+    .from("batches")
+    .insert({
+      owner_type: parsed.data.ownerType,
+      owner_id: ownerId,
+      title: parsed.data.title,
+      mode: parsed.data.mode,
+      class_size_type: parsed.data.classSizeType ?? "group",
+      location: parsed.data.location || null,
+      schedule_note: parsed.data.scheduleNote || null,
+      description: parsed.data.description || null,
+      teacher_label: parsed.data.ownerType === "class" ? parsed.data.teacherLabel || null : null,
+      taught_by_teacher_id: parsed.data.ownerType === "class" ? parsed.data.taughtByTeacherId ?? null : null,
+      grade_band: parsed.data.gradeBand ?? null,
+      course_code: parsed.data.courseCode ?? null,
+      subject_id: subjectId,
+      is_open_enrollment: parsed.data.isOpenEnrollment ?? false,
+      capacity: parsed.data.isOpenEnrollment ? (parsed.data.capacity ?? null) : null,
+    })
+    .select("id")
+    .single();
   if (error) {
     return { error: "Couldn't create the batch. Please try again." };
   }
-  return {};
+  // Returned so the Classes tab can immediately attach weekly schedule slots
+  // (setBatchScheduleSlots) right after creation, in the same "Add batch"
+  // step -- otherwise a fresh batch has no slots and never shows up in the
+  // calendar view until a separate edit.
+  return { id: inserted.id };
 }
 
 const updateBatchSchema = z.object({
@@ -195,16 +203,31 @@ export async function updateBatch(
   }
 
   let ownerId = user.id;
+  let instituteName: string | null = null;
   if (parsed.data.ownerType === "class") {
     const { data: classProfile } = await supabase
       .from("class_profiles")
-      .select("id")
+      .select("id, name")
       .eq("owner_id", user.id)
       .maybeSingle();
     if (!classProfile) {
       return { error: "No institute profile found for this account." };
     }
     ownerId = classProfile.id;
+    instituteName = classProfile.name;
+  }
+
+  // Read before the update below overwrites it -- the only way to tell
+  // "newly assigned to this teacher" from "already was this teacher" so the
+  // notification below doesn't refire on every unrelated edit to the batch.
+  let previousTeacherId: string | null = null;
+  if (parsed.data.ownerType === "class") {
+    const { data: existingBatch } = await supabase
+      .from("batches")
+      .select("taught_by_teacher_id")
+      .eq("id", batchId)
+      .maybeSingle();
+    previousTeacherId = existingBatch?.taught_by_teacher_id ?? null;
   }
 
   let subjectId: string | null | undefined = undefined;
@@ -252,6 +275,20 @@ export async function updateBatch(
     .eq("owner_id", ownerId);
   if (error) {
     return { error: "Couldn't update this class. Please try again." };
+  }
+
+  if (
+    parsed.data.ownerType === "class" &&
+    parsed.data.taughtByTeacherId &&
+    parsed.data.taughtByTeacherId !== previousTeacherId
+  ) {
+    await notify(
+      supabase,
+      parsed.data.taughtByTeacherId,
+      "institute_batch_assigned",
+      { batchTitle: parsed.data.title, instituteName: instituteName ?? "—" },
+      "institute",
+    );
   }
   return {};
 }

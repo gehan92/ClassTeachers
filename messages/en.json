@@ -101,6 +101,7 @@
       "institute_join_request_received": "{teacherName} requested to join your institute as a teacher.",
       "institute_join_request_accepted": "{instituteName} accepted your request to join.",
       "institute_join_request_declined": "{instituteName} declined your request to join.",
+      "institute_batch_assigned": "You've been assigned to teach {batchTitle} at {instituteName}.",
       "generic": "You have a new update."
     },
     "responderTypes": {

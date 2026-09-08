@@ -96,6 +96,8 @@ export function messageFor(t: Translator, n: NotificationRow): string {
       return t("types.institute_join_request_accepted", { instituteName: str(data.instituteName) });
     case "institute_join_request_declined":
       return t("types.institute_join_request_declined", { instituteName: str(data.instituteName) });
+    case "institute_batch_assigned":
+      return t("types.institute_batch_assigned", { batchTitle: str(data.batchTitle), instituteName: str(data.instituteName) });
     default:
       return t("types.generic");
   }

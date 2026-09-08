@@ -16,6 +16,7 @@ const createBatchSchema = z.object({
   classSizeType: z.enum(classSizeTypes).optional(),
   location: z.string().trim().optional(),
   scheduleNote: z.string().trim().optional(),
+  description: z.string().trim().max(2000).optional(),
   teacherLabel: z.string().trim().optional(),
   taughtByTeacherId: z.string().uuid().optional(),
   gradeBand: z.enum(gradeBands).optional(),
@@ -32,6 +33,7 @@ export async function createBatch(input: {
   classSizeType?: "group" | "individual";
   location: string;
   scheduleNote: string;
+  description?: string;
   teacherLabel?: string;
   taughtByTeacherId?: string;
   gradeBand: string;
@@ -57,6 +59,7 @@ export async function createBatch(input: {
     classSizeType: input.classSizeType || undefined,
     location: input.location || undefined,
     scheduleNote: input.scheduleNote || undefined,
+    description: input.description || undefined,
     teacherLabel: input.teacherLabel || undefined,
     taughtByTeacherId: input.taughtByTeacherId || undefined,
     gradeBand: input.gradeBand || undefined,
@@ -109,6 +112,7 @@ export async function createBatch(input: {
     class_size_type: parsed.data.classSizeType ?? "group",
     location: parsed.data.location || null,
     schedule_note: parsed.data.scheduleNote || null,
+    description: parsed.data.description || null,
     teacher_label: parsed.data.ownerType === "class" ? parsed.data.teacherLabel || null : null,
     taught_by_teacher_id: parsed.data.ownerType === "class" ? parsed.data.taughtByTeacherId ?? null : null,
     grade_band: parsed.data.gradeBand ?? null,
@@ -130,6 +134,7 @@ const updateBatchSchema = z.object({
   classSizeType: z.enum(classSizeTypes).optional(),
   location: z.string().trim().optional(),
   scheduleNote: z.string().trim().optional(),
+  description: z.string().trim().max(2000).optional(),
   teacherLabel: z.string().trim().optional(),
   taughtByTeacherId: z.string().uuid().optional(),
   gradeBand: z.enum(gradeBands).optional(),
@@ -148,6 +153,7 @@ export async function updateBatch(
     classSizeType?: "group" | "individual";
     location: string;
     scheduleNote: string;
+    description?: string;
     teacherLabel?: string;
     taughtByTeacherId?: string;
     gradeBand: string;
@@ -167,6 +173,7 @@ export async function updateBatch(
     classSizeType: input.classSizeType || undefined,
     location: input.location || undefined,
     scheduleNote: input.scheduleNote || undefined,
+    description: input.description || undefined,
     teacherLabel: input.ownerType === "class" ? input.teacherLabel || undefined : undefined,
     taughtByTeacherId: input.ownerType === "class" ? input.taughtByTeacherId || undefined : undefined,
     gradeBand: input.gradeBand || undefined,
@@ -223,6 +230,7 @@ export async function updateBatch(
       ...(parsed.data.classSizeType ? { class_size_type: parsed.data.classSizeType } : {}),
       location: parsed.data.location || null,
       schedule_note: parsed.data.scheduleNote || null,
+      description: parsed.data.description || null,
       grade_band: parsed.data.gradeBand ?? null,
       course_code: parsed.data.courseCode ?? null,
       ...(parsed.data.ownerType === "class"

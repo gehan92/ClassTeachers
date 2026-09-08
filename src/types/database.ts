@@ -449,6 +449,7 @@ export type Database = {
           class_size_type: "group" | "individual";
           location: string | null;
           schedule_note: string | null;
+          description: string | null;
           teacher_label: string | null;
           taught_by_teacher_id: string | null;
           grade_band: GradeBand | null;
@@ -475,6 +476,7 @@ export type Database = {
           class_size_type?: "group" | "individual";
           location?: string | null;
           schedule_note?: string | null;
+          description?: string | null;
           teacher_label?: string | null;
           taught_by_teacher_id?: string | null;
           grade_band?: GradeBand | null;
@@ -501,6 +503,7 @@ export type Database = {
           class_size_type?: "group" | "individual";
           location?: string | null;
           schedule_note?: string | null;
+          description?: string | null;
           teacher_label?: string | null;
           taught_by_teacher_id?: string | null;
           grade_band?: GradeBand | null;
@@ -1022,6 +1025,7 @@ export type Database = {
           starts_at: string;
           expires_at: string | null;
           created_at: string;
+          view_count: number;
         };
         Insert: {
           id?: string;
@@ -1038,6 +1042,7 @@ export type Database = {
           starts_at?: string;
           expires_at?: string | null;
           created_at?: string;
+          view_count?: number;
         };
         Update: {
           id?: string;
@@ -1054,6 +1059,7 @@ export type Database = {
           starts_at?: string;
           expires_at?: string | null;
           created_at?: string;
+          view_count?: number;
         };
         // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
         // every table declares no relationships rather than a guessed one.
@@ -1578,6 +1584,10 @@ export type Database = {
       };
       request_to_join_institute: {
         Args: { p_class_id: string };
+        Returns: undefined;
+      };
+      increment_ad_view: {
+        Args: { p_ad_id: string };
         Returns: undefined;
       };
       list_class_batch_ads: {

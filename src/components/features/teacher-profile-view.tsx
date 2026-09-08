@@ -158,6 +158,15 @@ function Hero({
                   {t("campusLecturer")}
                 </span>
               )}
+              {teacher.affiliatedInstitutes.map((institute) => (
+                <Link
+                  key={institute.id}
+                  href={`/class/${institute.id}`}
+                  className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs hover:bg-white/20"
+                >
+                  {t("affiliatedWith", { name: institute.name })}
+                </Link>
+              ))}
               <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs">
                 {classTypeLabel(t, teacher.classType)}
               </span>

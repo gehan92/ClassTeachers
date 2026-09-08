@@ -226,3 +226,23 @@ export async function respondToTeacherJoinRequest(teacherId: string, accept: boo
   );
   return {};
 }
+
+/**
+ * Backs the Institute tab's own "Find an institute" search (spec doc's
+ * "Institute tab -> Request to Join", rather than only reachable from an
+ * institute's public page) -- a plain SELECT, not an RPC, since approved
+ * class_profiles are already public (0005's own select policy).
+ */
+export async function searchInstitutes(query: string): Promise<{ id: string; name: string; location: string | null }[]> {
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return [];
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("class_profiles")
+    .select("id, name, location")
+    .eq("status", "approved")
+    .ilike("name", `%${trimmed}%`)
+    .limit(10);
+  return data ?? [];
+}

@@ -29,6 +29,7 @@ import { InstituteTab, type TeacherInstituteLinkRow, type InstituteTaughtBatchRo
 import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { TeacherOnboardingWizard } from "@/components/onboarding/teacher-onboarding-wizard";
 import { createClient } from "@/lib/supabase/server";
+import { classState } from "@/lib/dashboard/live-class-state";
 import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 import { stripRichText } from "@/lib/rich-text";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
@@ -50,6 +51,14 @@ import type { InquiryRow, InquiryMessageRow } from "@/components/dashboard/inqui
 import type { WantedAdBrowseRow } from "@/components/dashboard/wanted-ads-browse-tab";
 
 type RawQuestionOption = { id: string; text: string; imagePath?: string };
+
+// A plain (non-component) helper, not inlined into the page body itself —
+// same reason student/page.tsx's isFuture/isEndedLiveClass live at module
+// level rather than inside the component: react-hooks/purity only flags an
+// impure call (Date.now here) made directly in a component/hook's own body.
+function isUpcomingLiveClass(row: { scheduledAtIso: string; durationMinutes: number; status: "scheduled" | "live" | "completed" | "cancelled" }): boolean {
+  return classState(row, Date.now()) !== "ended";
+}
 
 export default async function TeacherDashboardPage({
   params,
@@ -180,7 +189,7 @@ export default async function TeacherDashboardPage({
     supabase
       .from("batches")
       .select(
-        "id, title, mode, class_size_type, location, schedule_note, grade_band, status, subject_id, hourly_rate, monthly_rate, course_code, is_open_enrollment, capacity, medium, class_type, hourly_rate_max, monthly_rate_max",
+        "id, title, mode, class_size_type, location, schedule_note, description, grade_band, status, subject_id, hourly_rate, monthly_rate, course_code, is_open_enrollment, capacity, medium, class_type, hourly_rate_max, monthly_rate_max",
       )
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
@@ -211,7 +220,7 @@ export default async function TeacherDashboardPage({
     // from the single own_profile promo box fetched above.
     supabase
       .from("advertisements")
-      .select("id, batch_id, title, content, status")
+      .select("id, batch_id, title, content, status, view_count")
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
       .eq("placement", "search_results"),
@@ -508,6 +517,7 @@ export default async function TeacherDashboardPage({
     classSizeType: b.class_size_type,
     location: b.location,
     scheduleNote: b.schedule_note,
+    description: b.description,
     gradeBand: b.grade_band,
     courseCode: b.course_code,
     hasActiveAd: activeAdBatchIds.has(b.id),
@@ -533,14 +543,18 @@ export default async function TeacherDashboardPage({
   // Deleted (0109 soft-delete) rows stay in batchAdRows so the Advertisement
   // tab's "Ad history" section can list and restore them — they're set
   // aside here rather than treated as a batch's live ad.
-  const batchAdByBatchId = new Map<string, { id: string; title: string; content: string | null; status: "active" | "expired" | "removed" }>();
+  const batchAdByBatchId = new Map<
+    string,
+    { id: string; title: string; content: string | null; status: "active" | "expired" | "removed"; viewCount: number }
+  >();
   const deletedBatchAdRows: NonNullable<typeof batchAdRows> = [];
   for (const a of batchAdRows ?? []) {
     if (a.status === "deleted") {
       deletedBatchAdRows.push(a);
       continue;
     }
-    if (a.batch_id) batchAdByBatchId.set(a.batch_id, { id: a.id, title: a.title, content: a.content, status: a.status });
+    if (a.batch_id)
+      batchAdByBatchId.set(a.batch_id, { id: a.id, title: a.title, content: a.content, status: a.status, viewCount: a.view_count });
   }
 
   const adBatches: TeacherAdBatchRow[] = (batchRows ?? []).map((b) => {
@@ -557,7 +571,9 @@ export default async function TeacherDashboardPage({
       monthlyRateMax: b.monthly_rate_max,
       medium: b.medium,
       classType: b.class_type,
-      ad: ad ? { id: ad.id, title: ad.title, content: sanitizeRichTextNullable(ad.content) ?? "", status: ad.status } : null,
+      ad: ad
+        ? { id: ad.id, title: ad.title, content: sanitizeRichTextNullable(ad.content) ?? "", status: ad.status, viewCount: ad.viewCount }
+        : null,
     };
   });
 
@@ -568,7 +584,9 @@ export default async function TeacherDashboardPage({
     // still-plain-text promotions) — strip the tags a teacher ad's content
     // (0119, rich-text HTML) now carries rather than showing them raw.
     content: stripRichText(ad.content ?? ""),
-    meta: ad.batch_id ? (batchTitleById.get(ad.batch_id) ?? undefined) : undefined,
+    meta: [ad.batch_id ? batchTitleById.get(ad.batch_id) : null, t("ads.classAds.viewCount", { count: ad.view_count })]
+      .filter((v): v is string => Boolean(v))
+      .join(" · "),
   }));
 
   // get_roster_student_info only ever resolves this teacher's own students
@@ -821,6 +839,26 @@ export default async function TeacherDashboardPage({
     status: c.status,
   }));
 
+  // Home tab's "Upcoming classes" KPI + "Start Next Class" shortcut (spec
+  // doc) — filtered from the raw rows (not the already-mapped `liveClasses`
+  // below, which drops duration_minutes) since classState needs the real
+  // duration to know whether a class that started a while ago has actually
+  // ended yet. "Upcoming" covers not-yet-open, starting-soon, and
+  // already-live, same definition the Live Classes tab itself uses to
+  // separate its own scheduled-vs-history sections.
+  const upcomingLiveClassRows = (liveClassRows ?? [])
+    .filter((c) => isUpcomingLiveClass({ scheduledAtIso: c.scheduled_at, durationMinutes: c.duration_minutes, status: c.status }))
+    .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
+  const upcomingClassesCount = upcomingLiveClassRows.length;
+  const nextLiveClass = upcomingLiveClassRows[0]
+    ? {
+        id: upcomingLiveClassRows[0].id,
+        title: upcomingLiveClassRows[0].title,
+        scheduledLabel: scheduleFormatter.format(new Date(upcomingLiveClassRows[0].scheduled_at)),
+        joinLink: joinLinkByClassId.get(upcomingLiveClassRows[0].id) ?? null,
+      }
+    : null;
+
   const lessonOptions: TeacherLessonOption[] = (liveClassRows ?? []).map((c) => ({ id: c.id, title: c.title }));
   const lessonTitleById = new Map(lessonOptions.map((l) => [l.id, l.title]));
 
@@ -919,6 +957,9 @@ export default async function TeacherDashboardPage({
     academicTitle: teacherProfile?.academic_title ?? null,
     institutionVerified: teacherProfile?.institution_verified ?? false,
     publications: teacherProfile?.publications ?? [],
+    affiliatedInstitutes: (instituteLinkRows ?? [])
+      .filter((row) => row.status === "accepted")
+      .map((row) => ({ id: row.class_id, name: assignedInstituteNameById.get(row.class_id) ?? "—" })),
   };
 
   const referrals: ReferralRow[] = (myReferralRows ?? []).map((row) => ({
@@ -1056,6 +1097,8 @@ export default async function TeacherDashboardPage({
             averageRating={averageRating}
             reviewsCount={reviewRows?.length ?? 0}
             pendingSubmissionsCount={pendingSubmissionsCount}
+            upcomingClassesCount={upcomingClassesCount}
+            nextLiveClass={nextLiveClass}
           />
         ),
         profile: (
@@ -1150,7 +1193,14 @@ export default async function TeacherDashboardPage({
             }))}
           />
         ),
-        students: <StudentsTab students={students} requests={requests} />,
+        students: (
+          <StudentsTab
+            students={students}
+            requests={requests}
+            examResults={analyticsExamResults}
+            attendance={analyticsAttendance}
+          />
+        ),
         analytics: (
           <AnalyticsTab
             examResults={analyticsExamResults}

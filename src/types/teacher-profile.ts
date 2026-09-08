@@ -52,4 +52,9 @@ export type TeacherProfileDetail = {
   academicTitle: string | null;
   institutionVerified: boolean;
   publications: string[];
+  /** Institutes (class_teachers, accepted) this teacher is actually linked
+   * to in the system -- distinct from the free-text institution/
+   * academicTitle fields above, which a campus lecturer just types in
+   * themselves. Empty for a teacher with no accepted institute link. */
+  affiliatedInstitutes: { id: string; name: string }[];
 };

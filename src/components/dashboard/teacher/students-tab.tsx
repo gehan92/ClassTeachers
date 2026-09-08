@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { usePagination } from "@/lib/hooks/use-pagination";
 import { respondToJoinRequest } from "@/lib/dashboard/batches-actions";
+import type { AnalyticsExamResultRow, AnalyticsAttendanceRow } from "@/components/dashboard/teacher/analytics-tab";
 
 export type TeacherStudentRow = {
   id: string;
@@ -31,14 +33,22 @@ export type TeacherJoinRequestRow = {
 export function StudentsTab({
   students,
   requests: initialRequests,
+  examResults,
+  attendance,
 }: {
   students: TeacherStudentRow[];
   requests: TeacherJoinRequestRow[];
+  /** Already computed for the Analytics tab (analyticsExamResults) — reused
+   * here rather than re-queried, filtered per-student when the profile
+   * dialog opens. */
+  examResults: AnalyticsExamResultRow[];
+  attendance: AnalyticsAttendanceRow[];
 }) {
   const t = useTranslations("teacherDashboard.students");
   const tc = useTranslations("teacherDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [query, setQuery] = useState("");
+  const [viewingStudent, setViewingStudent] = useState<TeacherStudentRow | null>(null);
   // Read straight from the prop (filtered by a locally-handled set), not a
   // useState copy — see the identical fix + note in question-bank-tab.tsx.
   const [handledRequestIds, setHandledRequestIds] = useState<Set<string>>(new Set());
@@ -150,6 +160,7 @@ export function StudentsTab({
               <TableHead>{t("columns.batch")}</TableHead>
               <TableHead>{t("columns.joined")}</TableHead>
               <TableHead>{t("columns.contact")}</TableHead>
+              <TableHead className="text-right">{t("columns.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -167,7 +178,24 @@ export function StudentsTab({
                 </TableCell>
                 <TableCell className="text-muted-foreground">{student.batch}</TableCell>
                 <TableCell className="text-muted-foreground">{student.joinedAt}</TableCell>
-                <TableCell className="text-muted-foreground">{student.phone}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {student.phone ? (
+                    <a href={`tel:${student.phone}`} className="font-medium text-primary hover:underline">
+                      {student.phone}
+                    </a>
+                  ) : (
+                    "—"
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-primary hover:underline"
+                    onClick={() => setViewingStudent(student)}
+                  >
+                    {t("columns.view")}
+                  </button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -185,6 +213,71 @@ export function StudentsTab({
           />
         )}
       </div>
+
+      <Dialog open={viewingStudent !== null} onOpenChange={(open) => !open && setViewingStudent(null)}>
+        <DialogContent className="max-w-md">
+          {viewingStudent && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{viewingStudent.name}</DialogTitle>
+                <DialogDescription>
+                  {viewingStudent.batch} · {t("profileDialog.joined", { date: viewingStudent.joinedAt })}
+                </DialogDescription>
+              </DialogHeader>
+
+              {viewingStudent.phone && (
+                <a href={`tel:${viewingStudent.phone}`} className="text-sm font-medium text-primary hover:underline">
+                  {viewingStudent.phone}
+                </a>
+              )}
+
+              <div className="flex flex-col gap-4">
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold text-foreground">{t("profileDialog.attendanceHeading")}</h4>
+                  {(() => {
+                    const rows = attendance.filter((a) => a.studentId === viewingStudent.id);
+                    if (rows.length === 0) {
+                      return <p className="text-sm text-muted-foreground">{t("profileDialog.attendanceEmpty")}</p>;
+                    }
+                    const present = rows.filter((r) => r.status === "present").length;
+                    const late = rows.filter((r) => r.status === "late").length;
+                    const absent = rows.filter((r) => r.status === "absent").length;
+                    return (
+                      <p className="text-sm text-muted-foreground">
+                        {t("profileDialog.attendanceSummary", { present, late, absent })}
+                      </p>
+                    );
+                  })()}
+                </div>
+
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold text-foreground">{t("profileDialog.gradesHeading")}</h4>
+                  {(() => {
+                    const rows = examResults.filter((r) => r.studentId === viewingStudent.id);
+                    if (rows.length === 0) {
+                      return <p className="text-sm text-muted-foreground">{t("profileDialog.gradesEmpty")}</p>;
+                    }
+                    return (
+                      <div className="flex flex-col divide-y divide-border">
+                        {rows.map((r) => (
+                          <div key={r.examId} className="flex items-center justify-between gap-3 py-2 text-sm first:pt-0 last:pb-0">
+                            <span className="text-foreground">{r.examTitle}</span>
+                            <span className="font-mono text-muted-foreground">
+                              {r.status === "graded" && r.scorePercent !== null
+                                ? `${r.scorePercent}%`
+                                : t("profileDialog.gradePending")}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

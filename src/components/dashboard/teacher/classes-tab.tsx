@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,9 @@ import { ScheduleSlotEditor, type ScheduleSlotDraft } from "@/components/dashboa
 import type { GradeBand } from "@/types/grade-band";
 import { GRADE_BAND_SELECT_VALUES, OPEN_GRADE_VALUE } from "@/lib/grade-band-options";
 
+const textareaClass =
+  "min-h-20 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm";
+
 export type TeacherBatchRow = {
   id: string;
   title: string;
@@ -29,6 +33,7 @@ export type TeacherBatchRow = {
   classSizeType: "group" | "individual";
   location: string | null;
   scheduleNote: string | null;
+  description: string | null;
   gradeBand: GradeBand | null;
   /** Campus lecturer only (0076) — a module/course code distinct from the generic subject list, e.g. "CS301". Null for regular teacher batches. */
   courseCode: string | null;
@@ -78,14 +83,17 @@ export function ClassesTab({
   const t = useTranslations("teacherDashboard.classes");
   const tc = useTranslations("teacherDashboard.common");
   const tg = useTranslations("search");
+  const tLive = useTranslations("teacherDashboard.live");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
 
+  const [view, setView] = useState<"list" | "calendar">("list");
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [mode, setMode] = useState<"online" | "physical">("physical");
   const [classSizeType, setClassSizeType] = useState<"group" | "individual">("group");
   const [location, setLocation] = useState("");
   const [scheduleNote, setScheduleNote] = useState("");
+  const [description, setDescription] = useState("");
   const [gradeBand, setGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>("12-13");
   const [courseCode, setCourseCode] = useState("");
   const [isOpenEnrollment, setIsOpenEnrollment] = useState(false);
@@ -100,6 +108,7 @@ export function ClassesTab({
   const [editClassSizeType, setEditClassSizeType] = useState<"group" | "individual">("group");
   const [editLocation, setEditLocation] = useState("");
   const [editScheduleNote, setEditScheduleNote] = useState("");
+  const [editDescription, setEditDescription] = useState("");
   const [editGradeBand, setEditGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>("12-13");
   const [editCourseCode, setEditCourseCode] = useState("");
   const [editIsOpenEnrollment, setEditIsOpenEnrollment] = useState(false);
@@ -118,6 +127,7 @@ export function ClassesTab({
     setClassSizeType("group");
     setLocation("");
     setScheduleNote("");
+    setDescription("");
     setGradeBand("12-13");
     setCourseCode("");
     setIsOpenEnrollment(false);
@@ -135,6 +145,7 @@ export function ClassesTab({
       classSizeType,
       location,
       scheduleNote,
+      description,
       gradeBand: gradeBand === OPEN_GRADE_VALUE ? "" : gradeBand,
       courseCode: isCampusLecturer ? courseCode : undefined,
       isOpenEnrollment,
@@ -159,6 +170,7 @@ export function ClassesTab({
     setEditClassSizeType(batch.classSizeType);
     setEditLocation(batch.location ?? "");
     setEditScheduleNote(batch.scheduleNote ?? "");
+    setEditDescription(batch.description ?? "");
     setEditGradeBand(batch.gradeBand ?? OPEN_GRADE_VALUE);
     setEditCourseCode(batch.courseCode ?? "");
     setEditIsOpenEnrollment(batch.isOpenEnrollment);
@@ -183,6 +195,7 @@ export function ClassesTab({
       classSizeType: editClassSizeType,
       location: editLocation,
       scheduleNote: editScheduleNote,
+      description: editDescription,
       gradeBand: editGradeBand === OPEN_GRADE_VALUE ? "" : editGradeBand,
       courseCode: isCampusLecturer ? editCourseCode : undefined,
       isOpenEnrollment: editIsOpenEnrollment,
@@ -228,6 +241,22 @@ export function ClassesTab({
         </div>
         <div className="flex items-center gap-3">
           {added && <span className="animate-in fade-in-0 text-sm font-medium text-success duration-200">{tc("added")}</span>}
+          <div className="flex rounded-sm border border-input p-0.5">
+            <button
+              type="button"
+              onClick={() => setView("list")}
+              className={`rounded-xs px-2.5 py-1 text-sm font-medium transition-colors ${view === "list" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {t("viewList")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("calendar")}
+              className={`rounded-xs px-2.5 py-1 text-sm font-medium transition-colors ${view === "calendar" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {t("viewCalendar")}
+            </button>
+          </div>
           <Button onClick={() => setShowForm((v) => !v)}>
             {isCampusLecturer ? t("addBatchCampus") : t("addBatch")}
           </Button>
@@ -329,6 +358,16 @@ export function ClassesTab({
                 onChange={(e) => setScheduleNote(e.target.value)}
               />
             </div>
+            <div className="grid gap-1.5 sm:col-span-2">
+              <Label htmlFor="batch-description">{t("form.descriptionLabel")}</Label>
+              <textarea
+                id="batch-description"
+                className={textareaClass}
+                placeholder={t("form.descriptionPlaceholder")}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
             <div className="flex flex-col gap-2 rounded-md border border-border p-3 sm:col-span-2">
               <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <input
@@ -370,7 +409,7 @@ export function ClassesTab({
         </div>
       )}
 
-      {batches.length === 0 ? (
+      {view === "list" && (batches.length === 0 ? (
         <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
           {isCampusLecturer ? t("emptyStateCampus") : t("emptyState")}
         </div>
@@ -466,6 +505,15 @@ export function ClassesTab({
                           onChange={(e) => setEditScheduleNote(e.target.value)}
                         />
                       </div>
+                      <div className="grid gap-1.5 sm:col-span-2">
+                        <Label htmlFor={`edit-description-${batch.id}`}>{t("form.descriptionLabel")}</Label>
+                        <textarea
+                          id={`edit-description-${batch.id}`}
+                          className={textareaClass}
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
+                        />
+                      </div>
                       <div className="flex flex-col gap-2 rounded-md border border-border p-3 sm:col-span-2">
                         <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                           <input
@@ -519,6 +567,7 @@ export function ClassesTab({
                         {batch.location ? ` · ${batch.location}` : ""}
                         {batch.scheduleNote ? ` · ${batch.scheduleNote}` : ""}
                       </p>
+                      {batch.description && <p className="mt-1.5 text-sm text-foreground">{batch.description}</p>}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       {batch.isOpenEnrollment && (
@@ -529,6 +578,11 @@ export function ClassesTab({
                       <span className="rounded-full bg-background px-2.5 py-1 font-mono text-[11px] text-muted-foreground">
                         {t("studentCount", { count: roster.length })}
                       </span>
+                      <Link href={{ pathname: "/teacher", query: { tab: "live", scheduleBatch: batch.id } }}>
+                        <Button type="button" variant="ghost" size="sm">
+                          {tLive("scheduleClass")}
+                        </Button>
+                      </Link>
                       <Button type="button" variant="ghost" size="sm" onClick={() => startEdit(batch)}>
                         {t("edit")}
                       </Button>
@@ -581,7 +635,9 @@ export function ClassesTab({
             );
           })}
         </div>
-      )}
+      ))}
+
+      {view === "calendar" && <ClassesWeeklyTimetable batches={batches} />}
 
       <AlertDialog
         open={confirmDeleteId !== null}
@@ -616,6 +672,71 @@ export function ClassesTab({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+// Monday-first display order, each value a dayOfWeek index (0=Sun..6=Sat) —
+// same convention as the student dashboard's own Calendar tab timetable grid
+// (calendar-tab.tsx), which this mirrors for the teacher's own batches only
+// (no cross-content agenda here, just the recurring weekly schedule).
+const TIMETABLE_DAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
+
+/**
+ * Read-only weekly view of every batch's recurring meeting slots
+ * (batch_schedule_slots, 0118) — the Classes tab's "calendar view" toggle
+ * alongside the existing list view. A batch with no slots set just never
+ * appears here; nothing to edit from this view, that's still the list view.
+ */
+function ClassesWeeklyTimetable({ batches }: { batches: TeacherBatchRow[] }) {
+  const t = useTranslations("teacherDashboard.classes");
+  const td = useTranslations("scheduleSlotEditor");
+
+  const slotsByDay = new Map<number, { batchTitle: string; startTime: string; endTime: string }[]>();
+  for (const day of TIMETABLE_DAY_ORDER) slotsByDay.set(day, []);
+  for (const batch of batches) {
+    for (const slot of batch.scheduleSlots) {
+      const list = slotsByDay.get(slot.dayOfWeek);
+      if (list) list.push({ batchTitle: batch.title, startTime: slot.startTime, endTime: slot.endTime });
+    }
+  }
+  for (const list of slotsByDay.values()) list.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+  const hasAnySlot = batches.some((b) => b.scheduleSlots.length > 0);
+
+  if (!hasAnySlot) {
+    return (
+      <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
+        {t("timetableEmpty")}
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-lg border border-border bg-white">
+      <div className="grid min-w-[980px] grid-cols-7">
+        {TIMETABLE_DAY_ORDER.map((day, i) => (
+          <div key={day} className={`flex flex-col gap-2 p-3 ${i !== 0 ? "border-l border-border" : ""}`}>
+            <div className="text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              {td(`days.${["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][day]}`)}
+            </div>
+            <div className="flex flex-col gap-2">
+              {(slotsByDay.get(day) ?? []).length === 0 ? (
+                <p className="py-4 text-center text-xs text-muted-foreground">{t("timetableNoClasses")}</p>
+              ) : (
+                (slotsByDay.get(day) ?? []).map((slot, i2) => (
+                  <div key={i2} className="rounded-md bg-primary/5 p-2.5">
+                    <p className="font-mono text-[11px] text-primary">
+                      {slot.startTime}–{slot.endTime}
+                    </p>
+                    <p className="mt-0.5 text-[13px] font-medium text-foreground">{slot.batchTitle}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

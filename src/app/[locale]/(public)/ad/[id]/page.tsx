@@ -60,6 +60,9 @@ async function loadAd(adId: string): Promise<NormalizedAd | null> {
   const { data: teacherRows } = await supabase.rpc("get_public_ad", { p_ad_id: adId });
   if (teacherRows && teacherRows.length > 0) {
     const r = teacherRows[0];
+    // Result intentionally ignored -- a failed count bump shouldn't ever
+    // break the page rendering for the visitor viewing the ad.
+    await supabase.rpc("increment_ad_view", { p_ad_id: adId });
     return {
       ownerType: "teacher",
       ownerId: r.teacher_id,
@@ -94,6 +97,7 @@ async function loadAd(adId: string): Promise<NormalizedAd | null> {
   const { data: classRows } = await supabase.rpc("get_public_class_ad", { p_ad_id: adId });
   if (classRows && classRows.length > 0) {
     const r = classRows[0];
+    await supabase.rpc("increment_ad_view", { p_ad_id: adId });
     return {
       ownerType: "class",
       ownerId: r.class_id,

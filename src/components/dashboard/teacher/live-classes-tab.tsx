@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +73,7 @@ export function LiveClassesTab({
   const tc = useTranslations("teacherDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const { activeCall, startCall, restoreCall } = useLiveCall();
+  const searchParams = useSearchParams();
 
   const [viewingRosterId, setViewingRosterId] = useState<string | null>(null);
 
@@ -90,6 +92,21 @@ export function LiveClassesTab({
   const [savingRosterKey, setSavingRosterKey] = useState<string | null>(null);
   const [remindedKeys, setRemindedKeys] = useState<Set<string>>(new Set());
   const [remindingKey, setRemindingKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Classes tab's own "Schedule class" link (spec doc's "open batch ->
+    // Schedule Class" flow) lands here with ?scheduleBatch=<id> -- open the
+    // create form pre-aimed at that batch instead of making the teacher
+    // reselect it from the dropdown.
+    const fromUrl = searchParams.get("scheduleBatch");
+    const matchedBatch = fromUrl ? batches.find((b) => b.id === fromUrl) : undefined;
+    if (matchedBatch) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from the URL, not derived render state
+      setNewBatchId(matchedBatch.id);
+      setAdding(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- batches is stable for this component's lifetime; only the URL param should retrigger this
+  }, [searchParams]);
 
   const poolForNewBatch = studentPool.filter((s) => newBatchId === NO_BATCH || s.batchId === newBatchId);
 
@@ -197,6 +214,10 @@ export function LiveClassesTab({
     // moment the teacher actually starts it, not when it was scheduled
     // (that's the separate, much-earlier new_live_class notification).
     notifyLiveClassStarted(c.id);
+    // Spec doc's "Start Class opens video room and attendance modal" --
+    // jump straight to this class's roster so marking attendance is the
+    // very next thing the teacher sees, not a separate click to find it.
+    setViewingRosterId(c.id);
   }
 
   const viewingRoster = classes.find((c) => c.id === viewingRosterId) ?? null;

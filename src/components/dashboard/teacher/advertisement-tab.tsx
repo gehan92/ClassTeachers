@@ -117,7 +117,7 @@ export type TeacherAdBatchRow = {
   monthlyRateMax: number | null;
   medium: Medium | null;
   classType: ClassType | null;
-  ad: { id: string; title: string; content: string; status: "active" | "expired" | "removed" } | null;
+  ad: { id: string; title: string; content: string; status: "active" | "expired" | "removed"; viewCount: number } | null;
 };
 
 export function AdvertisementTab({
@@ -366,6 +366,9 @@ function BatchAdCard({
         </div>
         {batch.ad && !deleted && !editing && (
           <div className="flex items-center gap-2">
+            <span className="font-mono text-xs text-muted-foreground">
+              {t("viewCount", { count: batch.ad.viewCount })}
+            </span>
             <span className={`text-sm font-medium ${active ? "text-success" : "text-muted-foreground"}`}>
               {active ? t("active") : t("paused")}
             </span>

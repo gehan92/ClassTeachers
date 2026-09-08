@@ -904,6 +904,7 @@
     "workExperienceLabel": "රැකියා පළපුරුද්ද",
     "publicationsLabel": "ප්‍රකාශන සහ පර්යේෂණ",
     "campusLecturer": "කැම්පස් කථිකාචාර්ය",
+    "affiliatedWith": "{name} සමඟ සම්බන්ධිතයි",
     "experienceLabel": "පළපුරුද්ද",
     "subjectsLabel": "විෂයයන්",
     "languagesLabel": "භාෂා",
@@ -2067,6 +2068,7 @@
       "stats": {
         "activeStudents": "සක්‍රීය සිසුන්",
         "activeStudentsDelta": "+6 මෙම මාසයේ",
+        "upcomingClasses": "ඉදිරි පන්ති",
         "earnings": "මෙම මාසයේ ආදායම",
         "earningsDelta": "+12%",
         "earningsUnavailable": "ඉක්මනින්",
@@ -2077,16 +2079,16 @@
       },
       "quickActionsHeading": "ඉක්මන් ක්‍රියා",
       "actions": {
-        "classHeading": "අද පන්තිය — පස්වරු 6:00",
-        "classBody": "සංයුක්ත ගණිතය — Mechanics ඉක්මනින් ආරම්භ වේ. ඔබේ join link එක සූදානම්දැයි තහවුරු කරගන්න.",
-        "classAction": "පන්තිය ආරම්භ කරන්න",
-        "classStarted": "පන්තිය ආරම්භ විය",
-        "gradingHeading": "ලකුණු නොකළ ඉදිරිපත් කිරීම් 7ක්",
-        "gradingBody": "Mechanics Unit Test — කාලය 2 ලකුණු කිරීම සඳහා පොරොත්තුවෙන් සිටී.",
+        "classHeadingEmpty": "ඉදිරි පන්ති නැත",
+        "classBodyEmpty": "Classes ටැබයෙන් එකක් සැලසුම් කරන්න.",
+        "classAction": "දැන් ආරම්භ කරන්න",
+        "gradingHeading": "ලකුණු නොකළ ඉදිරිපත් කිරීම් {count}ක්",
+        "gradingHeadingEmpty": "ලකුණු කිරීමට කිසිවක් නැත",
+        "gradingBody": "සමාලෝචනය කර ලකුණු කිරීමට ඔබේ Exams ටැබයට යන්න.",
         "gradingAction": "දැන් ලකුණු කරන්න",
-        "reviewHeading": "නව සමාලෝචනයක්",
-        "reviewBody": "මම සහභාගී වූ හොඳම සංයුක්ත ගණිත පන්ති. පසුගිය ප්‍රශ්න පත්‍ර සායනය සම්පූර්ණ වෙනසක් කළා.",
-        "reviewAction": "පිළිතුරු දෙන්න"
+        "assignmentHeading": "පැවරුමක් සාදන්න",
+        "assignmentBody": "ඔබේ සිසුන්ට ඉදිරිපත් කර ලකුණු කිරීමට වැඩ පත්‍රිකාවක් උඩුගත කරන්න.",
+        "assignmentAction": "පැවරුම සාදන්න"
       }
     },
     "profile": {
@@ -2313,6 +2315,10 @@
       "heading": "පන්ති",
       "headingCampus": "පාඨමාලා",
       "subtitle": "ඔබේම කණ්ඩායම් සහ එක් එක් කණ්ඩායමට ලියාපදිංචි වූවන්.",
+      "viewList": "ලැයිස්තුව",
+      "viewCalendar": "දින දර්ශනය",
+      "timetableEmpty": "කිසිදු පන්තියකට තවම සතිපතා කාලසටහනක් සකසා නැත — කණ්ඩායමක සංස්කරණ පෝරමයෙන් එකක් එකතු කරන්න.",
+      "timetableNoClasses": "පන්ති නැත",
       "addBatch": "+ කණ්ඩායමක් එකතු කරන්න",
       "addBatchCampus": "+ පාඨමාලාවක් එකතු කරන්න",
       "emptyState": "ඔබ තවම කණ්ඩායමක් සාදා නැත.",
@@ -2357,6 +2363,8 @@
         "locationPlaceholder": "උදා: කොළඹ 05",
         "scheduleLabel": "කාලසටහන",
         "schedulePlaceholder": "උදා: සඳුදා, බදාදා · පස්වරු 5:00",
+        "descriptionLabel": "විස්තරය",
+        "descriptionPlaceholder": "මෙම පන්තිය ගැන සිසුන් දැනගත යුතු දේ...",
         "openEnrollmentLabel": "විවෘත ලියාපදිංචිය — ඕනෑම කෙනෙකුට ක්ෂණිකව එකතු විය හැක",
         "openEnrollmentHint": "සිසුන් වහාම එකතු වේ, පිළිගැනීමට ඉල්ලීමක් නැත — ඕනෑම කෙනෙකුට එකතු විය හැකි විවෘත ප්‍රජා හෝ වැඩිහිටි පන්ති සඳහා සුදුසුය.",
         "capacityPlaceholder": "උපරිම සිසුන් (විකල්ප, සීමාවක් නැතිනම් හිස්ව තබන්න)",
@@ -2596,13 +2604,24 @@
         "student": "සිසුවා",
         "batch": "කණ්ඩායම",
         "joined": "එකතු වූ දිනය",
-        "contact": "සම්බන්ධතාවය"
+        "contact": "සම්බන්ධතාවය",
+        "actions": "ක්‍රියා",
+        "view": "බලන්න"
       },
       "requests": {
         "heading": "එකතු වීමේ ඉල්ලීම්",
         "accept": "පිළිගන්න",
         "decline": "ප්‍රතික්ෂේප කරන්න",
         "declineReasonPlaceholder": "හේතුව (විකල්ප)"
+      },
+      "profileDialog": {
+        "joined": "එකතු වුණේ {date}",
+        "attendanceHeading": "පැමිණීම",
+        "attendanceEmpty": "තවම පැමිණීමක් වාර්තා වී නැත.",
+        "attendanceSummary": "පැමිණි {present} · ප්‍රමාද {late} · නොපැමිණි {absent}",
+        "gradesHeading": "ලකුණු",
+        "gradesEmpty": "තවම විභාග ලකුණු කර නැත.",
+        "gradePending": "පොරොත්තුවෙන්"
       }
     },
     "analytics": {
@@ -2694,6 +2713,7 @@
         "editAd": "දැන්වීම සංස්කරණය කරන්න",
         "active": "සක්‍රීයයි — සෙවුමේ පෙනේ",
         "paused": "විරාම කර ඇත — සෙවුමෙන් සඟවා ඇත",
+        "viewCount": "නැරඹීම් {count}",
         "subjectLabel": "විෂය",
         "subjectPlaceholder": "විෂයක් තෝරන්න",
         "noSubjects": "පළමුව ඔබේ පැතිකඩට විෂයක් එකතු කරන්න (Profile → Subjects), පසුව මෙහි ආපසු එන්න.",
@@ -2808,7 +2828,13 @@
       "pendingFromInstitute": "මෙම ආයතනය ඔබට එකතු වීමට ආරාධනා කර ඇත.",
       "pendingFromTeacher": "ඉල්ලීම යවා ඇත — ආයතනයේ පිළිතුර එනතෙක් රැඳී සිටින්න.",
       "accept": "පිළිගන්න",
-      "decline": "ප්‍රතික්ෂේප කරන්න"
+      "decline": "ප්‍රතික්ෂේප කරන්න",
+      "findHeading": "ආයතනයක් සොයන්න",
+      "findSubtitle": "නමින් සොයා එකතු වීමට ඉල්ලන්න — ආයතනය එය සමාලෝචනය කර අනුමත කරයි.",
+      "findPlaceholder": "ආයතනයේ නම...",
+      "findSearch": "සොයන්න",
+      "findRequest": "එකතු වීමට ඉල්ලන්න",
+      "findRequested": "ඉල්ලා ඇත"
     },
     "assignments": {
       "heading": "පැවරුම්",

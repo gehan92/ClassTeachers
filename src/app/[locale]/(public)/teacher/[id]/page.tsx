@@ -53,6 +53,20 @@ async function loadTeacherProfile(
     .eq("status", "active");
   const adIdByBatchId = new Map((batchAdRows ?? []).filter((a) => a.batch_id).map((a) => [a.batch_id as string, a.id]));
 
+  // Institute affiliation badge (0121's Institute tab) — every institute
+  // this teacher is actually accepted onto the roster of, not the free-text
+  // institution/academicTitle fields above (those are just what a campus
+  // lecturer typed into their own profile).
+  const { data: instituteLinkRows } = await supabase
+    .from("class_teachers")
+    .select("class_id")
+    .eq("teacher_id", id)
+    .eq("status", "accepted");
+  const instituteIds = (instituteLinkRows ?? []).map((row) => row.class_id);
+  const { data: instituteRows } = instituteIds.length
+    ? await supabase.from("class_profiles").select("id, name").in("id", instituteIds)
+    : { data: [] as { id: string; name: string }[] };
+
   const dateFormatter = createDateFormatter(locale);
 
   return {
@@ -102,6 +116,7 @@ async function loadTeacherProfile(
     academicTitle: teacher.academic_title,
     institutionVerified: teacher.institution_verified,
     publications: teacher.publications ?? [],
+    affiliatedInstitutes: (instituteRows ?? []).map((row) => ({ id: row.id, name: row.name })),
   } satisfies TeacherProfileDetail;
 }
 

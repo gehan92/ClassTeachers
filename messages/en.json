@@ -904,6 +904,7 @@
     "workExperienceLabel": "Work experience",
     "publicationsLabel": "Publications & research",
     "campusLecturer": "Campus Lecturer",
+    "affiliatedWith": "Affiliated with {name}",
     "experienceLabel": "Experience",
     "subjectsLabel": "Subjects",
     "languagesLabel": "Languages",
@@ -2067,6 +2068,7 @@
       "stats": {
         "activeStudents": "Active students",
         "activeStudentsDelta": "+6 this month",
+        "upcomingClasses": "Upcoming classes",
         "earnings": "This month's earnings",
         "earningsDelta": "+12%",
         "earningsUnavailable": "Coming soon",
@@ -2077,16 +2079,16 @@
       },
       "quickActionsHeading": "Quick actions",
       "actions": {
-        "classHeading": "Today's class — 6:00 PM",
-        "classBody": "Combined Maths — Mechanics starts soon. Make sure your join link is ready.",
-        "classAction": "Start class",
-        "classStarted": "Class started",
-        "gradingHeading": "7 ungraded submissions",
-        "gradingBody": "Mechanics Unit Test — Term 2 is waiting for grading.",
+        "classHeadingEmpty": "No upcoming classes",
+        "classBodyEmpty": "Schedule one from the Classes tab.",
+        "classAction": "Start now",
+        "gradingHeading": "{count} ungraded submissions",
+        "gradingHeadingEmpty": "No submissions to grade",
+        "gradingBody": "Head to your Exams tab to review and grade them.",
         "gradingAction": "Grade now",
-        "reviewHeading": "New review",
-        "reviewBody": "Best Combined Maths classes I've attended. The past paper clinic made all the difference.",
-        "reviewAction": "Reply"
+        "assignmentHeading": "Create an assignment",
+        "assignmentBody": "Upload a worksheet for your students to submit and mark.",
+        "assignmentAction": "Create assignment"
       }
     },
     "profile": {
@@ -2313,6 +2315,10 @@
       "heading": "Classes",
       "headingCampus": "Courses",
       "subtitle": "Your own batches and who's registered in each.",
+      "viewList": "List",
+      "viewCalendar": "Calendar",
+      "timetableEmpty": "No classes have a weekly schedule set yet — add one from a batch's edit form.",
+      "timetableNoClasses": "No classes",
       "addBatch": "+ Add batch",
       "addBatchCampus": "+ Add course",
       "emptyState": "You haven't created a batch yet.",
@@ -2357,6 +2363,8 @@
         "locationPlaceholder": "e.g. Colombo 05",
         "scheduleLabel": "Schedule",
         "schedulePlaceholder": "e.g. Mon, Wed · 5:00 PM",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "What students should know about this class...",
         "openEnrollmentLabel": "Open enrollment — anyone can join instantly",
         "openEnrollmentHint": "Students join immediately, no request to accept — good for open community or elder classes anyone can walk into.",
         "capacityPlaceholder": "Max students (optional, leave blank for unlimited)",
@@ -2596,13 +2604,24 @@
         "student": "Student",
         "batch": "Batch",
         "joined": "Joined",
-        "contact": "Contact"
+        "contact": "Contact",
+        "actions": "Actions",
+        "view": "View"
       },
       "requests": {
         "heading": "Join requests",
         "accept": "Accept",
         "decline": "Decline",
         "declineReasonPlaceholder": "Reason (optional)"
+      },
+      "profileDialog": {
+        "joined": "joined {date}",
+        "attendanceHeading": "Attendance",
+        "attendanceEmpty": "No attendance recorded yet.",
+        "attendanceSummary": "{present} present · {late} late · {absent} absent",
+        "gradesHeading": "Grades",
+        "gradesEmpty": "No exams graded yet.",
+        "gradePending": "Pending"
       }
     },
     "analytics": {
@@ -2694,6 +2713,7 @@
         "editAd": "Edit ad",
         "active": "Active — visible in search",
         "paused": "Paused — hidden from search",
+        "viewCount": "{count} views",
         "subjectLabel": "Subject",
         "subjectPlaceholder": "Select a subject",
         "noSubjects": "Add a subject to your profile first (Profile → Subjects), then come back here.",
@@ -2808,7 +2828,13 @@
       "pendingFromInstitute": "This institute invited you to join.",
       "pendingFromTeacher": "Request sent — waiting for the institute to respond.",
       "accept": "Accept",
-      "decline": "Decline"
+      "decline": "Decline",
+      "findHeading": "Find an institute",
+      "findSubtitle": "Search by name and request to join — the institute reviews and approves it.",
+      "findPlaceholder": "Institute name...",
+      "findSearch": "Search",
+      "findRequest": "Request to join",
+      "findRequested": "Requested"
     },
     "assignments": {
       "heading": "Assignments",

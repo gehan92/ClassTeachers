@@ -24,7 +24,8 @@ import { WantedAdsBrowseTab } from "@/components/dashboard/wanted-ads-browse-tab
 import { AdvertisementTab } from "@/components/dashboard/teacher/advertisement-tab";
 import type { TeacherAdBatchRow } from "@/components/dashboard/teacher/advertisement-tab";
 import type { AdHistoryRow } from "@/components/dashboard/ad-history-list";
-import { SettingsTab, type InstituteInviteRow } from "@/components/dashboard/teacher/settings-tab";
+import { SettingsTab } from "@/components/dashboard/teacher/settings-tab";
+import { InstituteTab, type TeacherInstituteLinkRow, type InstituteTaughtBatchRow } from "@/components/dashboard/teacher/institute-tab";
 import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { TeacherOnboardingWizard } from "@/components/onboarding/teacher-onboarding-wizard";
 import { createClient } from "@/lib/supabase/server";
@@ -33,12 +34,7 @@ import { stripRichText } from "@/lib/rich-text";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import type { TeacherProfileDetail } from "@/types/teacher-profile";
 import type { ReferralRow } from "@/components/dashboard/refer-earn-panel";
-import type {
-  TeacherBatchRow,
-  TeacherBatchOption,
-  BatchRosterEntry,
-  InstituteTaughtBatchRow,
-} from "@/components/dashboard/teacher/classes-tab";
+import type { TeacherBatchRow, TeacherBatchOption, BatchRosterEntry } from "@/components/dashboard/teacher/classes-tab";
 import type { TeacherNoteRow } from "@/components/dashboard/teacher/notes-tab";
 import type { TeacherStudentRow, TeacherJoinRequestRow } from "@/components/dashboard/teacher/students-tab";
 import type { TeacherLiveClassRow } from "@/components/dashboard/teacher/live-classes-tab";
@@ -144,7 +140,7 @@ export default async function TeacherDashboardPage({
     { data: liveProfilePhone },
     { data: referralCodeValue },
     { data: myReferralRows },
-    { data: instituteInviteRows },
+    { data: instituteLinkRows },
     { data: assignedInstituteBatchRows },
     { data: managedBatchStudentRows },
     { data: notificationRows },
@@ -252,9 +248,10 @@ export default async function TeacherDashboardPage({
     // time it's asked for (referrals, 0089), nothing to backfill up front.
     supabase.rpc("ensure_referral_code"),
     supabase.rpc("list_my_referrals"),
-    // Institute Blueprint step 1 (0091) — invites this teacher hasn't
-    // responded to yet. Surfaced in the Settings tab.
-    supabase.from("class_teachers").select("class_id, joined_at").eq("teacher_id", userId).eq("status", "pending"),
+    // Institute Blueprint step 1 (0091), widened by 0121 for the teacher-
+    // initiated direction — every institute this teacher has ever been
+    // linked to, any status, surfaced in the Institute tab.
+    supabase.from("class_teachers").select("class_id, status, requested_by, joined_at").eq("teacher_id", userId),
     // Institute Blueprint step 3b — batches this teacher is assigned to
     // inside an institute (0091's taught_by_teacher_id), offered as a
     // content target alongside their own batches in notes/exams/live-
@@ -298,11 +295,19 @@ export default async function TeacherDashboardPage({
   const assignmentIds = (assignmentRows ?? []).map((a) => a.id);
   const inquiryIds = (inquiryRows ?? []).map((i) => i.id);
   // Institute Blueprint step 3b — the institute names behind
-  // assignedInstituteBatchRows, needed to label each assigned batch
-  // clearly (e.g. "Horizon Institute — A/L Maths") everywhere it appears:
-  // content-target selectors, batch titles on notes/exams/etc., and the
-  // Classes tab's own "Teaching at institutes" section.
-  const assignedInstituteIds = [...new Set((assignedInstituteBatchRows ?? []).map((row) => row.owner_id))];
+  // assignedInstituteBatchRows, needed to label each assigned batch clearly
+  // (e.g. "Horizon Institute — A/L Maths") everywhere it appears:
+  // content-target selectors, batch titles on notes/exams/etc. Unioned with
+  // every class_teachers link's class_id (0121) so the Institute tab can
+  // also name an institute this teacher is linked to but has no assigned
+  // batch from yet (a fresh invite/request, or accepted with nothing
+  // assigned).
+  const assignedInstituteIds = [
+    ...new Set([
+      ...(assignedInstituteBatchRows ?? []).map((row) => row.owner_id),
+      ...(instituteLinkRows ?? []).map((row) => row.class_id),
+    ]),
+  ];
 
   const [
     { data: subjectRows },
@@ -923,18 +928,16 @@ export default async function TeacherDashboardPage({
     dateLabel: dateFormatter.format(new Date(row.created_at)),
   }));
 
-  // Institute Blueprint step 1 (0091) — resolve the inviting institute's
-  // name for each pending roster invite. Usually zero or one row, so a
-  // second small query beats widening Stage 1 with an embedded join this
-  // codebase's types don't support (see database.ts's own note on that).
-  const instituteInviteClassIds = (instituteInviteRows ?? []).map((row) => row.class_id);
-  const { data: inviteInstituteRows } = instituteInviteClassIds.length
-    ? await supabase.from("class_profiles").select("id, name").in("id", instituteInviteClassIds)
-    : { data: [] as { id: string; name: string }[] };
-  const instituteNameById = new Map((inviteInstituteRows ?? []).map((row) => [row.id, row.name]));
-  const instituteInvites: InstituteInviteRow[] = (instituteInviteRows ?? []).map((row) => ({
+  // Institute Blueprint step 1 (0091), widened by 0121 — every institute
+  // this teacher has ever been linked to, either direction, named via
+  // assignedInstituteNameById (already resolved above for
+  // assignedInstituteBatchRows, and widened to cover every link's class_id
+  // too, not just ones with an assigned batch).
+  const teacherInstituteLinks: TeacherInstituteLinkRow[] = (instituteLinkRows ?? []).map((row) => ({
     classId: row.class_id,
-    instituteName: instituteNameById.get(row.class_id) ?? "—",
+    instituteName: assignedInstituteNameById.get(row.class_id) ?? "—",
+    status: row.status,
+    requestedBy: row.requested_by,
     dateLabel: dateFormatter.format(new Date(row.joined_at)),
   }));
 
@@ -954,7 +957,7 @@ export default async function TeacherDashboardPage({
   const instituteTaughtBatches: InstituteTaughtBatchRow[] = (assignedInstituteBatchRows ?? []).map((b) => ({
     id: b.id,
     title: b.title,
-    instituteName: assignedInstituteNameById.get(b.owner_id) ?? "—",
+    classId: b.owner_id,
     mode: b.mode,
     location: b.location,
     scheduleNote: b.schedule_note,
@@ -1039,7 +1042,10 @@ export default async function TeacherDashboardPage({
           ],
         },
         {
-          items: [{ key: "ads", label: t("tabs.ads") }],
+          items: [
+            { key: "ads", label: t("tabs.ads") },
+            { key: "institute", label: t("tabs.institute") },
+          ],
         },
       ]}
       panels={{
@@ -1096,12 +1102,7 @@ export default async function TeacherDashboardPage({
           />
         ),
         classes: (
-          <ClassesTab
-            batches={batches}
-            rosterByBatch={rosterByBatch}
-            isCampusLecturer={isCampusLecturer}
-            instituteBatches={instituteTaughtBatches}
-          />
+          <ClassesTab batches={batches} rosterByBatch={rosterByBatch} isCampusLecturer={isCampusLecturer} />
         ),
         questionBank: <QuestionBankTab initialQuestions={questions} batches={contentTargetBatches} />,
         exams: (
@@ -1181,8 +1182,10 @@ export default async function TeacherDashboardPage({
             email={user!.email ?? ""}
             referralCode={referralCodeValue ?? ""}
             referrals={referrals}
-            instituteInvites={instituteInvites}
           />
+        ),
+        institute: (
+          <InstituteTab links={teacherInstituteLinks} taughtBatches={instituteTaughtBatches} rosterByBatch={rosterByBatch} />
         ),
       }}
       defaultTab="overview"

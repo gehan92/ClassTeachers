@@ -95,6 +95,12 @@
       "listing_decision": "ඔබේ ලැයිස්තුව {decision}.",
       "listing_resubmitted": "{kind} ලැයිස්තුවක් සමාලෝචනය සඳහා යළි ඉදිරිපත් කරන ලදී.",
       "review_flagged": "සමාලෝචනයක් මධ්‍යස්ථභාවය සඳහා ලකුණු කරන ලදී.",
+      "institute_invite_received": "{instituteName} ඔබට ගුරුවරයෙකු ලෙස එකතු වීමට ආරාධනා කර ඇත.",
+      "institute_invite_accepted": "{teacherName} ඔබේ ආරාධනාව පිළිගත්තා.",
+      "institute_invite_declined": "{teacherName} ඔබේ ආරාධනාව ප්‍රතික්ෂේප කළා.",
+      "institute_join_request_received": "{teacherName} ඔබේ ආයතනයට ගුරුවරයෙකු ලෙස එකතු වීමට ඉල්ලීමක් කර ඇත.",
+      "institute_join_request_accepted": "{instituteName} ඔබේ එකතු වීමේ ඉල්ලීම පිළිගත්තා.",
+      "institute_join_request_declined": "{instituteName} ඔබේ එකතු වීමේ ඉල්ලීම ප්‍රතික්ෂේප කළා.",
       "generic": "ඔබට නව යාවත්කාලීනයක් ඇත."
     },
     "responderTypes": {
@@ -879,6 +885,8 @@
     "joinPending": "ඉල්ලීම යවා ඇත — ආයතනයේ පිළිතුර එනතෙක් රැඳී සිටින්න.",
     "joinAccepted": "ඔබ දැනටමත් මෙම ආයතනය සමඟ සම්බන්ධ වී ඇත.",
     "joinDeclined": "ඔබේ ඉල්ලීම ප්‍රතික්ෂේප කරන ලදී.",
+    "joinInstituteAsTeacher": "ගුරුවරයෙකු ලෙස එකතු වීමට ඉල්ලන්න",
+    "joinInstitutePendingFromInstitute": "මෙම ආයතනය ඔබට ආරාධනා කර ඇත — ඔබේ ඩෑෂ්බෝඩයේ Institute ටැබයෙන් පිළිතුරු දෙන්න.",
     "yearsExperience": "වසර {years}ක පළපුරුද්ද",
     "teachersCount": "ගුරුවරුන් {count}",
     "about": "පිළිබඳව",
@@ -1251,7 +1259,10 @@
         "remove": "ඉවත් කරන්න",
         "invitePending": "ආරාධනාව බලාපොරොත්තුවෙන්",
         "cancelInvite": "ආරාධනාව අවලංගු කරන්න",
-        "lecturerBadge": "කැම්පස් කථිකාචාර්ය"
+        "lecturerBadge": "කැම්පස් කථිකාචාර්ය",
+        "requestPending": "එකතු වීමට කැමතියි",
+        "approve": "අනුමත කරන්න",
+        "reject": "ප්‍රතික්ෂේප කරන්න"
       }
     },
     "batches": {
@@ -2045,6 +2056,7 @@
       "studentRequests": "සිසුන්ගේ ඉල්ලීම්",
       "reviews": "සමාලෝචන",
       "ads": "දැන්වීම",
+      "institute": "ආයතනය",
       "settings": "සැකසුම්",
       "assignments": "පැවරුම්",
       "homework": "ගෙදර වැඩ"
@@ -2323,10 +2335,6 @@
         "student": "සිසුවා",
         "joined": "එකතු වූ දිනය",
         "contact": "සම්බන්ධතාවය"
-      },
-      "institutes": {
-        "heading": "ආයතන වල ඉගැන්වීම",
-        "subtitle": "ආයතනයක් ඔබට උගන්වන්නට පවරා ඇති පන්ති. ආයතනය පන්තිය කළමනාකරණය කරන අතර, ඔබ එහි සටහන්, විභාග, සජීවී සැසි සහ පැවරුම් කළමනාකරණය කරයි."
       },
       "form": {
         "title": "නව කණ්ඩායම",
@@ -2788,13 +2796,19 @@
         "submissions": "විභාග ඉදිරිපත් කිරීම්",
         "listingDecisions": "ඔබේ ලැයිස්තුව අනුමත හෝ ප්‍රතික්ෂේප කරන ලදී",
         "newInquiries": "නව විමසීමක් පැමිණේ"
-      },
-      "instituteInvites": {
-        "heading": "ආයතන ආරාධනා",
-        "subtitle": "ඔබව තම ලේඛනයට එකතු කිරීමට කැමති ආයතන.",
-        "accept": "පිළිගන්න",
-        "decline": "ප්‍රතික්ෂේප කරන්න"
       }
+    },
+    "institute": {
+      "heading": "ආයතනය",
+      "subtitle": "ආයතන සමඟ ඔබේ සම්බන්ධතාවය, සහ ඔවුන් ඔබට පවරා ඇති පන්ති.",
+      "empty": "ඔබ තවම කිසිදු ආයතනයක් සමඟ සම්බන්ධ වී නැත.",
+      "emptyAction": "ආයතන පිරික්සන්න",
+      "statusAccepted": "සම්බන්ධිතයි",
+      "statusDeclined": "ප්‍රතික්ෂේප කර ඇත",
+      "pendingFromInstitute": "මෙම ආයතනය ඔබට එකතු වීමට ආරාධනා කර ඇත.",
+      "pendingFromTeacher": "ඉල්ලීම යවා ඇත — ආයතනයේ පිළිතුර එනතෙක් රැඳී සිටින්න.",
+      "accept": "පිළිගන්න",
+      "decline": "ප්‍රතික්ෂේප කරන්න"
     },
     "assignments": {
       "heading": "පැවරුම්",

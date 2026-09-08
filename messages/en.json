@@ -95,6 +95,12 @@
       "listing_decision": "Your listing was {decision}.",
       "listing_resubmitted": "A {kind} listing was resubmitted for review.",
       "review_flagged": "A review was flagged for moderation.",
+      "institute_invite_received": "{instituteName} invited you to join as a teacher.",
+      "institute_invite_accepted": "{teacherName} accepted your invite.",
+      "institute_invite_declined": "{teacherName} declined your invite.",
+      "institute_join_request_received": "{teacherName} requested to join your institute as a teacher.",
+      "institute_join_request_accepted": "{instituteName} accepted your request to join.",
+      "institute_join_request_declined": "{instituteName} declined your request to join.",
       "generic": "You have a new update."
     },
     "responderTypes": {
@@ -879,6 +885,8 @@
     "joinPending": "Request sent — waiting for the institute to respond.",
     "joinAccepted": "You're already connected with this institute.",
     "joinDeclined": "Your request was declined.",
+    "joinInstituteAsTeacher": "Request to join as a teacher",
+    "joinInstitutePendingFromInstitute": "This institute invited you — respond from your dashboard's Institute tab.",
     "yearsExperience": "{years} years experience",
     "teachersCount": "{count} teachers",
     "about": "About",
@@ -1251,7 +1259,10 @@
         "remove": "Remove",
         "invitePending": "Invite pending",
         "cancelInvite": "Cancel invite",
-        "lecturerBadge": "Campus Lecturer"
+        "lecturerBadge": "Campus Lecturer",
+        "requestPending": "Wants to join",
+        "approve": "Approve",
+        "reject": "Reject"
       }
     },
     "batches": {
@@ -2047,6 +2058,7 @@
       "studentRequests": "Student Requests",
       "reviews": "Reviews",
       "ads": "Advertisement",
+      "institute": "Institute",
       "settings": "Settings"
     },
     "overview": {
@@ -2323,10 +2335,6 @@
         "student": "Student",
         "joined": "Joined",
         "contact": "Contact"
-      },
-      "institutes": {
-        "heading": "Teaching at institutes",
-        "subtitle": "Classes an institute has assigned you to teach. The institute manages the class itself — you manage its notes, exams, live sessions, and assignments."
       },
       "form": {
         "title": "New batch",
@@ -2788,13 +2796,19 @@
         "submissions": "Exam submissions",
         "listingDecisions": "Your listing is approved or rejected",
         "newInquiries": "A new inquiry arrives"
-      },
-      "instituteInvites": {
-        "heading": "Institute invites",
-        "subtitle": "Institutes that want to add you to their roster.",
-        "accept": "Accept",
-        "decline": "Decline"
       }
+    },
+    "institute": {
+      "heading": "Institute",
+      "subtitle": "Your affiliation with institutes, and any classes they've assigned you.",
+      "empty": "You're not affiliated with any institute yet.",
+      "emptyAction": "Browse institutes",
+      "statusAccepted": "Affiliated",
+      "statusDeclined": "Declined",
+      "pendingFromInstitute": "This institute invited you to join.",
+      "pendingFromTeacher": "Request sent — waiting for the institute to respond.",
+      "accept": "Accept",
+      "decline": "Decline"
     },
     "assignments": {
       "heading": "Assignments",

@@ -10,6 +10,7 @@ import { ClassBatchCard } from "@/components/features/class-batch-card";
 import { Panel } from "@/components/features/teacher-profile-view";
 import { InstituteTeachersPanel } from "@/components/features/institute-teacher-quick-view";
 import { InstituteJoinButton } from "@/components/features/institute-join-button";
+import { InstituteTeacherJoinButton } from "@/components/features/institute-teacher-join-button";
 import type { ClassProfileDetail } from "@/types/class-profile";
 
 /** The signed-in viewer's join state — undefined on the institute's own
@@ -19,6 +20,11 @@ export type ClassProfileViewerJoin = {
   isStudent: boolean;
   generalStatus: "pending" | "accepted" | "declined" | null;
   batchStatusById: Record<string, "pending" | "accepted" | "declined" | null>;
+  /** A teacher/campus-lecturer viewer (0121) — mutually exclusive with
+   * isStudent, since a signed-in account is only ever one role. */
+  isTeacher: boolean;
+  teacherStatus: "pending" | "accepted" | "declined" | null;
+  teacherRequestedBy: "institute" | "teacher" | null;
 };
 
 /**
@@ -176,12 +182,22 @@ function Hero({
               >
                 {t("save")}
               </button>
-              <InstituteJoinButton
-                classId={classProfile.id}
-                loggedIn={viewerJoin?.loggedIn ?? false}
-                isStudent={viewerJoin?.isStudent ?? false}
-                initialStatus={viewerJoin?.generalStatus ?? null}
-              />
+              {viewerJoin?.isTeacher ? (
+                <InstituteTeacherJoinButton
+                  classId={classProfile.id}
+                  loggedIn={viewerJoin?.loggedIn ?? false}
+                  isTeacher={viewerJoin?.isTeacher ?? false}
+                  initialStatus={viewerJoin?.teacherStatus ?? null}
+                  requestedBy={viewerJoin?.teacherRequestedBy ?? null}
+                />
+              ) : (
+                <InstituteJoinButton
+                  classId={classProfile.id}
+                  loggedIn={viewerJoin?.loggedIn ?? false}
+                  isStudent={viewerJoin?.isStudent ?? false}
+                  initialStatus={viewerJoin?.generalStatus ?? null}
+                />
+              )}
             </div>
           )}
         </div>

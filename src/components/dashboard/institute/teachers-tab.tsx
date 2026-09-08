@@ -14,7 +14,12 @@ import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { usePagination } from "@/lib/hooks/use-pagination";
-import { inviteTeacherToRoster, removeTeacherFromRoster, setTeacherVisibility } from "@/lib/dashboard/institute-actions";
+import {
+  inviteTeacherToRoster,
+  removeTeacherFromRoster,
+  setTeacherVisibility,
+  respondToTeacherJoinRequest,
+} from "@/lib/dashboard/institute-actions";
 
 export type InstituteTeacherRow = {
   id: string;
@@ -24,7 +29,12 @@ export type InstituteTeacherRow = {
   studentCount: number;
   visible: boolean;
   teacherHref: string;
-  rosterStatus: "pending" | "accepted";
+  rosterStatus: "pending" | "accepted" | "declined";
+  /** Who created this link (0121) -- an institute-sent invite still waiting
+   * on the teacher renders "Invite pending" with a cancel action; a
+   * teacher-sent request waiting on the institute renders "Wants to join"
+   * with Approve/Reject instead. */
+  requestedBy: "institute" | "teacher";
   isCampusLecturer: boolean;
 };
 
@@ -77,6 +87,15 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
   async function handleVisibilityChange(teacherId: string, checked: boolean) {
     setVisibility((prev) => ({ ...prev, [teacherId]: checked }));
     await setTeacherVisibility(teacherId, checked);
+    refresh();
+  }
+
+  const [respondingId, setRespondingId] = useState<string | null>(null);
+
+  async function handleRespond(teacherId: string, accept: boolean) {
+    setRespondingId(teacherId);
+    await respondToTeacherJoinRequest(teacherId, accept);
+    setRespondingId(null);
     refresh();
   }
 
@@ -167,7 +186,7 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
                         </div>
                         {teacher.rosterStatus === "pending" && (
                           <span className="w-fit rounded-full bg-background px-2 py-0.5 font-mono text-[10.5px] text-muted-foreground">
-                            {t("table.invitePending")}
+                            {teacher.requestedBy === "teacher" ? t("table.requestPending") : t("table.invitePending")}
                           </span>
                         )}
                       </div>
@@ -188,16 +207,39 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-3">
-                      <Link href={teacher.teacherHref} className="text-sm font-medium text-primary hover:underline">
-                        {t("table.view")}
-                      </Link>
-                      <button
-                        type="button"
-                        className="text-sm font-medium text-lock hover:underline"
-                        onClick={() => handleRemove(teacher)}
-                      >
-                        {teacher.rosterStatus === "pending" ? t("table.cancelInvite") : t("table.remove")}
-                      </button>
+                      {teacher.rosterStatus === "pending" && teacher.requestedBy === "teacher" ? (
+                        <>
+                          <button
+                            type="button"
+                            className="text-sm font-medium text-primary hover:underline disabled:pointer-events-none disabled:opacity-60"
+                            onClick={() => handleRespond(teacher.id, true)}
+                            disabled={respondingId === teacher.id}
+                          >
+                            {t("table.approve")}
+                          </button>
+                          <button
+                            type="button"
+                            className="text-sm font-medium text-lock hover:underline disabled:pointer-events-none disabled:opacity-60"
+                            onClick={() => handleRespond(teacher.id, false)}
+                            disabled={respondingId === teacher.id}
+                          >
+                            {t("table.reject")}
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <Link href={teacher.teacherHref} className="text-sm font-medium text-primary hover:underline">
+                            {t("table.view")}
+                          </Link>
+                          <button
+                            type="button"
+                            className="text-sm font-medium text-lock hover:underline"
+                            onClick={() => handleRemove(teacher)}
+                          >
+                            {teacher.rosterStatus === "pending" ? t("table.cancelInvite") : t("table.remove")}
+                          </button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

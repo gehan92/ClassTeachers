@@ -2,12 +2,18 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { notify } from "@/lib/dashboard/notify";
 
 type ActionResult = { error: string } | { error?: undefined };
 
 async function resolveInstituteId(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const { data } = await supabase.from("class_profiles").select("id").eq("owner_id", userId).maybeSingle();
   return data?.id ?? null;
+}
+
+async function resolveInstitute(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  const { data } = await supabase.from("class_profiles").select("id, name").eq("owner_id", userId).maybeSingle();
+  return data;
 }
 
 const addTeacherSchema = z.object({ email: z.string().trim().email() });
@@ -36,8 +42,8 @@ export async function inviteTeacherToRoster(email: string): Promise<ActionResult
     return { error: "You need to be signed in." };
   }
 
-  const instituteId = await resolveInstituteId(supabase, user.id);
-  if (!instituteId) {
+  const institute = await resolveInstitute(supabase, user.id);
+  if (!institute) {
     return { error: "Save your institute details first." };
   }
 
@@ -49,13 +55,14 @@ export async function inviteTeacherToRoster(email: string): Promise<ActionResult
 
   const { error } = await supabase
     .from("class_teachers")
-    .insert({ class_id: instituteId, teacher_id: teacher.id, status: "pending" });
+    .insert({ class_id: institute.id, teacher_id: teacher.id, status: "pending", requested_by: "institute" });
   if (error) {
     if (error.code === "23505") {
       return { error: "This teacher is already linked to your institute (or already invited)." };
     }
     return { error: "Couldn't send the invite. Please try again." };
   }
+  await notify(supabase, teacher.id, "institute_invite_received", { instituteName: institute.name }, "institute");
   return {};
 }
 
@@ -82,6 +89,18 @@ export async function respondToRosterInvite(classId: string, accept: boolean): P
   if (error) {
     return { error: "Couldn't respond to this invite. Please try again." };
   }
+
+  const [{ data: classProfile }, { data: profile }] = await Promise.all([
+    supabase.from("class_profiles").select("owner_id, name").eq("id", classId).maybeSingle(),
+    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+  ]);
+  await notify(
+    supabase,
+    classProfile?.owner_id,
+    accept ? "institute_invite_accepted" : "institute_invite_declined",
+    { teacherName: profile?.full_name ?? "—" },
+    "teachers",
+  );
   return {};
 }
 
@@ -132,5 +151,78 @@ export async function removeTeacherFromRoster(teacherId: string): Promise<Action
   if (error) {
     return { error: "Couldn't remove this teacher. Please try again." };
   }
+  return {};
+}
+
+/**
+ * The reverse of inviteTeacherToRoster (0121) -- a teacher, browsing an
+ * institute's public page, asks to join it instead of waiting to be
+ * invited. Goes through the request_to_join_institute RPC (security
+ * definer, mirrors request_to_join_class for a student's "join this
+ * institute") since a teacher has no RLS insert grant on class_teachers.
+ */
+export async function requestToJoinInstitute(classId: string): Promise<ActionResult> {
+  if (!classId) {
+    return { error: "Invalid institute." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error } = await supabase.rpc("request_to_join_institute", { p_class_id: classId });
+  if (error) {
+    if (error.message.includes("class_not_found")) {
+      return { error: "That institute couldn't be found." };
+    }
+    if (error.message.includes("already_requested")) {
+      return { error: "You've already contacted this institute." };
+    }
+    return { error: "Couldn't send your request. Please try again." };
+  }
+  return {};
+}
+
+/**
+ * Institute-side approval of a teacher-initiated request (requestToJoinInstitute
+ * above) -- distinct from respondToRosterInvite, which is the teacher's own
+ * reply to an institute-sent invite. Named differently from batches-actions'
+ * respondToJoinRequest (the student/enrollment equivalent) since both can be
+ * imported side by side in the institute dashboard.
+ */
+export async function respondToTeacherJoinRequest(teacherId: string, accept: boolean): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const institute = await resolveInstitute(supabase, user.id);
+  if (!institute) {
+    return { error: "Save your institute details first." };
+  }
+
+  const { error } = await supabase
+    .from("class_teachers")
+    .update({ status: accept ? "accepted" : "declined" })
+    .eq("class_id", institute.id)
+    .eq("teacher_id", teacherId)
+    .eq("requested_by", "teacher");
+  if (error) {
+    return { error: "Couldn't respond to this request. Please try again." };
+  }
+  await notify(
+    supabase,
+    teacherId,
+    accept ? "institute_join_request_accepted" : "institute_join_request_declined",
+    { instituteName: institute.name },
+    "institute",
+  );
   return {};
 }

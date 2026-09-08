@@ -312,6 +312,7 @@ export type Database = {
           teacher_id: string;
           is_visible: boolean;
           status: "pending" | "accepted" | "declined";
+          requested_by: "institute" | "teacher";
           joined_at: string;
         };
         Insert: {
@@ -319,6 +320,7 @@ export type Database = {
           teacher_id: string;
           is_visible?: boolean;
           status?: "pending" | "accepted" | "declined";
+          requested_by?: "institute" | "teacher";
           joined_at?: string;
         };
         Update: {
@@ -326,6 +328,7 @@ export type Database = {
           teacher_id?: string;
           is_visible?: boolean;
           status?: "pending" | "accepted" | "declined";
+          requested_by?: "institute" | "teacher";
           joined_at?: string;
         };
         // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
@@ -1570,6 +1573,10 @@ export type Database = {
         Returns: undefined;
       };
       request_to_join_class: {
+        Args: { p_class_id: string };
+        Returns: undefined;
+      };
+      request_to_join_institute: {
         Args: { p_class_id: string };
         Returns: undefined;
       };

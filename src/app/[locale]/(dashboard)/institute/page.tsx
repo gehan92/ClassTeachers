@@ -127,8 +127,15 @@ export default async function InstituteDashboardPage({
     { data: classAdRows },
   ] = await Promise.all([
     instituteId
-      ? supabase.from("class_teachers").select("teacher_id, is_visible, status").eq("class_id", instituteId)
-      : Promise.resolve({ data: [] as { teacher_id: string; is_visible: boolean; status: "pending" | "accepted" | "declined" }[] }),
+      ? supabase.from("class_teachers").select("teacher_id, is_visible, status, requested_by").eq("class_id", instituteId)
+      : Promise.resolve({
+          data: [] as {
+            teacher_id: string;
+            is_visible: boolean;
+            status: "pending" | "accepted" | "declined";
+            requested_by: "institute" | "teacher";
+          }[],
+        }),
     // One richer fetch backs studentsCount, batchStudentCounts, AND the new
     // Students tab (roster + pending requests, step 4b) — used to be two
     // separate narrower queries (student_id only, batch_id only) before
@@ -363,6 +370,7 @@ export default async function InstituteDashboardPage({
 
   const isVisibleById = new Map((classTeacherRows ?? []).map((row) => [row.teacher_id, row.is_visible]));
   const rosterStatusById = new Map((classTeacherRows ?? []).map((row) => [row.teacher_id, row.status]));
+  const requestedByById = new Map((classTeacherRows ?? []).map((row) => [row.teacher_id, row.requested_by]));
   const acceptedInstituteEnrollments = (instituteEnrollmentRows ?? []).filter((row) => row.status === "accepted");
   const pendingInstituteEnrollments = (instituteEnrollmentRows ?? []).filter((row) => row.status === "pending");
   const studentsCount = new Set(acceptedInstituteEnrollments.map((row) => row.student_id)).size;
@@ -443,7 +451,8 @@ export default async function InstituteDashboardPage({
             ? `Rs. ${Number(price.monthly_rate).toLocaleString()}/mo`
             : "—";
       return {
-        rosterStatus: rosterStatusById.get(teacherId) === "pending" ? "pending" : "accepted",
+        rosterStatus: rosterStatusById.get(teacherId) ?? "accepted",
+        requestedBy: requestedByById.get(teacherId) ?? "institute",
         id: teacherId,
         name: nameById.get(teacherId) ?? "—",
         subject: headlineById.get(teacherId) || academicTitleById.get(teacherId) || "",

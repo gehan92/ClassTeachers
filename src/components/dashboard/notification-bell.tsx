@@ -84,6 +84,18 @@ function messageFor(t: Translator, n: NotificationRow): string {
       return t("types.listing_resubmitted", { kind: t(data.kind === "class" ? "kinds.class" : "kinds.teacher") });
     case "review_flagged":
       return t("types.review_flagged");
+    case "institute_invite_received":
+      return t("types.institute_invite_received", { instituteName: str(data.instituteName) });
+    case "institute_invite_accepted":
+      return t("types.institute_invite_accepted", { teacherName: str(data.teacherName) });
+    case "institute_invite_declined":
+      return t("types.institute_invite_declined", { teacherName: str(data.teacherName) });
+    case "institute_join_request_received":
+      return t("types.institute_join_request_received", { teacherName: str(data.teacherName) });
+    case "institute_join_request_accepted":
+      return t("types.institute_join_request_accepted", { instituteName: str(data.instituteName) });
+    case "institute_join_request_declined":
+      return t("types.institute_join_request_declined", { instituteName: str(data.instituteName) });
     default:
       return t("types.generic");
   }

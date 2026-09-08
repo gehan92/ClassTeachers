@@ -38,10 +38,13 @@ export default async function ClassProfilePage({
   } = await supabase.auth.getUser();
 
   let isStudent = false;
+  let isTeacher = false;
   let generalStatus: "pending" | "accepted" | "declined" | null = null;
   const batchStatusById: Record<string, "pending" | "accepted" | "declined" | null> = {};
+  let teacherStatus: "pending" | "accepted" | "declined" | null = null;
+  let teacherRequestedBy: "institute" | "teacher" | null = null;
   if (user) {
-    const [{ data: profile }, { data: enrollmentRows }] = await Promise.all([
+    const [{ data: profile }, { data: enrollmentRows }, { data: teacherLink }] = await Promise.all([
       supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
       supabase
         .from("enrollments")
@@ -49,8 +52,15 @@ export default async function ClassProfilePage({
         .eq("student_id", user.id)
         .eq("owner_type", "class")
         .eq("owner_id", classProfile.id),
+      supabase
+        .from("class_teachers")
+        .select("status, requested_by")
+        .eq("teacher_id", user.id)
+        .eq("class_id", classProfile.id)
+        .maybeSingle(),
     ]);
     isStudent = profile?.role === "student";
+    isTeacher = profile?.role === "teacher" || profile?.role === "campus_lecturer";
     for (const row of enrollmentRows ?? []) {
       if (row.batch_id === null) {
         generalStatus = row.status;
@@ -58,6 +68,8 @@ export default async function ClassProfilePage({
         batchStatusById[row.batch_id] = row.status;
       }
     }
+    teacherStatus = teacherLink?.status ?? null;
+    teacherRequestedBy = teacherLink?.requested_by ?? null;
   }
 
   return (
@@ -65,7 +77,15 @@ export default async function ClassProfilePage({
       classProfile={classProfile}
       showGate={!user}
       backHref="/teachers"
-      viewerJoin={{ loggedIn: Boolean(user), isStudent, generalStatus, batchStatusById }}
+      viewerJoin={{
+        loggedIn: Boolean(user),
+        isStudent,
+        generalStatus,
+        batchStatusById,
+        isTeacher,
+        teacherStatus,
+        teacherRequestedBy,
+      }}
     />
   );
 }

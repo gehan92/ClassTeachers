@@ -131,6 +131,7 @@ const TAB_ICONS: Partial<Record<string, LucideIcon>> = {
   reviews: Star,
   inquiries: MessageSquare,
   ads: Megaphone,
+  institute: Building2,
   settings: SettingsIcon,
   progress: TrendingUp,
   requests: Inbox,

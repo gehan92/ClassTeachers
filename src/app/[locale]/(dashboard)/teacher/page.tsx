@@ -1078,7 +1078,7 @@ export default async function TeacherDashboardPage({
         },
         {
           items: [
-            { key: "ads", label: t("tabs.ads") },
+            { key: "ads", label: t("tabs.ads"), highlight: true },
             { key: "institute", label: t("tabs.institute") },
           ],
         },

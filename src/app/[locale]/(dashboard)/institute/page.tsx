@@ -750,7 +750,7 @@ export default async function InstituteDashboardPage({
               label: t("tabs.studentRequests"),
               count: wantedAdRequests.filter((r) => !r.myResponse).length,
             },
-            { key: "ads", label: t("tabs.ads") },
+            { key: "ads", label: t("tabs.ads"), highlight: true },
             { key: "announcements", label: t("tabs.announcements") },
             { key: "analytics", label: t("tabs.analytics") },
             { key: "reviews", label: t("tabs.reviews"), count: reviewRows?.length ?? 0 },

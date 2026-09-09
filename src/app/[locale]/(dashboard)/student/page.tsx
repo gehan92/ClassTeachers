@@ -1037,7 +1037,7 @@ export default async function StudentDashboardPage({
           key: "promote",
           label: t("groupPromote"),
           items: [
-            { key: "wantedAds", label: t("tabs.wantedAds") },
+            { key: "wantedAds", label: t("tabs.wantedAds"), highlight: true },
             {
               key: "wantedAdResponses",
               label: t("tabs.wantedAdResponses"),

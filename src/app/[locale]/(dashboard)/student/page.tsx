@@ -3,6 +3,7 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import type { NotificationRow } from "@/components/dashboard/notification-bell";
 import { OverviewTab } from "@/components/dashboard/student/overview-tab";
 import { AnnouncementsPanel, type AnnouncementRow } from "@/components/dashboard/student/announcements-panel";
+import { RecommendedPanel, type RecommendedListingRow } from "@/components/dashboard/student/recommended-panel";
 import { ClassesTab } from "@/components/dashboard/student/classes-tab";
 import { LiveClassesTab } from "@/components/dashboard/student/live-classes-tab";
 import { NotesTab } from "@/components/dashboard/student/notes-tab";
@@ -131,6 +132,8 @@ export default async function StudentDashboardPage({
     { data: myInquiryRows },
     { data: attendanceRows },
     { data: notificationRows },
+    { data: recommendedTeacherAdRows },
+    { data: recommendedClassAdRows },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -206,6 +209,13 @@ export default async function StudentDashboardPage({
       .eq("student_id", userId)
       .order("marked_at", { ascending: false }),
     supabase.rpc("list_my_notifications"),
+    // Home's "Recommended for you" panel (spec doc) — the exact same
+    // already-public, active-ads RPCs the /teachers search page reads
+    // (public-directory.ts), reused here rather than duplicated; ranked
+    // below against this student's own profile.subjects (already fetched
+    // above), never a fabricated match.
+    supabase.rpc("list_teacher_ads"),
+    supabase.rpc("list_class_batch_ads"),
   ]);
 
   const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({
@@ -945,6 +955,78 @@ export default async function StudentDashboardPage({
       createdLabel: dateFormatter.format(new Date(row.created_at)),
     }));
 
+  // Home's "Recommended for you" panel — real active ads (same source as
+  // the public /teachers search), ranked against this student's own
+  // profile.subjects. Subjects here are free-typed text (0067), not the
+  // canonical `subjects` table an ad's `subject` comes from, so this is a
+  // loose case-insensitive substring match rather than an exact join —
+  // good enough to surface "Chemistry" -> "Chemistry" or "Maths" ->
+  // "Combined Mathematics", not perfect, but real and honest about it (the
+  // panel only ever claims "personalized" when a match actually happened;
+  // otherwise it falls back to popular listings, never a fake match).
+  // grade_band is a fixed enum (1-5/6-9/10-11/12-13/campus) with no
+  // reliable mapping from a student's own free-typed grade_level, so it's
+  // shown on each card but deliberately not used to filter/rank.
+  const studentSubjectTerms = (profile?.subjects ?? []).map((s) => s.trim().toLowerCase()).filter(Boolean);
+  function matchesStudentSubjects(adSubject: string | null): boolean {
+    if (!adSubject || studentSubjectTerms.length === 0) return false;
+    const subject = adSubject.toLowerCase();
+    return studentSubjectTerms.some((term) => subject.includes(term) || term.includes(subject));
+  }
+  function priceLabel(hourlyRate: number | null, monthlyRate: number | null): string | null {
+    if (hourlyRate != null) return `Rs. ${Number(hourlyRate).toLocaleString()}/hr`;
+    if (monthlyRate != null) return `Rs. ${Number(monthlyRate).toLocaleString()}/mo`;
+    return null;
+  }
+
+  const recommendedTeacherListings: RecommendedListingRow[] = (recommendedTeacherAdRows ?? []).flatMap((row) => {
+    const price = priceLabel(row.hourly_rate, row.monthly_rate);
+    if (!price || !row.display_name) return [];
+    return [
+      {
+        id: row.ad_id,
+        kind: "teacher" as const,
+        name: row.display_name,
+        subject: row.subject,
+        gradeBand: row.grade_band,
+        location: row.location,
+        online: row.mode === "online",
+        rating: Number(row.rating),
+        reviewCount: Number(row.review_count),
+        photoUrl: row.photo_url,
+        priceLabel: price,
+        matched: matchesStudentSubjects(row.subject),
+        href: `/ad/${row.ad_id}`,
+      },
+    ];
+  });
+  const recommendedClassListings: RecommendedListingRow[] = (recommendedClassAdRows ?? []).flatMap((row) => {
+    const price = priceLabel(row.hourly_rate, row.monthly_rate);
+    if (!price) return [];
+    return [
+      {
+        id: row.ad_id,
+        kind: "class" as const,
+        name: row.name,
+        subject: row.subject,
+        gradeBand: row.grade_band,
+        location: row.location,
+        online: row.mode === "online",
+        rating: Number(row.rating),
+        reviewCount: Number(row.review_count),
+        photoUrl: row.photo_url,
+        priceLabel: price,
+        matched: matchesStudentSubjects(row.subject),
+        href: `/ad/${row.ad_id}`,
+      },
+    ];
+  });
+  const allRecommendedListings = [...recommendedTeacherListings, ...recommendedClassListings];
+  const matchedListings = allRecommendedListings.filter((l) => l.matched).sort((a, b) => b.rating - a.rating);
+  const hasPersonalizedRecommendations = matchedListings.length > 0;
+  const fallbackListings = allRecommendedListings.filter((l) => !l.matched).sort((a, b) => b.rating - a.rating);
+  const recommendedListings: RecommendedListingRow[] = [...matchedListings, ...fallbackListings].slice(0, 4);
+
   const reviewTargets: ReviewTarget[] = [...joinedOwnerKeys].map((key) => {
     const [ownerType, ownerId] = key.split(":") as ["teacher" | "class", string];
     return { ownerType, ownerId, name: ownerName(ownerType, ownerId) };
@@ -1064,6 +1146,7 @@ export default async function StudentDashboardPage({
               dueAssignmentTitles={dueAssignmentTitles}
               unreadMessagesCount={unreadMessagesCount}
             />
+            <RecommendedPanel listings={recommendedListings} personalized={hasPersonalizedRecommendations} />
           </>
         ),
         progress: (

@@ -1570,7 +1570,12 @@
       "actionAssignmentsCta": "පැවරුම් වෙත යන්න",
       "actionCalendarTitle": "ඔබේ සතිපතා කාලසටහන",
       "actionCalendarBody": "සෑම පන්තියක්ම, විභාගයක්ම සහ නියමිත දිනයක්ම එක් දර්ශනයකින් බලන්න.",
-      "actionCalendarCta": "දින දර්ශනය වෙත යන්න"
+      "actionCalendarCta": "දින දර්ශනය වෙත යන්න",
+      "recommended": {
+        "heading": "ඔබ වෙනුවෙන් නිර්දේශිත",
+        "subtitlePersonalized": "ඔබේ පැතිකඩෙහි විෂයයන්ට ගැළපේ.",
+        "subtitleGeneral": "දැනට ClassPortals හි ජනප්‍රිය ගුරුවරුන් සහ පන්ති."
+      }
     },
     "progress": {
       "heading": "ප්‍රගතිය",

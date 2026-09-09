@@ -1570,7 +1570,12 @@
       "actionAssignmentsCta": "Go to Assignments",
       "actionCalendarTitle": "Your weekly schedule",
       "actionCalendarBody": "See every class, exam, and due date in one view.",
-      "actionCalendarCta": "Go to Calendar"
+      "actionCalendarCta": "Go to Calendar",
+      "recommended": {
+        "heading": "Recommended for you",
+        "subtitlePersonalized": "Matched to the subjects on your profile.",
+        "subtitleGeneral": "Popular teachers and classes on ClassPortals right now."
+      }
     },
     "progress": {
       "heading": "Progress",

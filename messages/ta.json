@@ -1570,7 +1570,12 @@
       "actionAssignmentsCta": "பணிகளுக்குச் செல்லுங்கள்",
       "actionCalendarTitle": "உங்கள் வாராந்திர அட்டவணை",
       "actionCalendarBody": "ஒவ்வொரு வகுப்பு, தேர்வு மற்றும் நிலுவைத் தேதியையும் ஒரே பார்வையில் காணுங்கள்.",
-      "actionCalendarCta": "நாட்காட்டிக்குச் செல்லுங்கள்"
+      "actionCalendarCta": "நாட்காட்டிக்குச் செல்லுங்கள்",
+      "recommended": {
+        "heading": "உங்களுக்காக பரிந்துரைக்கப்பட்டவை",
+        "subtitlePersonalized": "உங்கள் சுயவிவரத்தில் உள்ள பாடங்களுக்கு பொருந்துகிறது.",
+        "subtitleGeneral": "தற்போது ClassPortals இல் பிரபலமான ஆசிரியர்கள் மற்றும் வகுப்புகள்."
+      }
     },
     "progress": {
       "heading": "முன்னேற்றம்",

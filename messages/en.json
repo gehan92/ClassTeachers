@@ -2079,6 +2079,7 @@
       "assignments": "Assignments",
       "homework": "Homework",
       "live": "Live classes",
+      "calendar": "Schedule",
       "students": "Students",
       "analytics": "Analytics",
       "attendance": "Attendance",
@@ -2635,6 +2636,21 @@
       "reminded": "Reminded",
       "returnToCallAction": "Return to call",
       "inOtherCallHint": "Leave your current call first"
+    },
+    "calendar": {
+      "title": "Schedule",
+      "subtitle": "Your weekly teaching schedule, plus what's coming up next.",
+      "timetableHeading": "Weekly timetable",
+      "timetableEmpty": "No classes have a weekly schedule set yet.",
+      "noClasses": "—",
+      "agendaHeading": "Coming up",
+      "agendaEmpty": "Nothing due or scheduled in the next two weeks.",
+      "itemType": {
+        "live": "Live class",
+        "exam": "Exam",
+        "assignment": "Assignment",
+        "homework": "Homework"
+      }
     },
     "students": {
       "heading": "Students",

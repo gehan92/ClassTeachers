@@ -2077,6 +2077,7 @@
       "questionBank": "ප්‍රශ්න බැංකුව",
       "exams": "විභාග",
       "live": "සජීවී පන්ති",
+      "calendar": "කාලසටහන",
       "students": "සිසුන්",
       "analytics": "විශ්ලේෂණ",
       "attendance": "පැමිණීම",
@@ -2635,6 +2636,21 @@
       "reminded": "මතක් කර ඇත",
       "returnToCallAction": "ඇමතුමට ආපසු යන්න",
       "inOtherCallHint": "පළමුව ඔබේ වත්මන් ඇමතුමෙන් ඉවත් වන්න"
+    },
+    "calendar": {
+      "title": "කාලසටහන",
+      "subtitle": "ඔබේ සතිපතා ඉගැන්වීමේ කාලසටහන, සහ ඉදිරියේදී එළඹෙන දේ.",
+      "timetableHeading": "සතිපතා කාලසටහන",
+      "timetableEmpty": "තවම කිසිදු පන්තියකට සතිපතා කාලසටහනක් සකසා නැත.",
+      "noClasses": "—",
+      "agendaHeading": "ඉදිරියේදී එළඹෙන දේ",
+      "agendaEmpty": "ඉදිරි සති දෙක තුළ නියමිත හෝ සැලසුම් කළ කිසිවක් නැත.",
+      "itemType": {
+        "live": "සජීවී පන්තිය",
+        "exam": "විභාගය",
+        "assignment": "පැවරුම",
+        "homework": "ගෙදර වැඩ"
+      }
     },
     "students": {
       "heading": "සිසුන්",

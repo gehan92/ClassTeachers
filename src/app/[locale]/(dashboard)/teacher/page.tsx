@@ -10,6 +10,8 @@ import { QuestionBankTab } from "@/components/dashboard/teacher/question-bank-ta
 import { ExamsTab } from "@/components/dashboard/teacher/exams-tab";
 import { AssignmentsTab } from "@/components/dashboard/teacher/assignments-tab";
 import { LiveClassesTab } from "@/components/dashboard/teacher/live-classes-tab";
+import { ScheduleTab } from "@/components/dashboard/teacher/schedule-tab";
+import type { TeacherScheduleSlotRow } from "@/components/dashboard/teacher/schedule-tab";
 import { StudentsTab } from "@/components/dashboard/teacher/students-tab";
 import { AttendanceTab } from "@/components/dashboard/teacher/attendance-tab";
 import { AnalyticsTab } from "@/components/dashboard/teacher/analytics-tab";
@@ -194,11 +196,13 @@ export default async function TeacherDashboardPage({
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
       .order("created_at", { ascending: false }),
-    supabase
-      .from("batch_schedule_slots")
-      .select("batch_id, day_of_week, start_time, end_time")
-      .eq("owner_type", "teacher")
-      .eq("owner_id", userId),
+    // No owner filter — 0124 widened this table's RLS the same way 0093 did
+    // for notes/exams/etc, so an unfiltered select naturally returns this
+    // teacher's own schedule slots plus any institute-assigned batch's, with
+    // RLS as the real boundary (same trust-RLS pattern used throughout this
+    // file). Schedule tab needs `id` too, unlike the create/edit-form-only
+    // use below.
+    supabase.from("batch_schedule_slots").select("id, batch_id, day_of_week, start_time, end_time"),
     supabase
       .from("enrollments")
       .select("id, student_id, batch_id, joined_at, status")
@@ -541,6 +545,20 @@ export default async function TeacherDashboardPage({
     ...instituteBatchLabelById,
   ]);
 
+  // Schedule tab — every weekly slot this teacher can see per RLS (own
+  // batches + any institute-assigned batch, 0124), labeled via the same
+  // batchTitleById map used everywhere else content is shown.
+  const teacherScheduleSlots: TeacherScheduleSlotRow[] = (scheduleSlotRows ?? [])
+    .map((s) => ({
+      id: s.id,
+      batchId: s.batch_id,
+      dayOfWeek: s.day_of_week,
+      startTime: s.start_time.slice(0, 5),
+      endTime: s.end_time.slice(0, 5),
+      title: batchTitleById.get(s.batch_id) ?? "—",
+    }))
+    .sort((a, b) => a.dayOfWeek - b.dayOfWeek || a.startTime.localeCompare(b.startTime));
+
   // Deleted (0109 soft-delete) rows stay in batchAdRows so the Advertisement
   // tab's "Ad history" section can list and restore them — they're set
   // aside here rather than treated as a batch's live ad.
@@ -831,6 +849,7 @@ export default async function TeacherDashboardPage({
     title: c.title,
     scheduledAtIso: c.scheduled_at,
     scheduledLabel: scheduleFormatter.format(new Date(c.scheduled_at)),
+    durationMinutes: c.duration_minutes,
     mode: c.mode,
     location: c.location,
     joinLink: joinLinkByClassId.get(c.id) ?? null,
@@ -1041,6 +1060,7 @@ export default async function TeacherDashboardPage({
               count: batches.length,
             },
             { key: "live", label: t("tabs.live") },
+            { key: "calendar", label: t("tabs.calendar") },
           ],
         },
         {
@@ -1194,6 +1214,15 @@ export default async function TeacherDashboardPage({
               name: studentById.get(e.student_id)?.full_name ?? "—",
               batchId: e.batch_id,
             }))}
+          />
+        ),
+        calendar: (
+          <ScheduleTab
+            scheduleSlots={teacherScheduleSlots}
+            liveClasses={liveClasses}
+            exams={exams}
+            assignments={assignments}
+            homework={homework}
           />
         ),
         students: (

@@ -34,6 +34,9 @@ export type TeacherLiveClassRow = {
   title: string;
   scheduledAtIso: string;
   scheduledLabel: string;
+  /** Needed by classState (Schedule tab's agenda) to know whether a class
+   * that started a while ago has actually ended yet. */
+  durationMinutes: number;
   mode: "online" | "physical";
   location: string | null;
   joinLink: string | null;

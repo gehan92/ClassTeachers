@@ -15,6 +15,10 @@ const createAssignmentSchema = z.object({
   // — see the same note in live-classes-actions.ts's createLiveClassSchema.
   dueAt: z.iso.datetime().optional(),
   assignmentType: z.enum(["assignment", "homework"]).default("assignment"),
+  // Hand-picked student subset (0125) — mirrors exams' participant model
+  // (undefined/empty = everyone in scope, same "everyone stays unsent"
+  // reasoning as exam_participants).
+  participantStudentIds: z.array(z.string().uuid()).optional(),
 });
 
 export async function createAssignment(formData: FormData): Promise<ActionResult> {
@@ -26,12 +30,15 @@ export async function createAssignment(formData: FormData): Promise<ActionResult
     return { error: "Only PDF files are supported." };
   }
 
+  const participantIds = formData.getAll("participantStudentIds").filter((v): v is string => typeof v === "string");
+
   const parsed = createAssignmentSchema.safeParse({
     title: formData.get("title"),
     batchId: formData.get("batchId") || undefined,
     lessonId: formData.get("lessonId") || undefined,
     dueAt: formData.get("dueAt") || undefined,
     assignmentType: formData.get("assignmentType") || undefined,
+    participantStudentIds: participantIds.length > 0 ? participantIds : undefined,
   });
   if (!parsed.success) {
     return { error: "Please add a title and choose a PDF file." };
@@ -75,6 +82,15 @@ export async function createAssignment(formData: FormData): Promise<ActionResult
   if (insertError) {
     await supabase.storage.from("assignments").remove([filePath]);
     return { error: "Couldn't save the assignment. Please try again." };
+  }
+
+  if (parsed.data.participantStudentIds) {
+    const { error: participantsError } = await supabase
+      .from("assignment_participants")
+      .insert(parsed.data.participantStudentIds.map((studentId) => ({ assignment_id: assignmentId, student_id: studentId })));
+    if (participantsError) {
+      return { error: "Assignment was created, but the student list couldn't be saved. Please try again." };
+    }
   }
 
   await notifyContentAudience(

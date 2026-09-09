@@ -1189,16 +1189,28 @@ export default async function TeacherDashboardPage({
           <AssignmentsTab
             assignments={assignments}
             submissions={assignmentSubmissions}
-            batches={contentTargetBatches}
+            batches={contentTargetBatches.map((b) => ({ id: b.id, title: b.title, studentCount: rosterByBatch[b.id]?.length ?? 0 }))}
             lessons={lessonOptions}
+            totalStudentsCount={combinedAcceptedEnrollments.length}
+            studentPool={combinedAcceptedEnrollments.map((e) => ({
+              id: e.student_id,
+              name: studentById.get(e.student_id)?.full_name ?? "—",
+              batchId: e.batch_id,
+            }))}
           />
         ),
         homework: (
           <AssignmentsTab
             assignments={homework}
             submissions={assignmentSubmissions}
-            batches={contentTargetBatches}
+            batches={contentTargetBatches.map((b) => ({ id: b.id, title: b.title, studentCount: rosterByBatch[b.id]?.length ?? 0 }))}
             lessons={lessonOptions}
+            totalStudentsCount={combinedAcceptedEnrollments.length}
+            studentPool={combinedAcceptedEnrollments.map((e) => ({
+              id: e.student_id,
+              name: studentById.get(e.student_id)?.full_name ?? "—",
+              batchId: e.batch_id,
+            }))}
             assignmentType="homework"
             tNamespace="teacherDashboard.homework"
           />

@@ -15,7 +15,8 @@ import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createAssignment, deleteAssignment, gradeAssignmentSubmission } from "@/lib/dashboard/assignments-actions";
 
 export type TeacherLessonOption = { id: string; title: string };
-export type TeacherBatchOption = { id: string; title: string };
+export type TeacherBatchOption = { id: string; title: string; studentCount: number };
+export type TeacherAssignmentStudentOption = { id: string; name: string; batchId: string | null };
 
 export type TeacherAssignmentRow = {
   id: string;
@@ -52,6 +53,8 @@ export function AssignmentsTab({
   submissions,
   batches,
   lessons,
+  totalStudentsCount,
+  studentPool,
   assignmentType = "assignment",
   tNamespace = "teacherDashboard.assignments",
 }: {
@@ -59,6 +62,8 @@ export function AssignmentsTab({
   submissions: AssignmentSubmissionRow[];
   batches: TeacherBatchOption[];
   lessons: TeacherLessonOption[];
+  totalStudentsCount: number;
+  studentPool: TeacherAssignmentStudentOption[];
   /** Which of the 2 kinds this tab creates as — implicit from the tab itself
    * (Assignments/Homework are separate dashboard tabs), not a field the
    * teacher picks. */
@@ -77,6 +82,11 @@ export function AssignmentsTab({
   const [batchId, setBatchId] = useState<string>(NO_BATCH);
   const [lessonId, setLessonId] = useState<string>(NO_LESSON);
   const [dueAt, setDueAt] = useState("");
+  // Hand-picked student subset (0125) — "exclude" model, same as ExamsTab:
+  // the pool starts fully included, and only students the teacher
+  // deliberately unchecks get excluded, so leaving this empty means
+  // "everyone currently in the pool" rather than "no one".
+  const [excludedStudentIds, setExcludedStudentIds] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [created, setCreated] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,11 +95,30 @@ export function AssignmentsTab({
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
   const [viewingWorksheetId, setViewingWorksheetId] = useState<string | null>(null);
 
+  const poolForBatch = studentPool.filter((s) => batchId === NO_BATCH || s.batchId === batchId);
+
+  function handleBatchChange(value: string | null) {
+    setBatchId(value ?? NO_BATCH);
+    // Different pool of students — a leftover exclusion set from the
+    // previous batch wouldn't map to the right people here.
+    setExcludedStudentIds(new Set());
+  }
+
+  function toggleStudent(studentId: string) {
+    setExcludedStudentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(studentId)) next.delete(studentId);
+      else next.add(studentId);
+      return next;
+    });
+  }
+
   function resetForm() {
     setTitle("");
     setBatchId(NO_BATCH);
     setLessonId(NO_LESSON);
     setDueAt("");
+    setExcludedStudentIds(new Set());
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -110,6 +139,13 @@ export function AssignmentsTab({
     if (dueAt) formData.set("dueAt", new Date(dueAt).toISOString());
     formData.set("file", file);
     formData.set("assignmentType", assignmentType);
+    // Nothing excluded = every current member of the pool gets in — see the
+    // comment on assignment_participants (0125) for why "everyone" stays unsent.
+    if (excludedStudentIds.size > 0) {
+      for (const student of poolForBatch) {
+        if (!excludedStudentIds.has(student.id)) formData.append("participantStudentIds", student.id);
+      }
+    }
 
     const result = await createAssignment(formData);
     setSaving(false);
@@ -249,15 +285,17 @@ export function AssignmentsTab({
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="assignment-batch">{t("form.batchLabel")}</Label>
-              <Select value={batchId} onValueChange={(value) => setBatchId(value ?? NO_BATCH)}>
+              <Select value={batchId} onValueChange={handleBatchChange}>
                 <SelectTrigger id="assignment-batch" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NO_BATCH}>{t("form.noBatch")}</SelectItem>
+                  <SelectItem value={NO_BATCH}>
+                    {t("form.noBatch")} ({totalStudentsCount})
+                  </SelectItem>
                   {batches.map((batch) => (
                     <SelectItem key={batch.id} value={batch.id}>
-                      {batch.title}
+                      {batch.title} ({batch.studentCount})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -293,6 +331,32 @@ export function AssignmentsTab({
                 className="text-sm text-foreground file:mr-3 file:rounded-sm file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-secondary-foreground"
               />
             </div>
+            {poolForBatch.length > 0 && (
+              <div className="rounded-md border border-border p-3 sm:col-span-2">
+                <label className="mb-2 flex items-center gap-2 text-xs font-medium text-foreground">
+                  <input
+                    type="checkbox"
+                    className="size-3.5 accent-primary"
+                    checked={excludedStudentIds.size === 0}
+                    onChange={(e) => setExcludedStudentIds(e.target.checked ? new Set() : new Set(poolForBatch.map((s) => s.id)))}
+                  />
+                  {t("form.selectAll")}
+                </label>
+                <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
+                  {poolForBatch.map((s) => (
+                    <label key={s.id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        className="size-3.5 accent-primary"
+                        checked={!excludedStudentIds.has(s.id)}
+                        onChange={() => toggleStudent(s.id)}
+                      />
+                      {s.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2.5">
             <Button type="button" onClick={handleCreate} disabled={saving}>

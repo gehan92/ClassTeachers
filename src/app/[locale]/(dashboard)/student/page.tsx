@@ -264,6 +264,7 @@ export default async function StudentDashboardPage({
   const revealedExamIds = (examRows ?? [])
     .filter((e) => e.reveal_answers && submissionByExamId.get(e.id)?.status === "graded")
     .map((e) => e.id);
+  const allAssignmentIds = (assignmentRows ?? []).map((a) => a.id);
   const teacherIds = acceptedEnrollments.filter((e) => e.owner_type === "teacher").map((e) => e.owner_id);
   const classIds = acceptedEnrollments.filter((e) => e.owner_type === "class").map((e) => e.owner_id);
   // Deduped separately from the arrays above — a multi-batch institute
@@ -298,6 +299,7 @@ export default async function StudentDashboardPage({
   // depends on anything else in this stage.
   const [
     { data: visibleExamIds },
+    { data: visibleAssignmentIds },
     teacherLive,
     classLive,
     { data: teacherOwners },
@@ -319,6 +321,12 @@ export default async function StudentDashboardPage({
     // drifting out of sync. Same pattern as visible_live_class_ids below.
     allExamIds.length
       ? supabase.rpc("visible_exam_ids", { p_ids: allExamIds })
+      : Promise.resolve({ data: [] as string[] }),
+    // Same reasoning as visible_exam_ids above — assignments/homework
+    // gained the same batch+participant scoping exams already had (0125),
+    // via is_enrolled_in_assignment().
+    allAssignmentIds.length
+      ? supabase.rpc("visible_assignment_ids", { p_ids: allAssignmentIds })
       : Promise.resolve({ data: [] as string[] }),
     teacherIds.length
       ? supabase
@@ -837,8 +845,11 @@ export default async function StudentDashboardPage({
   // Same batch-scoping notes already apply (0008): a batch-scoped assignment
   // is only visible to a student enrolled in that specific batch, not just
   // any batch of that teacher's — RLS only checks the owner-level enrollment.
+  // visibleAssignmentIdSet (0125) narrows further to a hand-picked
+  // participant list when the teacher set one, same as exams.
+  const visibleAssignmentIdSet = new Set(visibleAssignmentIds ?? []);
   const visibleAssignmentRows = (assignmentRows ?? []).filter(
-    (a) => !a.batch_id || enrolledBatchIds.has(a.batch_id),
+    (a) => visibleAssignmentIdSet.has(a.id) && (!a.batch_id || enrolledBatchIds.has(a.batch_id)),
   );
 
   function mapAssignmentRow(a: (typeof visibleAssignmentRows)[number]): StudentAssignmentRow {

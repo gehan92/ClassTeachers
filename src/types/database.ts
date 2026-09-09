@@ -804,6 +804,22 @@ export type Database = {
         Relationships: [];
       };
 
+      assignment_participants: {
+        Row: {
+          assignment_id: string;
+          student_id: string;
+        };
+        Insert: {
+          assignment_id: string;
+          student_id: string;
+        };
+        Update: {
+          assignment_id?: string;
+          student_id?: string;
+        };
+        Relationships: [];
+      };
+
       assignment_submissions: {
         Row: {
           id: string;
@@ -1506,6 +1522,14 @@ export type Database = {
         Returns: boolean;
       };
       visible_exam_ids: {
+        Args: { p_ids: string[] };
+        Returns: string[];
+      };
+      is_enrolled_in_assignment: {
+        Args: { p_assignment_id: string };
+        Returns: boolean;
+      };
+      visible_assignment_ids: {
         Args: { p_ids: string[] };
         Returns: string[];
       };

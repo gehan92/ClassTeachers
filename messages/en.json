@@ -2931,7 +2931,9 @@
         "fileLabel": "Worksheet PDF",
         "missingFields": "Please add a title and choose a PDF file.",
         "batchLabel": "Class",
-        "noBatch": "No specific class (general)"
+        "noBatch": "No specific class (general)",
+        "allStudentsOption": "All my students",
+        "selectAll": "Select all"
       },
       "filters": {
         "searchLabel": "Search",
@@ -2994,7 +2996,9 @@
         "fileLabel": "Worksheet PDF",
         "missingFields": "Please add a title and choose a PDF file.",
         "batchLabel": "Class",
-        "noBatch": "No specific class (general)"
+        "noBatch": "No specific class (general)",
+        "allStudentsOption": "All my students",
+        "selectAll": "Select all"
       },
       "filters": {
         "searchLabel": "Search",

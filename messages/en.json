@@ -1509,6 +1509,8 @@
     "groupClasses": "My Learning",
     "groupContent": "Coursework",
     "groupMore": "Account",
+    "groupMessages": "Messages",
+    "groupPromote": "Promote",
     "tabs": {
       "overview": "Home",
       "progress": "Progress",
@@ -1535,11 +1537,22 @@
     "overview": {
       "greeting": "Good evening, {name}",
       "subtitle": "Here's what's happening across your classes today.",
+      "tips": {
+        "heading": "New here? A quick orientation",
+        "classes": "My Learning — your classes, live sessions, and calendar in one place.",
+        "coursework": "Coursework — notes, exams, assignments, and homework all live here.",
+        "progress": "Progress — track your attendance and grades over time.",
+        "messages": "Messages — reach out to a teacher and see their replies.",
+        "promote": "Promote — post what you're looking for and see who responds.",
+        "dismiss": "Dismiss"
+      },
       "statClasses": "Classes joined",
       "statNextLive": "Next live class",
       "statNextLiveEmpty": "None scheduled",
       "statExamsDue": "Exams due",
+      "statAssignmentsDue": "Assignments due",
       "statNotes": "Notes available",
+      "statUnreadMessages": "Unread messages",
       "actionLiveTitle": "{title} — {time}",
       "actionLiveBody": "{teacher}'s class is coming up.",
       "actionLiveEmptyTitle": "No live classes scheduled",
@@ -1550,11 +1563,14 @@
       "actionExamsEmptyTitle": "No exams due",
       "actionExamsEmptyBody": "You're all caught up — nothing pending right now.",
       "actionExamsCta": "Go to Exams",
-      "actionNotesTitle": "{count} notes available",
-      "actionNotesBody": "Browse notes your teachers have shared.",
-      "actionNotesEmptyTitle": "No notes yet",
-      "actionNotesEmptyBody": "Your teachers haven't shared any notes yet.",
-      "actionNotesCta": "Go to Notes"
+      "actionAssignmentsTitle": "{count} assignments due",
+      "actionAssignmentsBody": "{titles} still need your answers.",
+      "actionAssignmentsEmptyTitle": "No assignments due",
+      "actionAssignmentsEmptyBody": "You're all caught up — nothing pending right now.",
+      "actionAssignmentsCta": "Go to Assignments",
+      "actionCalendarTitle": "Your weekly schedule",
+      "actionCalendarBody": "See every class, exam, and due date in one view.",
+      "actionCalendarCta": "Go to Calendar"
     },
     "progress": {
       "heading": "Progress",
@@ -1605,7 +1621,16 @@
       "justSharedHeading": "Shared during this class",
       "liveNowBadge": "Live now",
       "newActivityBadge": "New",
-      "dueSoonBadge": "{count} due"
+      "dueSoonBadge": "{count} due",
+      "requestHelp": {
+        "cta": "Request help",
+        "heading": "Ask your teacher a question",
+        "hint": "Send a question to your teacher — expect a reply within 48 hours. Your message shows up in Messages.",
+        "placeholder": "What do you need help with?",
+        "send": "Send",
+        "cancel": "Cancel",
+        "sentNote": "Sent — check Messages for a reply."
+      }
     },
     "requests": {
       "heading": "Requests",
@@ -1904,6 +1929,7 @@
         "phone": "Phone"
       },
       "changePassword": "Change password",
+      "helpCenter": "Help center",
       "contactHeading": "Contact preference",
       "contactSubtitle": "Controls what your teachers can see about you.",
       "notifications": {

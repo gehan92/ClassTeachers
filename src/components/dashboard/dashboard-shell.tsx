@@ -164,6 +164,8 @@ const GROUP_ICONS: Partial<Record<string, LucideIcon>> = {
   platform: LayoutGrid,
   monetization: Wallet,
   trust: ShieldCheck,
+  messages: MessageSquare,
+  promote: Megaphone,
 };
 
 function updateTabParam(tab: string, liveClassId?: string) {

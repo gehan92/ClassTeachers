@@ -110,9 +110,14 @@ export function SettingsTab({
             <Input id={phoneId} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
         </div>
-        <Link href="/forgot-password" className="mt-4 inline-block text-sm font-medium text-primary hover:underline">
-          {t("changePassword")}
-        </Link>
+        <div className="mt-4 flex flex-wrap items-center gap-4">
+          <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline">
+            {t("changePassword")}
+          </Link>
+          <Link href="/help" className="text-sm font-medium text-primary hover:underline">
+            {t("helpCenter")}
+          </Link>
+        </div>
         <div className="mt-4 flex items-center gap-3">
           <Button type="button" onClick={handleSaveChanges} disabled={saving}>
             {tc("save")}

@@ -1509,6 +1509,8 @@
     "groupClasses": "මගේ ඉගෙනීම",
     "groupContent": "අධ්‍යයන කටයුතු",
     "groupMore": "ගිණුම",
+    "groupMessages": "පණිවිඩ",
+    "groupPromote": "ප්‍රවර්ධනය",
     "tabs": {
       "overview": "මුල් පිටුව",
       "progress": "ප්‍රගතිය",
@@ -1535,11 +1537,22 @@
     "overview": {
       "greeting": "සුබ සන්ධ්‍යාවක්, {name}",
       "subtitle": "අද ඔබේ පන්තිවල සිදුවෙමින් පවතින දේ මෙන්න.",
+      "tips": {
+        "heading": "අලුතින්ද? ඉක්මන් මාර්ගෝපදේශයක්",
+        "classes": "මගේ ඉගෙනීම — ඔබේ පන්ති, සජීවී සැසි සහ දින දර්ශනය එකම තැනක.",
+        "coursework": "අධ්‍යයන කටයුතු — සටහන්, විභාග, පැවරුම් සහ ගෙදර වැඩ සියල්ල මෙහි ඇත.",
+        "progress": "ප්‍රගතිය — ඔබේ පැමිණීම සහ ලකුණු කාලයත් සමඟ නිරීක්ෂණය කරන්න.",
+        "messages": "පණිවිඩ — ගුරුවරයෙකු අමතන්න සහ ඔවුන්ගේ පිළිතුරු බලන්න.",
+        "promote": "ප්‍රවර්ධනය — ඔබ සොයන දේ පළ කර කවුරුන් ප්‍රතිචාර දක්වනවාද බලන්න.",
+        "dismiss": "ඉවත් කරන්න"
+      },
       "statClasses": "එකතු වූ පන්ති",
       "statNextLive": "ඊළඟ සජීවී පන්තිය",
       "statNextLiveEmpty": "කිසිවක් නියමිත නැත",
       "statExamsDue": "විභාග කිරීමට ඇති",
+      "statAssignmentsDue": "බැඳී ඇති පැවරුම්",
       "statNotes": "ලබා ගත හැකි සටහන්",
+      "statUnreadMessages": "නොකියවූ පණිවිඩ",
       "actionLiveTitle": "{title} — {time}",
       "actionLiveBody": "{teacher} ගේ පන්තිය ළඟදීම පැවැත්වේ.",
       "actionLiveEmptyTitle": "සජීවී පන්තියක් නියමිත නැත",
@@ -1550,11 +1563,14 @@
       "actionExamsEmptyTitle": "විභාග කිසිවක් කිරීමට නැත",
       "actionExamsEmptyBody": "ඔබ සියල්ල සම්පූර්ණ කර ඇත — දැනට කිසිවක් පොරොත්තුවෙන් නැත.",
       "actionExamsCta": "විභාග වෙත යන්න",
-      "actionNotesTitle": "සටහන් {count}ක් ලබාගත හැක",
-      "actionNotesBody": "ඔබේ ගුරුවරුන් බෙදාගත් සටහන් බලන්න.",
-      "actionNotesEmptyTitle": "තවම සටහන් නැත",
-      "actionNotesEmptyBody": "ඔබේ ගුරුවරුන් තවම සටහන් කිසිවක් බෙදාගෙන නැත.",
-      "actionNotesCta": "සටහන් වෙත යන්න"
+      "actionAssignmentsTitle": "පැවරුම් {count}ක් බැඳී ඇත",
+      "actionAssignmentsBody": "{titles} තවමත් ඔබේ පිළිතුරු අවශ්‍යයි.",
+      "actionAssignmentsEmptyTitle": "බැඳී ඇති පැවරුම් නැත",
+      "actionAssignmentsEmptyBody": "ඔබ සම්පූර්ණයෙන්ම යාවත්කාලීනයි — දැනට කිසිවක් පොරොත්තු නැත.",
+      "actionAssignmentsCta": "පැවරුම් වෙත යන්න",
+      "actionCalendarTitle": "ඔබේ සතිපතා කාලසටහන",
+      "actionCalendarBody": "සෑම පන්තියක්ම, විභාගයක්ම සහ නියමිත දිනයක්ම එක් දර්ශනයකින් බලන්න.",
+      "actionCalendarCta": "දින දර්ශනය වෙත යන්න"
     },
     "progress": {
       "heading": "ප්‍රගතිය",
@@ -1605,7 +1621,16 @@
       "justSharedHeading": "මෙම පන්තිය අතරතුර බෙදාගත්තා",
       "liveNowBadge": "දැන් සජීවී",
       "newActivityBadge": "අලුත්",
-      "dueSoonBadge": "{count} නියමිතයි"
+      "dueSoonBadge": "{count} නියමිතයි",
+      "requestHelp": {
+        "cta": "උදව් ඉල්ලන්න",
+        "heading": "ඔබේ ගුරුවරයාගෙන් ප්‍රශ්නයක් අහන්න",
+        "hint": "ඔබේ ගුරුවරයාට ප්‍රශ්නයක් යවන්න — පැය 48ක් ඇතුළත පිළිතුරක් අපේක්ෂා කරන්න. ඔබේ පණිවිඩය පණිවිඩ (Messages) හි පෙන්වයි.",
+        "placeholder": "ඔබට උදව් අවශ්‍ය කුමක් ගැනද?",
+        "send": "යවන්න",
+        "cancel": "අවලංගු කරන්න",
+        "sentNote": "යවා ඇත — පිළිතුරක් සඳහා පණිවිඩ බලන්න."
+      }
     },
     "requests": {
       "heading": "ඉල්ලීම්",
@@ -1904,6 +1929,7 @@
         "phone": "දුරකථනය"
       },
       "changePassword": "මුරපදය වෙනස් කරන්න",
+      "helpCenter": "උදව් මධ්‍යස්ථානය",
       "contactHeading": "සම්බන්ධතා මනාපය",
       "contactSubtitle": "ඔබේ ගුරුවරුන්ට ඔබ ගැන පෙනෙන දේ මෙයින් පාලනය වේ.",
       "notifications": {

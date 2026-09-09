@@ -74,6 +74,20 @@ export function ProgressTab({
 
       <div className="rounded-lg border border-border bg-white p-5">
         <h3 className="mb-4 text-lg">{t("attendanceHeading")}</h3>
+        {attendanceRatePercent !== null && (
+          <div className="mb-5">
+            <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-muted-foreground">
+              <span>{t("statAttendance")}</span>
+              <span className="font-mono text-foreground">{attendanceRatePercent}%</span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full rounded-full bg-primary transition-[width] duration-500"
+                style={{ width: `${attendanceRatePercent}%` }}
+              />
+            </div>
+          </div>
+        )}
         {attendance.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">{t("attendanceEmpty")}</p>
         ) : (

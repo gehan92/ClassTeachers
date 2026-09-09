@@ -232,6 +232,11 @@ export default async function StudentDashboardPage({
   const hasNewLive =
     hasUnreadOfType("new_live_class") || hasUnreadOfType("live_class_started") || hasUnreadOfType("live_class_ended");
   const hasNewJoinDecline = hasUnreadOfType("join_request_declined");
+  // Home's "Unread messages" KPI (student dashboard spec doc) -- a reply to
+  // an inquiry this student sent is the only notification type flowing back
+  // to them from that feature (new_inquiry/inquiry_message are the owner's
+  // own inbox signals, not this student's).
+  const unreadMessagesCount = notifications.filter((n) => n.type === "inquiry_reply" && !n.readAt).length;
 
   const fullName = profile?.full_name ?? user!.email ?? "Student";
   const userInitial = fullName.charAt(0).toUpperCase();
@@ -878,6 +883,12 @@ export default async function StudentDashboardPage({
     .filter((e) => submissionByExamId.get(e.id)?.status !== "graded")
     .slice(0, 2)
     .map((e) => e.title);
+  const dueAssignmentTitles = visibleAssignmentRows
+    .filter(
+      (a) => a.assignment_type === "assignment" && assignmentSubmissionByAssignmentId.get(a.id)?.status !== "graded",
+    )
+    .slice(0, 2)
+    .map((a) => a.title);
 
   const subjectOptions = (subjectRows ?? [])
     .map((s) => ({ id: s.id, name: (s.translations as Record<string, string> | null)?.en ?? "" }))
@@ -990,6 +1001,7 @@ export default async function StudentDashboardPage({
           label: t("groupClasses"),
           items: [
             { key: "classes", label: t("tabs.classes"), hasNew: hasNewLive },
+            { key: "live", label: t("tabs.live"), count: endedLiveClassesCount },
             { key: "calendar", label: t("tabs.calendar") },
             { key: "requests", label: t("tabs.requests"), count: pendingRequestsCount, hasNew: hasNewJoinDecline },
             { key: "reviews", label: t("tabs.reviews") },
@@ -999,7 +1011,6 @@ export default async function StudentDashboardPage({
           key: "content",
           label: t("groupContent"),
           items: [
-            { key: "live", label: t("tabs.live"), count: endedLiveClassesCount },
             { key: "notes", label: t("tabs.notes"), count: studentNotes.length, hasNew: hasNewNotes },
             { key: "shortNotes", label: t("tabs.shortNotes"), count: studentShortNotes.length },
             { key: "pastPapers", label: t("tabs.pastPapers"), count: studentPastPapers.length },
@@ -1018,8 +1029,14 @@ export default async function StudentDashboardPage({
           ],
         },
         {
+          key: "messages",
+          label: t("groupMessages"),
+          items: [{ key: "inquiries", label: t("tabs.inquiries") }],
+        },
+        {
+          key: "promote",
+          label: t("groupPromote"),
           items: [
-            { key: "inquiries", label: t("tabs.inquiries") },
             { key: "wantedAds", label: t("tabs.wantedAds") },
             {
               key: "wantedAdResponses",
@@ -1043,6 +1060,9 @@ export default async function StudentDashboardPage({
               examsDueCount={examsDueCount}
               dueExamTitles={dueExamTitles}
               notesCount={studentNotes.length + studentShortNotes.length + studentPastPapers.length}
+              assignmentsDueCount={assignmentsDueCount}
+              dueAssignmentTitles={dueAssignmentTitles}
+              unreadMessagesCount={unreadMessagesCount}
             />
           </>
         ),
@@ -1067,6 +1087,7 @@ export default async function StudentDashboardPage({
             liveClasses={liveClasses}
             reminderClassIds={reminderClassIds}
             studentName={fullName}
+            studentEmail={user!.email ?? ""}
             teacherProfiles={teacherProfiles}
             instituteProfiles={instituteProfiles}
             notifications={notifications}

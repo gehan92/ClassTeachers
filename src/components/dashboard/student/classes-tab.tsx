@@ -10,6 +10,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from "@/co
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { requestToJoin, joinOpenBatch } from "@/lib/dashboard/batches-actions";
+import { submitInquiry } from "@/lib/inquiries-actions";
 import { LiveClassesTab, type StudentLiveClassRow } from "@/components/dashboard/student/live-classes-tab";
 import { classState } from "@/lib/dashboard/live-class-state";
 import { useLiveCall } from "@/components/dashboard/live-call-context";
@@ -135,6 +136,7 @@ export function ClassesTab({
   liveClasses,
   reminderClassIds,
   studentName,
+  studentEmail,
   teacherProfiles,
   instituteProfiles,
   notifications,
@@ -150,6 +152,7 @@ export function ClassesTab({
   liveClasses: StudentLiveClassRow[];
   reminderClassIds: string[];
   studentName: string;
+  studentEmail: string;
   teacherProfiles: InstituteTeacherCard[];
   instituteProfiles: InstituteQuickView[];
   notifications: NotificationRow[];
@@ -269,6 +272,7 @@ export function ClassesTab({
           liveClasses={liveClasses}
           reminderClassIds={reminderClassIds}
           studentName={studentName}
+          studentEmail={studentEmail}
           forceOpenSection={forceOpenSection}
           hasQuickView={
             openClass.ownerType === "teacher"
@@ -460,6 +464,7 @@ function ClassWorkspace({
   liveClasses,
   reminderClassIds,
   studentName,
+  studentEmail,
   forceOpenSection,
   hasQuickView,
   photoUrl,
@@ -476,6 +481,7 @@ function ClassWorkspace({
   liveClasses: StudentLiveClassRow[];
   reminderClassIds: string[];
   studentName: string;
+  studentEmail: string;
   /** Arriving from a "class started"/"class ended" notification forces this
    * section open regardless of whether it's actionable — e.g. an ended
    * class's Live Class section wouldn't normally auto-open since nothing's
@@ -500,6 +506,39 @@ function ClassWorkspace({
   // uncontrolled defaultValue and the once-per-open missed-item filter
   // below, neither of which needs to be re-evaluated after mount.
   const [nowForDefaults] = useState(() => Date.now());
+
+  // "Request Help" (student dashboard spec doc) -- a lightweight composer
+  // right inside the class the question is actually about, reusing the same
+  // submitInquiry action the public contact form already uses (name/contact
+  // are already known here, so only the message itself needs typing). Once
+  // sent, the thread lives in the student's own Messages/Inquiries tab like
+  // any other inquiry -- this doesn't create a separate "help ticket" system.
+  const [requestingHelp, setRequestingHelp] = useState(false);
+  const [helpMessage, setHelpMessage] = useState("");
+  const [helpSending, setHelpSending] = useState(false);
+  const [helpSent, setHelpSent] = useState(false);
+  const [helpError, setHelpError] = useState<string | null>(null);
+
+  async function handleSendHelp() {
+    if (!helpMessage.trim()) return;
+    setHelpSending(true);
+    setHelpError(null);
+    const result = await submitInquiry({
+      ownerType: classRow.ownerType,
+      ownerId: classRow.ownerId,
+      name: studentName,
+      contact: studentEmail,
+      message: helpMessage,
+    });
+    setHelpSending(false);
+    if (result.error) {
+      setHelpError(result.error);
+      return;
+    }
+    setHelpSent(true);
+    setHelpMessage("");
+    setRequestingHelp(false);
+  }
 
   const classLiveClasses = useMemo(
     () => liveClasses.filter((row) => belongsToClass(row, classRow)),
@@ -617,7 +656,49 @@ function ClassWorkspace({
             {classRow.scheduleNote && <div className="mt-1 text-xs text-muted-foreground">{classRow.scheduleNote}</div>}
           </div>
         </div>
+        {!requestingHelp && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            onClick={() => {
+              setRequestingHelp(true);
+              setHelpSent(false);
+            }}
+          >
+            {t("requestHelp.cta")}
+          </Button>
+        )}
       </div>
+
+      {requestingHelp && (
+        <div className="mb-6 rounded-lg border border-border bg-white p-4.5">
+          <h4 className="mb-1 text-sm font-semibold text-foreground">{t("requestHelp.heading")}</h4>
+          <p className="mb-3 text-xs text-muted-foreground">{t("requestHelp.hint")}</p>
+          <textarea
+            className="min-h-20 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            placeholder={t("requestHelp.placeholder")}
+            value={helpMessage}
+            onChange={(e) => setHelpMessage(e.target.value)}
+          />
+          <div className="mt-2 flex items-center gap-2">
+            <Button type="button" size="sm" onClick={handleSendHelp} disabled={helpSending || !helpMessage.trim()}>
+              {t("requestHelp.send")}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setRequestingHelp(false)} disabled={helpSending}>
+              {t("requestHelp.cancel")}
+            </Button>
+            {helpError && <span className="text-sm font-medium text-destructive">{helpError}</span>}
+          </div>
+        </div>
+      )}
+
+      {helpSent && (
+        <div className="mb-6 rounded-lg border border-success/30 bg-success/10 p-3.5 text-sm text-success">
+          {t("requestHelp.sentNote")}
+        </div>
+      )}
 
       {justShared.length > 0 && (
         <div className="mb-6 rounded-lg border border-cta/30 bg-cta/5 p-4">

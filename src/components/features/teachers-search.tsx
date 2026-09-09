@@ -16,10 +16,12 @@ import type { Listing } from "@/types/listing";
 type Grade = "1-5" | "6-9" | "10-11" | "12-13" | "campus";
 type Category = "all" | "teacher" | "class" | "campus";
 type PriceInterval = "any" | "hr" | "mo";
+type MinRating = "any" | "3" | "4";
 
 const categories: Category[] = ["all", "teacher", "class", "campus"];
 const grades: Grade[] = ["1-5", "6-9", "10-11", "12-13", "campus"];
 const priceIntervals: PriceInterval[] = ["any", "hr", "mo"];
+const minRatings: MinRating[] = ["any", "3", "4"];
 
 function isCategory(value: string): value is Category {
   return (categories as string[]).includes(value);
@@ -31,6 +33,10 @@ function isGrade(value: string): value is Grade {
 
 function isPriceInterval(value: string): value is PriceInterval {
   return (priceIntervals as string[]).includes(value);
+}
+
+function isMinRating(value: string): value is MinRating {
+  return (minRatings as string[]).includes(value);
 }
 
 /**
@@ -121,6 +127,33 @@ function PriceFilter({
   );
 }
 
+function RatingFilter({ value, onChange }: { value: MinRating; onChange: (value: MinRating) => void }) {
+  const t = useTranslations("search");
+
+  return (
+    <div>
+      <div className="mb-2 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{t("rating")}</div>
+      <div role="radiogroup" aria-label={t("rating")} className="flex overflow-hidden rounded-md border border-input bg-white">
+        {minRatings.map((option) => (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            aria-checked={value === option}
+            onClick={() => onChange(option)}
+            className={cn(
+              "flex-1 border-r border-border px-3 py-2.5 text-center font-mono text-xs text-foreground/80 transition-colors last:border-r-0 hover:bg-secondary",
+              value === option && "bg-secondary text-secondary-foreground",
+            )}
+          >
+            {t(`ratingOptions.${option}`)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function TeachersSearch({ listings }: { listings: Listing[] }) {
   const t = useTranslations("teachersPage");
   const tSearch = useTranslations("search");
@@ -132,7 +165,10 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
   const [priceInterval, setPriceInterval] = useState<PriceInterval>("any");
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
+  const [minRating, setMinRating] = useState<MinRating>("any");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const onlineOnlyId = useId();
+  const verifiedOnlyId = useId();
   const searchParams = useSearchParams();
 
   const results = useMemo(() => {
@@ -158,6 +194,8 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
       const matchesPriceInterval = priceInterval === "any" || listing.price.interval === priceInterval;
       const matchesPriceMin = minPrice === undefined || Number.isNaN(minPrice) || listing.price.amount >= minPrice;
       const matchesPriceMax = maxPrice === undefined || Number.isNaN(maxPrice) || listing.price.amount <= maxPrice;
+      const matchesRating = minRating === "any" || listing.rating >= Number(minRating);
+      const matchesVerified = !verifiedOnly || listing.verified;
       return (
         matchesCategory(listing, category) &&
         matchesSubject &&
@@ -166,10 +204,12 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
         matchesGrade &&
         matchesPriceInterval &&
         matchesPriceMin &&
-        matchesPriceMax
+        matchesPriceMax &&
+        matchesRating &&
+        matchesVerified
       );
     });
-  }, [listings, category, subject, location, onlineOnly, grade, priceInterval, priceMin, priceMax]);
+  }, [listings, category, subject, location, onlineOnly, grade, priceInterval, priceMin, priceMax, minRating, verifiedOnly]);
 
   const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(results.length);
   const pagedResults = results.slice(offset, offset + pageSize);
@@ -185,6 +225,7 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
     const locationFromUrl = searchParams.get("location");
     const gradeFromUrl = searchParams.get("grade");
     const priceIntervalFromUrl = searchParams.get("priceInterval");
+    const minRatingFromUrl = searchParams.get("minRating");
     const resolvedCategory = categoryFromUrl && isCategory(categoryFromUrl) ? categoryFromUrl : "all";
     // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from the URL, not derived render state
     setCategory(resolvedCategory);
@@ -198,6 +239,8 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
     setPriceInterval(priceIntervalFromUrl && isPriceInterval(priceIntervalFromUrl) ? priceIntervalFromUrl : "any");
     setPriceMin(searchParams.get("priceMin") ?? "");
     setPriceMax(searchParams.get("priceMax") ?? "");
+    setMinRating(minRatingFromUrl && isMinRating(minRatingFromUrl) ? minRatingFromUrl : "any");
+    setVerifiedOnly(searchParams.get("verified") === "true");
     setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setPage is a stable setState setter from usePagination, intentionally omitted like every other setter above
   }, [searchParams]);
@@ -210,7 +253,9 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
     grade !== undefined ||
     priceInterval !== "any" ||
     priceMin.length > 0 ||
-    priceMax.length > 0;
+    priceMax.length > 0 ||
+    minRating !== "any" ||
+    verifiedOnly;
 
   function clearFilters() {
     setCategory("all");
@@ -221,6 +266,8 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
     setPriceInterval("any");
     setPriceMin("");
     setPriceMax("");
+    setMinRating("any");
+    setVerifiedOnly(false);
     setPage(1);
   }
 
@@ -247,20 +294,35 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
             className="bg-white"
           />
         </div>
-        <div className="mb-3 flex items-center gap-2">
-          <Checkbox
-            id={onlineOnlyId}
-            checked={onlineOnly}
-            onCheckedChange={(checked) => {
-              setOnlineOnly(checked);
-              setPage(1);
-            }}
-          />
-          <Label htmlFor={onlineOnlyId} className="cursor-pointer text-sm font-normal text-foreground/80">
-            {tSearch("onlineOnly")}
-          </Label>
+        <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id={onlineOnlyId}
+              checked={onlineOnly}
+              onCheckedChange={(checked) => {
+                setOnlineOnly(checked);
+                setPage(1);
+              }}
+            />
+            <Label htmlFor={onlineOnlyId} className="cursor-pointer text-sm font-normal text-foreground/80">
+              {tSearch("onlineOnly")}
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id={verifiedOnlyId}
+              checked={verifiedOnly}
+              onCheckedChange={(checked) => {
+                setVerifiedOnly(checked);
+                setPage(1);
+              }}
+            />
+            <Label htmlFor={verifiedOnlyId} className="cursor-pointer text-sm font-normal text-foreground/80">
+              {tSearch("verifiedOnly")}
+            </Label>
+          </div>
         </div>
-        <div className="mb-3">
+        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <PriceFilter
             interval={priceInterval}
             onIntervalChange={(interval) => {
@@ -275,6 +337,13 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
             max={priceMax}
             onMaxChange={(value) => {
               setPriceMax(value);
+              setPage(1);
+            }}
+          />
+          <RatingFilter
+            value={minRating}
+            onChange={(value) => {
+              setMinRating(value);
               setPage(1);
             }}
           />

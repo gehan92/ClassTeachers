@@ -255,6 +255,7 @@
     "subjectPlaceholderCampus": "Subject / course area — e.g. Data Structures & Algorithms",
     "locationPlaceholder": "Location — e.g. Matara, or 'Online'",
     "onlineOnly": "Online classes only",
+    "verifiedOnly": "Verified only",
     "level": "Level",
     "anyLevel": "Any level",
     "searchButton": "Search",
@@ -265,6 +266,12 @@
       "any": "Any",
       "hr": "Hourly",
       "mo": "Monthly"
+    },
+    "rating": "Minimum rating",
+    "ratingOptions": {
+      "any": "Any",
+      "3": "3+ stars",
+      "4": "4+ stars"
     },
     "grades": {
       "1-5": "1–5",

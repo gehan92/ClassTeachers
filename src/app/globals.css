@@ -270,6 +270,25 @@
   }
 }
 
+/* Home hero (page.tsx): a fixed 92vh + 120px top padding looked fine on
+   desktop but on a phone forced extra scrolling before the search card
+   (the primary conversion element) came into view — so mobile gets a
+   shorter floor and much less top padding, both restored at md. */
+.home-hero {
+  min-height: 78vh;
+}
+.home-hero-inner {
+  padding-top: 56px;
+}
+@media (min-width: 768px) {
+  .home-hero {
+    min-height: 92vh;
+  }
+  .home-hero-inner {
+    padding-top: 120px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

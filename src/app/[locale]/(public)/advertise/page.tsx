@@ -45,12 +45,11 @@ function Hero() {
 
   return (
     <section
-      className="position-relative text-center text-white"
+      className="position-relative px-4 pb-14 pt-20 text-center text-white md:px-6 md:pb-[96px] md:pt-[140px]"
       style={{
         backgroundImage: `linear-gradient(0deg, rgba(27,35,51,0.92), rgba(27,35,51,0.82)), url('${HERO_PHOTO}')`,
         backgroundSize: "cover",
         backgroundPosition: "center",
-        padding: "140px 24px 96px",
       }}
     >
       <div className="d-flex justify-content-center">

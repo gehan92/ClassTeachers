@@ -68,15 +68,14 @@ function Hero() {
 
   return (
     <section
-      className="position-relative d-flex align-items-end text-white overflow-hidden"
+      className="home-hero position-relative d-flex align-items-end text-white overflow-hidden"
       style={{
-        minHeight: "92vh",
         backgroundImage: `linear-gradient(90deg, rgba(27,35,51,0.85) 0%, rgba(27,35,51,0.45) 42%, transparent 72%), linear-gradient(0deg, rgba(27,35,51,0.65) 5%, rgba(27,35,51,0.18) 55%, rgba(27,35,51,0.3) 100%), url('${HERO_PHOTO}')`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
     >
-      <div className="container px-4 pb-5" style={{ maxWidth: 1180, paddingTop: 120 }}>
+      <div className="home-hero-inner container px-4 pb-5" style={{ maxWidth: 1180 }}>
         <h1
           className="fw-bold"
           style={{
@@ -377,12 +376,11 @@ function CtaPhotoSection() {
 
   return (
     <section
-      className="position-relative text-center text-white"
+      className="position-relative py-14 px-4 text-center text-white md:px-6 md:py-[100px]"
       style={{
         backgroundImage: `linear-gradient(0deg, rgba(27,35,51,0.9), rgba(27,35,51,0.8)), url('${CTA_PHOTO}')`,
         backgroundSize: "cover",
         backgroundPosition: "center",
-        padding: "100px 24px",
       }}
     >
       <div className="d-flex justify-content-center">

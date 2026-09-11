@@ -269,7 +269,7 @@ function DetailsPanel({ classProfile }: { classProfile: ClassProfileDetail }) {
 
   return (
     <Panel title={t("instituteDetailsTitle")}>
-      <div className="grid grid-cols-[140px_1fr] gap-x-4 gap-y-3.5 text-sm">
+      <div className="grid grid-cols-[minmax(90px,140px)_1fr] gap-x-3 gap-y-3.5 text-sm sm:gap-x-4">
         <div className="text-muted-foreground">{t("establishedLabel")}</div>
         <div className="font-medium text-foreground">{classProfile.establishedText || "—"}</div>
 

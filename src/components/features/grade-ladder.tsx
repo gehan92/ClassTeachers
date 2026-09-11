@@ -28,7 +28,7 @@ export function GradeLadder({
       <div
         role="radiogroup"
         aria-label={t("level")}
-        className="flex overflow-hidden rounded-md border border-input bg-white"
+        className="flex overflow-x-auto rounded-md border border-input bg-white sm:overflow-hidden"
       >
         {grades.map((grade) => (
           <button
@@ -38,8 +38,8 @@ export function GradeLadder({
             aria-checked={selected === grade}
             onClick={() => select(grade)}
             className={cn(
-              "flex-1 border-r border-border px-0.5 py-2.5 text-center font-mono text-xs text-foreground/80 transition-colors last:border-r-0 hover:bg-secondary",
-              grade === "campus" && "flex-[1.6] font-sans font-semibold",
+              "min-w-[58px] flex-none whitespace-nowrap border-r border-border px-2.5 py-2.5 text-center font-mono text-xs text-foreground/80 transition-colors last:border-r-0 hover:bg-secondary sm:min-w-0 sm:flex-1 sm:px-0.5",
+              grade === "campus" && "min-w-[76px] font-sans font-semibold sm:min-w-0 sm:flex-[1.6]",
               selected === grade
                 ? grade === "campus"
                   ? "bg-primary text-white hover:bg-primary-light"

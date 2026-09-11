@@ -249,7 +249,7 @@ export function SiteHeader({
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                        "rounded-md px-3 py-3 text-sm font-medium transition-colors",
                         active ? "bg-secondary text-primary" : "text-foreground hover:bg-muted",
                       )}
                     >
@@ -259,11 +259,11 @@ export function SiteHeader({
                 })}
                 <Link
                   href="/advertise"
-                  className="mt-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+                  className="mt-3 rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-muted"
                 >
                   {t("postYourAd")}
                 </Link>
-                <Link href="/help" className="rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted">
+                <Link href="/help" className="rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-muted">
                   {t("help")}
                 </Link>
                 <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
@@ -288,7 +288,7 @@ export function SiteHeader({
                       {inquiriesCount !== undefined && (
                         <Link
                           href={inquiriesHref}
-                          className="flex items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+                          className="flex items-center justify-between rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-muted"
                         >
                           <span className="flex items-center gap-2">
                             <Bell className="size-4" />
@@ -304,7 +304,7 @@ export function SiteHeader({
                       <form action={logOutAction}>
                         <button
                           type="submit"
-                          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-input px-3.5 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+                          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-input px-3.5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted"
                         >
                           <LogOut className="size-4" />
                           {t("logout")}

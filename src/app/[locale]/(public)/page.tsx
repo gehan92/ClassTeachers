@@ -71,7 +71,7 @@ function Hero() {
       className="position-relative d-flex align-items-end text-white overflow-hidden"
       style={{
         minHeight: "92vh",
-        backgroundImage: `linear-gradient(90deg, rgba(27,35,51,0.8) 0%, rgba(27,35,51,0.4) 45%, transparent 78%), linear-gradient(0deg, rgba(27,35,51,0.93) 5%, rgba(27,35,51,0.48) 55%, rgba(27,35,51,0.65) 100%), url('${HERO_PHOTO}')`,
+        backgroundImage: `linear-gradient(90deg, rgba(27,35,51,0.85) 0%, rgba(27,35,51,0.45) 42%, transparent 72%), linear-gradient(0deg, rgba(27,35,51,0.65) 5%, rgba(27,35,51,0.18) 55%, rgba(27,35,51,0.3) 100%), url('${HERO_PHOTO}')`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}

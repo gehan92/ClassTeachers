@@ -19,10 +19,14 @@ import { roleDashboardPath, type UserRole } from "@/lib/auth/routes";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { cn } from "@/lib/utils";
 
-// Home and Advertise open with a full-bleed photo hero — the header overlays
-// transparently on top of it (matching the classportals-home-v3.html
-// reference) until the visitor scrolls past it, then it becomes the normal
-// solid nav every other page already uses.
+// Home and Advertise open with a full-bleed photo hero — the header sits
+// transparent on top of it until the visitor scrolls past it, then becomes
+// solid. Solid now matches the dashboard's own header exactly (bg-primary-dark
+// + white text, see dashboard-shell.tsx) rather than a plain white bar, so
+// the same dark-navy header identity carries across the whole site — and
+// since both the transparent and solid states are dark, almost every child
+// element below uses the same light-text styling regardless of `transparent`;
+// only the header's own background/position differs between the two.
 const HERO_PAGES = ["/", "/advertise"];
 
 // Roles/Pricing/Help stay one click away in the footer (see site-footer.tsx)
@@ -96,42 +100,27 @@ export function SiteHeader({
   const navLinkClass = (active: boolean) =>
     cn(
       "group relative flex items-center gap-1 rounded-md px-3.5 py-2 text-sm font-medium transition-colors",
-      transparent
-        ? "text-white/90 hover:bg-white/10 hover:text-white"
-        : active
-          ? "text-primary"
-          : "text-muted-foreground hover:bg-secondary hover:text-primary",
+      active ? "text-white" : "text-white/70 hover:bg-white/10 hover:text-white",
     );
 
   return (
     <header
       className={cn(
-        "top-0 z-50 w-full border-b transition-[background-color,box-shadow,border-color] duration-200",
+        "top-0 z-50 w-full border-b text-white transition-[background-color,box-shadow,border-color] duration-200",
         transparent
           ? "fixed border-transparent bg-transparent"
-          : "sticky border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.06),0_4px_16px_-8px_rgba(14,33,29,0.12)]",
+          : "sticky border-primary-dark bg-primary-dark shadow-[0_1px_2px_rgba(0,0,0,0.2)]",
       )}
     >
       <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-4 px-7 py-4">
-        <Link
-          href="/"
-          className={cn(
-            "flex items-center gap-2.5 font-display text-xl font-bold",
-            transparent ? "text-white" : "text-primary",
-          )}
-        >
-          <span
-            className={cn(
-              "flex size-8 items-center justify-center rounded-[7px] font-mono text-[13px] font-bold",
-              transparent ? "bg-white text-primary" : "bg-primary text-secondary",
-            )}
-          >
+        <Link href="/" className="flex items-center gap-2.5 font-display text-xl font-bold text-white">
+          <span className="flex size-8 items-center justify-center rounded-[7px] bg-secondary font-mono text-[13px] font-bold text-primary-dark">
             CP
           </span>
           ClassPortals
         </Link>
 
-        <span aria-hidden className={cn("hidden h-6 w-px md:block", transparent ? "bg-white/30" : "bg-border")} />
+        <span aria-hidden className="hidden h-6 w-px bg-white/20 md:block" />
 
         <nav className="hidden flex-1 items-center gap-1 md:flex">
           <DropdownMenu>
@@ -142,8 +131,7 @@ export function SiteHeader({
               <ChevronDown className="size-3.5 transition-transform group-aria-expanded:rotate-180" />
               <span
                 className={cn(
-                  "pointer-events-none absolute inset-x-3.5 -bottom-[1px] h-[2px] rounded-full transition-opacity",
-                  transparent ? "bg-white" : "bg-primary",
+                  "pointer-events-none absolute inset-x-3.5 -bottom-[1px] h-[2px] rounded-full bg-white transition-opacity",
                   isSearchActive ? "opacity-100" : "opacity-0",
                 )}
               />
@@ -175,11 +163,11 @@ export function SiteHeader({
             size="sm"
             nativeButton={false}
             render={<Link href="/advertise" />}
-            className={transparent ? "border-white/40 bg-transparent text-white hover:bg-white/10" : undefined}
+            className="border-white/40 bg-transparent text-white hover:bg-white/10"
           >
             {t("postYourAd")}
           </Button>
-          <LocaleSwitcher className={transparent ? "text-white hover:bg-white/10" : undefined} />
+          <LocaleSwitcher className="text-white hover:bg-white/10" />
           {user ? (
             <>
               <Button
@@ -194,10 +182,7 @@ export function SiteHeader({
                 <Link
                   href={inquiriesHref}
                   aria-label={bellLabel}
-                  className={cn(
-                    "relative flex size-9 items-center justify-center rounded-md transition-colors",
-                    transparent ? "text-white hover:bg-white/10" : "text-muted-foreground hover:bg-secondary hover:text-primary",
-                  )}
+                  className="relative flex size-9 items-center justify-center rounded-md text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                 >
                   <Bell className="size-4.5" />
                   {inquiriesCount > 0 && (
@@ -220,13 +205,7 @@ export function SiteHeader({
                 </span>
               )}
               <form action={logOutAction}>
-                <button
-                  type="submit"
-                  className={cn(
-                    "flex items-center gap-1.5 px-2 text-sm font-medium transition-colors",
-                    transparent ? "text-white/90 hover:text-white" : "text-muted-foreground hover:text-primary",
-                  )}
-                >
+                <button type="submit" className="flex items-center gap-1.5 px-2 text-sm font-medium text-white/80 transition-colors hover:text-white">
                   <LogOut className="size-4" />
                   {t("logout")}
                 </button>
@@ -239,7 +218,7 @@ export function SiteHeader({
                 size="sm"
                 nativeButton={false}
                 render={<Link href="/login" />}
-                className={transparent ? "text-white hover:bg-white/10" : undefined}
+                className="text-white hover:bg-white/10"
               >
                 {t("login")}
               </Button>
@@ -251,10 +230,10 @@ export function SiteHeader({
         </div>
 
         <div className="flex items-center gap-1 md:hidden">
-          <LocaleSwitcher className={transparent ? "text-white hover:bg-white/10" : undefined} />
+          <LocaleSwitcher className="text-white hover:bg-white/10" />
           <Sheet>
-            <SheetTrigger render={<Button variant="ghost" size="icon" aria-label={t("menu")} className={transparent ? "hover:bg-white/10" : undefined} />}>
-              <Menu className={cn("size-5", transparent ? "text-white" : "text-primary")} />
+            <SheetTrigger render={<Button variant="ghost" size="icon" aria-label={t("menu")} className="hover:bg-white/10" />}>
+              <Menu className="size-5 text-white" />
             </SheetTrigger>
             <SheetContent side="right" className="w-72">
               <SheetTitle className="sr-only">{t("menu")}</SheetTitle>

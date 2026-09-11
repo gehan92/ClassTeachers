@@ -47,7 +47,7 @@ function Hero() {
     <section
       className="position-relative text-center text-white"
       style={{
-        backgroundImage: `linear-gradient(0deg, rgba(27,35,51,0.92), rgba(27,35,51,0.72)), url('${HERO_PHOTO}')`,
+        backgroundImage: `linear-gradient(0deg, rgba(27,35,51,0.92), rgba(27,35,51,0.82)), url('${HERO_PHOTO}')`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         padding: "140px 24px 96px",

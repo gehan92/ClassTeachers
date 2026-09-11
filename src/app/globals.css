@@ -12,14 +12,51 @@
    universally; if bootstrap sits below base, that reset wins over
    Bootstrap's own `.form-control`/`.btn` styles and silently strips their
    borders/background (this is what broke the search bar's input borders).
-   Putting "bootstrap" below "utilities" is what still makes our own
-   Tailwind utility classes (e.g. `.text-primary`) win over Bootstrap's
-   conflicting defaults (e.g. its default link-blue on <a> tags) — that part
-   of the original fix stays correct. */
-@layer theme, base, bootstrap, components, utilities;
+
+   "brand-overrides" is declared FIRST (before even "theme") for a different
+   reason: Bootstrap ships its own `.text-primary`/`.bg-primary`/
+   `.text-secondary`/`.bg-secondary`/`.text-success`/`.bg-success` utility
+   classes (same names as ours, since both frameworks converge on the same
+   semantic color-naming convention), and Bootstrap marks them `!important`.
+   An `!important` declaration ALWAYS beats a normal one regardless of layer
+   or specificity, so no amount of layer reordering fixes that case — that's
+   what was turning the header logo blue and would've turned the "CP" badge
+   grey (Bootstrap's default secondary color) once it switched to
+   bg-secondary. The fix is to also be `!important`, but layer order for
+   *important* declarations is the REVERSE of normal ones (earliest-declared
+   layer wins), so "brand-overrides" has to be declared before "bootstrap"
+   to actually beat it — declaring it in "utilities" (last) would still lose. */
+@layer brand-overrides, theme, base, bootstrap, components, utilities;
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+
+/* Restates the 6 colliding utility classes above with our own token values,
+   `!important`, inside the highest-priority layer for important
+   declarations — see the comment above for why. Only these 6 names collide
+   with a Bootstrap utility class of the same name; every other brand color
+   class we use (bg-cta, text-accent-deep, text-muted-foreground, etc.) has
+   no Bootstrap equivalent and needs no override. */
+@layer brand-overrides {
+  .text-primary {
+    color: var(--primary) !important;
+  }
+  .bg-primary {
+    background-color: var(--primary) !important;
+  }
+  .text-secondary {
+    color: var(--secondary) !important;
+  }
+  .bg-secondary {
+    background-color: var(--secondary) !important;
+  }
+  .text-success {
+    color: var(--success) !important;
+  }
+  .bg-success {
+    background-color: var(--success) !important;
+  }
+}
 
 @custom-variant dark (&:is(.dark *));
 

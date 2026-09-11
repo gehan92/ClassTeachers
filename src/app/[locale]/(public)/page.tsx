@@ -71,13 +71,12 @@ function Hero() {
       className="position-relative d-flex align-items-end text-white overflow-hidden"
       style={{
         minHeight: "92vh",
-        backgroundImage: `linear-gradient(0deg, rgba(27,35,51,0.92) 5%, rgba(27,35,51,0.25) 55%, rgba(27,35,51,0.55) 100%), url('${HERO_PHOTO}')`,
+        backgroundImage: `linear-gradient(90deg, rgba(27,35,51,0.8) 0%, rgba(27,35,51,0.4) 45%, transparent 78%), linear-gradient(0deg, rgba(27,35,51,0.93) 5%, rgba(27,35,51,0.48) 55%, rgba(27,35,51,0.65) 100%), url('${HERO_PHOTO}')`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
     >
       <div className="container px-4 pb-5" style={{ maxWidth: 1180, paddingTop: 120 }}>
-        <Eyebrow dark>{t("eyebrow")}</Eyebrow>
         <h1
           className="fw-bold"
           style={{
@@ -380,7 +379,7 @@ function CtaPhotoSection() {
     <section
       className="position-relative text-center text-white"
       style={{
-        backgroundImage: `linear-gradient(0deg, rgba(27,35,51,0.9), rgba(27,35,51,0.65)), url('${CTA_PHOTO}')`,
+        backgroundImage: `linear-gradient(0deg, rgba(27,35,51,0.9), rgba(27,35,51,0.8)), url('${CTA_PHOTO}')`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         padding: "100px 24px",

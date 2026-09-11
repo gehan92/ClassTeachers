@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { Menu, ChevronDown } from "lucide-react";
+import { Bell, Menu, LogOut, ChevronDown } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -14,17 +14,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LocaleSwitcher } from "./locale-switcher";
+import { logOutAction } from "@/lib/auth/actions";
 import { roleDashboardPath, type UserRole } from "@/lib/auth/routes";
+import { avatarGradientClass } from "@/lib/avatar-color";
 import { cn } from "@/lib/utils";
 
 // Home and Advertise open with a full-bleed photo hero — the header overlays
 // transparently on top of it (matching the classportals-home-v3.html
 // reference) until the visitor scrolls past it, then it becomes the normal
-// solid nav every other page already uses. Notifications/avatar/logout are
-// deliberately not shown here even when signed in (see below) — they still
-// live in the dashboard's own header (dashboard-shell.tsx's NotificationBell
-// + logout form), so nothing is actually lost, just decluttered off the
-// marketing pages.
+// solid nav every other page already uses.
 const HERO_PAGES = ["/", "/advertise"];
 
 // Roles/Pricing/Help stay one click away in the footer (see site-footer.tsx)
@@ -60,12 +58,27 @@ function isSearchItemActive(
   return Object.keys(query).every((key) => searchParams.get(key) === query[key]);
 }
 
-export function SiteHeader({ user }: { user: { name: string; role: UserRole } | null }) {
+export function SiteHeader({
+  user,
+  inquiriesCount,
+  userPhotoUrl,
+}: {
+  user: { name: string; role: UserRole } | null;
+  inquiriesCount?: number;
+  userPhotoUrl?: string | null;
+}) {
   const t = useTranslations("nav");
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const isSearchActive = pathname === "/teachers" || pathname === "/requests";
+  // Students have no "inquiries" tab (they submit them, don't receive them)
+  // — their equivalent inbound-message tab is Post an Ad's wanted-ad
+  // responses.
+  const bellTab = user?.role === "student" ? "wantedAds" : "inquiries";
+  const inquiriesHref = user ? `${roleDashboardPath[user.role]}?tab=${bellTab}` : "/login";
+  const userInitial = user ? user.name.charAt(0).toUpperCase() : "";
+  const bellLabel = t(bellTab === "wantedAds" ? "myRequests" : "inquiries");
 
   const isHeroPage = HERO_PAGES.includes(pathname);
   const [scrolled, setScrolled] = useState(false);
@@ -167,19 +180,58 @@ export function SiteHeader({ user }: { user: { name: string; role: UserRole } | 
             {t("postYourAd")}
           </Button>
           <LocaleSwitcher className={transparent ? "text-white hover:bg-white/10" : undefined} />
-          {/* Dashboard is the only signed-in action shown here (matching the
-             classportals-home-v3.html reference) — notifications, avatar and
-             logout stay inside the dashboard's own header, not duplicated
-             on the marketing pages. */}
           {user ? (
-            <Button
-              size="sm"
-              nativeButton={false}
-              render={<Link href={roleDashboardPath[user.role]} />}
-              className="bg-cta text-cta-foreground hover:bg-cta-hover"
-            >
-              {t("dashboard")}
-            </Button>
+            <>
+              <Button
+                size="sm"
+                nativeButton={false}
+                render={<Link href={roleDashboardPath[user.role]} />}
+                className="bg-cta text-cta-foreground hover:bg-cta-hover"
+              >
+                {t("dashboard")}
+              </Button>
+              {inquiriesCount !== undefined && (
+                <Link
+                  href={inquiriesHref}
+                  aria-label={bellLabel}
+                  className={cn(
+                    "relative flex size-9 items-center justify-center rounded-md transition-colors",
+                    transparent ? "text-white hover:bg-white/10" : "text-muted-foreground hover:bg-secondary hover:text-primary",
+                  )}
+                >
+                  <Bell className="size-4.5" />
+                  {inquiriesCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-cta font-mono text-[9px] font-bold text-cta-foreground">
+                      {inquiriesCount > 9 ? "9+" : inquiriesCount}
+                    </span>
+                  )}
+                </Link>
+              )}
+              {userPhotoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- public Supabase Storage URL, not a local/optimizable asset
+                <img src={userPhotoUrl} alt="" title={user.name} className="size-8 shrink-0 rounded-full object-cover" />
+              ) : (
+                <span
+                  title={user.name}
+                  aria-label={user.name}
+                  className={`flex size-8 shrink-0 items-center justify-center rounded-full font-display text-xs font-bold text-white ${avatarGradientClass(user.name)}`}
+                >
+                  {userInitial}
+                </span>
+              )}
+              <form action={logOutAction}>
+                <button
+                  type="submit"
+                  className={cn(
+                    "flex items-center gap-1.5 px-2 text-sm font-medium transition-colors",
+                    transparent ? "text-white/90 hover:text-white" : "text-muted-foreground hover:text-primary",
+                  )}
+                >
+                  <LogOut className="size-4" />
+                  {t("logout")}
+                </button>
+              </form>
+            </>
           ) : (
             <>
               <Button
@@ -237,9 +289,49 @@ export function SiteHeader({ user }: { user: { name: string; role: UserRole } | 
                 </Link>
                 <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
                   {user ? (
-                    <Button nativeButton={false} render={<Link href={roleDashboardPath[user.role]} />} className="bg-cta text-cta-foreground hover:bg-cta-hover">
-                      {t("dashboard")}
-                    </Button>
+                    <>
+                      <Button nativeButton={false} render={<Link href={roleDashboardPath[user.role]} />} className="bg-cta text-cta-foreground hover:bg-cta-hover">
+                        {t("dashboard")}
+                      </Button>
+                      <div className="flex items-center gap-2.5 px-3 py-1.5">
+                        {userPhotoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- public Supabase Storage URL, not a local/optimizable asset
+                          <img src={userPhotoUrl} alt="" className="size-8 shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <span
+                            className={`flex size-8 shrink-0 items-center justify-center rounded-full font-display text-xs font-bold text-white ${avatarGradientClass(user.name)}`}
+                          >
+                            {userInitial}
+                          </span>
+                        )}
+                        <span className="truncate text-sm font-medium text-foreground">{user.name}</span>
+                      </div>
+                      {inquiriesCount !== undefined && (
+                        <Link
+                          href={inquiriesHref}
+                          className="flex items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Bell className="size-4" />
+                            {bellLabel}
+                          </span>
+                          {inquiriesCount > 0 && (
+                            <span className="flex size-5 items-center justify-center rounded-full bg-cta font-mono text-[10px] font-bold text-cta-foreground">
+                              {inquiriesCount > 9 ? "9+" : inquiriesCount}
+                            </span>
+                          )}
+                        </Link>
+                      )}
+                      <form action={logOutAction}>
+                        <button
+                          type="submit"
+                          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-input px-3.5 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+                        >
+                          <LogOut className="size-4" />
+                          {t("logout")}
+                        </button>
+                      </form>
+                    </>
                   ) : (
                     <>
                       <Button variant="outline" nativeButton={false} render={<Link href="/login" />}>

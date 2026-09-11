@@ -18,7 +18,7 @@ export function ListingCard({ listing, index }: { listing: Listing; index?: numb
     <Link
       href={listing.href}
       style={index !== undefined ? { animationDelay: `${Math.min(index, 10) * 45}ms` } : undefined}
-      className="flex flex-col overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)] transition-transform animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-500 hover:-translate-y-0.5"
+      className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)] transition-transform animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-500 hover:-translate-y-0.5"
     >
       <div className="relative aspect-4/3 w-full overflow-hidden bg-gradient-to-br from-primary to-primary-light">
         {listing.photoUrl ? (

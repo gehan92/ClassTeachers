@@ -4,8 +4,15 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Check } from "lucide-react";
 import { RoleCard } from "@/components/features/role-card";
 import { AdBoard } from "@/components/features/ad-board";
+import { Eyebrow } from "@/components/features/eyebrow";
 import { getPublicListings } from "@/lib/public-directory";
 import { cn } from "@/lib/utils";
+
+// Same verified-working Pexels photo already used for the Home page's
+// spotlight cards (rq_md/page/classportals-home-v3.html) — reused here at a
+// wider crop for this page's own hero, not a new/invented photo ID.
+const HERO_PHOTO =
+  "https://images.pexels.com/photos/8423049/pexels-photo-8423049.jpeg?auto=compress&cs=tinysrgb&w=1920&h=800&fit=crop";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/advertise">): Promise<Metadata> {
   const { locale } = await params;
@@ -37,20 +44,31 @@ function Hero() {
   const t = useTranslations("advertise");
 
   return (
-    <section className="border-b border-border bg-primary py-16">
-      <div className="mx-auto max-w-160 px-7 text-center">
-        <div className="mb-2.5 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-white/70 before:inline-block before:h-px before:w-4 before:bg-white/70 before:content-['']">
-          {t("hero.eyebrow")}
-        </div>
-        <h1 className="mb-4.5 text-[32px] leading-[1.1] text-white sm:text-[44px]">{t("hero.title")}</h1>
-        <p className="mx-auto max-w-[46ch] text-[17px] text-white/80">{t("hero.subtitle")}</p>
-        <a
-          href="#postAd"
-          className="mt-5.5 inline-flex items-center justify-center rounded-sm bg-cta px-5 py-2.75 text-sm font-semibold text-cta-foreground transition-all hover:-translate-y-px hover:bg-cta-hover"
-        >
-          {t("hero.cta")}
-        </a>
+    <section
+      className="position-relative text-center text-white"
+      style={{
+        backgroundImage: `linear-gradient(0deg, rgba(27,35,51,0.92), rgba(27,35,51,0.72)), url('${HERO_PHOTO}')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        padding: "140px 24px 96px",
+      }}
+    >
+      <div className="d-flex justify-content-center">
+        <Eyebrow dark>{t("hero.eyebrow")}</Eyebrow>
       </div>
+      <h1 className="mx-auto mb-3" style={{ maxWidth: 640, fontSize: "clamp(1.9rem, 4vw, 2.8rem)", color: "#fff" }}>
+        {t("hero.title")}
+      </h1>
+      <p className="mx-auto mb-4" style={{ maxWidth: 520, color: "rgba(255,255,255,0.85)" }}>
+        {t("hero.subtitle")}
+      </p>
+      <a
+        href="#postAd"
+        className="btn fw-semibold px-4 py-2 d-inline-block"
+        style={{ background: "var(--cta)", color: "var(--cta-foreground)" }}
+      >
+        {t("hero.cta")}
+      </a>
     </section>
   );
 }
@@ -64,9 +82,7 @@ function CompareSection() {
     <section className="py-15">
       <div className="mx-auto max-w-[1180px] px-7">
         <div className="mb-7">
-          <div className="mb-2.5 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-accent-deep before:inline-block before:h-px before:w-4 before:bg-accent-deep before:content-['']">
-            {t("compare.eyebrow")}
-          </div>
+          <Eyebrow>{t("compare.eyebrow")}</Eyebrow>
           <h2 className="text-[28px]">{t("compare.title")}</h2>
         </div>
 
@@ -95,9 +111,7 @@ function PlansSection() {
     <section className="border-y border-border bg-white py-15">
       <div className="mx-auto max-w-[1180px] px-7">
         <div className="mb-7">
-          <div className="mb-2.5 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-accent-deep before:inline-block before:h-px before:w-4 before:bg-accent-deep before:content-['']">
-            {t("plans.eyebrow")}
-          </div>
+          <Eyebrow>{t("plans.eyebrow")}</Eyebrow>
           <h2 className="text-[28px]">{t("plans.title")}</h2>
         </div>
 

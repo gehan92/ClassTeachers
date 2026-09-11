@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { LockPill } from "@/components/features/lock-pill";
+import { Eyebrow } from "@/components/features/eyebrow";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { usePagination } from "@/lib/hooks/use-pagination";
 import { cn } from "@/lib/utils";
@@ -86,9 +87,7 @@ export function AdBoard({ listings }: { listings: Listing[] }) {
       <section className="py-15">
         <div className="mx-auto max-w-[1180px] px-7">
           <div className="mb-7">
-            <div className="mb-2.5 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-accent-deep before:inline-block before:h-px before:w-4 before:bg-accent-deep before:content-['']">
-              {t("currentAds.eyebrow")}
-            </div>
+            <Eyebrow>{t("currentAds.eyebrow")}</Eyebrow>
             <h2 className="text-[28px]">{t("currentAds.title")}</h2>
           </div>
 
@@ -152,8 +151,8 @@ export function AdBoard({ listings }: { listings: Listing[] }) {
 
       <section id="postAd" className="border-t border-border bg-white py-15">
         <div className="mx-auto max-w-160 px-7 text-center">
-          <div className="mb-2.5 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-accent-deep before:inline-block before:h-px before:w-4 before:bg-accent-deep before:content-['']">
-            {t("form.eyebrow")}
+          <div className="d-flex justify-content-center">
+            <Eyebrow>{t("form.eyebrow")}</Eyebrow>
           </div>
           <h2 className="mb-2 text-[28px]">{t("form.title")}</h2>
           <p className="mx-auto mb-6.5 max-w-[46ch] text-muted-foreground">{t("form.subtitle")}</p>

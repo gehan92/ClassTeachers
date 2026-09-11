@@ -3,6 +3,12 @@ import { useTranslations } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { RoleCard } from "@/components/features/role-card";
+import { Eyebrow } from "@/components/features/eyebrow";
+
+// Same verified-working Pexels photo already used for the Home page's
+// spotlight cards — reused here, not a new/invented photo ID.
+const BAND_PHOTO =
+  "https://images.pexels.com/photos/8423123/pexels-photo-8423123.jpeg?auto=compress&cs=tinysrgb&w=900&h=700&fit=crop";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/roles">): Promise<Metadata> {
   const { locale } = await params;
@@ -17,6 +23,7 @@ export default async function RolesPage({ params }: PageProps<"/[locale]/roles">
   return (
     <>
       <Hero />
+      <PhotoBand />
       <RolesList />
       <CtaSection />
     </>
@@ -27,15 +34,28 @@ function Hero() {
   const t = useTranslations("rolesPage");
 
   return (
-    <section className="border-b border-border bg-[radial-gradient(1200px_420px_at_82%_-10%,rgba(185,138,34,0.10),transparent_60%)] py-16 pb-10">
+    <section className="border-b border-border bg-[radial-gradient(1200px_420px_at_82%_-10%,rgba(201,150,44,0.10),transparent_60%)] py-16 pb-10">
       <div className="mx-auto max-w-160 px-7 text-center">
-        <div className="mb-2.5 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-accent-deep before:inline-block before:h-px before:w-4 before:bg-accent-deep before:content-['']">
-          {t("eyebrow")}
+        <div className="d-flex justify-content-center">
+          <Eyebrow>{t("eyebrow")}</Eyebrow>
         </div>
         <h1 className="mb-4.5 text-[32px] leading-[1.1] sm:text-[44px]">{t("title")}</h1>
         <p className="mx-auto max-w-[46ch] text-[17px] text-muted-foreground">{t("subtitle")}</p>
       </div>
     </section>
+  );
+}
+
+function PhotoBand() {
+  return (
+    <section
+      style={{
+        height: 280,
+        backgroundImage: `url('${BAND_PHOTO}')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center 25%",
+      }}
+    />
   );
 }
 

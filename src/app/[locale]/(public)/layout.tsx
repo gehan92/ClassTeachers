@@ -9,60 +9,50 @@ export default async function PublicLayout({ children }: { children: React.React
   } = await supabase.auth.getUser();
 
   let headerUser = null;
-  let inquiriesCount: number | undefined = undefined;
-  let userPhotoUrl: string | null = null;
-
   if (authUser) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, role, avatar_url")
+      .select("full_name, role")
       .eq("id", authUser.id)
       .maybeSingle();
     if (profile) {
       headerUser = { name: profile.full_name, role: profile.role };
-      userPhotoUrl = profile.avatar_url;
-
-      // Same bell the dashboard header shows (dashboard-shell.tsx) — surfaced
-      // here too so a logged-in teacher/institute/student browsing the
-      // public site doesn't have to open the dashboard just to notice a new
-      // inquiry or wanted-ad response.
-      if (profile.role === "teacher" || profile.role === "campus_lecturer") {
-        const { count } = await supabase
-          .from("inquiries")
-          .select("id", { count: "exact", head: true })
-          .eq("owner_type", "teacher")
-          .eq("owner_id", authUser.id)
-          .eq("status", "new");
-        inquiriesCount = count ?? 0;
-      } else if (profile.role === "class") {
-        const { data: classProfile } = await supabase
-          .from("class_profiles")
-          .select("id")
-          .eq("owner_id", authUser.id)
-          .maybeSingle();
-        if (classProfile) {
-          const { count } = await supabase
-            .from("inquiries")
-            .select("id", { count: "exact", head: true })
-            .eq("owner_type", "class")
-            .eq("owner_id", classProfile.id)
-            .eq("status", "new");
-          inquiriesCount = count ?? 0;
-        }
-      } else if (profile.role === "student") {
-        // No 'new'/'read' filter at the DB layer here (unlike the inquiries
-        // count above) — list_wanted_ad_responses_for_student (0073) is
-        // already scoped to auth.uid(), so counting client-side matches
-        // exactly what student/page.tsx's own unreadResponsesCount does.
-        const { data: responseRows } = await supabase.rpc("list_wanted_ad_responses_for_student");
-        inquiriesCount = (responseRows ?? []).filter((r) => r.status === "new").length;
-      }
     }
   }
 
   return (
     <>
-      <SiteHeader user={headerUser} inquiriesCount={inquiriesCount} userPhotoUrl={userPhotoUrl} />
+      {/* Bootstrap adds grid/layout utilities (row/col, d-flex, etc.) for the
+          public-page redesign — scoped to this route group only via Next's
+          head-hoisting of <link>/<style> rendered inside a nested layout
+          (removed automatically when this layout unmounts on client nav).
+          Loaded via @import ... layer(bootstrap) rather than a plain <link>
+          so it lands in the low-priority "bootstrap" layer registered first
+          in globals.css — without this, Bootstrap's unlayered stylesheet
+          would beat ANY Tailwind utility regardless of specificity (that's
+          what was turning the header's logo/locale-switcher text blue:
+          Bootstrap's default link color winning over our `text-primary`
+          class). The second <style> block still explicitly strips the
+          underline Bootstrap's reboot puts on every <a> — being in the
+          bootstrap layer doesn't make Bootstrap's own decoration/color
+          declarations disappear, only lose ties against Tailwind, so
+          without this a link with no color/decoration utility of its own
+          would still show Bootstrap's underline. */}
+      <style>{`@import url("https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css") layer(bootstrap);`}</style>
+      <style>{`
+        body a { text-decoration: none; color: inherit; }
+        body h1, body h2, body h3, body h4 {
+          font-family: var(--font-display);
+          font-weight: 600;
+          color: var(--primary);
+          letter-spacing: -0.01em;
+        }
+      `}</style>
+      {/* headerUser only needs name+role for the "Dashboard" button link —
+          notifications/avatar/logout live in the dashboard's own header now,
+          not duplicated here (see site-header.tsx), so the inquiries-count
+          and avatar-photo queries this layout used to run are gone too. */}
+      <SiteHeader user={headerUser} />
       <main className="flex-1">{children}</main>
       <SiteFooter />
     </>

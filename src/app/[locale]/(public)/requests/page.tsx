@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { WantedAdsBoard } from "@/components/features/wanted-ads-board";
 import type { PublicWantedAd } from "@/components/features/wanted-ads-board";
+import { Eyebrow } from "@/components/features/eyebrow";
 import { createClient } from "@/lib/supabase/server";
 import { createDateFormatter } from "@/lib/format-date";
 import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
@@ -35,20 +36,22 @@ export default async function RequestsPage({ params }: PageProps<"/[locale]/requ
   }));
 
   return (
-    <section className="py-12">
-      <div className="mx-auto max-w-[1180px] px-7">
-        {/* Same plain-heading shape as /teachers (no colored hero band) —
-         * this is another searchable listing page, not a marketing landing
-         * page, so it should match /teachers rather than /advertise. */}
-        <div className="mb-7">
-          <div className="mb-2.5 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-accent-deep before:inline-block before:h-px before:w-4 before:bg-accent-deep before:content-['']">
-            {t("hero.eyebrow")}
-          </div>
+    <>
+      {/* Same tinted-band heading shape as /teachers — this is another
+       * searchable listing page, not a marketing landing page, so it
+       * should match /teachers rather than /advertise. */}
+      <section style={{ background: "var(--muted)" }} className="py-5">
+        <div className="mx-auto max-w-[1180px] px-7">
+          <Eyebrow>{t("hero.eyebrow")}</Eyebrow>
           <h1 className="text-[32px]">{t("hero.title")}</h1>
-          <p className="text-muted-foreground">{t("hero.subtitle")}</p>
+          <p className="text-muted-foreground mb-0">{t("hero.subtitle")}</p>
         </div>
-        <WantedAdsBoard ads={ads} />
-      </div>
-    </section>
+      </section>
+      <section className="py-12">
+        <div className="mx-auto max-w-[1180px] px-7">
+          <WantedAdsBoard ads={ads} />
+        </div>
+      </section>
+    </>
   );
 }

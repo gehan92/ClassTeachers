@@ -1,3 +1,22 @@
+/* Pre-registers the full cascade-layer order, with "bootstrap" slotted in
+   between Tailwind's "base" and "components"/"utilities" layers — not below
+   everything. Layer names keep whatever relative order they're FIRST
+   declared in, so this bare statement (parsed before Tailwind's own @import
+   below re-declares theme/base/utilities, and before shadcn/tailwind.css
+   declares components) is what actually fixes the order, regardless of
+   where each layer's real content gets added later.
+
+   Putting "bootstrap" above "base" — not below everything as a first
+   attempt at this did — matters because Tailwind's preflight (in "base")
+   resets border-width to 0 and other browser form/element defaults
+   universally; if bootstrap sits below base, that reset wins over
+   Bootstrap's own `.form-control`/`.btn` styles and silently strips their
+   borders/background (this is what broke the search bar's input borders).
+   Putting "bootstrap" below "utilities" is what still makes our own
+   Tailwind utility classes (e.g. `.text-primary`) win over Bootstrap's
+   conflicting defaults (e.g. its default link-blue on <a> tags) — that part
+   of the original fix stays correct. */
+@layer theme, base, bootstrap, components, utilities;
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -61,56 +80,65 @@
 }
 
 :root {
-  /* ClassPortals — "Academic Register" brand palette, ported from the
-     req/*.html prototype's :root design tokens. */
-  --background: #f1f5f2;
-  --foreground: #17241f;
+  /* ClassPortals brand palette (set 2026-09-11, replaces the earlier
+     deep-green/terracotta "Academic Register" set): ink navy #1B2333
+     (headers/dark sections), warm paper #FAF7F0 (background), chalk gold
+     #C9962C (accent — tuition/exam-season warmth, deliberately not a
+     generic terracotta), forest #2F6B4F (verified/trust signals — maps
+     1:1 onto the existing --success token), slate #4A5568 (body text).
+     Everything below maps those five onto the existing token roles rather
+     than introducing new ones, so every component that already reads
+     --primary/--cta/--success/etc. picks up the new palette automatically. */
+  --background: #faf7f0;
+  --foreground: #4a5568;
   --paper: #ffffff;
   --card: #ffffff;
-  --card-foreground: #17241f;
+  --card-foreground: #4a5568;
   --popover: #ffffff;
-  --popover-foreground: #17241f;
-  --primary: #0e4c45;
-  --primary-foreground: #ffffff;
-  --primary-light: #1b6b60;
-  --primary-dark: #0a332e;
-  --secondary: #fbe2d2;
-  --secondary-foreground: #b8511f;
-  --muted: #f1f5f2;
-  --muted-foreground: #69796f;
-  --accent: #fbe2d2;
-  --accent-foreground: #b8511f;
+  --popover-foreground: #4a5568;
+  --primary: #1b2333;
+  --primary-foreground: #faf7f0;
+  --primary-light: #2e3a4e;
+  --primary-dark: #12172a;
+  --secondary: #f4e8cc;
+  --secondary-foreground: #7a5e1b;
+  --muted: #f1ece0;
+  --muted-foreground: #4a5568;
+  --accent: #f4e8cc;
+  --accent-foreground: #7a5e1b;
   --destructive: #8a2e2e;
-  --border: #dce6e0;
-  --input: #b7c7be;
-  --ring: #e2703a;
-  --success: #2a6b4f;
-  --success-foreground: #e4f0ea;
+  --border: #e4dcc8;
+  --input: #c6bca0;
+  --ring: #c9962c;
+  --success: #2f6b4f;
+  --success-foreground: #e7f1ec;
   --lock: #8a2e2e;
   --lock-foreground: #f6e7e7;
-  --cta: #e2703a;
-  --cta-foreground: #26190a;
-  --cta-hover: #c79a34;
-  --accent-deep: #b8511f;
-  --chart-1: #0e4c45;
-  --chart-2: #e2703a;
-  --chart-3: #1b6b60;
-  --chart-4: #b8511f;
-  --chart-5: #69796f;
+  --cta: #c9962c;
+  --cta-foreground: #1b2333;
+  --cta-hover: #ab7c1d;
+  --accent-deep: #8a6a1e;
+  --chart-1: #1b2333;
+  --chart-2: #c9962c;
+  --chart-3: #2f6b4f;
+  --chart-4: #4a5568;
+  --chart-5: #a8926b;
   --radius: 0.5rem;
   /* The sidebar stays on its own dark palette regardless of the app's
      (currently unused, no toggle wired up anywhere) .dark theme — these are
      the exact values that block already carries for --sidebar-*, borrowed
      here so the sidebar-specific tokens work standalone. See
-     dashboard-shell.tsx's <aside>, which is the only consumer. */
-  --sidebar: #0a332e;
-  --sidebar-foreground: #eef1ee;
-  --sidebar-primary: #e2703a;
-  --sidebar-primary-foreground: #26190a;
-  --sidebar-accent: #164039;
-  --sidebar-accent-foreground: #fbe2d2;
+     dashboard-shell.tsx's <aside>, which is the only consumer. Ink navy is
+     literally "headers/dark sections" per the brand palette, so it's used
+     directly rather than approximated. */
+  --sidebar: #1b2333;
+  --sidebar-foreground: #faf7f0;
+  --sidebar-primary: #c9962c;
+  --sidebar-primary-foreground: #1b2333;
+  --sidebar-accent: #26314a;
+  --sidebar-accent-foreground: #f4e8cc;
   --sidebar-border: color-mix(in oklab, white 12%, transparent);
-  --sidebar-ring: #e2703a;
+  --sidebar-ring: #c9962c;
 
   --font-display: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
   --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -189,6 +217,19 @@
   h3,
   h4 {
     @apply font-display font-semibold text-primary tracking-tight;
+  }
+}
+
+/* Home page's WhyUs/HowItWorks photo bands (page.tsx) — matches the
+   classportals-home-v3.html reference's `.band .text{padding:60px}` /
+   `@media (max-width:991px){.band .text{padding:36px 8px}}` exactly, which
+   Bootstrap's spacing-utility scale (p-4/p-5) can't hit precisely. */
+.home-band-text {
+  padding: 36px 8px;
+}
+@media (min-width: 992px) {
+  .home-band-text {
+    padding: 60px;
   }
 }
 

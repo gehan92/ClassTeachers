@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Grade = "1-5" | "6-9" | "10-11" | "12-13" | "campus";
 const ANY_GRADE = "all";
@@ -22,42 +20,41 @@ export function SearchCard() {
   if (grade !== ANY_GRADE) query.grade = grade;
 
   return (
-    <div className="rounded-2xl border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
-      <span className="mb-1.5 block font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-        {t("whatLearning")}
-      </span>
-      <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Input
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          placeholder={t("subjectPlaceholder")}
-          className="bg-white"
-        />
-        <Input
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          placeholder={t("locationPlaceholder")}
-          className="bg-white"
-        />
-      </div>
-
-      <Select value={grade} onValueChange={(value) => setGrade(value as Grade | typeof ANY_GRADE)}>
-        <SelectTrigger className="w-full bg-white">
-          <SelectValue placeholder={t("anyLevel")} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ANY_GRADE}>{t("anyLevel")}</SelectItem>
-          {GRADES.map((g) => (
-            <SelectItem key={g} value={g}>
-              {t(`grades.${g}`)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
+    <div
+      className="d-flex flex-column flex-sm-row flex-wrap bg-white position-relative"
+      style={{ boxShadow: "0 20px 50px rgba(13,20,18,0.28)", borderRadius: 10, padding: 16, gap: 10 }}
+    >
+      <input
+        value={subject}
+        onChange={(e) => setSubject(e.target.value)}
+        placeholder={t("subjectPlaceholder")}
+        className="form-control"
+        style={{ flex: "1 1 200px", padding: "11px 13px" }}
+      />
+      <input
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        placeholder={t("locationPlaceholder")}
+        className="form-control"
+        style={{ flex: "1 1 200px", padding: "11px 13px" }}
+      />
+      <select
+        value={grade}
+        onChange={(e) => setGrade(e.target.value as Grade | typeof ANY_GRADE)}
+        className="form-select"
+        style={{ flex: "1 1 160px", padding: "11px 13px" }}
+      >
+        <option value={ANY_GRADE}>{t("anyLevel")}</option>
+        {GRADES.map((g) => (
+          <option key={g} value={g}>
+            {t(`grades.${g}`)}
+          </option>
+        ))}
+      </select>
       <Link
         href={{ pathname: "/teachers", query }}
-        className="mt-4 flex w-full items-center justify-center rounded-md bg-cta px-5 py-2.75 text-sm font-semibold text-cta-foreground transition-all hover:-translate-y-px hover:bg-cta-hover hover:shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]"
+        className="btn d-flex align-items-center justify-content-center fw-semibold flex-shrink-0"
+        style={{ background: "var(--cta)", color: "var(--cta-foreground)", padding: "12px 26px" }}
       >
         {t("searchButton")}
       </Link>

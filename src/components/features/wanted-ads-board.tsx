@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { Input } from "@/components/ui/input";
+import { Eyebrow } from "@/components/features/eyebrow";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { usePagination } from "@/lib/hooks/use-pagination";
 import { avatarGradientClass } from "@/lib/avatar-color";
@@ -238,9 +239,7 @@ function ClosingCtaBanner() {
   return (
     <div className="mt-8 grid grid-cols-1 divide-y divide-border rounded-2xl border border-border bg-white shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
       <div className="flex flex-col items-start gap-2 p-6">
-        <div className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-accent-deep before:inline-block before:h-px before:w-4 before:bg-accent-deep before:content-['']">
-          {t("studentEyebrow")}
-        </div>
+        <Eyebrow>{t("studentEyebrow")}</Eyebrow>
         <p className="text-sm text-muted-foreground">{t("studentText")}</p>
         <Link
           href="/student?tab=wantedAds"
@@ -250,9 +249,7 @@ function ClosingCtaBanner() {
         </Link>
       </div>
       <div className="flex flex-col items-start gap-2 p-6">
-        <div className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-accent-deep before:inline-block before:h-px before:w-4 before:bg-accent-deep before:content-['']">
-          {t("teacherEyebrow")}
-        </div>
+        <Eyebrow>{t("teacherEyebrow")}</Eyebrow>
         <p className="text-sm text-muted-foreground">{t("teacherText")}</p>
         <Link
           href="/advertise"

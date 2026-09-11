@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { TeachersSearch } from "@/components/features/teachers-search";
+import { Eyebrow } from "@/components/features/eyebrow";
 import { getPublicListings } from "@/lib/public-directory";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/teachers">): Promise<Metadata> {
@@ -43,19 +44,21 @@ export default async function TeachersPage({ params, searchParams }: PageProps<"
   const { title, subtitle } = headingKeys(resolvedSearchParams.category, resolvedSearchParams.online);
 
   return (
-    <section className="py-12">
-      <div className="mx-auto max-w-[1180px] px-7">
-        <div className="mb-7">
-          <div className="mb-2.5 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-accent-deep before:inline-block before:h-px before:w-4 before:bg-accent-deep before:content-['']">
-            {tPage("eyebrow")}
-          </div>
+    <>
+      <section style={{ background: "var(--muted)" }} className="py-5">
+        <div className="mx-auto max-w-[1180px] px-7">
+          <Eyebrow>{tPage("eyebrow")}</Eyebrow>
           <h1 className="text-[32px]">{tPage(title)}</h1>
-          <p className="text-muted-foreground">{tPage(subtitle)}</p>
+          <p className="text-muted-foreground mb-0">{tPage(subtitle)}</p>
         </div>
-        <Suspense>
-          <TeachersSearch listings={listings} />
-        </Suspense>
-      </div>
-    </section>
+      </section>
+      <section className="py-12">
+        <div className="mx-auto max-w-[1180px] px-7">
+          <Suspense>
+            <TeachersSearch listings={listings} />
+          </Suspense>
+        </div>
+      </section>
+    </>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Eyebrow } from "@/components/features/eyebrow";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/help">): Promise<Metadata> {
   const { locale } = await params;
@@ -27,8 +28,8 @@ function Header() {
 
   return (
     <div className="mb-8 text-center">
-      <div className="mb-2.5 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-accent-deep before:inline-block before:h-px before:w-4 before:bg-accent-deep before:content-['']">
-        {t("eyebrow")}
+      <div className="d-flex justify-content-center">
+        <Eyebrow>{t("eyebrow")}</Eyebrow>
       </div>
       <h1 className="text-[32px]">{t("title")}</h1>
       <p className="text-muted-foreground">{t("subtitle")}</p>

@@ -484,11 +484,43 @@
     "cta": "Advertise here",
     "sponsoredLabel": "Sponsored"
   },
-  "teachCta": {
-    "eyebrow": "Teach on ClassPortals",
-    "title": "List your class, reach students across the island",
-    "subtitle": "Start on the free plan — upgrade any time you want featured placement.",
-    "cta": "Get started"
+  "homeExtra": {
+    "subjects": {
+      "eyebrow": "Browse by subject",
+      "title": "Whatever the exam, there's a class for it",
+      "teachersCount": "{count} listings"
+    },
+    "ctaPhoto": {
+      "eyebrow": "Advertise on ClassPortals",
+      "title": "Put your class or ad in front of active parents and students",
+      "subtitle": "Reach families who are already searching by subject, grade and location — no cold calls, no flyers.",
+      "cta": "Post an ad"
+    },
+    "whyUs": {
+      "eyebrow": "Why ClassPortals",
+      "title": "Every teacher is checked before they go live",
+      "description": "Qualifications, ID and teaching history are reviewed for every profile — so you're comparing real credentials, not just claims.",
+      "points": [
+        "Search by subject, medium, town and fee range",
+        "Reviews and ratings from real students",
+        "Post a request if you can't find the right fit"
+      ]
+    },
+    "howItWorks": {
+      "eyebrow": "How it works",
+      "title": "Search, compare, and message — in one place",
+      "description": "No more scrolling WhatsApp groups. Filter by what actually matters, then message the teachers who fit before committing to a class.",
+      "points": [
+        "Browse verified profiles or post a request",
+        "Compare fees, medium and class locations",
+        "Confirm directly with the teacher — online or in person"
+      ]
+    },
+    "stats": {
+      "listings": "Active listings",
+      "locations": "Locations covered",
+      "verified": "Verified profiles"
+    }
   },
   "rolesPage": {
     "eyebrow": "How ClassPortals works",

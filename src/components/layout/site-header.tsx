@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { Bell, Menu, LogOut, ChevronDown } from "lucide-react";
+import { useLinkStatus } from "next/link";
+import { Bell, Menu, LogOut, ChevronDown, Loader2 } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -60,6 +61,24 @@ function isSearchItemActive(
   if (pathname !== item.href.pathname) return false;
   const query: Record<string, string> = item.href.query;
   return Object.keys(query).every((key) => searchParams.get(key) === query[key]);
+}
+
+// Clicking "Dashboard" jumps to a whole different route group ((public) ->
+// (dashboard)), so the RSC fetch for the new layout+page can take a visible
+// moment with zero feedback otherwise — the button just sits there looking
+// clicked-but-frozen until the destination's own loading.tsx skeleton can
+// mount. useLinkStatus reports that in-between "pending" state (it reads
+// from the nearest ancestor Link, which Button's `render` prop makes this a
+// descendant of) so the button can show a spinner immediately on click.
+function DashboardButtonLabel({ label }: { label: string }) {
+  const { pending } = useLinkStatus();
+  if (!pending) return label;
+  return (
+    <span className="flex items-center gap-1.5">
+      <Loader2 className="size-3.5 animate-spin" />
+      {label}
+    </span>
+  );
 }
 
 export function SiteHeader({
@@ -176,7 +195,7 @@ export function SiteHeader({
                 render={<Link href={roleDashboardPath[user.role]} />}
                 className="bg-cta text-cta-foreground hover:bg-cta-hover"
               >
-                {t("dashboard")}
+                <DashboardButtonLabel label={t("dashboard")} />
               </Button>
               {inquiriesCount !== undefined && (
                 <Link
@@ -270,7 +289,7 @@ export function SiteHeader({
                   {user ? (
                     <>
                       <Button nativeButton={false} render={<Link href={roleDashboardPath[user.role]} />} className="bg-cta text-cta-foreground hover:bg-cta-hover">
-                        {t("dashboard")}
+                        <DashboardButtonLabel label={t("dashboard")} />
                       </Button>
                       <div className="flex items-center gap-2.5 px-3 py-1.5">
                         {userPhotoUrl ? (

@@ -529,7 +529,56 @@
     "ctaTitle": "Ready to get started?",
     "ctaSubtitle": "Setting up a profile takes a few minutes — you can start on the free plan.",
     "ctaTeacher": "Register as a teacher",
-    "ctaClass": "Register a class"
+    "ctaClass": "Register a class",
+    "detail": {
+      "teacher": {
+        "tag": "Individual",
+        "title": "Teacher",
+        "description": "Any individual educator — school teacher, private tutor, or subject specialist, Grade 1 through campus level.",
+        "points": [
+          "Personal profile: qualifications, experience, subjects and grade levels",
+          "Set your own hourly or monthly rate",
+          "Share notes as watermarked, view-only PDFs",
+          "Build a question bank and run timed online exams",
+          "Hold live online classes with a scheduled join link",
+          "Collect reviews from students who've actually joined you"
+        ]
+      },
+      "class": {
+        "tag": "Institute",
+        "title": "Class / Institute",
+        "description": "A tuition institute or academy with one or more teachers working under one shared profile.",
+        "points": [
+          "Institute profile with its own photo and advertisement space",
+          "Link multiple teachers — each keeps their own subjects and pricing",
+          "An institute-wide rate alongside each teacher's own rate",
+          "One combined class schedule across every linked teacher",
+          "Institute-level reviews, separate from individual teacher reviews"
+        ]
+      },
+      "campus": {
+        "tag": "Higher education",
+        "title": "Campus Lecturer / Professor",
+        "description": "University lecturers and professors offering courses, guest lectures, or exam-prep sessions.",
+        "points": [
+          "Profile highlights your degree, research area and institution",
+          "Course-style question banks for assignments and past papers",
+          "Works for both credit courses and one-off guest sessions",
+          "Priced per hour or per course, same tools as any teacher"
+        ]
+      },
+      "student": {
+        "tag": "Learner",
+        "title": "Student",
+        "description": "Anyone searching for a teacher, class, or campus course — from a parent of a Grade 1 pupil to a university student.",
+        "points": [
+          "Browse and search freely, no account needed",
+          "Full contact details unlock once you join a teacher or class",
+          "Join live classes, sit timed exams, and submit assignments",
+          "Leave a review only for teachers or classes you've actually joined"
+        ]
+      }
+    }
   },
   "advertise": {
     "hero": {

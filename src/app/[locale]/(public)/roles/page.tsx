@@ -58,8 +58,12 @@ const ROLE_PHOTOS: Record<(typeof ROLES)[number], string> = {
     "https://images.pexels.com/photos/8423123/pexels-photo-8423123.jpeg?auto=compress&cs=tinysrgb&w=500&h=500&fit=crop",
 };
 
+// Uses "rolesPage.detail.*" rather than the "roles" namespace Home's teaser
+// section reads from — this page is what "See how each role works →"
+// promises, so it needs fuller descriptions and more points per role, not
+// the exact same three bullets repeated with a photo bolted on.
 function RolesList() {
-  const t = useTranslations("roles");
+  const t = useTranslations("rolesPage.detail");
 
   return (
     <section className="py-15">

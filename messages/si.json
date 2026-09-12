@@ -78,6 +78,8 @@
       "join_request_declined_with_reason": "{ownerName} ඔබේ එකතු වීමේ ඉල්ලීම ප්‍රතික්ෂේප කළා: \"{reason}\"",
       "open_batch_joined": "{studentName} ඔබේ විවෘත පන්තියට එකතු විය: \"{batchTitle}\".",
       "exam_graded": "ඔබේ \"{examTitle}\" විභාගය ලකුණු කරන ලදී: {grade}.",
+      "exam_submitted": "{studentName} \"{examTitle}\" ඉදිරිපත් කළේය.",
+      "assignment_submitted": "{studentName} \"{assignmentTitle}\" ඉදිරිපත් කළේය.",
       "new_note": "නව සටහනක් බෙදාගන්නා ලදී: \"{title}\".",
       "new_exam": "නව විභාගයක් විවෘතයි: \"{title}\".",
       "new_assignment": "නව පැවරුමක් පළ කරන ලදී: \"{title}\".",

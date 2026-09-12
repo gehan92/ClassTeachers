@@ -78,6 +78,8 @@
       "join_request_declined_with_reason": "{ownerName} உங்கள் சேர்க்கை கோரிக்கையை நிராகரித்தார்: \"{reason}\"",
       "open_batch_joined": "{studentName} உங்கள் திறந்த வகுப்பில் சேர்ந்தார்: \"{batchTitle}\".",
       "exam_graded": "உங்கள் \"{examTitle}\" தேர்வு மதிப்பிடப்பட்டது: {grade}.",
+      "exam_submitted": "{studentName} \"{examTitle}\" ஐ சமர்ப்பித்தார்.",
+      "assignment_submitted": "{studentName} \"{assignmentTitle}\" ஐ சமர்ப்பித்தார்.",
       "new_note": "புதிய குறிப்பு பகிரப்பட்டது: \"{title}\".",
       "new_exam": "புதிய தேர்வு திறக்கப்பட்டுள்ளது: \"{title}\".",
       "new_assignment": "புதிய பணி இடப்பட்டது: \"{title}\".",

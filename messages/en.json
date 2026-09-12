@@ -78,6 +78,8 @@
       "join_request_declined_with_reason": "{ownerName} declined your request to join: \"{reason}\"",
       "open_batch_joined": "{studentName} joined your open class \"{batchTitle}\".",
       "exam_graded": "Your exam \"{examTitle}\" was graded: {grade}.",
+      "exam_submitted": "{studentName} submitted \"{examTitle}\".",
+      "assignment_submitted": "{studentName} submitted \"{assignmentTitle}\".",
       "new_note": "A new note was shared: \"{title}\".",
       "new_exam": "A new exam is open: \"{title}\".",
       "new_assignment": "A new assignment was posted: \"{title}\".",

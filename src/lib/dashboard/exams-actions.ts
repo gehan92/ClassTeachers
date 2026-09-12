@@ -240,7 +240,11 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
     return { error: "You need to be signed in." };
   }
 
-  const { data: exam } = await supabase.from("exams").select("question_ids").eq("id", examId).maybeSingle();
+  const { data: exam } = await supabase
+    .from("exams")
+    .select("question_ids, owner_type, owner_id, title")
+    .eq("id", examId)
+    .maybeSingle();
   if (!exam) {
     return { error: "Exam not found." };
   }
@@ -330,6 +334,26 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
   if (error) {
     return { error: "Couldn't save your submission. Please try again." };
   }
+
+  // Only the cases that actually land in the teacher's grading queue —
+  // a pure-MCQ exam is already graded, nothing for them to do.
+  if (!isFullyAutoGraded) {
+    let recipientId = exam.owner_id;
+    if (exam.owner_type === "class") {
+      const { data: cp } = await supabase.from("class_profiles").select("owner_id").eq("id", exam.owner_id).maybeSingle();
+      recipientId = cp?.owner_id ?? exam.owner_id;
+    }
+    const { data: studentProfile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+    await notify(
+      supabase,
+      recipientId,
+      "exam_submitted",
+      { studentName: studentProfile?.full_name ?? "—", examTitle: exam.title },
+      "exams",
+      "submissions",
+    );
+  }
+
   return isFullyAutoGraded ? { autoGrade: { score: mcqScore, maxScore: mcqMaxScore } } : {};
 }
 

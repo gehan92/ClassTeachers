@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAssignmentOwner } from "@/lib/dashboard/resolve-batch-owner";
-import { notifyContentAudience } from "@/lib/dashboard/notify";
+import { notify, notifyContentAudience } from "@/lib/dashboard/notify";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -166,7 +166,11 @@ export async function submitAssignment(formData: FormData): Promise<ActionResult
     return { error: "You need to be signed in." };
   }
 
-  const { data: assignment } = await supabase.from("assignments").select("due_at").eq("id", assignmentId).maybeSingle();
+  const { data: assignment } = await supabase
+    .from("assignments")
+    .select("due_at, owner_type, owner_id, title")
+    .eq("id", assignmentId)
+    .maybeSingle();
   if (!assignment) {
     return { error: "Assignment not found." };
   }
@@ -203,6 +207,22 @@ export async function submitAssignment(formData: FormData): Promise<ActionResult
   if (error) {
     return { error: "Couldn't save your submission. Please try again." };
   }
+
+  let recipientId = assignment.owner_id;
+  if (assignment.owner_type === "class") {
+    const { data: cp } = await supabase.from("class_profiles").select("owner_id").eq("id", assignment.owner_id).maybeSingle();
+    recipientId = cp?.owner_id ?? assignment.owner_id;
+  }
+  const { data: studentProfile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+  await notify(
+    supabase,
+    recipientId,
+    "assignment_submitted",
+    { studentName: studentProfile?.full_name ?? "—", assignmentTitle: assignment.title },
+    "assignments",
+    "submissions",
+  );
+
   return {};
 }
 

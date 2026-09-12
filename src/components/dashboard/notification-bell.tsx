@@ -46,6 +46,13 @@ export function messageFor(t: Translator, n: NotificationRow): string {
         : t("types.join_request_declined", { ownerName: str(data.ownerName) });
     case "exam_graded":
       return t("types.exam_graded", { examTitle: str(data.examTitle), grade: str(data.grade) });
+    case "exam_submitted":
+      return t("types.exam_submitted", { studentName: str(data.studentName), examTitle: str(data.examTitle) });
+    case "assignment_submitted":
+      return t("types.assignment_submitted", {
+        studentName: str(data.studentName),
+        assignmentTitle: str(data.assignmentTitle),
+      });
     case "new_note":
       return t("types.new_note", { title: str(data.title) });
     case "new_exam":

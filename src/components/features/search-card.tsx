@@ -21,8 +21,8 @@ export function SearchCard() {
 
   return (
     <div
-      className="d-flex flex-column flex-sm-row flex-wrap bg-white position-relative"
-      style={{ boxShadow: "0 20px 50px rgba(13,20,18,0.28)", borderRadius: 10, padding: 16, gap: 10 }}
+      className="grid grid-cols-2 bg-white position-relative sm:flex sm:flex-row sm:flex-wrap"
+      style={{ boxShadow: "0 20px 50px rgba(13,20,18,0.28)", borderRadius: 10, padding: 14, gap: 8 }}
     >
       <input
         value={subject}
@@ -53,7 +53,7 @@ export function SearchCard() {
       </select>
       <Link
         href={{ pathname: "/teachers", query }}
-        className="btn d-flex align-items-center justify-content-center fw-semibold flex-shrink-0"
+        className="btn d-flex align-items-center justify-content-center fw-semibold max-sm:w-full sm:flex-shrink-0"
         style={{ background: "var(--cta)", color: "var(--cta-foreground)", padding: "12px 26px" }}
       >
         {t("searchButton")}

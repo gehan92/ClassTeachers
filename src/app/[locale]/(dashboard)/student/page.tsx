@@ -638,6 +638,14 @@ export default async function StudentDashboardPage({
   const joinedOwnerKeys = new Set(
     (enrollments ?? []).filter((e) => e.status !== "declined").map((e) => `${e.owner_type}:${e.owner_id}`),
   );
+  // Reviews require actually having joined, not merely requested — a still-
+  // pending join request must not unlock the ability to post a public
+  // review of that teacher/class (unlike joinedOwnerKeys above, which is
+  // deliberately "not declined" so a pending request still blocks a
+  // duplicate re-request).
+  const acceptedOwnerKeys = new Set(
+    (enrollments ?? []).filter((e) => e.status === "accepted").map((e) => `${e.owner_type}:${e.owner_id}`),
+  );
   // A student can now hold more than one batch at the same institute
   // (0091/0092), so "already joined" for a class-owned batch has to be
   // scoped to that specific batch — otherwise joining one class at an
@@ -1038,7 +1046,7 @@ export default async function StudentDashboardPage({
   const fallbackListings = allRecommendedListings.filter((l) => !l.matched).sort((a, b) => b.rating - a.rating);
   const recommendedListings: RecommendedListingRow[] = [...matchedListings, ...fallbackListings].slice(0, 4);
 
-  const reviewTargets: ReviewTarget[] = [...joinedOwnerKeys].map((key) => {
+  const reviewTargets: ReviewTarget[] = [...acceptedOwnerKeys].map((key) => {
     const [ownerType, ownerId] = key.split(":") as ["teacher" | "class", string];
     return { ownerType, ownerId, name: ownerName(ownerType, ownerId) };
   });

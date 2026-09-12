@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { updateStudentAccount, updateNotificationPrefs, updatePhoneSharingPref } from "@/lib/dashboard/actions";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 
 const panelClass = "rounded-lg border border-border bg-white p-5";
 
@@ -25,6 +26,7 @@ export function SettingsTab({
   const t = useTranslations("studentDashboard.settings");
   const tp = useTranslations("studentDashboard.profile");
   const tc = useTranslations("studentDashboard.common");
+  const { refresh } = useDashboardRefresh();
 
   const emailId = useId();
   const phoneId = useId();
@@ -46,6 +48,7 @@ export function SettingsTab({
     }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+    refresh();
   }
 
   const [sharePhone, setSharePhone] = useState(initialSharePhoneWithTeachers);
@@ -61,7 +64,9 @@ export function SettingsTab({
     if (result.error) {
       setSharePhone(!checked);
       setPhoneShareError(result.error);
+      return;
     }
+    refresh();
   }
 
   // Every key here has a matching notify() call site passing this exact
@@ -91,7 +96,9 @@ export function SettingsTab({
     if (result.error) {
       setNotifPrefs((prev) => ({ ...prev, [key]: previous }));
       setToggleError(result.error);
+      return;
     }
+    refresh();
   }
 
   return (

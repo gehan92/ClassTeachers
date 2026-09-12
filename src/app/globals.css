@@ -273,12 +273,15 @@
 /* Home hero (page.tsx): a fixed 92vh + 120px top padding looked fine on
    desktop but on a phone forced extra scrolling before the search card
    (the primary conversion element) came into view — so mobile gets a
-   shorter floor and much less top padding, both restored at md. */
+   shorter floor and much less top padding, both restored at md.
+   56px undershot it, though: the fixed mobile header itself is ~64px tall,
+   so the headline sat almost flush against it with no breathing room —
+   bumped to 92px, still far short of desktop's 120px. */
 .home-hero {
   min-height: 78vh;
 }
 .home-hero-inner {
-  padding-top: 56px;
+  padding-top: 92px;
 }
 @media (min-width: 768px) {
   .home-hero {

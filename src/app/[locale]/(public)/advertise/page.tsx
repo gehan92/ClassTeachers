@@ -128,12 +128,18 @@ function PlansSection() {
                 )}
               >
                 {isFeatured && (
-                  <span className="absolute -top-3 left-5.5 rounded-full bg-primary px-2.5 py-0.75 font-mono text-[11px] uppercase tracking-wide text-primary-foreground">
+                  <span
+                    className="absolute -top-3 left-5.5 rounded-full bg-primary px-2.5 py-0.75 font-mono text-[11px] uppercase tracking-wide"
+                    style={{ color: "var(--primary-foreground)" }}
+                  >
                     {t("plans.featured.badge")}
                   </span>
                 )}
 
-                <span className="mb-3 inline-block w-fit rounded-[3px] bg-secondary px-2 py-0.75 font-mono text-[11px] tracking-wide text-secondary-foreground">
+                <span
+                  className="mb-3 inline-block w-fit rounded-[3px] bg-secondary px-2 py-0.75 font-mono text-[11px] tracking-wide"
+                  style={{ color: "var(--secondary-foreground)" }}
+                >
                   {t(`plans.${plan}.days`)}
                 </span>
                 <h3 className="mb-1 text-lg">{t(`plans.${plan}.title`)}</h3>
@@ -157,10 +163,9 @@ function PlansSection() {
                   href="#postAd"
                   className={cn(
                     "inline-flex items-center justify-center rounded-sm px-5 py-2.75 text-sm font-semibold transition-all hover:-translate-y-px",
-                    isFeatured
-                      ? "bg-primary text-primary-foreground hover:bg-primary-light"
-                      : "border border-input text-primary hover:bg-white",
+                    isFeatured ? "bg-primary hover:bg-primary-light" : "border border-input text-primary hover:bg-white",
                   )}
+                  style={isFeatured ? { color: "var(--primary-foreground)" } : undefined}
                 >
                   {t(`plans.${plan}.cta`)}
                 </a>

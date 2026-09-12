@@ -5,11 +5,6 @@ import { Link } from "@/i18n/navigation";
 import { RoleCard } from "@/components/features/role-card";
 import { Eyebrow } from "@/components/features/eyebrow";
 
-// Same verified-working Pexels photo already used for the Home page's
-// spotlight cards — reused here, not a new/invented photo ID.
-const BAND_PHOTO =
-  "https://images.pexels.com/photos/8423123/pexels-photo-8423123.jpeg?auto=compress&cs=tinysrgb&w=900&h=700&fit=crop";
-
 export async function generateMetadata({ params }: PageProps<"/[locale]/roles">): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "meta" });
@@ -23,7 +18,6 @@ export default async function RolesPage({ params }: PageProps<"/[locale]/roles">
   return (
     <>
       <Hero />
-      <PhotoBand />
       <RolesList />
       <CtaSection />
     </>
@@ -46,34 +40,38 @@ function Hero() {
   );
 }
 
-function PhotoBand() {
-  return (
-    <section
-      style={{
-        height: 280,
-        backgroundImage: `url('${BAND_PHOTO}')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center 25%",
-      }}
-    />
-  );
-}
+const ROLES = ["teacher", "class", "campus", "student"] as const;
+
+// One verified Pexels photo per role, reused from elsewhere on the site
+// (same photo shoot the rest of the marketing pages use) rather than
+// invented IDs — chosen so each thumbnail actually matches its role: a
+// teacher addressing a class, a multi-student institute setting, a
+// university lecture hall (campus lecturer), and a lone student studying.
+const ROLE_PHOTOS: Record<(typeof ROLES)[number], string> = {
+  teacher:
+    "https://images.pexels.com/photos/8423012/pexels-photo-8423012.jpeg?auto=compress&cs=tinysrgb&w=500&h=500&fit=crop",
+  class:
+    "https://images.pexels.com/photos/8423049/pexels-photo-8423049.jpeg?auto=compress&cs=tinysrgb&w=500&h=500&fit=crop",
+  campus:
+    "https://images.pexels.com/photos/8199167/pexels-photo-8199167.jpeg?auto=compress&cs=tinysrgb&w=500&h=500&fit=crop",
+  student:
+    "https://images.pexels.com/photos/8423123/pexels-photo-8423123.jpeg?auto=compress&cs=tinysrgb&w=500&h=500&fit=crop",
+};
 
 function RolesList() {
   const t = useTranslations("roles");
 
-  const roles = ["teacher", "class", "campus", "student"] as const;
-
   return (
     <section className="py-15">
       <div className="mx-auto max-w-160 space-y-4.5 px-7">
-        {roles.map((role) => (
+        {ROLES.map((role) => (
           <RoleCard
             key={role}
             tag={t(`${role}.tag`)}
             title={t(`${role}.title`)}
             description={t(`${role}.description`)}
             points={t.raw(`${role}.points`) as string[]}
+            photo={ROLE_PHOTOS[role]}
           />
         ))}
       </div>
@@ -92,7 +90,8 @@ function CtaSection() {
         <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/signup"
-            className="inline-flex items-center justify-center rounded-sm bg-primary px-5 py-2.75 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-px hover:bg-primary-light"
+            className="inline-flex items-center justify-center rounded-sm bg-primary px-5 py-2.75 text-sm font-semibold transition-all hover:-translate-y-px hover:bg-primary-light"
+            style={{ color: "var(--primary-foreground)" }}
           >
             {t("ctaTeacher")}
           </Link>

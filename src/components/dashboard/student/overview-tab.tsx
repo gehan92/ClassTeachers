@@ -123,7 +123,7 @@ export function OverviewTab({
         </div>
       )}
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
         <StatCard label={t("statClasses")} value={classesCount} />
         <StatCard label={t("statNextLive")} value={nextLiveLabel ?? t("statNextLiveEmpty")} />
         <StatCard label={t("statExamsDue")} value={examsDueCount} />

@@ -189,7 +189,7 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
                   </StatusBadge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex justify-end gap-2">
+                  <div className="flex flex-wrap justify-end gap-2">
                     {user.role !== "student" && user.hasVerificationDocument && (
                       <Button
                         size="sm"

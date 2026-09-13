@@ -1077,6 +1077,10 @@
           "empty": "ළඟදී කල් ඉකුත් වන දැන්වීම් නොමැත.",
           "cta": "දැන්වීම් කළමනාකරණය කරන්න"
         }
+      },
+      "hero": {
+        "reviewApprovals": "අනුමැතීන් සමාලෝචනය",
+        "manageAds": "+ දැන්වීම් කළමනාකරණය"
       }
     },
     "approvals": {
@@ -1861,6 +1865,10 @@
         "heading": "ඔබ වෙනුවෙන් නිර්දේශිත",
         "subtitlePersonalized": "ඔබේ පැතිකඩෙහි විෂයයන්ට ගැළපේ.",
         "subtitleGeneral": "දැනට ClassPortals හි ජනප්‍රිය ගුරුවරුන් සහ පන්ති."
+      },
+      "hero": {
+        "viewClasses": "පන්ති බලන්න",
+        "postRequest": "+ ඉල්ලීමක් පළ කරන්න"
       }
     },
     "progress": {
@@ -2405,7 +2413,8 @@
         "rating": "සාමාන්‍ය ශ්‍රේණිගත කිරීම",
         "ratingDelta": "සමාලෝචන {count}",
         "submissions": "ලකුණු කිරීමට ඉදිරිපත් කිරීම්",
-        "submissionsDelta": "දින 2කින් නියමිතයි"
+        "submissionsDelta": "දින 2කින් නියමිතයි",
+        "ratingWithCount": "★ {rating} ({count})"
       },
       "quickActionsHeading": "ඉක්මන් ක්‍රියා",
       "actions": {
@@ -2419,6 +2428,10 @@
         "assignmentHeading": "පැවරුමක් සාදන්න",
         "assignmentBody": "ඔබේ සිසුන්ට ඉදිරිපත් කර ලකුණු කිරීමට වැඩ පත්‍රිකාවක් උඩුගත කරන්න.",
         "assignmentAction": "පැවරුම සාදන්න"
+      },
+      "hero": {
+        "viewClasses": "පන්ති බලන්න",
+        "postAd": "+ දැන්වීමක් පළ කරන්න"
       }
     },
     "profile": {

@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/features/status-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { avatarGradientClass } from "@/lib/avatar-color";
+import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import type { TeachersAtGlance } from "@/types/dashboard-institute";
 
 export type RecentActivityItem =
@@ -14,15 +15,6 @@ export type RecentActivityItem =
 
 export type PendingTeacherApproval = { id: string; name: string; subject: string };
 export type PendingStudentApproval = { id: string; studentName: string; batchLabel: string };
-
-function HeroStat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-lg bg-white/8 px-4 py-3.5">
-      <div className="font-mono text-[11px] tracking-wide text-white/55 uppercase">{label}</div>
-      <div className="font-display text-2xl text-white">{value}</div>
-    </div>
-  );
-}
 
 function TimelineItem({ label, dateLabel, dotClassName }: { label: React.ReactNode; dateLabel: string; dotClassName?: string }) {
   return (
@@ -66,50 +58,22 @@ export function OverviewTab({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-xl bg-primary p-6 sm:p-7">
-        <div className="flex flex-wrap items-start justify-between gap-3.5">
-          <div>
-            <h1 className="flex flex-wrap items-center gap-2 font-display text-2xl text-white">
-              {instituteName}
-              {verified && (
-                <span className="rounded-full bg-cta px-2.5 py-0.5 font-mono text-[11px] font-semibold tracking-wide text-primary uppercase">
-                  ✓ {t("hero.verified")}
-                </span>
-              )}
-            </h1>
-            <p className="mt-1 text-sm text-white/60">
-              {t("subtitle")}
-              {location ? ` · ${location}` : ""}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2.5">
-            <Link
-              href={{ pathname: "/institute", query: { tab: "batches" } }}
-              className="rounded-sm bg-white/10 px-3.5 py-2 text-sm font-semibold text-white hover:bg-white/15"
-            >
-              {t("hero.createClass")}
-            </Link>
-            <Link
-              href={{ pathname: "/institute", query: { tab: "teachers" } }}
-              className="rounded-sm bg-white/10 px-3.5 py-2 text-sm font-semibold text-white hover:bg-white/15"
-            >
-              {t("hero.approveTeacher")}
-            </Link>
-            <Link
-              href={{ pathname: "/institute", query: { tab: "ads" } }}
-              className="rounded-sm bg-cta px-3.5 py-2 text-sm font-semibold text-primary hover:bg-cta-hover"
-            >
-              {t("hero.postAd")}
-            </Link>
-          </div>
-        </div>
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <HeroStat label={t("stats.classes")} value={batchesCount} />
-          <HeroStat label={t("stats.teachers")} value={teachersCount} />
-          <HeroStat label={t("stats.students")} value={studentsCount} />
-          <HeroStat label={t("stats.revenue")} value={revenueDisplay} />
-        </div>
-      </div>
+      <DashboardHero
+        title={instituteName}
+        badge={verified ? `✓ ${t("hero.verified")}` : undefined}
+        subtitle={`${t("subtitle")}${location ? ` · ${location}` : ""}`}
+        actions={[
+          { label: t("hero.createClass"), href: { pathname: "/institute", query: { tab: "batches" } } },
+          { label: t("hero.approveTeacher"), href: { pathname: "/institute", query: { tab: "teachers" } } },
+          { label: t("hero.postAd"), href: { pathname: "/institute", query: { tab: "ads" } }, variant: "cta" },
+        ]}
+        stats={[
+          { label: t("stats.classes"), value: batchesCount, href: { pathname: "/institute", query: { tab: "batches" } } },
+          { label: t("stats.teachers"), value: teachersCount, href: { pathname: "/institute", query: { tab: "teachers" } } },
+          { label: t("stats.students"), value: studentsCount, href: { pathname: "/institute", query: { tab: "students" } } },
+          { label: t("stats.revenue"), value: revenueDisplay, href: { pathname: "/institute", query: { tab: "finance" } } },
+        ]}
+      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-white p-5">

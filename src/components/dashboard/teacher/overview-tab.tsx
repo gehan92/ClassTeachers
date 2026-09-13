@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Sparkles, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import { StatCard } from "@/components/dashboard/stat-card";
+import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { useLiveCall } from "@/components/dashboard/live-call-context";
 import { notifyLiveClassStarted } from "@/lib/dashboard/live-classes-actions";
 import { messageFor, type NotificationRow, type Translator } from "@/components/dashboard/notification-bell";
@@ -97,10 +97,28 @@ export function OverviewTab({
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl">{t("greeting", { name: teacherName.split(" ")[0] })}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
-      </div>
+      <DashboardHero
+        title={t("greeting", { name: teacherName.split(" ")[0] })}
+        subtitle={t("subtitle")}
+        actions={[
+          { label: t("hero.viewClasses"), href: { pathname: "/teacher", query: { tab: "live" } } },
+          { label: t("hero.postAd"), href: { pathname: "/teacher", query: { tab: "ads" } }, variant: "cta" },
+        ]}
+        stats={[
+          { label: t("stats.activeStudents"), value: activeStudentsCount, href: { pathname: "/teacher", query: { tab: "students" } } },
+          { label: t("stats.upcomingClasses"), value: upcomingClassesCount, href: { pathname: "/teacher", query: { tab: "live" } } },
+          { label: t("stats.earnings"), value: t("stats.earningsUnavailable") },
+          {
+            label: t("stats.rating"),
+            value:
+              averageRating && reviewsCount > 0
+                ? t("stats.ratingWithCount", { rating: averageRating, count: reviewsCount })
+                : (averageRating ?? "—"),
+            href: { pathname: "/teacher", query: { tab: "reviews" } },
+          },
+          { label: t("stats.submissions"), value: pendingSubmissionsCount, href: { pathname: "/teacher", query: { tab: "exams" } } },
+        ]}
+      />
 
       {showTips && (
         <div className="relative rounded-lg border border-primary/20 bg-primary/5 p-4.5 pr-11">
@@ -125,27 +143,6 @@ export function OverviewTab({
           </ul>
         </div>
       )}
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Link href={{ pathname: "/teacher", query: { tab: "students" } }}>
-          <StatCard label={t("stats.activeStudents")} value={activeStudentsCount} />
-        </Link>
-        <Link href={{ pathname: "/teacher", query: { tab: "live" } }}>
-          <StatCard label={t("stats.upcomingClasses")} value={upcomingClassesCount} />
-        </Link>
-        {/* No payments/transactions table exists yet — earnings can't be computed from real data, so this one isn't a link to anything. */}
-        <StatCard label={t("stats.earnings")} value={t("stats.earningsUnavailable")} />
-        <Link href={{ pathname: "/teacher", query: { tab: "reviews" } }}>
-          <StatCard
-            label={t("stats.rating")}
-            value={averageRating ?? "—"}
-            delta={reviewsCount > 0 ? t("stats.ratingDelta", { count: reviewsCount }) : undefined}
-          />
-        </Link>
-        <Link href={{ pathname: "/teacher", query: { tab: "exams" } }}>
-          <StatCard label={t("stats.submissions")} value={pendingSubmissionsCount} />
-        </Link>
-      </div>
 
       <div>
         <h3 className="mb-4 text-lg">{t("activityHeading")}</h3>

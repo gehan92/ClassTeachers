@@ -1077,6 +1077,10 @@
           "empty": "No site ads expiring soon.",
           "cta": "Manage ads"
         }
+      },
+      "hero": {
+        "reviewApprovals": "Review approvals",
+        "manageAds": "+ Manage ads"
       }
     },
     "approvals": {
@@ -1861,6 +1865,10 @@
         "heading": "Recommended for you",
         "subtitlePersonalized": "Matched to the subjects on your profile.",
         "subtitleGeneral": "Popular teachers and classes on ClassPortals right now."
+      },
+      "hero": {
+        "viewClasses": "View classes",
+        "postRequest": "+ Post a request"
       }
     },
     "progress": {
@@ -2405,7 +2413,8 @@
         "rating": "Average rating",
         "ratingDelta": "{count} reviews",
         "submissions": "Submissions to grade",
-        "submissionsDelta": "Due in 2 days"
+        "submissionsDelta": "Due in 2 days",
+        "ratingWithCount": "★ {rating} ({count})"
       },
       "quickActionsHeading": "Quick actions",
       "actions": {
@@ -2419,6 +2428,10 @@
         "assignmentHeading": "Create an assignment",
         "assignmentBody": "Upload a worksheet for your students to submit and mark.",
         "assignmentAction": "Create assignment"
+      },
+      "hero": {
+        "viewClasses": "View classes",
+        "postAd": "+ Post an ad"
       }
     },
     "profile": {

@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { StatCard } from "@/components/dashboard/stat-card";
+import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -34,27 +34,32 @@ export function OverviewTab({
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-display text-2xl text-primary">{t("title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label={t("stats.teachers")}
-          value={teachersCount.toLocaleString()}
-          delta={teachersDelta > 0 ? t("stats.thisWeek", { count: teachersDelta }) : undefined}
+        <DashboardHero
+          title={t("title")}
+          subtitle={t("subtitle")}
+          actions={[
+            { label: t("hero.reviewApprovals"), href: { pathname: "/admin", query: { tab: "approvals" } } },
+            { label: t("hero.manageAds"), href: { pathname: "/admin", query: { tab: "siteAds" } }, variant: "cta" },
+          ]}
+          stats={[
+            {
+              label: t("stats.teachers"),
+              value: teachersDelta > 0 ? `${teachersCount.toLocaleString()} (+${teachersDelta})` : teachersCount.toLocaleString(),
+              href: { pathname: "/admin", query: { tab: "users" } },
+            },
+            {
+              label: t("stats.institutes"),
+              value: institutesDelta > 0 ? `${institutesCount.toLocaleString()} (+${institutesDelta})` : institutesCount.toLocaleString(),
+              href: { pathname: "/admin", query: { tab: "users" } },
+            },
+            {
+              label: t("stats.students"),
+              value: studentsDelta > 0 ? `${studentsCount.toLocaleString()} (+${studentsDelta})` : studentsCount.toLocaleString(),
+              href: { pathname: "/admin", query: { tab: "users" } },
+            },
+            { label: t("stats.revenue"), value: revenueDisplay, href: { pathname: "/admin", query: { tab: "subscriptions" } } },
+          ]}
         />
-        <StatCard
-          label={t("stats.institutes")}
-          value={institutesCount.toLocaleString()}
-          delta={institutesDelta > 0 ? t("stats.thisWeek", { count: institutesDelta }) : undefined}
-        />
-        <StatCard
-          label={t("stats.students")}
-          value={studentsCount.toLocaleString()}
-          delta={studentsDelta > 0 ? t("stats.thisWeek", { count: studentsDelta }) : undefined}
-        />
-        <StatCard label={t("stats.revenue")} value={revenueDisplay} />
       </div>
 
       <h3 className="mt-8 mb-4 text-lg">{t("attentionHeading")}</h3>

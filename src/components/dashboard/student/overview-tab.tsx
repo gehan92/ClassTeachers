@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Sparkles, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { StatCard } from "@/components/dashboard/stat-card";
+import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 
 // Device-local, not per-account -- a one-time UI hint doesn't need a server
 // round trip (same pattern as the teacher dashboard's own tips card).
@@ -95,8 +95,22 @@ export function OverviewTab({
   return (
     <div>
       <div className="mb-6">
-        <h1 className="mb-1 text-2xl">{t("greeting", { name: studentName.split(" ")[0] })}</h1>
-        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+        <DashboardHero
+          title={t("greeting", { name: studentName.split(" ")[0] })}
+          subtitle={t("subtitle")}
+          actions={[
+            { label: t("hero.viewClasses"), href: { pathname: "/student", query: { tab: "classes" } } },
+            { label: t("hero.postRequest"), href: { pathname: "/student", query: { tab: "requests" } }, variant: "cta" },
+          ]}
+          stats={[
+            { label: t("statClasses"), value: classesCount, href: { pathname: "/student", query: { tab: "classes" } } },
+            { label: t("statNextLive"), value: nextLiveLabel ?? t("statNextLiveEmpty"), href: { pathname: "/student", query: { tab: "live" } } },
+            { label: t("statExamsDue"), value: examsDueCount, href: { pathname: "/student", query: { tab: "exams" } } },
+            { label: t("statAssignmentsDue"), value: assignmentsDueCount, href: { pathname: "/student", query: { tab: "assignments" } } },
+            { label: t("statNotes"), value: notesCount, href: { pathname: "/student", query: { tab: "notes" } } },
+            { label: t("statUnreadMessages"), value: unreadMessagesCount, href: { pathname: "/student", query: { tab: "inquiries" } } },
+          ]}
+        />
       </div>
 
       {showTips && (
@@ -122,15 +136,6 @@ export function OverviewTab({
           </ul>
         </div>
       )}
-
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-        <StatCard label={t("statClasses")} value={classesCount} />
-        <StatCard label={t("statNextLive")} value={nextLiveLabel ?? t("statNextLiveEmpty")} />
-        <StatCard label={t("statExamsDue")} value={examsDueCount} />
-        <StatCard label={t("statAssignmentsDue")} value={assignmentsDueCount} />
-        <StatCard label={t("statNotes")} value={notesCount} />
-        <StatCard label={t("statUnreadMessages")} value={unreadMessagesCount} />
-      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {nextLiveTitle && nextLiveLabel ? (

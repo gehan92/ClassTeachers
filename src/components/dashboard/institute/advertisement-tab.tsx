@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { AdSlot } from "@/components/features/ad-slot";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
+import { StatCard } from "@/components/dashboard/stat-card";
 import { AdPreviewCard } from "@/components/dashboard/ad-preview-card";
 import { AdHistoryList, type AdHistoryRow } from "@/components/dashboard/ad-history-list";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
@@ -25,7 +26,13 @@ import {
 const textareaClass =
   "w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40";
 
-export type InstituteAdRow = { id: string; title: string; content: string; status: "active" | "expired" | "removed" };
+export type InstituteAdRow = {
+  id: string;
+  title: string;
+  content: string;
+  status: "active" | "expired" | "removed";
+  viewCount: number;
+};
 
 export type InstituteAdBatchRow = {
   id: string;
@@ -56,11 +63,20 @@ export function AdvertisementTab({
   const [deletedAdIds, setDeletedAdIds] = useState<Set<string>>(new Set());
   const [deletedPromotionIds, setDeletedPromotionIds] = useState<Set<string>>(new Set());
 
+  const allAds = batches.flatMap((batch) => batch.ads).filter((ad) => !deletedAdIds.has(ad.id));
+  const activeAds = allAds.filter((ad) => ad.status === "active");
+  const totalViews = activeAds.reduce((sum, ad) => sum + ad.viewCount, 0);
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-display text-2xl text-primary">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3.5 sm:max-w-100">
+        <StatCard label={t("glance.activeAds")} value={activeAds.length} />
+        <StatCard label={t("glance.totalViews")} value={totalViews} />
       </div>
 
       <RefreshStatus
@@ -323,10 +339,13 @@ function ClassBatchAdCard({ ad, onDeleted, onSaved }: { ad: InstituteAdRow; onDe
   return (
     <div className="rounded-md border border-border p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className={`text-xs font-medium ${active ? "text-success" : "text-muted-foreground"}`}>
-          {active ? t("active") : t("paused")}
-        </span>
-        <Switch checked={active} onCheckedChange={handleToggle} disabled={toggling} />
+        <span className="font-mono text-xs text-muted-foreground">{t("viewCount", { count: ad.viewCount })}</span>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-medium ${active ? "text-success" : "text-muted-foreground"}`}>
+            {active ? t("active") : t("paused")}
+          </span>
+          <Switch checked={active} onCheckedChange={handleToggle} disabled={toggling} />
+        </div>
       </div>
 
       {!editing ? (

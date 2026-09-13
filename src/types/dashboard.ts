@@ -2,6 +2,11 @@ export type DashboardTabDef = {
   key: string;
   label: string;
   count?: number;
+  /** Renders the count badge in the cta/gold color instead of the plain
+   * neutral one — for a count that means "N things waiting on your action"
+   * (a pending request, an unresponded message), as opposed to a plain
+   * informational total (e.g. total batches, total reviews). */
+  countUrgent?: boolean;
   /** Small accent dot next to the label — unread "new content" notifications
    * exist for this tab (new note/exam/assignment/live class). Independent of
    * `count`, which on Exams/Assignments already means something else (items

@@ -1330,6 +1330,219 @@ export type Database = {
         Relationships: [];
       };
 
+      fee_charges: {
+        Row: {
+          id: string;
+          owner_type: "class";
+          owner_id: string;
+          student_id: string;
+          batch_id: string | null;
+          description: string;
+          amount: number;
+          charged_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_type: "class";
+          owner_id: string;
+          student_id: string;
+          batch_id?: string | null;
+          description: string;
+          amount: number;
+          charged_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_type?: "class";
+          owner_id?: string;
+          student_id?: string;
+          batch_id?: string | null;
+          description?: string;
+          amount?: number;
+          charged_at?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+
+      fee_payments: {
+        Row: {
+          id: string;
+          owner_type: "class";
+          owner_id: string;
+          student_id: string;
+          charge_id: string | null;
+          amount: number;
+          method: "cash" | "bank_transfer" | "card" | "other";
+          note: string | null;
+          paid_at: string;
+          recorded_by: string;
+        };
+        Insert: {
+          id?: string;
+          owner_type: "class";
+          owner_id: string;
+          student_id: string;
+          charge_id?: string | null;
+          amount: number;
+          method: "cash" | "bank_transfer" | "card" | "other";
+          note?: string | null;
+          paid_at?: string;
+          recorded_by: string;
+        };
+        Update: {
+          id?: string;
+          owner_type?: "class";
+          owner_id?: string;
+          student_id?: string;
+          charge_id?: string | null;
+          amount?: number;
+          method?: "cash" | "bank_transfer" | "card" | "other";
+          note?: string | null;
+          paid_at?: string;
+          recorded_by?: string;
+        };
+        Relationships: [];
+      };
+
+      student_guardians: {
+        Row: {
+          id: string;
+          owner_type: "class";
+          owner_id: string;
+          student_id: string;
+          guardian_name: string | null;
+          guardian_phone: string | null;
+          guardian_email: string | null;
+          note: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_type: "class";
+          owner_id: string;
+          student_id: string;
+          guardian_name?: string | null;
+          guardian_phone?: string | null;
+          guardian_email?: string | null;
+          note?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_type?: "class";
+          owner_id?: string;
+          student_id?: string;
+          guardian_name?: string | null;
+          guardian_phone?: string | null;
+          guardian_email?: string | null;
+          note?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+
+      library_resources: {
+        Row: {
+          id: string;
+          owner_type: "class";
+          owner_id: string;
+          title: string;
+          description: string | null;
+          category: string | null;
+          file_path: string;
+          view_count: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_type: "class";
+          owner_id: string;
+          title: string;
+          description?: string | null;
+          category?: string | null;
+          file_path: string;
+          view_count?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_type?: "class";
+          owner_id?: string;
+          title?: string;
+          description?: string | null;
+          category?: string | null;
+          file_path?: string;
+          view_count?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+
+      extracurricular_activities: {
+        Row: {
+          id: string;
+          owner_type: "class";
+          owner_id: string;
+          name: string;
+          description: string | null;
+          schedule_note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_type: "class";
+          owner_id: string;
+          name: string;
+          description?: string | null;
+          schedule_note?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_type?: "class";
+          owner_id?: string;
+          name?: string;
+          description?: string | null;
+          schedule_note?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+
+      extracurricular_participants: {
+        Row: {
+          id: string;
+          activity_id: string;
+          owner_type: "class";
+          owner_id: string;
+          student_id: string;
+          joined_at: string;
+          certificate_issued: boolean;
+        };
+        Insert: {
+          id?: string;
+          activity_id: string;
+          owner_type: "class";
+          owner_id: string;
+          student_id: string;
+          joined_at?: string;
+          certificate_issued?: boolean;
+        };
+        Update: {
+          id?: string;
+          activity_id?: string;
+          owner_type?: "class";
+          owner_id?: string;
+          student_id?: string;
+          joined_at?: string;
+          certificate_issued?: boolean;
+        };
+        Relationships: [];
+      };
+
       prices: {
         Row: {
           id: string;
@@ -1612,6 +1825,10 @@ export type Database = {
       };
       increment_ad_view: {
         Args: { p_ad_id: string };
+        Returns: undefined;
+      };
+      increment_library_resource_view: {
+        Args: { p_resource_id: string };
         Returns: undefined;
       };
       list_class_batch_ads: {

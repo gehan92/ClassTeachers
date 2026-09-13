@@ -43,6 +43,11 @@ import {
   ShieldCheck,
   Maximize2,
   X,
+  CalendarRange,
+  Library,
+  Contact,
+  School,
+  Trophy,
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -144,6 +149,14 @@ const TAB_ICONS: Partial<Record<string, LucideIcon>> = {
   calendar: Calendar,
   studentRequests: Inbox,
   announcements: BellRing,
+  // School LMS group (institute-only): timetable/exams reuse the calendar/
+  // exams icons where sensible but get distinct ones here since they sit
+  // alongside "calendar" and no per-role "exams" tab existed before.
+  finance: Wallet,
+  timetable: CalendarRange,
+  library: Library,
+  parentPortal: Contact,
+  extracurriculars: Trophy,
 };
 
 /**
@@ -166,6 +179,7 @@ const GROUP_ICONS: Partial<Record<string, LucideIcon>> = {
   trust: ShieldCheck,
   messages: MessageSquare,
   promote: Megaphone,
+  lms: School,
 };
 
 function updateTabParam(tab: string, liveClassId?: string) {
@@ -211,7 +225,9 @@ function NavList({
               {item.label}
               {item.highlight && !isActive && <span className="size-1.5 shrink-0 rounded-full bg-cta" />}
               {item.hasNew && <span className="size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />}
-              {item.count !== undefined && <span className="ml-1.5 opacity-70">{item.count}</span>}
+              {item.count !== undefined && (
+                <span className={cn("ml-1.5", item.countUrgent ? "font-semibold text-cta" : "opacity-70")}>{item.count}</span>
+              )}
             </button>
           );
         })}
@@ -312,12 +328,13 @@ function VerticalNavList({
                         group.label &&
                           "before:absolute before:-left-3 before:top-1/2 before:h-px before:w-3 before:-translate-y-1/2 before:bg-sidebar-border before:content-['']",
                         isActive
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
                           : item.highlight
                             ? "text-cta hover:bg-sidebar-accent/40"
                             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground",
                       )}
                     >
+                      {isActive && <span className="absolute top-1 bottom-1 right-0 w-[3px] rounded-full bg-cta" />}
                       {!group.label && Icon && (
                         <Icon className={cn("size-4 shrink-0", item.highlight && !isActive && "text-cta")} />
                       )}
@@ -327,7 +344,12 @@ function VerticalNavList({
                       )}
                       {item.hasNew && <span className="size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />}
                       {item.count !== undefined && (
-                        <span className="shrink-0 rounded-full bg-sidebar-border px-1.5 py-0.25 font-mono text-[11px] text-sidebar-foreground/70">
+                        <span
+                          className={cn(
+                            "shrink-0 rounded-full px-1.5 py-0.25 font-mono text-[11px]",
+                            item.countUrgent ? "bg-cta text-primary-dark font-semibold" : "bg-sidebar-border text-sidebar-foreground/70",
+                          )}
+                        >
                           {item.count}
                         </span>
                       )}

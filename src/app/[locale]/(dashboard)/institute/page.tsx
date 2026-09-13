@@ -1,7 +1,12 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import type { NotificationRow } from "@/components/dashboard/notification-bell";
-import { OverviewTab } from "@/components/dashboard/institute/overview-tab";
+import {
+  OverviewTab,
+  type RecentActivityItem,
+  type PendingTeacherApproval,
+  type PendingStudentApproval,
+} from "@/components/dashboard/institute/overview-tab";
 import { TeachersTab, type InstituteTeacherRow } from "@/components/dashboard/institute/teachers-tab";
 import { BatchesTab } from "@/components/dashboard/institute/batches-tab";
 import { StudentsTab, type InstituteStudentRow, type InstituteJoinRequestRow } from "@/components/dashboard/institute/students-tab";
@@ -20,6 +25,27 @@ import type {
 } from "@/components/dashboard/teacher/analytics-tab";
 import { CalendarTab, type InstituteCalendarSession } from "@/components/dashboard/institute/calendar-tab";
 import { AnnouncementsTab, type InstituteAnnouncementRow } from "@/components/dashboard/institute/announcements-tab";
+import {
+  FinanceTab,
+  type FeeChargeRow,
+  type FeePaymentRow,
+  type FeeBalanceRow,
+} from "@/components/dashboard/institute/finance-tab";
+import {
+  AttendanceTab,
+  type InstituteAttendanceSession,
+  type BatchAttendanceSummary,
+} from "@/components/dashboard/institute/attendance-tab";
+import { TimetableTab } from "@/components/dashboard/institute/timetable-tab";
+import { ParentPortalTab, type ParentPortalStudentRow } from "@/components/dashboard/institute/parent-portal-tab";
+import { LibraryTab, type LibraryResourceRow } from "@/components/dashboard/institute/library-tab";
+import {
+  ExtracurricularsTab,
+  type ExtracurricularActivityRow,
+  type ExtracurricularStudentOption,
+} from "@/components/dashboard/institute/extracurriculars-tab";
+import { ExamsLmsTab, type ExamOversightRow } from "@/components/dashboard/institute/exams-lms-tab";
+import type { WeeklyTimetableSlot } from "@/components/dashboard/weekly-timetable";
 import { ClassProfileView } from "@/components/features/class-profile-view";
 import { InstituteOnboardingWizard } from "@/components/onboarding/institute-onboarding-wizard";
 import { loadClassProfile } from "@/lib/load-class-profile";
@@ -125,6 +151,12 @@ export default async function InstituteDashboardPage({
     { data: batchRows },
     { data: scheduleSlotRows },
     { data: classAdRows },
+    { data: feeChargeRows },
+    { data: feePaymentRows },
+    { data: guardianRows },
+    { data: libraryResourceRows },
+    { data: extracurricularActivityRows },
+    { data: extracurricularParticipantRows },
   ] = await Promise.all([
     instituteId
       ? supabase.from("class_teachers").select("teacher_id, is_visible, status, requested_by").eq("class_id", instituteId)
@@ -165,13 +197,13 @@ export default async function InstituteDashboardPage({
     instituteId
       ? supabase
           .from("advertisements")
-          .select("id, content, status")
+          .select("id, content, status, created_at")
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
           .eq("placement", "own_profile")
           .order("created_at", { ascending: false })
       : Promise.resolve({
-          data: [] as { id: string; content: string; status: "active" | "expired" | "removed" | "deleted" }[],
+          data: [] as { id: string; content: string; status: "active" | "expired" | "removed" | "deleted"; created_at: string }[],
         }),
     instituteId
       ? supabase
@@ -238,13 +270,83 @@ export default async function InstituteDashboardPage({
     instituteId
       ? supabase
           .from("advertisements")
-          .select("id, batch_id, title, content, status")
+          .select("id, batch_id, title, content, status, created_at, view_count")
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
           .eq("placement", "search_results")
       : Promise.resolve({
-          data: [] as { id: string; batch_id: string | null; title: string; content: string | null; status: "active" | "expired" | "removed" | "deleted" }[],
+          data: [] as {
+            id: string;
+            batch_id: string | null;
+            title: string;
+            content: string | null;
+            status: "active" | "expired" | "removed" | "deleted";
+            created_at: string;
+            view_count: number;
+          }[],
         }),
+    instituteId
+      ? supabase
+          .from("fee_charges")
+          .select("id, student_id, batch_id, description, amount, charged_at")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+          .order("charged_at", { ascending: false })
+      : Promise.resolve({
+          data: [] as { id: string; student_id: string; batch_id: string | null; description: string; amount: number; charged_at: string }[],
+        }),
+    instituteId
+      ? supabase
+          .from("fee_payments")
+          .select("id, student_id, charge_id, amount, method, note, paid_at")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+          .order("paid_at", { ascending: false })
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            student_id: string;
+            charge_id: string | null;
+            amount: number;
+            method: "cash" | "bank_transfer" | "card" | "other";
+            note: string | null;
+            paid_at: string;
+          }[],
+        }),
+    instituteId
+      ? supabase
+          .from("student_guardians")
+          .select("student_id, guardian_name, guardian_phone, guardian_email, note")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+      : Promise.resolve({
+          data: [] as { student_id: string; guardian_name: string | null; guardian_phone: string | null; guardian_email: string | null; note: string | null }[],
+        }),
+    instituteId
+      ? supabase
+          .from("library_resources")
+          .select("id, title, description, category, file_path, view_count")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({
+          data: [] as { id: string; title: string; description: string | null; category: string | null; file_path: string; view_count: number }[],
+        }),
+    instituteId
+      ? supabase
+          .from("extracurricular_activities")
+          .select("id, name, description, schedule_note")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] as { id: string; name: string; description: string | null; schedule_note: string | null }[] }),
+    instituteId
+      ? supabase
+          .from("extracurricular_participants")
+          .select("id, activity_id, student_id, certificate_issued")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+      : Promise.resolve({ data: [] as { id: string; activity_id: string; student_id: string; certificate_issued: boolean }[] }),
   ]);
 
   const batchSubjectIds = [...new Set((batchRows ?? []).map((b) => b.subject_id).filter((id): id is string => !!id))];
@@ -562,7 +664,10 @@ export default async function InstituteDashboardPage({
   // a subject picker: an institute batch's subject is already resolved at
   // creation (createBatch's resolve_subject step), so there's nothing to
   // set here.
-  const classAdsByBatchId = new Map<string, { id: string; title: string; content: string | null; status: "active" | "expired" | "removed" }[]>();
+  const classAdsByBatchId = new Map<
+    string,
+    { id: string; title: string; content: string | null; status: "active" | "expired" | "removed"; view_count: number }[]
+  >();
   // Deleted (0109 soft-delete) ads are set aside here rather than filtered
   // out entirely — the Advertisement tab's "Ad history" section below still
   // needs to show and let the owner restore them.
@@ -570,7 +675,7 @@ export default async function InstituteDashboardPage({
   for (const ad of classAdRows ?? []) {
     if (!ad.batch_id || ad.status === "deleted") continue;
     const list = classAdsByBatchId.get(ad.batch_id) ?? [];
-    list.push({ id: ad.id, title: ad.title, content: ad.content, status: ad.status });
+    list.push({ id: ad.id, title: ad.title, content: ad.content, status: ad.status, view_count: ad.view_count });
     classAdsByBatchId.set(ad.batch_id, list);
   }
   const instituteAdBatches: InstituteAdBatchRow[] = (batchRows ?? []).map((b) => {
@@ -581,7 +686,7 @@ export default async function InstituteDashboardPage({
       subjectName: b.subject_id ? (subjectNameById.get(b.subject_id) ?? null) : null,
       hourlyRate: b.hourly_rate,
       monthlyRate: b.monthly_rate,
-      ads: ads.map((ad) => ({ id: ad.id, title: ad.title, content: ad.content ?? "", status: ad.status })),
+      ads: ads.map((ad) => ({ id: ad.id, title: ad.title, content: ad.content ?? "", status: ad.status, viewCount: ad.view_count })),
     };
   });
 
@@ -693,6 +798,182 @@ export default async function InstituteDashboardPage({
     (instituteBatchRoster[row.batch_id] ??= []).push(entry);
   }
 
+  // Institute-level Attendance tab — no new table, reuses attendance_records
+  // (already fetched as instituteAttendanceRows for Analytics) at
+  // live-class-session granularity for the editor, plus analyticsAttendance
+  // re-aggregated by batch for the trend/low-attendance summary.
+  const instituteAttendanceByKey = new Map((instituteAttendanceRows ?? []).map((a) => [`${a.live_class_id}:${a.student_id}`, a.status]));
+  const instituteAttendanceSessions: InstituteAttendanceSession[] = (instituteLiveClassRows ?? []).map((c) => {
+    const pool = c.batch_id ? acceptedInstituteEnrollments.filter((e) => e.batch_id === c.batch_id) : acceptedInstituteEnrollments;
+    return {
+      id: c.id,
+      title: c.title,
+      batchLabel: c.batch_id ? (batchTitleById.get(c.batch_id) ?? null) : null,
+      dateLabel: dateFormatter.format(new Date(c.scheduled_at)),
+      rows: pool.map((e) => ({
+        studentId: e.student_id,
+        studentName: studentInfoById.get(e.student_id)?.full_name ?? "—",
+        status: instituteAttendanceByKey.get(`${c.id}:${e.student_id}`) ?? null,
+      })),
+    };
+  });
+  const batchAttendanceAgg = new Map<string, { present: number; total: number }>();
+  for (const a of analyticsAttendance) {
+    if (!a.batchId) continue;
+    const entry = batchAttendanceAgg.get(a.batchId) ?? { present: 0, total: 0 };
+    entry.total += 1;
+    if (a.status === "present") entry.present += 1;
+    batchAttendanceAgg.set(a.batchId, entry);
+  }
+  const batchAttendanceSummaries: BatchAttendanceSummary[] = batches
+    .map((b) => {
+      const agg = batchAttendanceAgg.get(b.id);
+      return {
+        batchId: b.id,
+        batchTitle: b.title,
+        presentPercent: agg && agg.total > 0 ? Math.round((agg.present / agg.total) * 100) : null,
+        recordCount: agg?.total ?? 0,
+      };
+    })
+    .filter((s) => s.recordCount > 0);
+
+  // Timetable (School LMS) — flattens every batch's already-fetched
+  // recurring schedule slots into one institute-wide weekly grid, reusing
+  // the same WeeklyTimetable component the teacher dashboard's Classes tab
+  // uses. No new query.
+  const timetableSlots: WeeklyTimetableSlot[] = batches.flatMap((b) =>
+    b.scheduleSlots.map((s) => ({ batchTitle: b.title, dayOfWeek: s.dayOfWeek, startTime: s.startTime, endTime: s.endTime })),
+  );
+
+  // Exams oversight (School LMS) — read-only rollup of exams teachers
+  // already create, reusing analyticsExamResults computed above for the
+  // Analytics tab. No authoring UI here; institute staff review, they don't
+  // create exams themselves.
+  const examResultsByExamId = new Map<string, typeof analyticsExamResults>();
+  for (const r of analyticsExamResults) {
+    const list = examResultsByExamId.get(r.examId) ?? [];
+    list.push(r);
+    examResultsByExamId.set(r.examId, list);
+  }
+  const examOversightRows: ExamOversightRow[] = (instituteExamRows ?? []).map((e) => {
+    const results = examResultsByExamId.get(e.id) ?? [];
+    const graded = results.filter((r) => r.status === "graded" && r.scorePercent !== null);
+    const avgScorePercent = graded.length
+      ? Math.round(graded.reduce((sum, r) => sum + (r.scorePercent ?? 0), 0) / graded.length)
+      : null;
+    return {
+      id: e.id,
+      title: e.title,
+      batchTitle: e.batch_id ? (batchTitleById.get(e.batch_id) ?? null) : null,
+      dateLabel: e.scheduled_at ? dateFormatter.format(new Date(e.scheduled_at)) : null,
+      submissionCount: results.length,
+      gradedCount: graded.length,
+      avgScorePercent,
+    };
+  });
+
+  // Finance tab — internal fee tracking, no payment gateway (0127).
+  const feeCharges: FeeChargeRow[] = (feeChargeRows ?? []).map((c) => ({
+    id: c.id,
+    studentId: c.student_id,
+    studentName: studentInfoById.get(c.student_id)?.full_name ?? "—",
+    batchLabel: c.batch_id ? (batchTitleById.get(c.batch_id) ?? null) : null,
+    description: c.description,
+    amount: Number(c.amount),
+    chargedAtLabel: dateFormatter.format(new Date(c.charged_at)),
+  }));
+  const feePayments: FeePaymentRow[] = (feePaymentRows ?? []).map((p) => ({
+    id: p.id,
+    studentId: p.student_id,
+    studentName: studentInfoById.get(p.student_id)?.full_name ?? "—",
+    amount: Number(p.amount),
+    method: p.method,
+    paidAtLabel: dateFormatter.format(new Date(p.paid_at)),
+    note: p.note,
+  }));
+  const totalCharged = feeCharges.reduce((sum, c) => sum + c.amount, 0);
+  const totalCollected = feePayments.reduce((sum, p) => sum + p.amount, 0);
+  const outstandingTotal = totalCharged - totalCollected;
+  const financeNow = new Date();
+  const thisMonthCollected = (feePaymentRows ?? [])
+    .filter((p) => {
+      const d = new Date(p.paid_at);
+      return d.getFullYear() === financeNow.getFullYear() && d.getMonth() === financeNow.getMonth();
+    })
+    .reduce((sum, p) => sum + Number(p.amount), 0);
+  const feeBalanceMap = new Map<string, { totalCharged: number; totalPaid: number }>();
+  for (const c of feeCharges) {
+    const entry = feeBalanceMap.get(c.studentId) ?? { totalCharged: 0, totalPaid: 0 };
+    entry.totalCharged += c.amount;
+    feeBalanceMap.set(c.studentId, entry);
+  }
+  for (const p of feePayments) {
+    const entry = feeBalanceMap.get(p.studentId) ?? { totalCharged: 0, totalPaid: 0 };
+    entry.totalPaid += p.amount;
+    feeBalanceMap.set(p.studentId, entry);
+  }
+  const financeStudentOptions = [...new Set(acceptedInstituteEnrollments.map((e) => e.student_id))].map((id) => ({
+    id,
+    name: studentInfoById.get(id)?.full_name ?? "—",
+  }));
+  const feeBalances: FeeBalanceRow[] = [...feeBalanceMap.entries()]
+    .map(([studentId, v]) => ({
+      studentId,
+      studentName: studentInfoById.get(studentId)?.full_name ?? "—",
+      totalCharged: v.totalCharged,
+      totalPaid: v.totalPaid,
+      balance: v.totalCharged - v.totalPaid,
+    }))
+    .sort((a, b) => b.balance - a.balance);
+
+  // Parent Portal — staff-facing guardian contact directory (0128), one
+  // row per enrolled student. Institute-internal only, no parent login.
+  const guardianByStudentId = new Map((guardianRows ?? []).map((g) => [g.student_id, g]));
+  const parentPortalRows: ParentPortalStudentRow[] = financeStudentOptions.map(({ id, name }) => {
+    const g = guardianByStudentId.get(id);
+    return {
+      studentId: id,
+      studentName: name,
+      guardianName: g?.guardian_name ?? "",
+      guardianPhone: g?.guardian_phone ?? "",
+      guardianEmail: g?.guardian_email ?? "",
+      note: g?.note ?? "",
+    };
+  });
+
+  // Library — digital resource library (0129), public bucket so a direct
+  // URL is fine (unlike notes' signed-URL serving path).
+  const libraryResources: LibraryResourceRow[] = (libraryResourceRows ?? []).map((r) => ({
+    id: r.id,
+    title: r.title,
+    description: r.description,
+    category: r.category,
+    fileUrl: supabase.storage.from("library").getPublicUrl(r.file_path).data.publicUrl,
+    filePath: r.file_path,
+    viewCount: r.view_count,
+  }));
+
+  // Extracurriculars (0130) — activities + roster, institute-managed.
+  const participantsByActivityId = new Map<string, NonNullable<typeof extracurricularParticipantRows>>();
+  for (const p of extracurricularParticipantRows ?? []) {
+    const list = participantsByActivityId.get(p.activity_id) ?? [];
+    list.push(p);
+    participantsByActivityId.set(p.activity_id, list);
+  }
+  const extracurricularActivities: ExtracurricularActivityRow[] = (extracurricularActivityRows ?? []).map((a) => ({
+    id: a.id,
+    name: a.name,
+    description: a.description,
+    scheduleNote: a.schedule_note,
+    participants: (participantsByActivityId.get(a.id) ?? []).map((p) => ({
+      id: p.id,
+      studentId: p.student_id,
+      studentName: studentInfoById.get(p.student_id)?.full_name ?? "—",
+      certificateIssued: p.certificate_issued,
+    })),
+  }));
+  const extracurricularStudentOptions: ExtracurricularStudentOption[] = financeStudentOptions;
+
   const referrals: ReferralRow[] = (myReferralRows ?? []).map((row) => ({
     id: row.id,
     name: row.referred_name,
@@ -702,6 +983,37 @@ export default async function InstituteDashboardPage({
 
   const liveClassProfile = await liveClassProfilePromise;
   const liveView = liveClassProfile ? <ClassProfileView classProfile={liveClassProfile} showGate={false} isOwnerView /> : null;
+
+  // Overview tab's "Recent activity" feed — no dedicated event-log table
+  // exists, so this unions the 3 most naturally chronological things
+  // already fetched above (new ads, newly-accepted enrollments, new
+  // reviews) by their real timestamps rather than adding one.
+  const recentActivity: RecentActivityItem[] = [
+    ...(classAdRows ?? []).map((ad) => ({ id: `ad-${ad.id}`, type: "ad" as const, title: ad.title, dateIso: ad.created_at })),
+    ...acceptedInstituteEnrollments.map((row) => ({
+      id: `enroll-${row.id}`,
+      type: "enrollment" as const,
+      studentName: studentInfoById.get(row.student_id)?.full_name ?? "—",
+      batchLabel: row.batch_id ? (batchTitleById.get(row.batch_id) ?? "—") : generalBatchLabel,
+      dateIso: row.joined_at,
+    })),
+    ...(myReviewRows ?? []).map((r) => ({ id: `review-${r.id}`, type: "review" as const, author: r.author ?? "Anonymous", dateIso: r.created_at })),
+  ]
+    .sort((a, b) => new Date(b.dateIso).getTime() - new Date(a.dateIso).getTime())
+    .slice(0, 5)
+    .map(({ dateIso, ...rest }) => ({ ...rest, dateLabel: dateFormatter.format(new Date(dateIso)) }));
+
+  // Same "pending" rows the Teachers/Students tabs already compute —
+  // surfaced here too so approvals waiting on the institute are visible
+  // right from Overview.
+  const pendingTeacherApprovals: PendingTeacherApproval[] = instituteTeachers
+    .filter((row) => row.rosterStatus === "pending")
+    .map((row) => ({ id: row.id, name: row.name, subject: row.subject }));
+  const pendingStudentApprovals: PendingStudentApproval[] = instituteJoinRequests.map((row) => ({
+    id: row.id,
+    studentName: row.studentName,
+    batchLabel: row.batch,
+  }));
 
   return (
     <DashboardShell
@@ -725,14 +1037,26 @@ export default async function InstituteDashboardPage({
       }
       groups={[
         {
+          items: [{ key: "overview", label: t("tabs.overview") }],
+        },
+        {
           key: "institute",
           label: t("groupInstitute"),
           items: [
-            { key: "overview", label: t("tabs.overview") },
             { key: "profile", label: t("tabs.profile") },
-            { key: "teachers", label: t("tabs.teachers"), count: teacherIds.length },
+            {
+              key: "teachers",
+              label: t("tabs.teachers"),
+              count: pendingTeacherApprovals.length,
+              countUrgent: pendingTeacherApprovals.length > 0,
+            },
             { key: "batches", label: t("tabs.batches"), count: batches.length },
-            { key: "students", label: t("tabs.students"), count: instituteJoinRequests.length },
+            {
+              key: "students",
+              label: t("tabs.students"),
+              count: instituteJoinRequests.length,
+              countUrgent: instituteJoinRequests.length > 0,
+            },
             { key: "calendar", label: t("tabs.calendar") },
           ],
         },
@@ -744,17 +1068,32 @@ export default async function InstituteDashboardPage({
               key: "inquiries",
               label: t("tabs.inquiries"),
               count: inquiries.filter((i) => i.status === "new").length,
+              countUrgent: inquiries.some((i) => i.status === "new"),
             },
             {
               key: "studentRequests",
               label: t("tabs.studentRequests"),
               count: wantedAdRequests.filter((r) => !r.myResponse).length,
+              countUrgent: wantedAdRequests.some((r) => !r.myResponse),
             },
             { key: "ads", label: t("tabs.ads"), highlight: true },
-            { key: "announcements", label: t("tabs.announcements") },
+            { key: "attendance", label: t("tabs.attendance") },
+            { key: "finance", label: t("tabs.finance") },
             { key: "analytics", label: t("tabs.analytics") },
+            { key: "announcements", label: t("tabs.announcements") },
             { key: "reviews", label: t("tabs.reviews"), count: reviewRows?.length ?? 0 },
             { key: "settings", label: t("tabs.settings") },
+          ],
+        },
+        {
+          key: "lms",
+          label: t("groupLms"),
+          items: [
+            { key: "timetable", label: t("tabs.timetable") },
+            { key: "exams", label: t("tabs.exams") },
+            { key: "parentPortal", label: t("tabs.parentPortal") },
+            { key: "library", label: t("tabs.library") },
+            { key: "extracurriculars", label: t("tabs.extracurriculars") },
           ],
         },
       ]}
@@ -762,11 +1101,16 @@ export default async function InstituteDashboardPage({
         overview: (
           <OverviewTab
             instituteName={fullName}
+            location={classProfile?.location ?? ""}
+            verified={classProfile?.institution_verified ?? false}
             teachersCount={acceptedTeacherIds.length}
             studentsCount={studentsCount}
-            averageRating={averageRating}
             batchesCount={batches.length}
+            revenueDisplay={thisMonthCollected > 0 ? `Rs. ${thisMonthCollected.toLocaleString()}` : "—"}
             teachersAtGlance={teachersAtGlance}
+            recentActivity={recentActivity}
+            pendingTeacherApprovals={pendingTeacherApprovals}
+            pendingStudentApprovals={pendingStudentApprovals}
           />
         ),
         profile: (
@@ -810,6 +1154,25 @@ export default async function InstituteDashboardPage({
             promotionHistory={institutePromotionHistory}
           />
         ),
+        attendance: <AttendanceTab sessions={instituteAttendanceSessions} batchSummaries={batchAttendanceSummaries} />,
+        finance: (
+          <FinanceTab
+            totalCharged={totalCharged}
+            totalCollected={totalCollected}
+            outstandingTotal={outstandingTotal}
+            thisMonthCollected={thisMonthCollected}
+            balances={feeBalances}
+            charges={feeCharges}
+            payments={feePayments}
+            students={financeStudentOptions}
+            batches={batches.map((b) => ({ id: b.id, title: b.title }))}
+          />
+        ),
+        timetable: <TimetableTab slots={timetableSlots} />,
+        exams: <ExamsLmsTab exams={examOversightRows} />,
+        parentPortal: <ParentPortalTab students={parentPortalRows} />,
+        library: <LibraryTab resources={libraryResources} />,
+        extracurriculars: <ExtracurricularsTab activities={extracurricularActivities} studentOptions={extracurricularStudentOptions} />,
         announcements: <AnnouncementsTab announcements={announcements} />,
         analytics: (
           <AnalyticsTab

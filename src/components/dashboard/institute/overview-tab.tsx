@@ -1,50 +1,165 @@
 import { useTranslations } from "next-intl";
 import { Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { StatCard } from "@/components/dashboard/stat-card";
 import { StatusBadge } from "@/components/features/status-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import type { TeachersAtGlance } from "@/types/dashboard-institute";
 
+export type RecentActivityItem =
+  | { id: string; type: "ad"; title: string; dateLabel: string }
+  | { id: string; type: "enrollment"; studentName: string; batchLabel: string; dateLabel: string }
+  | { id: string; type: "review"; author: string; dateLabel: string };
+
+export type PendingTeacherApproval = { id: string; name: string; subject: string };
+export type PendingStudentApproval = { id: string; studentName: string; batchLabel: string };
+
+function HeroStat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-lg bg-white/8 px-4 py-3.5">
+      <div className="font-mono text-[11px] tracking-wide text-white/55 uppercase">{label}</div>
+      <div className="font-display text-2xl text-white">{value}</div>
+    </div>
+  );
+}
+
+function TimelineItem({ label, dateLabel, dotClassName }: { label: React.ReactNode; dateLabel: string; dotClassName?: string }) {
+  return (
+    <div className="flex gap-3 border-b border-border py-2.5 last:border-b-0">
+      <div className={`mt-1.5 size-2 shrink-0 rounded-full ${dotClassName ?? "bg-cta"}`} />
+      <div className="text-sm">
+        <p className="text-foreground">{label}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{dateLabel}</p>
+      </div>
+    </div>
+  );
+}
+
 export function OverviewTab({
   instituteName,
+  location,
+  verified,
   teachersCount,
   studentsCount,
-  averageRating,
   batchesCount,
+  revenueDisplay,
   teachersAtGlance,
+  recentActivity,
+  pendingTeacherApprovals,
+  pendingStudentApprovals,
 }: {
   instituteName: string;
+  location: string;
+  verified: boolean;
   teachersCount: number;
   studentsCount: number;
-  averageRating: string | null;
   batchesCount: number;
+  /** "—" until a real number exists to show here (Finance feature isn't built yet). */
+  revenueDisplay: string;
   teachersAtGlance: TeachersAtGlance[];
+  recentActivity: RecentActivityItem[];
+  pendingTeacherApprovals: PendingTeacherApproval[];
+  pendingStudentApprovals: PendingStudentApproval[];
 }) {
   const t = useTranslations("instituteDashboard.overview");
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl text-primary">{instituteName}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+      <div className="rounded-xl bg-primary p-6 sm:p-7">
+        <div className="flex flex-wrap items-start justify-between gap-3.5">
+          <div>
+            <h1 className="flex flex-wrap items-center gap-2 font-display text-2xl text-white">
+              {instituteName}
+              {verified && (
+                <span className="rounded-full bg-cta px-2.5 py-0.5 font-mono text-[11px] font-semibold tracking-wide text-primary uppercase">
+                  ✓ {t("hero.verified")}
+                </span>
+              )}
+            </h1>
+            <p className="mt-1 text-sm text-white/60">
+              {t("subtitle")}
+              {location ? ` · ${location}` : ""}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            <Link
+              href={{ pathname: "/institute", query: { tab: "batches" } }}
+              className="rounded-sm bg-white/10 px-3.5 py-2 text-sm font-semibold text-white hover:bg-white/15"
+            >
+              {t("hero.createClass")}
+            </Link>
+            <Link
+              href={{ pathname: "/institute", query: { tab: "teachers" } }}
+              className="rounded-sm bg-white/10 px-3.5 py-2 text-sm font-semibold text-white hover:bg-white/15"
+            >
+              {t("hero.approveTeacher")}
+            </Link>
+            <Link
+              href={{ pathname: "/institute", query: { tab: "ads" } }}
+              className="rounded-sm bg-cta px-3.5 py-2 text-sm font-semibold text-primary hover:bg-cta-hover"
+            >
+              {t("hero.postAd")}
+            </Link>
+          </div>
         </div>
-        <Link
-          href={{ pathname: "/institute", query: { tab: "teachers" } }}
-          className="inline-flex items-center rounded-sm bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-light"
-        >
-          {t("inviteTeacher")}
-        </Link>
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <HeroStat label={t("stats.classes")} value={batchesCount} />
+          <HeroStat label={t("stats.teachers")} value={teachersCount} />
+          <HeroStat label={t("stats.students")} value={studentsCount} />
+          <HeroStat label={t("stats.revenue")} value={revenueDisplay} />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label={t("stats.teachers")} value={teachersCount} />
-        <StatCard label={t("stats.students")} value={studentsCount} />
-        <StatCard label={t("stats.rating")} value={averageRating ?? "—"} />
-        <StatCard label={t("stats.batches")} value={batchesCount} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="rounded-lg border border-border bg-white p-5">
+          <h3 className="mb-2 text-lg">{t("activity.title")}</h3>
+          {recentActivity.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("activity.empty")}</p>
+          ) : (
+            recentActivity.map((item) => (
+              <TimelineItem
+                key={item.id}
+                dateLabel={item.dateLabel}
+                label={
+                  item.type === "ad"
+                    ? t("activity.postedAd", { title: item.title })
+                    : item.type === "enrollment"
+                      ? t("activity.enrolled", { name: item.studentName, batch: item.batchLabel })
+                      : t("activity.newReview", { author: item.author })
+                }
+              />
+            ))
+          )}
+        </div>
+        <div className="rounded-lg border border-border bg-white p-5">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-lg">{t("approvals.title")}</h3>
+            <Link href={{ pathname: "/institute", query: { tab: "teachers" } }} className="text-sm font-medium text-accent-deep hover:underline">
+              {t("approvals.viewAll")}
+            </Link>
+          </div>
+          {pendingTeacherApprovals.length === 0 && pendingStudentApprovals.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("approvals.empty")}</p>
+          ) : (
+            <>
+              {pendingTeacherApprovals.map((row) => (
+                <TimelineItem
+                  key={`teacher-${row.id}`}
+                  label={t("approvals.teacherApplication", { name: row.name }) + (row.subject ? ` (${row.subject})` : "")}
+                  dateLabel={t("approvals.awaitingReview")}
+                />
+              ))}
+              {pendingStudentApprovals.map((row) => (
+                <TimelineItem
+                  key={`student-${row.id}`}
+                  label={t("approvals.studentRequest", { name: row.studentName, batch: row.batchLabel })}
+                  dateLabel={t("approvals.awaitingReview")}
+                />
+              ))}
+            </>
+          )}
+        </div>
       </div>
 
       <div className="rounded-lg border border-border bg-white p-5">

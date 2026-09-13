@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { StatCard } from "@/components/dashboard/stat-card";
 import { ReviewItem } from "@/components/features/review-item";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { usePagination } from "@/lib/hooks/use-pagination";
@@ -31,6 +32,8 @@ export function ReviewsTab({
   const [error, setError] = useState<string | null>(null);
   const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(reviews.length);
   const pagedReviews = reviews.slice(offset, offset + pageSize);
+  const repliedCount = reviews.filter((r) => r.reply).length;
+  const responseRate = reviews.length > 0 ? `${Math.round((repliedCount / reviews.length) * 100)}%` : "—";
 
   function startReply(id: string) {
     setReplyingId(id);
@@ -71,6 +74,12 @@ export function ReviewsTab({
       <div>
         <h1 className="font-display text-2xl text-primary">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("summary", { count: reviewCount, rating: averageRating })}</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+        <StatCard label={t("stats.overallRating")} value={reviewCount > 0 ? `★ ${averageRating}` : "—"} />
+        <StatCard label={t("stats.totalReviews")} value={reviewCount} />
+        <StatCard label={t("stats.responseRate")} value={responseRate} />
       </div>
 
       {error && <p className="text-sm font-medium text-destructive">{error}</p>}

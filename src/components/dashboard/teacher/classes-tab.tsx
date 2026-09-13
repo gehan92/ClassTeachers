@@ -20,6 +20,7 @@ import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createBatch, updateBatch, deleteBatch, setBatchScheduleSlots } from "@/lib/dashboard/batches-actions";
 import { ScheduleSlotEditor, type ScheduleSlotDraft } from "@/components/dashboard/schedule-slot-editor";
+import { WeeklyTimetable } from "@/components/dashboard/weekly-timetable";
 import type { GradeBand } from "@/types/grade-band";
 import { GRADE_BAND_SELECT_VALUES, OPEN_GRADE_VALUE } from "@/lib/grade-band-options";
 
@@ -667,7 +668,15 @@ export function ClassesTab({
         </div>
       ))}
 
-      {view === "calendar" && <ClassesWeeklyTimetable batches={filteredBatches} />}
+      {view === "calendar" && (
+        <WeeklyTimetable
+          slots={filteredBatches.flatMap((batch) =>
+            batch.scheduleSlots.map((slot) => ({ batchTitle: batch.title, dayOfWeek: slot.dayOfWeek, startTime: slot.startTime, endTime: slot.endTime })),
+          )}
+          emptyLabel={t("timetableEmpty")}
+          noClassesLabel={t("timetableNoClasses")}
+        />
+      )}
 
       <AlertDialog
         open={confirmDeleteId !== null}
@@ -702,71 +711,6 @@ export function ClassesTab({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
-}
-
-// Monday-first display order, each value a dayOfWeek index (0=Sun..6=Sat) —
-// same convention as the student dashboard's own Calendar tab timetable grid
-// (calendar-tab.tsx), which this mirrors for the teacher's own batches only
-// (no cross-content agenda here, just the recurring weekly schedule).
-const TIMETABLE_DAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
-
-/**
- * Read-only weekly view of every batch's recurring meeting slots
- * (batch_schedule_slots, 0118) — the Classes tab's "calendar view" toggle
- * alongside the existing list view. A batch with no slots set just never
- * appears here; nothing to edit from this view, that's still the list view.
- */
-function ClassesWeeklyTimetable({ batches }: { batches: TeacherBatchRow[] }) {
-  const t = useTranslations("teacherDashboard.classes");
-  const td = useTranslations("scheduleSlotEditor");
-
-  const slotsByDay = new Map<number, { batchTitle: string; startTime: string; endTime: string }[]>();
-  for (const day of TIMETABLE_DAY_ORDER) slotsByDay.set(day, []);
-  for (const batch of batches) {
-    for (const slot of batch.scheduleSlots) {
-      const list = slotsByDay.get(slot.dayOfWeek);
-      if (list) list.push({ batchTitle: batch.title, startTime: slot.startTime, endTime: slot.endTime });
-    }
-  }
-  for (const list of slotsByDay.values()) list.sort((a, b) => a.startTime.localeCompare(b.startTime));
-
-  const hasAnySlot = batches.some((b) => b.scheduleSlots.length > 0);
-
-  if (!hasAnySlot) {
-    return (
-      <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
-        {t("timetableEmpty")}
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-white">
-      <div className="grid min-w-[980px] grid-cols-7">
-        {TIMETABLE_DAY_ORDER.map((day, i) => (
-          <div key={day} className={`flex flex-col gap-2 p-3 ${i !== 0 ? "border-l border-border" : ""}`}>
-            <div className="text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-              {td(`days.${["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][day]}`)}
-            </div>
-            <div className="flex flex-col gap-2">
-              {(slotsByDay.get(day) ?? []).length === 0 ? (
-                <p className="py-4 text-center text-xs text-muted-foreground">{t("timetableNoClasses")}</p>
-              ) : (
-                (slotsByDay.get(day) ?? []).map((slot, i2) => (
-                  <div key={i2} className="rounded-md bg-primary/5 p-2.5">
-                    <p className="font-mono text-[11px] text-primary">
-                      {slot.startTime}–{slot.endTime}
-                    </p>
-                    <p className="mt-0.5 text-[13px] font-medium text-foreground">{slot.batchTitle}</p>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

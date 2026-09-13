@@ -12,6 +12,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
+import { StatCard } from "@/components/dashboard/stat-card";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { usePagination } from "@/lib/hooks/use-pagination";
 import {
@@ -59,8 +60,10 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
   const [visibility, setVisibility] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(teachers.map((teacher) => [teacher.id, teacher.visible])),
   );
-  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(teachers.length);
-  const pagedTeachers = teachers.slice(offset, offset + pageSize);
+  const pendingTeachers = teachers.filter((teacher) => teacher.rosterStatus === "pending");
+  const rosterTeachers = teachers.filter((teacher) => teacher.rosterStatus !== "pending");
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(rosterTeachers.length);
+  const pagedTeachers = rosterTeachers.slice(offset, offset + pageSize);
 
   async function handleAdd() {
     const trimmed = email.trim();
@@ -150,8 +153,83 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
         </div>
       )}
 
+      <div className="grid grid-cols-2 gap-3.5 sm:max-w-100">
+        <StatCard label={t("stats.pending")} value={pendingTeachers.length} />
+        <StatCard label={t("stats.approved")} value={rosterTeachers.filter((teacher) => teacher.rosterStatus === "accepted").length} />
+      </div>
+
+      {pendingTeachers.length > 0 && (
+        <div className="rounded-lg border border-border bg-white p-5">
+          <h3 className="mb-4 text-lg">{t("pendingTitle")}</h3>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("table.teacher")}</TableHead>
+                <TableHead>{t("table.subject")}</TableHead>
+                <TableHead className="text-right">{t("table.actions")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pendingTeachers.map((teacher) => (
+                <TableRow key={teacher.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2.5">
+                      <Avatar>
+                        <AvatarFallback className={avatarGradientClass(teacher.name)}>
+                          {initialsFor(teacher.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-foreground">{teacher.name}</span>
+                        <span className="w-fit rounded-full bg-background px-2 py-0.5 font-mono text-[10.5px] text-muted-foreground">
+                          {teacher.requestedBy === "teacher" ? t("table.requestPending") : t("table.invitePending")}
+                        </span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{teacher.subject || "—"}</TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-3">
+                      {teacher.requestedBy === "teacher" ? (
+                        <>
+                          <button
+                            type="button"
+                            className="text-sm font-medium text-primary hover:underline disabled:pointer-events-none disabled:opacity-60"
+                            onClick={() => handleRespond(teacher.id, true)}
+                            disabled={respondingId === teacher.id}
+                          >
+                            {t("table.approve")}
+                          </button>
+                          <button
+                            type="button"
+                            className="text-sm font-medium text-lock hover:underline disabled:pointer-events-none disabled:opacity-60"
+                            onClick={() => handleRespond(teacher.id, false)}
+                            disabled={respondingId === teacher.id}
+                          >
+                            {t("table.reject")}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          className="text-sm font-medium text-lock hover:underline"
+                          onClick={() => handleRemove(teacher)}
+                        >
+                          {t("table.cancelInvite")}
+                        </button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
       <div className="rounded-lg border border-border bg-white p-5">
-        {teachers.length === 0 ? (
+        <h3 className="mb-4 text-lg">{t("rosterTitle")}</h3>
+        {rosterTeachers.length === 0 ? (
           <p className="p-2 text-sm text-muted-foreground">{t("empty")}</p>
         ) : (
           <Table>
@@ -175,18 +253,11 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
                           {initialsFor(teacher.name)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex flex-col">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-medium text-foreground">{teacher.name}</span>
-                          {teacher.isCampusLecturer && (
-                            <span className="w-fit rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[10.5px] uppercase tracking-wide text-muted-foreground">
-                              {t("table.lecturerBadge")}
-                            </span>
-                          )}
-                        </div>
-                        {teacher.rosterStatus === "pending" && (
-                          <span className="w-fit rounded-full bg-background px-2 py-0.5 font-mono text-[10.5px] text-muted-foreground">
-                            {teacher.requestedBy === "teacher" ? t("table.requestPending") : t("table.invitePending")}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-foreground">{teacher.name}</span>
+                        {teacher.isCampusLecturer && (
+                          <span className="w-fit rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[10.5px] uppercase tracking-wide text-muted-foreground">
+                            {t("table.lecturerBadge")}
                           </span>
                         )}
                       </div>
@@ -207,39 +278,16 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-3">
-                      {teacher.rosterStatus === "pending" && teacher.requestedBy === "teacher" ? (
-                        <>
-                          <button
-                            type="button"
-                            className="text-sm font-medium text-primary hover:underline disabled:pointer-events-none disabled:opacity-60"
-                            onClick={() => handleRespond(teacher.id, true)}
-                            disabled={respondingId === teacher.id}
-                          >
-                            {t("table.approve")}
-                          </button>
-                          <button
-                            type="button"
-                            className="text-sm font-medium text-lock hover:underline disabled:pointer-events-none disabled:opacity-60"
-                            onClick={() => handleRespond(teacher.id, false)}
-                            disabled={respondingId === teacher.id}
-                          >
-                            {t("table.reject")}
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <Link href={teacher.teacherHref} className="text-sm font-medium text-primary hover:underline">
-                            {t("table.view")}
-                          </Link>
-                          <button
-                            type="button"
-                            className="text-sm font-medium text-lock hover:underline"
-                            onClick={() => handleRemove(teacher)}
-                          >
-                            {teacher.rosterStatus === "pending" ? t("table.cancelInvite") : t("table.remove")}
-                          </button>
-                        </>
-                      )}
+                      <Link href={teacher.teacherHref} className="text-sm font-medium text-primary hover:underline">
+                        {t("table.view")}
+                      </Link>
+                      <button
+                        type="button"
+                        className="text-sm font-medium text-lock hover:underline"
+                        onClick={() => handleRemove(teacher)}
+                      >
+                        {t("table.remove")}
+                      </button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -247,12 +295,12 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
             </TableBody>
           </Table>
         )}
-        {teachers.length > 0 && (
+        {rosterTeachers.length > 0 && (
           <PaginationFooter
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setPage}
-            showingLabel={tc("pagination.showingCount", { shown: pagedTeachers.length, total: teachers.length })}
+            showingLabel={tc("pagination.showingCount", { shown: pagedTeachers.length, total: rosterTeachers.length })}
             previousLabel={tc("pagination.previous")}
             nextLabel={tc("pagination.next")}
             pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}

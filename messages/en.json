@@ -271,9 +271,9 @@
     },
     "rating": "Minimum rating",
     "ratingOptions": {
-      "any": "Any",
       "3": "3+ stars",
-      "4": "4+ stars"
+      "4": "4+ stars",
+      "any": "Any"
     },
     "grades": {
       "1-5": "1–5",
@@ -1261,7 +1261,7 @@
     "groupInstitute": "Institute",
     "groupManage": "Manage",
     "tabs": {
-      "overview": "Overview",
+      "overview": "Home",
       "profile": "Profile",
       "teachers": "Teachers",
       "batches": "Classes & Batches",
@@ -1273,7 +1273,14 @@
       "settings": "Settings",
       "students": "Students",
       "calendar": "Calendar",
-      "announcements": "Announcements"
+      "announcements": "Announcements",
+      "attendance": "Attendance",
+      "timetable": "Timetable",
+      "exams": "Exams",
+      "finance": "Finance",
+      "parentPortal": "Parent Portal",
+      "library": "Library",
+      "extracurriculars": "Extracurriculars"
     },
     "calendar": {
       "title": "Calendar",
@@ -1312,7 +1319,9 @@
         "ratingDelta": "211 reviews",
         "batches": "Active batches",
         "batchesDelta": "2 starting soon",
-        "batchesUnavailable": "Coming soon"
+        "batchesUnavailable": "Coming soon",
+        "classes": "Classes",
+        "revenue": "Revenue (mo)"
       },
       "glanceTitle": "Teachers at a glance",
       "glanceEmpty": "No teachers linked yet.",
@@ -1323,6 +1332,27 @@
         "rating": "Rating",
         "status": "Status",
         "active": "Active"
+      },
+      "hero": {
+        "createClass": "+ Create class",
+        "approveTeacher": "Approve teacher",
+        "postAd": "+ Post ad",
+        "verified": "Verified"
+      },
+      "activity": {
+        "title": "Recent activity",
+        "empty": "No recent activity yet.",
+        "postedAd": "Posted an ad for \"{title}\"",
+        "enrolled": "Enrolled {name} into {batch}",
+        "newReview": "New review from {author}"
+      },
+      "approvals": {
+        "title": "Pending approvals",
+        "empty": "Nothing waiting on you right now.",
+        "teacherApplication": "Teacher application — {name}",
+        "awaitingReview": "Awaiting review",
+        "studentRequest": "{name} wants to join {batch}",
+        "viewAll": "View all"
       }
     },
     "teachers": {
@@ -1355,7 +1385,14 @@
         "requestPending": "Wants to join",
         "approve": "Approve",
         "reject": "Reject"
-      }
+      },
+      "stats": {
+        "pending": "Pending",
+        "approved": "Approved"
+      },
+      "pendingTitle": "Pending applications",
+      "pendingEmpty": "No pending requests or invites.",
+      "rosterTitle": "Current roster"
     },
     "batches": {
       "title": "Classes & Batches",
@@ -1458,7 +1495,8 @@
         "saveRate": "Save rate",
         "rateSaved": "Rate saved",
         "previewBadge": "Preview",
-        "previewEmpty": "Fill in the title and details above to see a live preview here."
+        "previewEmpty": "Fill in the title and details above to see a live preview here.",
+        "viewCount": "{count} views"
       },
       "panelTitle": "Your promotion",
       "promotionSubtitle": "Institute-wide promotions shown on your public profile page — post as many as you like.",
@@ -1485,6 +1523,10 @@
         "promotionsHeading": "Promotions",
         "restore": "Restore",
         "restored": "Restored"
+      },
+      "glance": {
+        "activeAds": "Active ads",
+        "totalViews": "Total views"
       }
     },
     "reviews": {
@@ -1494,7 +1536,12 @@
       "reply": "Reply",
       "replyPlaceholder": "Write your reply...",
       "flag": "Flag",
-      "confirmFlag": "Flag this review for admin moderation?"
+      "confirmFlag": "Flag this review for admin moderation?",
+      "stats": {
+        "overallRating": "Overall rating",
+        "totalReviews": "Total reviews",
+        "responseRate": "Response rate"
+      }
     },
     "common": {
       "save": "Save",
@@ -1591,6 +1638,155 @@
         "accept": "Accept",
         "decline": "Decline",
         "declineReasonPlaceholder": "Reason (optional)"
+      },
+      "subtitle": "Review join requests and manage your enrolled student roster."
+    },
+    "attendance": {
+      "heading": "Attendance",
+      "subtitle": "Track attendance across every batch at your institute.",
+      "noRecords": "No attendance records yet.",
+      "lowAttendanceAlert": "Low attendance alert",
+      "lowAttendanceRow": "{batch} is below 70% attendance ({percent}%)",
+      "trendTitle": "Attendance by batch",
+      "table": {
+        "batch": "Batch",
+        "attendance": "Attendance"
+      },
+      "status": {
+        "present": "Present",
+        "absent": "Absent",
+        "late": "Late"
+      }
+    },
+    "timetable": {
+      "heading": "Timetable",
+      "subtitle": "Every batch's weekly recurring schedule, in one view.",
+      "empty": "No recurring schedule set for any batch yet.",
+      "noClasses": "No classes"
+    },
+    "examsLms": {
+      "heading": "Exams",
+      "subtitle": "Results from every exam your teachers have created, across all batches.",
+      "empty": "No exams have been created yet.",
+      "table": {
+        "exam": "Exam",
+        "batch": "Batch",
+        "date": "Date",
+        "submissions": "Submissions",
+        "avgScore": "Avg. score",
+        "submissionsValue": "{graded}/{total} graded"
+      }
+    },
+    "groupLms": "School LMS",
+    "finance": {
+      "title": "Finance",
+      "subtitle": "Record what students are charged and what they've paid.",
+      "recordCharge": "+ Record a charge",
+      "recordPayment": "+ Record a payment",
+      "stats": {
+        "totalCharged": "Total charged",
+        "totalCollected": "Total collected",
+        "outstanding": "Outstanding balance",
+        "thisMonth": "This month collected"
+      },
+      "balances": {
+        "title": "Outstanding balances",
+        "empty": "No charges recorded yet.",
+        "student": "Student",
+        "charged": "Charged",
+        "paid": "Paid",
+        "balance": "Balance"
+      },
+      "chargesTitle": "Recent charges",
+      "noCharges": "No charges recorded yet.",
+      "paymentsTitle": "Recent payments",
+      "noPayments": "No payments recorded yet.",
+      "delete": "Delete",
+      "confirmDeleteCharge": "Delete this charge?",
+      "confirmDeletePayment": "Delete this payment?",
+      "method": {
+        "cash": "Cash",
+        "bank_transfer": "Bank transfer",
+        "card": "Card",
+        "other": "Other"
+      },
+      "chargeForm": {
+        "title": "Record a charge",
+        "student": "Student",
+        "batch": "Batch (optional)",
+        "batchNone": "No specific batch",
+        "description": "Description",
+        "descriptionPlaceholder": "e.g. Term 1 tuition fee",
+        "amount": "Amount (Rs.)",
+        "submit": "Save charge"
+      },
+      "paymentForm": {
+        "title": "Record a payment",
+        "student": "Student",
+        "method": "Payment method",
+        "amount": "Amount (Rs.)",
+        "note": "Note (optional)",
+        "notePlaceholder": "e.g. Paid at front desk",
+        "submit": "Save payment"
+      }
+    },
+    "parentPortal": {
+      "heading": "Parent Portal",
+      "subtitle": "Guardian contact details for every enrolled student, in one place.",
+      "empty": "No enrolled students yet.",
+      "noContact": "No guardian contact saved yet.",
+      "edit": "Edit",
+      "guardianName": "Guardian name",
+      "guardianPhone": "Phone",
+      "guardianEmail": "Email",
+      "note": "Note"
+    },
+    "library": {
+      "heading": "Library",
+      "subtitle": "Share PDF resources with every student across your institute.",
+      "addResource": "+ Add resource",
+      "empty": "No resources uploaded yet.",
+      "confirmDelete": "Delete this resource?",
+      "open": "Open",
+      "delete": "Delete",
+      "table": {
+        "title": "Title",
+        "category": "Category",
+        "views": "Views",
+        "actions": "Actions"
+      },
+      "form": {
+        "title": "Add a resource",
+        "resourceTitle": "Title",
+        "category": "Category",
+        "categoryPlaceholder": "e.g. Past papers",
+        "description": "Description",
+        "file": "PDF file",
+        "submit": "Upload",
+        "cancel": "Cancel",
+        "missingFields": "Please enter a title and choose a PDF file."
+      }
+    },
+    "extracurriculars": {
+      "heading": "Extracurriculars",
+      "subtitle": "Clubs and activities your institute runs alongside academics.",
+      "addActivity": "+ Add activity",
+      "empty": "No activities created yet.",
+      "confirmDeleteActivity": "Delete this activity? This also removes its member list.",
+      "deleteActivity": "Delete",
+      "remove": "Remove",
+      "enrollStudent": "Enroll a student",
+      "addStudent": "Add",
+      "certificateIssued": "Certificate issued",
+      "memberCount": "{count} members",
+      "form": {
+        "title": "Add an activity",
+        "name": "Name",
+        "schedule": "Schedule",
+        "schedulePlaceholder": "e.g. Fridays 3-4pm",
+        "description": "Description",
+        "submit": "Save",
+        "cancel": "Cancel"
       }
     }
   },

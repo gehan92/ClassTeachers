@@ -270,9 +270,9 @@
     },
     "rating": "අවම ශ්‍රේණිගත කිරීම",
     "ratingOptions": {
-      "any": "ඕනෑම",
       "3": "තරු 3+",
-      "4": "තරු 4+"
+      "4": "තරු 4+",
+      "any": "ඕනෑම"
     },
     "grades": {
       "1-5": "1–5",
@@ -1261,7 +1261,7 @@
     "groupInstitute": "ආයතනය",
     "groupManage": "කළමනාකරණය",
     "tabs": {
-      "overview": "දළ විශ්ලේෂණය",
+      "overview": "මුල් පිටුව",
       "profile": "පැතිකඩ",
       "teachers": "ගුරුවරුන්",
       "batches": "පන්ති සහ කණ්ඩායම්",
@@ -1273,7 +1273,14 @@
       "settings": "සැකසුම්",
       "students": "සිසුන්",
       "calendar": "දින දර්ශනය",
-      "announcements": "නිවේදන"
+      "announcements": "නිවේදන",
+      "attendance": "පැමිණීම",
+      "timetable": "කාල සටහන",
+      "exams": "විභාග",
+      "finance": "මූල්‍ය",
+      "parentPortal": "දෙමව්පිය පෝට්ලය",
+      "library": "පුස්තකාලය",
+      "extracurriculars": "විෂය බාහිර"
     },
     "calendar": {
       "title": "දින දර්ශනය",
@@ -1312,7 +1319,9 @@
         "ratingDelta": "සමාලෝචන 211",
         "batches": "සක්‍රීය කණ්ඩායම්",
         "batchesDelta": "2ක් ඉක්මනින් ආරම්භ වේ",
-        "batchesUnavailable": "ඉක්මනින්"
+        "batchesUnavailable": "ඉක්මනින්",
+        "classes": "පන්ති",
+        "revenue": "ආදායම (මාසිකව)"
       },
       "glanceTitle": "ගුරුවරුන් එක් බැල්මකින්",
       "glanceEmpty": "තවම ගුරුවරුන් සම්බන්ධ කර නැත.",
@@ -1323,6 +1332,27 @@
         "rating": "ශ්‍රේණිගත කිරීම",
         "status": "තත්ත්වය",
         "active": "සක්‍රීය"
+      },
+      "hero": {
+        "createClass": "+ පන්තියක් සාදන්න",
+        "approveTeacher": "ගුරුවරයා අනුමත කරන්න",
+        "postAd": "+ දැන්වීමක් පළ කරන්න",
+        "verified": "තහවුරු කළ"
+      },
+      "activity": {
+        "title": "මෑත ක්‍රියාකාරකම්",
+        "empty": "මෑත ක්‍රියාකාරකම් නොමැත.",
+        "postedAd": "\"{title}\" සඳහා දැන්වීමක් පළ කළා",
+        "enrolled": "{name} {batch} වෙත ඇතුළත් කළා",
+        "newReview": "{author} ගෙන් නව සමාලෝචනයක්"
+      },
+      "approvals": {
+        "title": "අනුමැතිය බලාපොරොත්තුවෙන්",
+        "empty": "දැනට ඔබ මත රඳා පවතින කිසිවක් නැත.",
+        "teacherApplication": "ගුරු අයදුම්පත — {name}",
+        "awaitingReview": "සමාලෝචනය පොරොත්තුවෙන්",
+        "studentRequest": "{name} {batch} වෙත එකතු වීමට කැමතියි",
+        "viewAll": "සියල්ල බලන්න"
       }
     },
     "teachers": {
@@ -1355,7 +1385,14 @@
         "requestPending": "එකතු වීමට කැමතියි",
         "approve": "අනුමත කරන්න",
         "reject": "ප්‍රතික්ෂේප කරන්න"
-      }
+      },
+      "stats": {
+        "pending": "පොරොත්තුවෙන්",
+        "approved": "අනුමත"
+      },
+      "pendingTitle": "පොරොත්තු අයදුම්පත්",
+      "pendingEmpty": "පොරොත්තු ඉල්ලීම් හෝ ආරාධනා නැත.",
+      "rosterTitle": "වත්මන් ලැයිස්තුව"
     },
     "batches": {
       "title": "පන්ති සහ කණ්ඩායම්",
@@ -1458,7 +1495,8 @@
         "saveRate": "ගාස්තුව සුරකින්න",
         "rateSaved": "ගාස්තුව සුරකින ලදී",
         "previewBadge": "පෙරදසුන",
-        "previewEmpty": "සජීවී පෙරදසුනක් බැලීමට ඉහත මාතෘකාව සහ විස්තර පුරවන්න."
+        "previewEmpty": "සජීවී පෙරදසුනක් බැලීමට ඉහත මාතෘකාව සහ විස්තර පුරවන්න.",
+        "viewCount": "නැරඹීම් {count}"
       },
       "panelTitle": "ඔබේ ප්‍රවර්ධනය",
       "promotionSubtitle": "ඔබේ පොදු පැතිකඩ පිටුවේ පෙන්වන ආයතනික ප්‍රවර්ධන — ඔබට අවශ්‍ය තරම් පළ කරන්න.",
@@ -1485,6 +1523,10 @@
         "promotionsHeading": "ප්‍රවර්ධන",
         "restore": "ප්‍රතිසාධනය කරන්න",
         "restored": "ප්‍රතිසාධනය කරන ලදී"
+      },
+      "glance": {
+        "activeAds": "සක්‍රීය දැන්වීම්",
+        "totalViews": "මුළු නැරඹීම්"
       }
     },
     "reviews": {
@@ -1494,7 +1536,12 @@
       "reply": "පිළිතුරු දෙන්න",
       "replyPlaceholder": "ඔබේ පිළිතුර ලියන්න...",
       "flag": "සලකුණු කරන්න",
-      "confirmFlag": "පරිපාලක සමාලෝචනය සඳහා මෙම සමාලෝචනය සලකුණු කරන්නද?"
+      "confirmFlag": "පරිපාලක සමාලෝචනය සඳහා මෙම සමාලෝචනය සලකුණු කරන්නද?",
+      "stats": {
+        "overallRating": "සමස්ත ශ්‍රේණිගත කිරීම",
+        "totalReviews": "මුළු සමාලෝචන",
+        "responseRate": "ප්‍රතිචාර අනුපාතය"
+      }
     },
     "common": {
       "save": "සුරකින්න",
@@ -1591,6 +1638,155 @@
         "accept": "පිළිගන්න",
         "decline": "ප්‍රතික්ෂේප කරන්න",
         "declineReasonPlaceholder": "හේතුව (විකල්ප)"
+      },
+      "subtitle": "එක්වීමේ ඉල්ලීම් සමාලෝචනය කර ලියාපදිංචි සිසුන් කළමනාකරණය කරන්න."
+    },
+    "attendance": {
+      "heading": "පැමිණීම",
+      "subtitle": "ඔබේ ආයතනයේ සෑම කණ්ඩායමක්ම හරහා පැමිණීම නිරීක්ෂණය කරන්න.",
+      "noRecords": "තවම පැමිණීමේ වාර්තා නැත.",
+      "lowAttendanceAlert": "අඩු පැමිණීමේ අනතුරු ඇඟවීම",
+      "lowAttendanceRow": "{batch} 70%ට වඩා අඩු පැමිණීමක් ඇත ({percent}%)",
+      "trendTitle": "කණ්ඩායම අනුව පැමිණීම",
+      "table": {
+        "batch": "කණ්ඩායම",
+        "attendance": "පැමිණීම"
+      },
+      "status": {
+        "present": "පැමිණ ඇත",
+        "absent": "නොපැමිණි",
+        "late": "ප්‍රමාද"
+      }
+    },
+    "timetable": {
+      "heading": "කාල සටහන",
+      "subtitle": "සෑම කණ්ඩායමකම සතිපතා කාල සටහන එක් දර්ශනයකින්.",
+      "empty": "තවම කිසිදු කණ්ඩායමකට කාල සටහනක් සකසා නැත.",
+      "noClasses": "පන්ති නැත"
+    },
+    "examsLms": {
+      "heading": "විභාග",
+      "subtitle": "ඔබේ ගුරුවරුන් සාදා ඇති සෑම විභාගයකම ප්‍රතිඵල, සියලුම කණ්ඩායම් හරහා.",
+      "empty": "තවම විභාග සාදා නැත.",
+      "table": {
+        "exam": "විභාගය",
+        "batch": "කණ්ඩායම",
+        "date": "දිනය",
+        "submissions": "ඉදිරිපත් කිරීම්",
+        "avgScore": "සාමාන්‍ය ලකුණු",
+        "submissionsValue": "{graded}/{total} ඇගයුම් කර ඇත"
+      }
+    },
+    "groupLms": "පාසල් LMS",
+    "finance": {
+      "title": "මූල්‍ය",
+      "subtitle": "සිසුන්ට අය කරන දේ සහ ඔවුන් ගෙවා ඇති දේ වාර්තා කරන්න.",
+      "recordCharge": "+ ගාස්තුවක් වාර්තා කරන්න",
+      "recordPayment": "+ ගෙවීමක් වාර්තා කරන්න",
+      "stats": {
+        "totalCharged": "මුළු අය කිරීම්",
+        "totalCollected": "මුළු එකතු කිරීම්",
+        "outstanding": "ගෙවිය යුතු ශේෂය",
+        "thisMonth": "මෙම මාසයේ එකතු කළ"
+      },
+      "balances": {
+        "title": "ගෙවිය යුතු ශේෂ",
+        "empty": "තවම ගාස්තු වාර්තා කර නැත.",
+        "student": "සිසුවා",
+        "charged": "අය කළ",
+        "paid": "ගෙවූ",
+        "balance": "ශේෂය"
+      },
+      "chargesTitle": "මෑත ගාස්තු",
+      "noCharges": "තවම ගාස්තු වාර්තා කර නැත.",
+      "paymentsTitle": "මෑත ගෙවීම්",
+      "noPayments": "තවම ගෙවීම් වාර්තා කර නැත.",
+      "delete": "මකන්න",
+      "confirmDeleteCharge": "මෙම ගාස්තුව මකන්නද?",
+      "confirmDeletePayment": "මෙම ගෙවීම මකන්නද?",
+      "method": {
+        "cash": "මුදල්",
+        "bank_transfer": "බැංකු මාරු කිරීම",
+        "card": "කාඩ්පත",
+        "other": "වෙනත්"
+      },
+      "chargeForm": {
+        "title": "ගාස්තුවක් වාර්තා කරන්න",
+        "student": "සිසුවා",
+        "batch": "කණ්ඩායම (විකල්ප)",
+        "batchNone": "නිශ්චිත කණ්ඩායමක් නැත",
+        "description": "විස්තරය",
+        "descriptionPlaceholder": "උදා: 1 වන වාරයේ නිබන්ධන ගාස්තුව",
+        "amount": "මුදල (රු.)",
+        "submit": "ගාස්තුව සුරකින්න"
+      },
+      "paymentForm": {
+        "title": "ගෙවීමක් වාර්තා කරන්න",
+        "student": "සිසුවා",
+        "method": "ගෙවීම් ක්‍රමය",
+        "amount": "මුදල (රු.)",
+        "note": "සටහන (විකල්ප)",
+        "notePlaceholder": "උදා: කවුළුවේදී ගෙවන ලදී",
+        "submit": "ගෙවීම සුරකින්න"
+      }
+    },
+    "parentPortal": {
+      "heading": "දෙමව්පිය පෝට්ලය",
+      "subtitle": "ලියාපදිංචි සෑම සිසුවෙකුගේම භාරකරු සම්බන්ධතා විස්තර, එක් තැනකින්.",
+      "empty": "තවම ලියාපදිංචි සිසුන් නැත.",
+      "noContact": "තවම භාරකරු සම්බන්ධතාවයක් සුරකා නැත.",
+      "edit": "සංස්කරණය",
+      "guardianName": "භාරකරුගේ නම",
+      "guardianPhone": "දුරකථනය",
+      "guardianEmail": "විද්‍යුත් තැපෑල",
+      "note": "සටහන"
+    },
+    "library": {
+      "heading": "පුස්තකාලය",
+      "subtitle": "ඔබේ ආයතනයේ සෑම සිසුවෙකු සමගම PDF සම්පත් බෙදාගන්න.",
+      "addResource": "+ සම්පතක් එකතු කරන්න",
+      "empty": "තවම සම්පත් උඩුගත කර නැත.",
+      "confirmDelete": "මෙම සම්පත මකන්නද?",
+      "open": "විවෘත කරන්න",
+      "delete": "මකන්න",
+      "table": {
+        "title": "මාතෘකාව",
+        "category": "ප්‍රවර්ගය",
+        "views": "නැරඹීම්",
+        "actions": "ක්‍රියා"
+      },
+      "form": {
+        "title": "සම්පතක් එකතු කරන්න",
+        "resourceTitle": "මාතෘකාව",
+        "category": "ප්‍රවර්ගය",
+        "categoryPlaceholder": "උදා: පසුගිය ප්‍රශ්න පත්‍ර",
+        "description": "විස්තරය",
+        "file": "PDF ගොනුව",
+        "submit": "උඩුගත කරන්න",
+        "cancel": "අවලංගු කරන්න",
+        "missingFields": "කරුණාකර මාතෘකාවක් ඇතුළත් කර PDF ගොනුවක් තෝරන්න."
+      }
+    },
+    "extracurriculars": {
+      "heading": "විෂය බාහිර ක්‍රියාකාරකම්",
+      "subtitle": "ඔබේ ආයතනය අධ්‍යයනයට අමතරව පවත්වන සමාජ හා ක්‍රියාකාරකම්.",
+      "addActivity": "+ ක්‍රියාකාරකමක් එකතු කරන්න",
+      "empty": "තවම ක්‍රියාකාරකම් සාදා නැත.",
+      "confirmDeleteActivity": "මෙම ක්‍රියාකාරකම මකන්නද? මෙය එහි සාමාජික ලැයිස්තුවද ඉවත් කරයි.",
+      "deleteActivity": "මකන්න",
+      "remove": "ඉවත් කරන්න",
+      "enrollStudent": "සිසුවෙකු ලියාපදිංචි කරන්න",
+      "addStudent": "එකතු කරන්න",
+      "certificateIssued": "සහතිකය නිකුත් කළා",
+      "memberCount": "සාමාජිකයන් {count}",
+      "form": {
+        "title": "ක්‍රියාකාරකමක් එකතු කරන්න",
+        "name": "නම",
+        "schedule": "කාලසටහන",
+        "schedulePlaceholder": "උදා: සිකුරාදා 3-4",
+        "description": "විස්තරය",
+        "submit": "සුරකින්න",
+        "cancel": "අවලංගු කරන්න"
       }
     }
   },

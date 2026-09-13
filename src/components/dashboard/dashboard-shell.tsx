@@ -201,16 +201,15 @@ function NavList({
               className={cn(
                 "flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.75 text-[13px] font-medium whitespace-nowrap transition-colors",
                 isActive
-                  ? item.highlight
-                    ? "bg-cta text-cta-foreground"
-                    : "bg-primary text-primary-foreground"
+                  ? "bg-primary text-primary-foreground"
                   : item.highlight
-                    ? "bg-cta/15 text-foreground hover:bg-cta/25"
+                    ? "bg-white text-cta hover:bg-secondary"
                     : "bg-white text-muted-foreground hover:bg-secondary",
               )}
             >
               {Icon && <Icon className={cn("size-3.5", item.highlight && !isActive && "text-cta")} />}
               {item.label}
+              {item.highlight && !isActive && <span className="size-1.5 shrink-0 rounded-full bg-cta" />}
               {item.hasNew && <span className="size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />}
               {item.count !== undefined && <span className="ml-1.5 opacity-70">{item.count}</span>}
             </button>
@@ -313,11 +312,9 @@ function VerticalNavList({
                         group.label &&
                           "before:absolute before:-left-3 before:top-1/2 before:h-px before:w-3 before:-translate-y-1/2 before:bg-sidebar-border before:content-['']",
                         isActive
-                          ? item.highlight
-                            ? "bg-cta text-cta-foreground"
-                            : "bg-sidebar-accent text-sidebar-accent-foreground"
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
                           : item.highlight
-                            ? "bg-cta/10 text-sidebar-foreground hover:bg-cta/20"
+                            ? "text-cta hover:bg-sidebar-accent/40"
                             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground",
                       )}
                     >
@@ -325,6 +322,9 @@ function VerticalNavList({
                         <Icon className={cn("size-4 shrink-0", item.highlight && !isActive && "text-cta")} />
                       )}
                       <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                      {item.highlight && !isActive && (
+                        <span className="size-1.5 shrink-0 rounded-full bg-cta" />
+                      )}
                       {item.hasNew && <span className="size-1.5 shrink-0 animate-in zoom-in-50 rounded-full bg-cta duration-300" />}
                       {item.count !== undefined && (
                         <span className="shrink-0 rounded-full bg-sidebar-border px-1.5 py-0.25 font-mono text-[11px] text-sidebar-foreground/70">

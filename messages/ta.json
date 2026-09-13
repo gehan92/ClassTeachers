@@ -1825,7 +1825,6 @@
       "heading": "அறிவிப்புகள்"
     },
     "overview": {
-      "greeting": "மாலை வணக்கம், {name}",
       "subtitle": "இன்று உங்கள் வகுப்புகளில் என்ன நடக்கிறது என்பது இதோ.",
       "tips": {
         "heading": "புதியவரா? ஒரு விரைவான வழிகாட்டி",
@@ -1869,7 +1868,10 @@
       "hero": {
         "viewClasses": "வகுப்புகளைப் பார்க்க",
         "postRequest": "+ கோரிக்கை இடுக"
-      }
+      },
+      "greetingMorning": "காலை வணக்கம், {name}",
+      "greetingAfternoon": "மதிய வணக்கம், {name}",
+      "greetingEvening": "மாலை வணக்கம், {name}"
     },
     "progress": {
       "heading": "முன்னேற்றம்",
@@ -2390,7 +2392,6 @@
       "homework": "வீட்டுப்பாடம்"
     },
     "overview": {
-      "greeting": "மாலை வணக்கம், {name}",
       "subtitle": "இன்று உங்கள் வகுப்புகளில் என்ன நடக்கிறது என்பது இதோ.",
       "activityHeading": "சமீபத்திய செயல்பாடு",
       "activityEmpty": "இதுவரை புதியது இல்லை — சமீபத்திய செயல்பாடு இங்கே காண்பிக்கப்படும்.",
@@ -2432,7 +2433,10 @@
       "hero": {
         "viewClasses": "வகுப்புகளைப் பார்க்க",
         "postAd": "+ விளம்பரம் இடுக"
-      }
+      },
+      "greetingMorning": "காலை வணக்கம், {name}",
+      "greetingAfternoon": "மதிய வணக்கம், {name}",
+      "greetingEvening": "மாலை வணக்கம், {name}"
     },
     "profile": {
       "heading": "சுயவிவரம்",

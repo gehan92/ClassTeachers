@@ -1825,7 +1825,6 @@
       "heading": "Announcements"
     },
     "overview": {
-      "greeting": "Good evening, {name}",
       "subtitle": "Here's what's happening across your classes today.",
       "tips": {
         "heading": "New here? A quick orientation",
@@ -1869,7 +1868,10 @@
       "hero": {
         "viewClasses": "View classes",
         "postRequest": "+ Post a request"
-      }
+      },
+      "greetingMorning": "Good morning, {name}",
+      "greetingAfternoon": "Good afternoon, {name}",
+      "greetingEvening": "Good evening, {name}"
     },
     "progress": {
       "heading": "Progress",
@@ -2390,7 +2392,6 @@
       "settings": "Settings"
     },
     "overview": {
-      "greeting": "Good evening, {name}",
       "subtitle": "Here's what's happening with your classes today.",
       "activityHeading": "Recent activity",
       "activityEmpty": "Nothing new yet — recent activity will show up here.",
@@ -2432,7 +2433,10 @@
       "hero": {
         "viewClasses": "View classes",
         "postAd": "+ Post an ad"
-      }
+      },
+      "greetingMorning": "Good morning, {name}",
+      "greetingAfternoon": "Good afternoon, {name}",
+      "greetingEvening": "Good evening, {name}"
     },
     "profile": {
       "heading": "Profile",

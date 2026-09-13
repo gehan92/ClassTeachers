@@ -5,6 +5,7 @@ import { Sparkles, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
+import { getGreetingPeriod, type GreetingPeriod } from "@/lib/greeting-time";
 
 // Device-local, not per-account -- a one-time UI hint doesn't need a server
 // round trip (same pattern as the teacher dashboard's own tips card).
@@ -73,6 +74,11 @@ export function OverviewTab({
   const t = useTranslations("studentDashboard.overview");
 
   const [showTips, setShowTips] = useState(false);
+  // Defaults to "evening" (the old always-shown text) for the initial
+  // server-rendered pass, then corrects to the viewer's actual local time
+  // right after mount -- computing this during render would mismatch
+  // between server and client and trip a hydration warning.
+  const [greetingPeriod, setGreetingPeriod] = useState<GreetingPeriod>("evening");
   useEffect(() => {
     try {
       if (!localStorage.getItem(TIPS_DISMISSED_KEY)) {
@@ -82,7 +88,10 @@ export function OverviewTab({
     } catch {
       // Storage blocked (private mode, locked-down browser) -- just skip the one-time tip.
     }
+    setGreetingPeriod(getGreetingPeriod());
   }, []);
+  const greetingKey =
+    greetingPeriod === "morning" ? "greetingMorning" : greetingPeriod === "afternoon" ? "greetingAfternoon" : "greetingEvening";
   function handleDismissTips() {
     setShowTips(false);
     try {
@@ -96,7 +105,7 @@ export function OverviewTab({
     <div>
       <div className="mb-6">
         <DashboardHero
-          title={t("greeting", { name: studentName.split(" ")[0] })}
+          title={t(greetingKey, { name: studentName.split(" ")[0] })}
           subtitle={t("subtitle")}
           actions={[
             { label: t("hero.viewClasses"), href: { pathname: "/student", query: { tab: "classes" } } },

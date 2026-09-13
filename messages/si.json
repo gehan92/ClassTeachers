@@ -1825,7 +1825,6 @@
       "heading": "නිවේදන"
     },
     "overview": {
-      "greeting": "සුබ සන්ධ්‍යාවක්, {name}",
       "subtitle": "අද ඔබේ පන්තිවල සිදුවෙමින් පවතින දේ මෙන්න.",
       "tips": {
         "heading": "අලුතින්ද? ඉක්මන් මාර්ගෝපදේශයක්",
@@ -1869,7 +1868,10 @@
       "hero": {
         "viewClasses": "පන්ති බලන්න",
         "postRequest": "+ ඉල්ලීමක් පළ කරන්න"
-      }
+      },
+      "greetingMorning": "සුභ උදෑසනක්, {name}",
+      "greetingAfternoon": "සුභ දහවලක්, {name}",
+      "greetingEvening": "සුභ සැන්දෑවක්, {name}"
     },
     "progress": {
       "heading": "ප්‍රගතිය",
@@ -2390,7 +2392,6 @@
       "homework": "ගෙදර වැඩ"
     },
     "overview": {
-      "greeting": "සුබ සන්ධ්‍යාවක්, {name}",
       "subtitle": "අද ඔබේ පන්තිවල සිදුවෙමින් පවතින දේ මෙන්න.",
       "activityHeading": "මෑත ක්‍රියාකාරකම්",
       "activityEmpty": "තවම නවක් නැත — මෑත ක්‍රියාකාරකම් මෙහි පෙන්වනු ඇත.",
@@ -2432,7 +2433,10 @@
       "hero": {
         "viewClasses": "පන්ති බලන්න",
         "postAd": "+ දැන්වීමක් පළ කරන්න"
-      }
+      },
+      "greetingMorning": "සුභ උදෑසනක්, {name}",
+      "greetingAfternoon": "සුභ දහවලක්, {name}",
+      "greetingEvening": "සුභ සැන්දෑවක්, {name}"
     },
     "profile": {
       "heading": "පැතිකඩ",

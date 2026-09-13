@@ -5,6 +5,7 @@ import { Sparkles, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
+import { getGreetingPeriod, type GreetingPeriod } from "@/lib/greeting-time";
 import { useLiveCall } from "@/components/dashboard/live-call-context";
 import { notifyLiveClassStarted } from "@/lib/dashboard/live-classes-actions";
 import { messageFor, type NotificationRow, type Translator } from "@/components/dashboard/notification-bell";
@@ -55,6 +56,11 @@ export function OverviewTab({
   const dateFormatter = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
   const [showTips, setShowTips] = useState(false);
+  // Defaults to "evening" (the old always-shown text) for the initial
+  // server-rendered pass, then corrects to the viewer's actual local time
+  // right after mount — computing this during render would mismatch
+  // between server and client and trip a hydration warning.
+  const [greetingPeriod, setGreetingPeriod] = useState<GreetingPeriod>("evening");
 
   useEffect(() => {
     try {
@@ -66,7 +72,11 @@ export function OverviewTab({
       // Storage blocked (private mode, locked-down browser) — just skip the
       // one-time tip rather than fail the whole tab over it.
     }
+    setGreetingPeriod(getGreetingPeriod());
   }, []);
+
+  const greetingKey =
+    greetingPeriod === "morning" ? "greetingMorning" : greetingPeriod === "afternoon" ? "greetingAfternoon" : "greetingEvening";
 
   function handleDismissTips() {
     setShowTips(false);
@@ -98,7 +108,7 @@ export function OverviewTab({
   return (
     <div className="flex flex-col gap-6">
       <DashboardHero
-        title={t("greeting", { name: teacherName.split(" ")[0] })}
+        title={t(greetingKey, { name: teacherName.split(" ")[0] })}
         subtitle={t("subtitle")}
         actions={[
           { label: t("hero.viewClasses"), href: { pathname: "/teacher", query: { tab: "live" } } },

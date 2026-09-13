@@ -32,6 +32,8 @@ export default async function RequestsPage({ params }: PageProps<"/[locale]/requ
     classType: row.class_type as "new" | "revision",
     title: row.title,
     description: sanitizeRichTextNullable(row.description),
+    budgetMin: row.budget_min,
+    budgetMax: row.budget_max,
     createdLabel: dateFormatter.format(new Date(row.created_at)),
   }));
 

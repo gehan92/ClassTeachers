@@ -9,7 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
-import { createFeeCharge, createFeePayment, deleteFeeCharge, deleteFeePayment } from "@/lib/dashboard/finance-actions";
+import {
+  createFeeCharge,
+  createFeePayment,
+  deleteFeeCharge,
+  deleteFeePayment,
+  createFeePlanTemplate,
+  deleteFeePlanTemplate,
+  createBulkFeeCharges,
+} from "@/lib/dashboard/finance-actions";
 
 export type FeeChargeRow = {
   id: string;
@@ -32,6 +40,7 @@ export type FeePaymentRow = {
 export type FeeBalanceRow = { studentId: string; studentName: string; totalCharged: number; totalPaid: number; balance: number };
 export type FeeStudentOption = { id: string; name: string };
 export type FeeBatchOption = { id: string; title: string };
+export type FeePlanTemplate = { id: string; name: string; description: string | null; amount: number };
 
 function formatRs(amount: number) {
   return `Rs. ${amount.toLocaleString()}`;
@@ -47,6 +56,7 @@ export function FinanceTab({
   payments,
   students,
   batches,
+  templates,
 }: {
   totalCharged: number;
   totalCollected: number;
@@ -57,11 +67,13 @@ export function FinanceTab({
   payments: FeePaymentRow[];
   students: FeeStudentOption[];
   batches: FeeBatchOption[];
+  templates: FeePlanTemplate[];
 }) {
   const t = useTranslations("instituteDashboard.finance");
   const { refresh } = useDashboardRefresh();
   const [showChargeForm, setShowChargeForm] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showBulkChargeForm, setShowBulkChargeForm] = useState(false);
 
   async function handleDeleteCharge(id: string) {
     if (!window.confirm(t("confirmDeleteCharge"))) return;
@@ -82,9 +94,12 @@ export function FinanceTab({
           <h1 className="font-display text-2xl text-primary">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
-        <div className="flex gap-2.5">
+        <div className="flex flex-wrap gap-2.5">
           <Button variant="outline" onClick={() => setShowPaymentForm((v) => !v)}>
             {t("recordPayment")}
+          </Button>
+          <Button variant="outline" onClick={() => setShowBulkChargeForm((v) => !v)}>
+            {t("bulkCharge.button")}
           </Button>
           <Button onClick={() => setShowChargeForm((v) => !v)}>{t("recordCharge")}</Button>
         </div>
@@ -118,6 +133,19 @@ export function FinanceTab({
           onCancel={() => setShowPaymentForm(false)}
         />
       )}
+      {showBulkChargeForm && (
+        <BulkChargeForm
+          students={students}
+          templates={templates}
+          onSaved={() => {
+            setShowBulkChargeForm(false);
+            refresh();
+          }}
+          onCancel={() => setShowBulkChargeForm(false)}
+        />
+      )}
+
+      <TemplatesPanel templates={templates} />
 
       <div className="rounded-lg border border-border bg-white p-5">
         <h3 className="mb-4 text-lg">{t("balances.title")}</h3>
@@ -373,6 +401,246 @@ function PaymentForm({ students, onSaved, onCancel }: { students: FeeStudentOpti
           {tc("cancel")}
         </Button>
       </div>
+    </div>
+  );
+}
+
+function BulkChargeForm({
+  students,
+  templates,
+  onSaved,
+  onCancel,
+}: {
+  students: FeeStudentOption[];
+  templates: FeePlanTemplate[];
+  onSaved: () => void;
+  onCancel: () => void;
+}) {
+  const t = useTranslations("instituteDashboard.finance");
+  const tc = useTranslations("instituteDashboard.common");
+  const [templateId, setTemplateId] = useState("");
+  const [description, setDescription] = useState("");
+  const [amount, setAmount] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function handleTemplateChange(id: string) {
+    setTemplateId(id);
+    const template = templates.find((tpl) => tpl.id === id);
+    if (template) {
+      setDescription(template.description || template.name);
+      setAmount(String(template.amount));
+    }
+  }
+
+  function toggleStudent(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const allSelected = students.length > 0 && selectedIds.size === students.length;
+
+  function toggleAll() {
+    setSelectedIds(allSelected ? new Set() : new Set(students.map((s) => s.id)));
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setError(null);
+    const result = await createBulkFeeCharges({
+      studentIds: [...selectedIds],
+      batchId: null,
+      description,
+      amount: Number(amount),
+    });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    onSaved();
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-white p-5">
+      <h3 className="mb-1 text-lg">{t("bulkCharge.title")}</h3>
+      <p className="mb-4 text-sm text-muted-foreground">{t("bulkCharge.subtitle")}</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {templates.length > 0 && (
+          <div className="grid gap-1.5 sm:col-span-2">
+            <Label>{t("bulkCharge.template")}</Label>
+            <Select value={templateId} onValueChange={(value) => handleTemplateChange(value ?? "")}>
+              <SelectTrigger>
+                <SelectValue placeholder={t("bulkCharge.templateNone")} />
+              </SelectTrigger>
+              <SelectContent>
+                {templates.map((tpl) => (
+                  <SelectItem key={tpl.id} value={tpl.id}>
+                    {tpl.name} — {formatRs(tpl.amount)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        <div className="grid gap-1.5 sm:col-span-2">
+          <Label htmlFor="bulk-charge-description">{t("chargeForm.description")}</Label>
+          <Input
+            id="bulk-charge-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={t("chargeForm.descriptionPlaceholder")}
+          />
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="bulk-charge-amount">{t("chargeForm.amount")}</Label>
+          <Input
+            id="bulk-charge-amount"
+            type="number"
+            min="0"
+            inputMode="decimal"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <div className="mb-2 flex items-center justify-between">
+          <Label>{t("bulkCharge.students", { count: selectedIds.size })}</Label>
+          <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={toggleAll}>
+            {allSelected ? t("bulkCharge.deselectAll") : t("bulkCharge.selectAll")}
+          </button>
+        </div>
+        <div className="flex max-h-52 flex-col gap-1.5 overflow-y-auto rounded-md border border-border p-2.5">
+          {students.map((s) => (
+            <label key={s.id} className="flex items-center gap-2 rounded-sm px-1.5 py-1 text-sm hover:bg-secondary/50">
+              <input
+                type="checkbox"
+                className="size-3.5 accent-primary"
+                checked={selectedIds.has(s.id)}
+                onChange={() => toggleStudent(s.id)}
+              />
+              {s.name}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {error && <p className="mt-2 text-sm font-medium text-destructive">{error}</p>}
+      <div className="mt-4 flex gap-3">
+        <Button onClick={handleSave} disabled={saving || selectedIds.size === 0 || !description.trim() || !amount}>
+          {t("bulkCharge.submit", { count: selectedIds.size })}
+        </Button>
+        <Button variant="outline" onClick={onCancel} disabled={saving}>
+          {tc("cancel")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function TemplatesPanel({ templates }: { templates: FeePlanTemplate[] }) {
+  const t = useTranslations("instituteDashboard.finance");
+  const tc = useTranslations("instituteDashboard.common");
+  const { refresh } = useDashboardRefresh();
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [amount, setAmount] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleCreate() {
+    setSaving(true);
+    setError(null);
+    const result = await createFeePlanTemplate({ name, description, amount: Number(amount) });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setName("");
+    setDescription("");
+    setAmount("");
+    setAdding(false);
+    refresh();
+  }
+
+  async function handleDelete(id: string) {
+    if (!window.confirm(t("templates.confirmDelete"))) return;
+    await deleteFeePlanTemplate(id);
+    refresh();
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-white p-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 className="text-lg">{t("templates.title")}</h3>
+          <p className="text-sm text-muted-foreground">{t("templates.subtitle")}</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => setAdding((v) => !v)}>
+          {t("templates.add")}
+        </Button>
+      </div>
+
+      {adding && (
+        <div className="mb-4 grid gap-3 rounded-md border border-border p-3.5 sm:grid-cols-2">
+          <div className="grid gap-1.5">
+            <Label htmlFor="template-name">{t("templates.name")}</Label>
+            <Input id="template-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("templates.namePlaceholder")} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="template-amount">{t("chargeForm.amount")}</Label>
+            <Input id="template-amount" type="number" min="0" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          </div>
+          <div className="grid gap-1.5 sm:col-span-2">
+            <Label htmlFor="template-description">{t("chargeForm.description")}</Label>
+            <Input
+              id="template-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t("templates.descriptionPlaceholder")}
+            />
+          </div>
+          {error && <p className="text-sm font-medium text-destructive sm:col-span-2">{error}</p>}
+          <div className="flex gap-3 sm:col-span-2">
+            <Button size="sm" onClick={handleCreate} disabled={saving || !name.trim() || !amount}>
+              {t("templates.save")}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setAdding(false)} disabled={saving}>
+              {tc("cancel")}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {templates.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("templates.empty")}</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {templates.map((tpl) => (
+            <div key={tpl.id} className="flex items-center justify-between gap-2.5 rounded-md border border-border p-2.5 text-sm">
+              <div>
+                <p className="font-medium text-foreground">{tpl.name}</p>
+                <p className="text-muted-foreground">
+                  {formatRs(tpl.amount)}
+                  {tpl.description ? ` · ${tpl.description}` : ""}
+                </p>
+              </div>
+              <button type="button" className="text-xs font-medium text-lock hover:underline" onClick={() => handleDelete(tpl.id)}>
+                {t("delete")}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

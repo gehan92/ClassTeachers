@@ -178,7 +178,7 @@ export default async function StudentDashboardPage({
       .in("target_type", ["teacher", "class"]),
     supabase
       .from("wanted_ads")
-      .select("id, looking_for, subject_id, mode, grade_level, medium, class_type, title, description, status")
+      .select("id, looking_for, subject_id, mode, grade_level, medium, class_type, title, description, status, budget_min, budget_max")
       .eq("student_id", userId)
       .order("created_at", { ascending: false }),
     // The full catalog, not just subjects this student already has a class
@@ -937,6 +937,8 @@ export default async function StudentDashboardPage({
     title: ad.title,
     description: sanitizeRichTextNullable(ad.description),
     status: ad.status,
+    budgetMin: ad.budget_min,
+    budgetMax: ad.budget_max,
   }));
 
   const wantedAdResponses: WantedAdResponseRow[] = (wantedAdResponseRows ?? []).map((r) => ({
@@ -971,6 +973,8 @@ export default async function StudentDashboardPage({
       classType: row.class_type as "new" | "revision",
       title: row.title,
       description: sanitizeRichTextNullable(row.description),
+      budgetMin: row.budget_min,
+      budgetMax: row.budget_max,
       createdLabel: dateFormatter.format(new Date(row.created_at)),
     }));
 

@@ -191,7 +191,7 @@ export default async function TeacherDashboardPage({
     supabase
       .from("batches")
       .select(
-        "id, title, mode, class_size_type, location, schedule_note, description, grade_band, status, subject_id, hourly_rate, monthly_rate, course_code, is_open_enrollment, capacity, medium, class_type, hourly_rate_max, monthly_rate_max",
+        "id, title, mode, class_size_type, location, schedule_note, description, grade_band, status, subject_id, hourly_rate, monthly_rate, course_code, is_open_enrollment, capacity, medium, class_type, hourly_rate_max, monthly_rate_max, join_code",
       )
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
@@ -468,6 +468,8 @@ export default async function TeacherDashboardPage({
     classType: row.class_type as "new" | "revision",
     title: row.title,
     description: sanitizeRichTextNullable(row.description),
+    budgetMin: row.budget_min,
+    budgetMax: row.budget_max,
     createdLabel: dateFormatter.format(new Date(row.created_at)),
     myResponse: row.my_response,
     myResponseStatus: row.my_response_status as "new" | "read" | "accepted" | "declined" | null,
@@ -528,6 +530,7 @@ export default async function TeacherDashboardPage({
     isOpenEnrollment: b.is_open_enrollment,
     capacity: b.capacity,
     scheduleSlots: scheduleSlotsByBatchId.get(b.id) ?? [],
+    joinCode: b.join_code,
   }));
 
   // Institute Blueprint step 3b — every assigned institute batch, labeled

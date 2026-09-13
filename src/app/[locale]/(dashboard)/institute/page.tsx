@@ -30,6 +30,7 @@ import {
   type FeeChargeRow,
   type FeePaymentRow,
   type FeeBalanceRow,
+  type FeePlanTemplate,
 } from "@/components/dashboard/institute/finance-tab";
 import {
   AttendanceTab,
@@ -153,6 +154,7 @@ export default async function InstituteDashboardPage({
     { data: classAdRows },
     { data: feeChargeRows },
     { data: feePaymentRows },
+    { data: feePlanTemplateRows },
     { data: guardianRows },
     { data: libraryResourceRows },
     { data: extracurricularActivityRows },
@@ -234,7 +236,7 @@ export default async function InstituteDashboardPage({
       ? supabase
           .from("batches")
           .select(
-            "id, title, mode, location, schedule_note, teacher_label, taught_by_teacher_id, subject_id, grade_band, hourly_rate, monthly_rate, is_open_enrollment, capacity",
+            "id, title, mode, location, schedule_note, teacher_label, taught_by_teacher_id, subject_id, grade_band, hourly_rate, monthly_rate, is_open_enrollment, capacity, join_code",
           )
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
@@ -254,6 +256,7 @@ export default async function InstituteDashboardPage({
             monthly_rate: number | null;
             is_open_enrollment: boolean;
             capacity: number | null;
+            join_code: string | null;
           }[],
         }),
     instituteId
@@ -312,6 +315,16 @@ export default async function InstituteDashboardPage({
             note: string | null;
             paid_at: string;
           }[],
+        }),
+    instituteId
+      ? supabase
+          .from("fee_plan_templates")
+          .select("id, name, description, amount")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+          .order("created_at", { ascending: true })
+      : Promise.resolve({
+          data: [] as { id: string; name: string; description: string | null; amount: number }[],
         }),
     instituteId
       ? supabase
@@ -608,6 +621,8 @@ export default async function InstituteDashboardPage({
     classType: row.class_type as "new" | "revision",
     title: row.title,
     description: sanitizeRichTextNullable(row.description),
+    budgetMin: row.budget_min,
+    budgetMax: row.budget_max,
     createdLabel: dateFormatter.format(new Date(row.created_at)),
     myResponse: row.my_response,
     myResponseStatus: row.my_response_status as "new" | "read" | "accepted" | "declined" | null,
@@ -657,6 +672,7 @@ export default async function InstituteDashboardPage({
     isOpenEnrollment: b.is_open_enrollment,
     capacity: b.capacity,
     scheduleSlots: scheduleSlotsByBatchId.get(b.id) ?? [],
+    joinCode: b.join_code,
   }));
 
   // Class-wise ads (0103, multiple per class since 0104) — mirrors the
@@ -890,6 +906,12 @@ export default async function InstituteDashboardPage({
     method: p.method,
     paidAtLabel: dateFormatter.format(new Date(p.paid_at)),
     note: p.note,
+  }));
+  const feePlanTemplates: FeePlanTemplate[] = (feePlanTemplateRows ?? []).map((tpl) => ({
+    id: tpl.id,
+    name: tpl.name,
+    description: tpl.description,
+    amount: Number(tpl.amount),
   }));
   const totalCharged = feeCharges.reduce((sum, c) => sum + c.amount, 0);
   const totalCollected = feePayments.reduce((sum, p) => sum + p.amount, 0);
@@ -1166,6 +1188,7 @@ export default async function InstituteDashboardPage({
             payments={feePayments}
             students={financeStudentOptions}
             batches={batches.map((b) => ({ id: b.id, title: b.title }))}
+            templates={feePlanTemplates}
           />
         ),
         timetable: <TimetableTab slots={timetableSlots} />,

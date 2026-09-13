@@ -114,6 +114,15 @@ export default async function RequestDetailPage({ params }: PageProps<"/[locale]
                   {ad.grade_level}
                 </span>
               )}
+              {(ad.budget_min != null || ad.budget_max != null) && (
+                <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs">
+                  {ad.budget_min != null && ad.budget_max != null
+                    ? t("budgetRange", { min: ad.budget_min.toLocaleString(), max: ad.budget_max.toLocaleString() })
+                    : ad.budget_max != null
+                      ? t("budgetUpTo", { max: ad.budget_max.toLocaleString() })
+                      : t("budgetFrom", { min: ad.budget_min!.toLocaleString() })}
+                </span>
+              )}
             </div>
           </div>
         </div>

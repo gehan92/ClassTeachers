@@ -21,6 +21,7 @@ import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createBatch, updateBatch, deleteBatch, setBatchScheduleSlots } from "@/lib/dashboard/batches-actions";
 import { ScheduleSlotEditor, type ScheduleSlotDraft } from "@/components/dashboard/schedule-slot-editor";
 import { WeeklyTimetable } from "@/components/dashboard/weekly-timetable";
+import { BatchJoinCode } from "@/components/dashboard/batch-join-code";
 import type { GradeBand } from "@/types/grade-band";
 import { GRADE_BAND_SELECT_VALUES, OPEN_GRADE_VALUE } from "@/lib/grade-band-options";
 
@@ -51,6 +52,9 @@ export type TeacherBatchRow = {
    * student-side Calendar tab's timetable grid. Empty until a teacher sets
    * one up via the edit form below. */
   scheduleSlots: ScheduleSlotDraft[];
+  /** Short code (0131) a student can enter to join instantly, independent of
+   * isOpenEnrollment — null until the teacher generates one. */
+  joinCode: string | null;
 };
 
 /**
@@ -123,6 +127,7 @@ export function ClassesTab({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<{ batchId: string; message: string } | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [joinCodeOverrides, setJoinCodeOverrides] = useState<Record<string, string>>({});
 
   function resetForm() {
     setTitle("");
@@ -584,6 +589,7 @@ export function ClassesTab({
                     </div>
                   </div>
                 ) : (
+                  <>
                   <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <h3 className="text-lg text-foreground">
@@ -638,6 +644,15 @@ export function ClassesTab({
                       </Button>
                     </div>
                   </div>
+                  <div className="mb-4">
+                    <BatchJoinCode
+                      batchId={batch.id}
+                      ownerType="teacher"
+                      joinCode={joinCodeOverrides[batch.id] ?? batch.joinCode}
+                      onGenerated={(code) => setJoinCodeOverrides((prev) => ({ ...prev, [batch.id]: code }))}
+                    />
+                  </div>
+                  </>
                 )}
 
                 {roster.length === 0 ? (

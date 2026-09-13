@@ -24,7 +24,17 @@ export type PublicWantedAd = {
   title: string;
   description: string | null;
   createdLabel: string;
+  /** Informational only (0132) — what the student is willing to pay. */
+  budgetMin: number | null;
+  budgetMax: number | null;
 };
+
+function formatBudget(t: ReturnType<typeof useTranslations>, budgetMin: number | null, budgetMax: number | null): string | null {
+  if (budgetMin != null && budgetMax != null) return t("budgetRange", { min: budgetMin.toLocaleString(), max: budgetMax.toLocaleString() });
+  if (budgetMax != null) return t("budgetUpTo", { max: budgetMax.toLocaleString() });
+  if (budgetMin != null) return t("budgetFrom", { min: budgetMin.toLocaleString() });
+  return null;
+}
 
 const lookingForFilters = ["all", "teacher", "institute"] as const;
 type LookingForFilter = (typeof lookingForFilters)[number];
@@ -83,7 +93,14 @@ function RequestCard({ ad, index }: { ad: PublicWantedAd; index?: number }) {
       <div className="flex flex-1 flex-col px-4 pb-4 pt-7.5">
         <div className="mb-1 line-clamp-2 font-display text-[17px] tracking-wide text-primary">{ad.title}</div>
         <div className="mb-2.5 text-[12.5px] text-muted-foreground">
-          {[ad.subject, ad.mode ? t(`modeOptions.${ad.mode}`) : null, t(`mediumOptions.${ad.medium}`), ad.gradeLevel, ad.createdLabel]
+          {[
+            ad.subject,
+            ad.mode ? t(`modeOptions.${ad.mode}`) : null,
+            t(`mediumOptions.${ad.medium}`),
+            ad.gradeLevel,
+            formatBudget(t, ad.budgetMin, ad.budgetMax),
+            ad.createdLabel,
+          ]
             .filter(Boolean)
             .join(" · ")}
         </div>

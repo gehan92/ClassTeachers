@@ -463,6 +463,7 @@ export type Database = {
           class_type: "new" | "revision" | null;
           hourly_rate_max: number | null;
           monthly_rate_max: number | null;
+          join_code: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -490,6 +491,7 @@ export type Database = {
           class_type?: "new" | "revision" | null;
           hourly_rate_max?: number | null;
           monthly_rate_max?: number | null;
+          join_code?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -517,6 +519,7 @@ export type Database = {
           class_type?: "new" | "revision" | null;
           hourly_rate_max?: number | null;
           monthly_rate_max?: number | null;
+          join_code?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1095,6 +1098,8 @@ export type Database = {
           title: string;
           description: string | null;
           status: "active" | "closed";
+          budget_min: number | null;
+          budget_max: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -1110,6 +1115,8 @@ export type Database = {
           title: string;
           description?: string | null;
           status?: "active" | "closed";
+          budget_min?: number | null;
+          budget_max?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1125,6 +1132,8 @@ export type Database = {
           title?: string;
           description?: string | null;
           status?: "active" | "closed";
+          budget_min?: number | null;
+          budget_max?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1403,6 +1412,37 @@ export type Database = {
           note?: string | null;
           paid_at?: string;
           recorded_by?: string;
+        };
+        Relationships: [];
+      };
+
+      fee_plan_templates: {
+        Row: {
+          id: string;
+          owner_type: "class";
+          owner_id: string;
+          name: string;
+          description: string | null;
+          amount: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_type?: "class";
+          owner_id: string;
+          name: string;
+          description?: string | null;
+          amount: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_type?: "class";
+          owner_id?: string;
+          name?: string;
+          description?: string | null;
+          amount?: number;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -1807,6 +1847,14 @@ export type Database = {
         Args: { p_batch_id: string };
         Returns: undefined;
       };
+      join_batch_by_code: {
+        Args: { p_code: string };
+        Returns: undefined;
+      };
+      bulk_enroll_students_by_phone: {
+        Args: { p_batch_id: string; p_phones: string[] };
+        Returns: { phone: string; result: "enrolled" | "already_enrolled" | "not_found" }[];
+      };
       create_notification: {
         Args: { p_recipient_id: string; p_type: string; p_data?: Json; p_tab?: string | null };
         Returns: undefined;
@@ -2056,6 +2104,8 @@ export type Database = {
           class_type: string;
           title: string;
           description: string | null;
+          budget_min: number | null;
+          budget_max: number | null;
           created_at: string;
         }[];
       };
@@ -2071,6 +2121,8 @@ export type Database = {
           class_type: string;
           title: string;
           description: string | null;
+          budget_min: number | null;
+          budget_max: number | null;
           created_at: string;
         }[];
       };
@@ -2086,6 +2138,8 @@ export type Database = {
           class_type: string;
           title: string;
           description: string | null;
+          budget_min: number | null;
+          budget_max: number | null;
           created_at: string;
           my_response: string | null;
           my_response_status: string | null;

@@ -58,7 +58,19 @@ export type WantedAdRow = {
   title: string;
   description: string | null;
   status: "active" | "closed";
+  /** Informational only (0132) — what the student is willing to pay, not a
+   * real charge. Either end can be set independently. */
+  budgetMin: number | null;
+  budgetMax: number | null;
 };
+
+/** "Rs. 2,000–3,000" / "Up to Rs. 3,000" / "From Rs. 2,000" / null when neither is set. */
+function formatBudget(t: ReturnType<typeof useTranslations>, budgetMin: number | null, budgetMax: number | null): string | null {
+  if (budgetMin != null && budgetMax != null) return t("budgetRange", { min: budgetMin.toLocaleString(), max: budgetMax.toLocaleString() });
+  if (budgetMax != null) return t("budgetUpTo", { max: budgetMax.toLocaleString() });
+  if (budgetMin != null) return t("budgetFrom", { min: budgetMin.toLocaleString() });
+  return null;
+}
 
 export type WantedAdResponseRow = {
   id: string;
@@ -137,6 +149,7 @@ function SampleAdsSection({ ads }: { ads: PublicWantedAd[] }) {
                 ad.mode ? t(`modeOptions.${ad.mode}`) : null,
                 t(`mediumOptions.${ad.medium}`),
                 ad.gradeLevel,
+                formatBudget(t, ad.budgetMin, ad.budgetMax),
                 ad.createdLabel,
               ]
                 .filter(Boolean)
@@ -163,6 +176,10 @@ function WantedAdFields({
   setClassType,
   gradeLevel,
   setGradeLevel,
+  budgetMin,
+  setBudgetMin,
+  budgetMax,
+  setBudgetMax,
   title,
   setTitle,
   description,
@@ -184,6 +201,10 @@ function WantedAdFields({
   setClassType: (value: ClassType) => void;
   gradeLevel: string;
   setGradeLevel: (value: string) => void;
+  budgetMin: string;
+  setBudgetMin: (value: string) => void;
+  budgetMax: string;
+  setBudgetMax: (value: string) => void;
   title: string;
   setTitle: (value: string) => void;
   description: string;
@@ -285,6 +306,29 @@ function WantedAdFields({
             onChange={(e) => setGradeLevel(e.target.value)}
             placeholder={t("gradePlaceholder")}
           />
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor={`${idPrefix}-budget-min`}>{t("budgetLabel")}</Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id={`${idPrefix}-budget-min`}
+              type="number"
+              min={0}
+              inputMode="numeric"
+              value={budgetMin}
+              onChange={(e) => setBudgetMin(e.target.value)}
+              placeholder={t("budgetMinPlaceholder")}
+            />
+            <span className="text-sm text-muted-foreground">–</span>
+            <Input
+              type="number"
+              min={0}
+              inputMode="numeric"
+              value={budgetMax}
+              onChange={(e) => setBudgetMax(e.target.value)}
+              placeholder={t("budgetMaxPlaceholder")}
+            />
+          </div>
         </div>
       </div>
       <div className="grid gap-1.5">
@@ -496,6 +540,8 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
   const [medium, setMedium] = useState<Medium>("sinhala");
   const [classType, setClassType] = useState<ClassType>("new");
   const [gradeLevel, setGradeLevel] = useState("");
+  const [budgetMin, setBudgetMin] = useState("");
+  const [budgetMax, setBudgetMax] = useState("");
   const [title, setTitle] = useState("");
   const [titleTouched, setTitleTouched] = useState(false);
   const [description, setDescription] = useState("");
@@ -563,6 +609,8 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
       classType,
       title,
       description: finalDescription,
+      budgetMin: budgetMin.trim() ? Number(budgetMin) : undefined,
+      budgetMax: budgetMax.trim() ? Number(budgetMax) : undefined,
     });
     setSaving(false);
     if (result.error) {
@@ -576,6 +624,8 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
     setMedium("sinhala");
     setClassType("new");
     setGradeLevel("");
+    setBudgetMin("");
+    setBudgetMax("");
     setTitle("");
     setTitleTouched(false);
     setDescription("");
@@ -621,6 +671,10 @@ function WantedAdCreator({ subjectOptions }: { subjectOptions: SubjectOption[] }
         setClassType={setClassType}
         gradeLevel={gradeLevel}
         setGradeLevel={setGradeLevel}
+        budgetMin={budgetMin}
+        setBudgetMin={setBudgetMin}
+        budgetMax={budgetMax}
+        setBudgetMax={setBudgetMax}
         title={title}
         setTitle={handleTitleChange}
         titleHint={t("titleAutoDraftHint")}
@@ -687,6 +741,8 @@ function WantedAdCard({
   const [medium, setMedium] = useState<Medium>(ad.medium);
   const [classType, setClassType] = useState<ClassType>(ad.classType);
   const [gradeLevel, setGradeLevel] = useState(ad.gradeLevel ?? "");
+  const [budgetMin, setBudgetMin] = useState(ad.budgetMin != null ? String(ad.budgetMin) : "");
+  const [budgetMax, setBudgetMax] = useState(ad.budgetMax != null ? String(ad.budgetMax) : "");
   const [title, setTitle] = useState(ad.title);
   const [description, setDescription] = useState(ad.description ?? "");
   const [active, setActive] = useState(ad.status === "active");
@@ -707,7 +763,18 @@ function WantedAdCard({
     }
     setSaving(true);
     setError(null);
-    const result = await updateWantedAd(ad.id, { lookingFor, subjectId, mode, gradeLevel, medium, classType, title, description });
+    const result = await updateWantedAd(ad.id, {
+      lookingFor,
+      subjectId,
+      mode,
+      gradeLevel,
+      medium,
+      classType,
+      title,
+      description,
+      budgetMin: budgetMin.trim() ? Number(budgetMin) : undefined,
+      budgetMax: budgetMax.trim() ? Number(budgetMax) : undefined,
+    });
     setSaving(false);
     if (result.error) {
       setError(result.error);
@@ -755,6 +822,7 @@ function WantedAdCard({
             {ad.mode ? ` · ${t(`modeOptions.${ad.mode}`)}` : ""}
             {` · ${t(`mediumOptions.${ad.medium}`)}`}
             {ad.gradeLevel ? ` · ${ad.gradeLevel}` : ""}
+            {formatBudget(t, ad.budgetMin, ad.budgetMax) ? ` · ${formatBudget(t, ad.budgetMin, ad.budgetMax)}` : ""}
           </p>
         </div>
         {!editing && (
@@ -804,6 +872,10 @@ function WantedAdCard({
             setClassType={setClassType}
             gradeLevel={gradeLevel}
             setGradeLevel={setGradeLevel}
+            budgetMin={budgetMin}
+            setBudgetMin={setBudgetMin}
+            budgetMax={budgetMax}
+            setBudgetMax={setBudgetMax}
             title={title}
             setTitle={setTitle}
             description={description}

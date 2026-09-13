@@ -12,21 +12,31 @@ const modeOptions = ["online", "physical", "both"] as const;
 const mediumOptions = ["english", "sinhala", "tamil", "other"] as const;
 const classTypeOptions = ["new", "revision"] as const;
 
-const wantedAdSchema = z.object({
-  lookingFor: z.enum(lookingForOptions),
-  subjectId: z.string().uuid().optional(),
-  mode: z.enum(modeOptions).optional(),
-  gradeLevel: z.string().trim().optional(),
-  medium: z.enum(mediumOptions),
-  classType: z.enum(classTypeOptions),
-  title: z.string().trim().min(2),
-  // The word limits shown in the composer (60 words each for the drafted
-  // description and the additional-details box, combined client-side into
-  // this one field) are a UX guardrail, not exact security here — this is
-  // just a generous backstop against abuse/junk. Sized up from the old plain-
-  // text limit to leave room for the HTML markup formatting adds.
-  description: z.string().trim().max(6000).optional(),
-});
+const wantedAdSchema = z
+  .object({
+    lookingFor: z.enum(lookingForOptions),
+    subjectId: z.string().uuid().optional(),
+    mode: z.enum(modeOptions).optional(),
+    gradeLevel: z.string().trim().optional(),
+    medium: z.enum(mediumOptions),
+    classType: z.enum(classTypeOptions),
+    title: z.string().trim().min(2),
+    // The word limits shown in the composer (60 words each for the drafted
+    // description and the additional-details box, combined client-side into
+    // this one field) are a UX guardrail, not exact security here — this is
+    // just a generous backstop against abuse/junk. Sized up from the old plain-
+    // text limit to leave room for the HTML markup formatting adds.
+    description: z.string().trim().max(6000).optional(),
+    // Informational only (0132) — what the student is willing to pay, not a
+    // real charge/payment field. Both ends optional and independent so a
+    // student can give just a ceiling or a full range.
+    budgetMin: z.number().nonnegative().optional(),
+    budgetMax: z.number().nonnegative().optional(),
+  })
+  .refine((data) => data.budgetMin === undefined || data.budgetMax === undefined || data.budgetMin <= data.budgetMax, {
+    message: "budget_range_invalid",
+    path: ["budgetMax"],
+  });
 
 export async function createWantedAd(input: {
   lookingFor: string;
@@ -37,6 +47,8 @@ export async function createWantedAd(input: {
   classType: string;
   title: string;
   description: string;
+  budgetMin?: number;
+  budgetMax?: number;
 }): Promise<ActionResult> {
   const parsed = wantedAdSchema.safeParse({
     lookingFor: input.lookingFor,
@@ -47,8 +59,13 @@ export async function createWantedAd(input: {
     classType: input.classType,
     title: input.title,
     description: input.description ? sanitizeRichText(input.description) : undefined,
+    budgetMin: input.budgetMin,
+    budgetMax: input.budgetMax,
   });
   if (!parsed.success) {
+    if (parsed.error.issues.some((i) => i.message === "budget_range_invalid")) {
+      return { error: "The minimum budget can't be more than the maximum." };
+    }
     return { error: "Please fill in a title and what you're looking for, then try again." };
   }
 
@@ -70,6 +87,8 @@ export async function createWantedAd(input: {
     class_type: parsed.data.classType,
     title: parsed.data.title,
     description: parsed.data.description || null,
+    budget_min: parsed.data.budgetMin ?? null,
+    budget_max: parsed.data.budgetMax ?? null,
   });
   if (error) {
     return { error: "Couldn't post your ad. Please try again." };
@@ -88,6 +107,8 @@ export async function updateWantedAd(
     classType: string;
     title: string;
     description: string;
+    budgetMin?: number;
+    budgetMax?: number;
   },
 ): Promise<ActionResult> {
   const parsed = wantedAdSchema.safeParse({
@@ -99,8 +120,13 @@ export async function updateWantedAd(
     classType: input.classType,
     title: input.title,
     description: input.description ? sanitizeRichText(input.description) : undefined,
+    budgetMin: input.budgetMin,
+    budgetMax: input.budgetMax,
   });
   if (!parsed.success) {
+    if (parsed.error.issues.some((i) => i.message === "budget_range_invalid")) {
+      return { error: "The minimum budget can't be more than the maximum." };
+    }
     return { error: "Please fill in a title and what you're looking for, then try again." };
   }
 
@@ -123,6 +149,8 @@ export async function updateWantedAd(
       class_type: parsed.data.classType,
       title: parsed.data.title,
       description: parsed.data.description || null,
+      budget_min: parsed.data.budgetMin ?? null,
+      budget_max: parsed.data.budgetMax ?? null,
     })
     .eq("id", adId)
     .eq("student_id", user.id);

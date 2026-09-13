@@ -9,7 +9,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from "@/components/ui/accordion";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
-import { requestToJoin, joinOpenBatch } from "@/lib/dashboard/batches-actions";
+import { requestToJoin, joinOpenBatch, joinBatchByCode } from "@/lib/dashboard/batches-actions";
+import { Input } from "@/components/ui/input";
 import { submitInquiry } from "@/lib/inquiries-actions";
 import { LiveClassesTab, type StudentLiveClassRow } from "@/components/dashboard/student/live-classes-tab";
 import { classState } from "@/lib/dashboard/live-class-state";
@@ -162,6 +163,9 @@ export function ClassesTab({
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [joinCodeInput, setJoinCodeInput] = useState("");
+  const [joiningByCode, setJoiningByCode] = useState(false);
+  const [joinCodeError, setJoinCodeError] = useState<string | null>(null);
   const [openClassId, setOpenClassId] = useState<string | null>(null);
   const [forceOpenSection, setForceOpenSection] = useState<string | null>(null);
   const [quickViewTeacherId, setQuickViewTeacherId] = useState<string | null>(null);
@@ -231,6 +235,20 @@ export function ClassesTab({
       setError(result.error);
       return;
     }
+    refresh();
+  }
+
+  async function handleJoinByCode() {
+    if (!joinCodeInput.trim()) return;
+    setJoiningByCode(true);
+    setJoinCodeError(null);
+    const result = await joinBatchByCode(joinCodeInput);
+    setJoiningByCode(false);
+    if (result.error) {
+      setJoinCodeError(result.error);
+      return;
+    }
+    setJoinCodeInput("");
     refresh();
   }
 
@@ -365,6 +383,28 @@ export function ClassesTab({
               })}
             </div>
           )}
+
+          <div className="mb-5 rounded-lg border border-dashed border-border bg-white p-4.5">
+            <p className="mb-2 text-sm font-medium text-foreground">{t("joinByCode.heading")}</p>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Input
+                value={joinCodeInput}
+                onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
+                placeholder={t("joinByCode.placeholder")}
+                className="w-40 font-mono uppercase tracking-wider"
+                maxLength={6}
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleJoinByCode}
+                disabled={joiningByCode || !joinCodeInput.trim()}
+              >
+                {joiningByCode ? t("joinByCode.joining") : t("joinByCode.join")}
+              </Button>
+              {joinCodeError && <span className="text-sm font-medium text-destructive">{joinCodeError}</span>}
+            </div>
+          </div>
 
           <h2 className="mb-3 text-lg font-semibold text-foreground">{t("browseTitle")}</h2>
           {error && <p className="mb-3 text-sm font-medium text-destructive">{error}</p>}

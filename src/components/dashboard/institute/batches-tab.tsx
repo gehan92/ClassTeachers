@@ -19,6 +19,7 @@ import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createBatch, updateBatch, deleteBatch, setBatchScheduleSlots } from "@/lib/dashboard/batches-actions";
 import { ScheduleSlotEditor, type ScheduleSlotDraft } from "@/components/dashboard/schedule-slot-editor";
+import { BatchJoinCode } from "@/components/dashboard/batch-join-code";
 import { GRADE_BAND_SELECT_VALUES, OPEN_GRADE_VALUE } from "@/lib/grade-band-options";
 import type { GradeBand } from "@/types/grade-band";
 
@@ -63,6 +64,9 @@ export type InstituteBatchRow = {
    * student-side Calendar tab's timetable grid. Empty until an institute
    * sets one up via the edit form below. */
   scheduleSlots: ScheduleSlotDraft[];
+  /** Short code (0131) a student can enter to join instantly, independent of
+   * isOpenEnrollment — null until the owner generates one. */
+  joinCode: string | null;
 };
 
 export type InstituteRosterTeacherOption = {
@@ -120,6 +124,7 @@ export function BatchesTab({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [joinCodeOverrides, setJoinCodeOverrides] = useState<Record<string, string>>({});
 
   const [filterQuery, setFilterQuery] = useState("");
   const [filterGrade, setFilterGrade] = useState(ALL_GRADES_FILTER);
@@ -684,6 +689,14 @@ export function BatchesTab({
                                 {batch.scheduleNote}
                               </span>
                             )}
+                          </div>
+                          <div className="mt-2.5">
+                            <BatchJoinCode
+                              batchId={batch.id}
+                              ownerType="class"
+                              joinCode={joinCodeOverrides[batch.id] ?? batch.joinCode}
+                              onGenerated={(code) => setJoinCodeOverrides((prev) => ({ ...prev, [batch.id]: code }))}
+                            />
                           </div>
                         </>
                       )}

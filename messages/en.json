@@ -442,7 +442,10 @@
     "responsePlaceholder": "Introduce yourself and how you can help...",
     "yourResponse": "Your response",
     "responseStatusAccepted": "The student accepted your response",
-    "responseStatusDeclined": "The student declined your response"
+    "responseStatusDeclined": "The student declined your response",
+    "budgetRange": "Rs. {min}–{max}/mo",
+    "budgetUpTo": "Up to Rs. {max}/mo",
+    "budgetFrom": "From Rs. {min}/mo"
   },
   "scheduleSlotEditor": {
     "label": "Weekly schedule",
@@ -738,7 +741,10 @@
       "alreadyRespondedHeading": "You've already responded",
       "alreadyRespondedHelper": "Here's the message you sent — manage or follow up from your dashboard.",
       "viewResponseCta": "View in dashboard"
-    }
+    },
+    "budgetRange": "Rs. {min}–{max}/mo",
+    "budgetUpTo": "Up to Rs. {max}/mo",
+    "budgetFrom": "From Rs. {min}/mo"
   },
   "termsPage": {
     "title": "Terms of service",
@@ -1643,7 +1649,23 @@
         "decline": "Decline",
         "declineReasonPlaceholder": "Reason (optional)"
       },
-      "subtitle": "Review join requests and manage your enrolled student roster."
+      "subtitle": "Review join requests and manage your enrolled student roster.",
+      "bulkImport": {
+        "button": "+ Bulk import",
+        "title": "Bulk-enroll existing students",
+        "subtitle": "Paste phone numbers of students who already have a ClassPortals account to enroll them into a class instantly — this doesn’t create new accounts.",
+        "batch": "Class",
+        "batchRequired": "Choose a class first.",
+        "phonesLabel": "Phone numbers",
+        "phonesPlaceholder": "0771234567\nJohn Silva, 0719876543\n...",
+        "phonesHint": "One per line. Extra text on a line (like a name) is ignored — only the phone number is matched.",
+        "noPhones": "Paste at least one phone number.",
+        "submit": "Import",
+        "importing": "Importing…",
+        "summary": "{enrolled} enrolled · {already} already enrolled · {notFound} not found",
+        "notFoundHeading": "No account found for these numbers — ask the student to sign up first:",
+        "importMore": "Import more"
+      }
     },
     "attendance": {
       "heading": "Attendance",
@@ -1732,6 +1754,28 @@
         "note": "Note (optional)",
         "notePlaceholder": "e.g. Paid at front desk",
         "submit": "Save payment"
+      },
+      "bulkCharge": {
+        "button": "+ Bulk charge",
+        "title": "Charge multiple students",
+        "subtitle": "Apply the same charge to several students at once — for example, everyone’s monthly fee at term start.",
+        "template": "Use a template (optional)",
+        "templateNone": "No template — enter manually",
+        "students": "{count, plural, =0 {No students selected} one {# student selected} other {# students selected}}",
+        "selectAll": "Select all",
+        "deselectAll": "Deselect all",
+        "submit": "{count, plural, =0 {Charge students} one {Charge # student} other {Charge # students}}"
+      },
+      "templates": {
+        "title": "Fee plan templates",
+        "subtitle": "Save a recurring charge once and reuse it instead of retyping it every time.",
+        "add": "+ New template",
+        "empty": "No templates saved yet.",
+        "name": "Template name",
+        "namePlaceholder": "e.g. Monthly Fee",
+        "descriptionPlaceholder": "e.g. Standard monthly tuition fee",
+        "save": "Save template",
+        "confirmDelete": "Delete this template?"
       }
     },
     "parentPortal": {
@@ -1931,6 +1975,12 @@
         "send": "Send",
         "cancel": "Cancel",
         "sentNote": "Sent — check Messages for a reply."
+      },
+      "joinByCode": {
+        "heading": "Have a join code?",
+        "placeholder": "ABC123",
+        "join": "Join",
+        "joining": "Joining…"
       }
     },
     "requests": {
@@ -2311,7 +2361,13 @@
       "statusOpen": "Open",
       "statusClosed": "Closed",
       "editAd": "Edit",
-      "deleteAd": "Delete"
+      "deleteAd": "Delete",
+      "budgetLabel": "Budget (Rs./month, optional)",
+      "budgetMinPlaceholder": "Min",
+      "budgetMaxPlaceholder": "Max",
+      "budgetRange": "Rs. {min}–{max}/mo",
+      "budgetUpTo": "Up to Rs. {max}/mo",
+      "budgetFrom": "From Rs. {min}/mo"
     },
     "wantedAdResponses": {
       "heading": "Responses",
@@ -3457,5 +3513,13 @@
     "privacyPolicy": "Privacy policy",
     "copyright": "© {year} ClassPortals. All rights reserved.",
     "location": "Koggala, Sri Lanka"
+  },
+  "batchJoinCode": {
+    "label": "Join code",
+    "generate": "Generate",
+    "generating": "Generating…",
+    "regenerate": "Regenerate",
+    "copy": "Copy",
+    "copied": "Copied"
   }
 }

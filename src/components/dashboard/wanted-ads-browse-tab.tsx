@@ -17,11 +17,21 @@ export type WantedAdBrowseRow = {
   title: string;
   description: string | null;
   createdLabel: string;
+  /** Informational only (0132) — what the student is willing to pay. */
+  budgetMin: number | null;
+  budgetMax: number | null;
   myResponse: string | null;
   /** Whether the student has decided on this response yet — null until they
    * do, and final once they have (see respondToWantedAdDecision). */
   myResponseStatus: "new" | "read" | "accepted" | "declined" | null;
 };
+
+function formatBudget(t: ReturnType<typeof useTranslations>, budgetMin: number | null, budgetMax: number | null): string | null {
+  if (budgetMin != null && budgetMax != null) return t("budgetRange", { min: budgetMin.toLocaleString(), max: budgetMax.toLocaleString() });
+  if (budgetMax != null) return t("budgetUpTo", { max: budgetMax.toLocaleString() });
+  if (budgetMin != null) return t("budgetFrom", { min: budgetMin.toLocaleString() });
+  return null;
+}
 
 /**
  * Shared between the teacher and institute dashboards — same pattern as
@@ -100,6 +110,7 @@ function RequestItem({ request }: { request: WantedAdBrowseRow }) {
           request.mode ? t(`modeOptions.${request.mode}`) : null,
           t(`mediumOptions.${request.medium}`),
           request.gradeLevel,
+          formatBudget(t, request.budgetMin, request.budgetMax),
         ]
           .filter(Boolean)
           .join(" · ")}

@@ -633,3 +633,122 @@ export async function requestToJoinClass(classId: string): Promise<ActionResult>
   return {};
 }
 
+const JOIN_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I — avoids look-alike mix-ups when read aloud or handwritten
+
+function randomJoinCode(): string {
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += JOIN_CODE_CHARS[Math.floor(Math.random() * JOIN_CODE_CHARS.length)];
+  }
+  return code;
+}
+
+/**
+ * (Re)generates a batch's join code — a short code the owner shares
+ * out-of-band (WhatsApp, printed handout) so a student can join instantly
+ * via joinBatchByCode below, independent of is_open_enrollment. Calling this
+ * again always replaces the previous code, invalidating it — expected
+ * behavior for a "regenerate," not a bug.
+ */
+export async function generateBatchJoinCode(
+  batchId: string,
+  ownerType: "teacher" | "class" = "teacher",
+): Promise<{ code: string; error?: undefined } | { error: string; code?: undefined }> {
+  if (!batchId) {
+    return { error: "Invalid class." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  let ownerId = user.id;
+  if (ownerType === "class") {
+    const { data: classProfile } = await supabase.from("class_profiles").select("id").eq("owner_id", user.id).maybeSingle();
+    if (!classProfile) {
+      return { error: "No institute profile found for this account." };
+    }
+    ownerId = classProfile.id;
+  }
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = randomJoinCode();
+    const { error } = await supabase
+      .from("batches")
+      .update({ join_code: code })
+      .eq("id", batchId)
+      .eq("owner_type", ownerType)
+      .eq("owner_id", ownerId);
+    if (!error) return { code };
+    if (error.code !== "23505") return { error: "Couldn't generate a join code. Please try again." };
+    // 23505 = unique violation on join_code — extremely unlikely with a
+    // 6-char, 33-symbol alphabet, but retry with a fresh code rather than fail.
+  }
+  return { error: "Couldn't generate a unique join code. Please try again." };
+}
+
+export type BulkEnrollResult = { phone: string; result: "enrolled" | "already_enrolled" | "not_found" };
+
+/**
+ * CSV bulk import, safe scope: matches against existing registered student
+ * accounts by phone and enrolls them into a batch — no new accounts
+ * created. See bulk_enroll_students_by_phone (0134).
+ */
+export async function bulkEnrollStudentsByPhone(
+  batchId: string,
+  phones: string[],
+): Promise<{ results: BulkEnrollResult[]; error?: undefined } | { error: string; results?: undefined }> {
+  const cleaned = [...new Set(phones.map((p) => p.trim()).filter(Boolean))];
+  if (cleaned.length === 0) {
+    return { error: "Paste at least one phone number." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { data, error } = await supabase.rpc("bulk_enroll_students_by_phone", { p_batch_id: batchId, p_phones: cleaned });
+  if (error) {
+    if (error.message.includes("batch_not_found")) {
+      return { error: "That class couldn't be found." };
+    }
+    return { error: "Couldn't import students. Please try again." };
+  }
+  return { results: data ?? [] };
+}
+
+export async function joinBatchByCode(code: string): Promise<ActionResult> {
+  const trimmed = code.trim();
+  if (!trimmed) {
+    return { error: "Enter a join code." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error } = await supabase.rpc("join_batch_by_code", { p_code: trimmed });
+  if (error) {
+    if (error.message.includes("invalid_code")) {
+      return { error: "That join code isn't valid. Double-check it with your teacher/institute." };
+    }
+    if (error.message.includes("batch_full")) {
+      return { error: "This class is full." };
+    }
+    return { error: "Couldn't join this class. Please try again." };
+  }
+  return {};
+}
+

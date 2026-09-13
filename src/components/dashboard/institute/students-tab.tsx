@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,7 +13,7 @@ import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { usePagination } from "@/lib/hooks/use-pagination";
-import { respondToJoinRequest } from "@/lib/dashboard/batches-actions";
+import { respondToJoinRequest, bulkEnrollStudentsByPhone, type BulkEnrollResult } from "@/lib/dashboard/batches-actions";
 
 export type InstituteStudentRow = {
   id: string;
@@ -59,6 +60,7 @@ export function StudentsTab({
   const tc = useTranslations("instituteDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [query, setQuery] = useState("");
+  const [showBulkImport, setShowBulkImport] = useState(false);
   const [handledRequestIds, setHandledRequestIds] = useState<Set<string>>(new Set());
   const requests = initialRequests.filter((r) => !handledRequestIds.has(r.id));
   const [respondingId, setRespondingId] = useState<string | null>(null);
@@ -100,15 +102,20 @@ export function StudentsTab({
           <h1 className="font-display text-2xl text-primary">{t("heading")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
-        <Input
-          placeholder={t("searchPlaceholder")}
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setPage(1);
-          }}
-          className="w-full sm:w-64"
-        />
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button type="button" variant="outline" size="sm" onClick={() => setShowBulkImport((v) => !v)}>
+            {t("bulkImport.button")}
+          </Button>
+          <Input
+            placeholder={t("searchPlaceholder")}
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
+            className="w-full sm:w-64"
+          />
+        </div>
       </div>
 
       <RefreshStatus
@@ -118,6 +125,10 @@ export function StudentsTab({
         stuckLabel={tc("updateStuck")}
         reloadLabel={tc("reloadPage")}
       />
+
+      {showBulkImport && (
+        <BulkImportPanel batchOptions={batchOptions} onDone={() => refresh()} onClose={() => setShowBulkImport(false)} />
+      )}
 
       {requests.length > 0 && (
         <div className="rounded-lg border border-border bg-white p-5">
@@ -230,6 +241,138 @@ export function StudentsTab({
           />
         )}
       </div>
+    </div>
+  );
+}
+
+// One phone number per line — accepts a bare number or "Name, 077 123 4567"
+// style rows (common when pasted straight out of a spreadsheet), pulling
+// out the first run of digits/+/spaces/dashes long enough to be a phone
+// number rather than requiring a strict single-column format.
+function extractPhone(line: string): string | null {
+  const match = line.match(/[+\d][\d\s-]{6,}/);
+  return match ? match[0].replace(/[\s-]/g, "") : null;
+}
+
+function BulkImportPanel({
+  batchOptions,
+  onDone,
+  onClose,
+}: {
+  batchOptions: { id: string; title: string }[];
+  onDone: () => void;
+  onClose: () => void;
+}) {
+  const t = useTranslations("instituteDashboard.students");
+  const tc = useTranslations("instituteDashboard.common");
+  const [batchId, setBatchId] = useState(batchOptions[0]?.id ?? "");
+  const [raw, setRaw] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<BulkEnrollResult[] | null>(null);
+
+  async function handleImport() {
+    const phones = raw
+      .split("\n")
+      .map(extractPhone)
+      .filter((p): p is string => Boolean(p));
+    if (!batchId) {
+      setError(t("bulkImport.batchRequired"));
+      return;
+    }
+    if (phones.length === 0) {
+      setError(t("bulkImport.noPhones"));
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    const outcome = await bulkEnrollStudentsByPhone(batchId, phones);
+    setSaving(false);
+    if (outcome.error) {
+      setError(outcome.error);
+      return;
+    }
+    setResults(outcome.results ?? []);
+    onDone();
+  }
+
+  const enrolledCount = results?.filter((r) => r.result === "enrolled").length ?? 0;
+  const alreadyCount = results?.filter((r) => r.result === "already_enrolled").length ?? 0;
+  const notFoundPhones = results?.filter((r) => r.result === "not_found").map((r) => r.phone) ?? [];
+
+  return (
+    <div className="rounded-lg border border-border bg-white p-5">
+      <h3 className="mb-1 text-lg">{t("bulkImport.title")}</h3>
+      <p className="mb-4 text-sm text-muted-foreground">{t("bulkImport.subtitle")}</p>
+
+      {results ? (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-foreground">
+            {t("bulkImport.summary", { enrolled: enrolledCount, already: alreadyCount, notFound: notFoundPhones.length })}
+          </p>
+          {notFoundPhones.length > 0 && (
+            <div className="rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground">
+              <p className="mb-1 font-medium text-foreground">{t("bulkImport.notFoundHeading")}</p>
+              <p className="font-mono text-xs">{notFoundPhones.join(", ")}</p>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setResults(null);
+                setRaw("");
+              }}
+            >
+              {t("bulkImport.importMore")}
+            </Button>
+            <Button size="sm" variant="outline" onClick={onClose}>
+              {tc("close")}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label>{t("bulkImport.batch")}</Label>
+              <Select value={batchId} onValueChange={(value) => setBatchId(value ?? "")}>
+                <SelectTrigger className="w-full sm:w-72">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {batchOptions.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="bulk-import-phones">{t("bulkImport.phonesLabel")}</Label>
+              <textarea
+                id="bulk-import-phones"
+                className="min-h-32 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 font-mono text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                value={raw}
+                onChange={(e) => setRaw(e.target.value)}
+                placeholder={t("bulkImport.phonesPlaceholder")}
+              />
+              <p className="text-xs text-muted-foreground">{t("bulkImport.phonesHint")}</p>
+            </div>
+          </div>
+          {error && <p className="mt-2 text-sm font-medium text-destructive">{error}</p>}
+          <div className="mt-4 flex gap-3">
+            <Button onClick={handleImport} disabled={saving || !batchId || !raw.trim()}>
+              {saving ? t("bulkImport.importing") : t("bulkImport.submit")}
+            </Button>
+            <Button variant="outline" onClick={onClose} disabled={saving}>
+              {tc("cancel")}
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

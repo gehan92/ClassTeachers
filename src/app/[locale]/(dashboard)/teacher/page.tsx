@@ -24,10 +24,16 @@ import { ReviewsTab } from "@/components/dashboard/teacher/reviews-tab";
 import { InquiriesTab } from "@/components/dashboard/inquiries-tab";
 import { WantedAdsBrowseTab } from "@/components/dashboard/wanted-ads-browse-tab";
 import { AdvertisementTab } from "@/components/dashboard/teacher/advertisement-tab";
-import type { TeacherAdBatchRow } from "@/components/dashboard/teacher/advertisement-tab";
+import type { TeacherAdBatchRow, TeacherLessonAdRow } from "@/components/dashboard/teacher/advertisement-tab";
 import type { AdHistoryRow } from "@/components/dashboard/ad-history-list";
 import { SettingsTab } from "@/components/dashboard/teacher/settings-tab";
-import { InstituteTab, type TeacherInstituteLinkRow, type InstituteTaughtBatchRow } from "@/components/dashboard/teacher/institute-tab";
+import {
+  InstituteTab,
+  type TeacherInstituteLinkRow,
+  type InstituteTaughtBatchRow,
+  type TeacherSeekingAdRow,
+  type TeacherSeekingAdResponseRow,
+} from "@/components/dashboard/teacher/institute-tab";
 import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { TeacherOnboardingWizard } from "@/components/onboarding/teacher-onboarding-wizard";
 import { createClient } from "@/lib/supabase/server";
@@ -60,6 +66,12 @@ type RawQuestionOption = { id: string; text: string; imagePath?: string };
 // impure call (Date.now here) made directly in a component/hook's own body.
 function isUpcomingLiveClass(row: { scheduledAtIso: string; durationMinutes: number; status: "scheduled" | "live" | "completed" | "cancelled" }): boolean {
   return classState(row, Date.now()) !== "ended";
+}
+
+// Same reasoning as isUpcomingLiveClass above — kept at module level so the
+// Date.now() call isn't made directly in the page component's own body.
+function isFutureIso(iso: string): boolean {
+  return new Date(iso).getTime() > Date.now();
 }
 
 export default async function TeacherDashboardPage({
@@ -155,6 +167,8 @@ export default async function TeacherDashboardPage({
     { data: assignedInstituteBatchRows },
     { data: managedBatchStudentRows },
     { data: notificationRows },
+    { data: teacherSeekingAdRows },
+    { data: teacherSeekingAdResponseRows },
   ] = await Promise.all([
     supabase.from("profiles").select("full_name, phone, notification_prefs, role").eq("id", userId).single(),
     supabase.from("teacher_profiles").select("*").eq("id", userId).maybeSingle(),
@@ -224,7 +238,7 @@ export default async function TeacherDashboardPage({
     // from the single own_profile promo box fetched above.
     supabase
       .from("advertisements")
-      .select("id, batch_id, title, content, status, view_count")
+      .select("id, batch_id, lesson_id, title, content, status, view_count")
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
       .eq("placement", "search_results"),
@@ -246,7 +260,7 @@ export default async function TeacherDashboardPage({
       .order("scheduled_at", { ascending: false }),
     supabase
       .from("live_classes")
-      .select("id, title, mode, location, scheduled_at, duration_minutes, batch_id, status")
+      .select("id, title, mode, location, scheduled_at, duration_minutes, batch_id, status, owner_type, owner_id")
       .neq("status", "cancelled")
       .order("scheduled_at", { ascending: false }),
     supabase
@@ -279,6 +293,16 @@ export default async function TeacherDashboardPage({
     // covered since it only opens up for the institute's own owner.
     supabase.rpc("get_managed_batch_student_info"),
     supabase.rpc("list_my_notifications"),
+    // Institute-Seeking Ad (Gehan's mockup, section 2.2) — this teacher's
+    // own posts, any status (RLS already scopes this to teacher_id =
+    // auth.uid() OR active, so an unfiltered-by-status select still only
+    // ever returns rows this teacher can see).
+    supabase
+      .from("teacher_seeking_ads")
+      .select("id, subject_id, mode, grade_band, title, content, status, created_at")
+      .eq("teacher_id", userId)
+      .order("created_at", { ascending: false }),
+    supabase.rpc("list_teacher_seeking_ad_responses_for_teacher"),
   ]);
 
   const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({
@@ -569,6 +593,10 @@ export default async function TeacherDashboardPage({
     string,
     { id: string; title: string; content: string | null; status: "active" | "expired" | "removed"; viewCount: number }
   >();
+  const lessonAdByLessonId = new Map<
+    string,
+    { id: string; title: string; content: string | null; status: "active" | "expired" | "removed"; viewCount: number }
+  >();
   const deletedBatchAdRows: NonNullable<typeof batchAdRows> = [];
   for (const a of batchAdRows ?? []) {
     if (a.status === "deleted") {
@@ -577,6 +605,8 @@ export default async function TeacherDashboardPage({
     }
     if (a.batch_id)
       batchAdByBatchId.set(a.batch_id, { id: a.id, title: a.title, content: a.content, status: a.status, viewCount: a.view_count });
+    if (a.lesson_id)
+      lessonAdByLessonId.set(a.lesson_id, { id: a.id, title: a.title, content: a.content, status: a.status, viewCount: a.view_count });
   }
 
   const adBatches: TeacherAdBatchRow[] = (batchRows ?? []).map((b) => {
@@ -598,6 +628,24 @@ export default async function TeacherDashboardPage({
         : null,
     };
   });
+
+  // Lesson/Grade-wise Ad (0138) — only this teacher's own upcoming, not-yet-
+  // happened lessons are eligible to promote (an institute-assigned lesson
+  // isn't this teacher's own ad to make; createLessonAd's own RLS-backed
+  // check enforces the same restriction server-side).
+  const adLessons: TeacherLessonAdRow[] = (liveClassRows ?? [])
+    .filter((c) => c.owner_type === "teacher" && c.owner_id === userId && isFutureIso(c.scheduled_at))
+    .map((c) => {
+      const ad = lessonAdByLessonId.get(c.id);
+      return {
+        id: c.id,
+        title: c.title,
+        scheduledLabel: scheduleFormatter.format(new Date(c.scheduled_at)),
+        ad: ad
+          ? { id: ad.id, title: ad.title, content: sanitizeRichTextNullable(ad.content) ?? "", status: ad.status, viewCount: ad.viewCount }
+          : null,
+      };
+    });
 
   const teacherAdHistory: AdHistoryRow[] = deletedBatchAdRows.map((ad) => ({
     id: ad.id,
@@ -965,7 +1013,7 @@ export default async function TeacherDashboardPage({
         return {
           id: b.id,
           title: b.title,
-          mode: b.mode as "online" | "physical",
+          mode: b.mode as "online" | "physical" | "travels_to_student",
           location: b.location,
           scheduleNote: b.schedule_note,
           gradeBand: b.grade_band,
@@ -1027,6 +1075,27 @@ export default async function TeacherDashboardPage({
     location: b.location,
     scheduleNote: b.schedule_note,
     studentCount: rosterByBatch[b.id]?.length ?? 0,
+  }));
+
+  // Institute-Seeking Ad (Gehan's mockup, section 2.2) — this teacher's own
+  // posts advertising availability to join an institute, and what came in.
+  const teacherSeekingAds: TeacherSeekingAdRow[] = (teacherSeekingAdRows ?? []).map((row) => ({
+    id: row.id,
+    subject: row.subject_id ? (subjectNameById.get(row.subject_id) ?? null) : null,
+    mode: row.mode,
+    gradeBand: row.grade_band,
+    title: row.title,
+    content: row.content,
+    active: row.status === "active",
+    createdLabel: dateFormatter.format(new Date(row.created_at)),
+  }));
+  const teacherSeekingAdResponses: TeacherSeekingAdResponseRow[] = (teacherSeekingAdResponseRows ?? []).map((row) => ({
+    id: row.id,
+    teacherSeekingAdId: row.teacher_seeking_ad_id,
+    instituteName: row.institute_name,
+    message: row.message,
+    status: row.status as "new" | "read" | "accepted" | "declined",
+    createdLabel: dateFormatter.format(new Date(row.created_at)),
   }));
 
   return (
@@ -1264,6 +1333,7 @@ export default async function TeacherDashboardPage({
           <AdvertisementTab
             initialContent={adRow?.content ?? ""}
             batches={adBatches}
+            lessons={adLessons}
             subjectOptions={subjectOptions}
             defaultHourlyRate={priceRow?.hourly_rate}
             defaultMonthlyRate={priceRow?.monthly_rate}
@@ -1282,7 +1352,14 @@ export default async function TeacherDashboardPage({
           />
         ),
         institute: (
-          <InstituteTab links={teacherInstituteLinks} taughtBatches={instituteTaughtBatches} rosterByBatch={rosterByBatch} />
+          <InstituteTab
+            links={teacherInstituteLinks}
+            taughtBatches={instituteTaughtBatches}
+            rosterByBatch={rosterByBatch}
+            seekingAds={teacherSeekingAds}
+            seekingAdResponses={teacherSeekingAdResponses}
+            subjectOptions={subjectOptions}
+          />
         ),
       }}
       defaultTab="overview"

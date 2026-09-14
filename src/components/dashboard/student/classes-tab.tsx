@@ -30,7 +30,7 @@ export type MyClassRow = {
   batchTitle: string | null;
   ownerName: string;
   ownerType: "teacher" | "class";
-  mode: "online" | "physical" | null;
+  mode: "online" | "physical" | "travels_to_student" | null;
   scheduleNote: string | null;
   status: "pending" | "accepted" | "declined";
   /** Swaps this row's "Teacher"/"Class" badge and any join-flow wording to campus terminology (0076) — a mixed list can have both, so this is per-row, not page-level. */
@@ -43,7 +43,7 @@ export type AvailableBatchRow = {
   ownerId: string;
   ownerName: string;
   ownerType: "teacher" | "class";
-  mode: "online" | "physical";
+  mode: "online" | "physical" | "travels_to_student";
   location: string | null;
   scheduleNote: string | null;
   isCampusLecturer: boolean;
@@ -452,7 +452,7 @@ export function ClassesTab({
                         {batch.title}
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
-                        {batch.mode === "online" ? t("modeOnline") : t("modePhysical")}
+                        {batch.mode === "online" ? t("modeOnline") : batch.mode === "travels_to_student" ? t("modeTravelsToStudent") : t("modePhysical")}
                         {batch.location ? ` · ${batch.location}` : ""}
                         {batch.scheduleNote ? ` · ${batch.scheduleNote}` : ""}
                       </div>

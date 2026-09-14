@@ -83,6 +83,12 @@ export function messageFor(t: Translator, n: NotificationRow): string {
       return t("types.wanted_ad_response_accepted");
     case "wanted_ad_response_declined":
       return t("types.wanted_ad_response_declined");
+    case "teacher_seeking_ad_response":
+      return t("types.teacher_seeking_ad_response", { instituteName: str(data.instituteName) });
+    case "teacher_seeking_ad_response_accepted":
+      return t("types.teacher_seeking_ad_response_accepted");
+    case "teacher_seeking_ad_response_declined":
+      return t("types.teacher_seeking_ad_response_declined");
     case "listing_decision":
       return t("types.listing_decision", {
         decision: t(data.decision === "approved" ? "decisions.approved" : "decisions.rejected"),

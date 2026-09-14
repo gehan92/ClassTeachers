@@ -445,7 +445,7 @@ export type Database = {
           owner_id: string;
           subject_id: string | null;
           title: string;
-          mode: "online" | "physical";
+          mode: "online" | "physical" | "travels_to_student";
           class_size_type: "group" | "individual";
           location: string | null;
           schedule_note: string | null;
@@ -473,7 +473,7 @@ export type Database = {
           owner_id: string;
           subject_id?: string | null;
           title: string;
-          mode: "online" | "physical";
+          mode: "online" | "physical" | "travels_to_student";
           class_size_type?: "group" | "individual";
           location?: string | null;
           schedule_note?: string | null;
@@ -501,7 +501,7 @@ export type Database = {
           owner_id?: string;
           subject_id?: string | null;
           title?: string;
-          mode?: "online" | "physical";
+          mode?: "online" | "physical" | "travels_to_student";
           class_size_type?: "group" | "individual";
           location?: string | null;
           schedule_note?: string | null;
@@ -1041,6 +1041,7 @@ export type Database = {
           status: "active" | "expired" | "removed" | "deleted";
           subject_id: string | null;
           batch_id: string | null;
+          lesson_id: string | null;
           starts_at: string;
           expires_at: string | null;
           created_at: string;
@@ -1058,6 +1059,7 @@ export type Database = {
           status?: "active" | "expired" | "removed" | "deleted";
           subject_id?: string | null;
           batch_id?: string | null;
+          lesson_id?: string | null;
           starts_at?: string;
           expires_at?: string | null;
           created_at?: string;
@@ -1075,6 +1077,7 @@ export type Database = {
           status?: "active" | "expired" | "removed" | "deleted";
           subject_id?: string | null;
           batch_id?: string | null;
+          lesson_id?: string | null;
           starts_at?: string;
           expires_at?: string | null;
           created_at?: string;
@@ -1164,6 +1167,74 @@ export type Database = {
           wanted_ad_id?: string;
           responder_type?: "teacher" | "class";
           responder_id?: string;
+          message?: string;
+          status?: "new" | "read" | "accepted" | "declined";
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+
+      teacher_seeking_ads: {
+        Row: {
+          id: string;
+          teacher_id: string;
+          subject_id: string | null;
+          mode: "online" | "physical" | "travels_to_student" | null;
+          grade_band: GradeBand | null;
+          title: string;
+          content: string;
+          status: "active" | "closed";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          teacher_id: string;
+          subject_id?: string | null;
+          mode?: "online" | "physical" | "travels_to_student" | null;
+          grade_band?: GradeBand | null;
+          title: string;
+          content: string;
+          status?: "active" | "closed";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          teacher_id?: string;
+          subject_id?: string | null;
+          mode?: "online" | "physical" | "travels_to_student" | null;
+          grade_band?: GradeBand | null;
+          title?: string;
+          content?: string;
+          status?: "active" | "closed";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+
+      teacher_seeking_ad_responses: {
+        Row: {
+          id: string;
+          teacher_seeking_ad_id: string;
+          institute_id: string;
+          message: string;
+          status: "new" | "read" | "accepted" | "declined";
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          teacher_seeking_ad_id: string;
+          institute_id: string;
+          message: string;
+          status?: "new" | "read" | "accepted" | "declined";
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          teacher_seeking_ad_id?: string;
+          institute_id?: string;
           message?: string;
           status?: "new" | "read" | "accepted" | "declined";
           created_at?: string;
@@ -2092,6 +2163,27 @@ export type Database = {
           monthly_rate_max: number | null;
         }[];
       };
+      get_public_lesson_ad: {
+        Args: { p_ad_id: string };
+        Returns: {
+          ad_id: string;
+          teacher_id: string;
+          display_name: string | null;
+          photo_url: string | null;
+          ad_title: string;
+          ad_content: string | null;
+          subject: string | null;
+          lesson_title: string;
+          scheduled_at: string;
+          duration_minutes: number;
+          mode: string;
+          location: string | null;
+          rating: number;
+          review_count: number;
+          is_campus_lecturer: boolean;
+          institution_verified: boolean;
+        }[];
+      };
       list_public_wanted_ads: {
         Args: Record<string, never>;
         Returns: {
@@ -2152,6 +2244,34 @@ export type Database = {
           wanted_ad_id: string;
           responder_type: string;
           responder_name: string | null;
+          message: string;
+          status: string;
+          created_at: string;
+        }[];
+      };
+      list_teacher_seeking_ads_for_institutes: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          teacher_id: string;
+          display_name: string | null;
+          photo_url: string | null;
+          subject: string | null;
+          grade_band: string | null;
+          mode: string | null;
+          title: string;
+          content: string;
+          created_at: string;
+          my_response: string | null;
+          my_response_status: string | null;
+        }[];
+      };
+      list_teacher_seeking_ad_responses_for_teacher: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          teacher_seeking_ad_id: string;
+          institute_name: string;
           message: string;
           status: string;
           created_at: string;

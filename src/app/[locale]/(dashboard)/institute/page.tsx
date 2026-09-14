@@ -7,7 +7,7 @@ import {
   type PendingTeacherApproval,
   type PendingStudentApproval,
 } from "@/components/dashboard/institute/overview-tab";
-import { TeachersTab, type InstituteTeacherRow } from "@/components/dashboard/institute/teachers-tab";
+import { TeachersTab, type InstituteTeacherRow, type TeacherSeekingAdBrowseRow } from "@/components/dashboard/institute/teachers-tab";
 import { BatchesTab } from "@/components/dashboard/institute/batches-tab";
 import { StudentsTab, type InstituteStudentRow, type InstituteJoinRequestRow } from "@/components/dashboard/institute/students-tab";
 import { AdvertisementTab, type InstituteAdBatchRow } from "@/components/dashboard/institute/advertisement-tab";
@@ -159,6 +159,7 @@ export default async function InstituteDashboardPage({
     { data: libraryResourceRows },
     { data: extracurricularActivityRows },
     { data: extracurricularParticipantRows },
+    { data: teacherSeekingAdRows },
   ] = await Promise.all([
     instituteId
       ? supabase.from("class_teachers").select("teacher_id, is_visible, status, requested_by").eq("class_id", instituteId)
@@ -245,7 +246,7 @@ export default async function InstituteDashboardPage({
           data: [] as {
             id: string;
             title: string;
-            mode: "online" | "physical";
+            mode: "online" | "physical" | "travels_to_student";
             location: string | null;
             schedule_note: string | null;
             teacher_label: string | null;
@@ -360,6 +361,10 @@ export default async function InstituteDashboardPage({
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
       : Promise.resolve({ data: [] as { id: string; activity_id: string; student_id: string; certificate_issued: boolean }[] }),
+    // Institute-Seeking Ad (Gehan's mockup, section 2.2) — doesn't depend on
+    // instituteId (it reads auth.uid() internally, same as
+    // list_wanted_ads_for_responder above), so it's called unconditionally.
+    supabase.rpc("list_teacher_seeking_ads_for_institutes"),
   ]);
 
   const batchSubjectIds = [...new Set((batchRows ?? []).map((b) => b.subject_id).filter((id): id is string => !!id))];
@@ -623,6 +628,19 @@ export default async function InstituteDashboardPage({
     description: sanitizeRichTextNullable(row.description),
     budgetMin: row.budget_min,
     budgetMax: row.budget_max,
+    createdLabel: dateFormatter.format(new Date(row.created_at)),
+    myResponse: row.my_response,
+    myResponseStatus: row.my_response_status as "new" | "read" | "accepted" | "declined" | null,
+  }));
+  const teacherSeekingAds: TeacherSeekingAdBrowseRow[] = (teacherSeekingAdRows ?? []).map((row) => ({
+    id: row.id,
+    teacherName: row.display_name,
+    photoUrl: row.photo_url,
+    subject: row.subject,
+    gradeBand: row.grade_band,
+    mode: row.mode as "online" | "physical" | "travels_to_student" | null,
+    title: row.title,
+    content: row.content,
     createdLabel: dateFormatter.format(new Date(row.created_at)),
     myResponse: row.my_response,
     myResponseStatus: row.my_response_status as "new" | "read" | "accepted" | "declined" | null,
@@ -1152,7 +1170,7 @@ export default async function InstituteDashboardPage({
             initialHasVerificationDocument={classProfile?.verification_document_path != null}
           />
         ),
-        teachers: <TeachersTab teachers={instituteTeachers} />,
+        teachers: <TeachersTab teachers={instituteTeachers} seekingAds={teacherSeekingAds} />,
         batches: (
           <BatchesTab batches={batches} teacherOptions={rosterTeacherOptions} rosterByBatch={instituteBatchRoster} />
         ),

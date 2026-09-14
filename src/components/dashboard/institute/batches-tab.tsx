@@ -41,7 +41,7 @@ export type InstituteBatchRosterEntry = {
 export type InstituteBatchRow = {
   id: string;
   title: string;
-  mode: "online" | "physical";
+  mode: "online" | "physical" | "travels_to_student";
   location: string | null;
   scheduleNote: string | null;
   teacherLabel: string | null;
@@ -97,7 +97,7 @@ export function BatchesTab({
   const [teacherId, setTeacherId] = useState("");
   const [subject, setSubject] = useState("");
   const [gradeBand, setGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>(OPEN_GRADE_VALUE);
-  const [mode, setMode] = useState<"online" | "physical">("physical");
+  const [mode, setMode] = useState<"online" | "physical" | "travels_to_student">("physical");
   const [schedule, setSchedule] = useState("");
   const [isOpenEnrollment, setIsOpenEnrollment] = useState(false);
   const [capacity, setCapacity] = useState("");
@@ -110,7 +110,7 @@ export function BatchesTab({
   const [editTeacherId, setEditTeacherId] = useState("");
   const [editSubject, setEditSubject] = useState("");
   const [editGradeBand, setEditGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>(OPEN_GRADE_VALUE);
-  const [editMode, setEditMode] = useState<"online" | "physical">("physical");
+  const [editMode, setEditMode] = useState<"online" | "physical" | "travels_to_student">("physical");
   const [editLocation, setEditLocation] = useState("");
   const [editSchedule, setEditSchedule] = useState("");
   const [editIsOpenEnrollment, setEditIsOpenEnrollment] = useState(false);
@@ -375,13 +375,14 @@ export function BatchesTab({
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="batch-mode">{t("form.modeLabel")}</Label>
-              <Select value={mode} onValueChange={(value) => setMode(value as "online" | "physical")}>
+              <Select value={mode} onValueChange={(value) => setMode(value as "online" | "physical" | "travels_to_student")}>
                 <SelectTrigger id="batch-mode" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="physical">{t("form.modePhysical")}</SelectItem>
                   <SelectItem value="online">{t("form.modeOnline")}</SelectItem>
+                  <SelectItem value="travels_to_student">{t("form.modeTravelsToStudent")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -484,6 +485,7 @@ export function BatchesTab({
                   <SelectItem value={ALL_MODES_FILTER}>{t("filters.allModes")}</SelectItem>
                   <SelectItem value="physical">{t("form.modePhysical")}</SelectItem>
                   <SelectItem value="online">{t("form.modeOnline")}</SelectItem>
+                  <SelectItem value="travels_to_student">{t("form.modeTravelsToStudent")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -564,13 +566,17 @@ export function BatchesTab({
                             </div>
                             <div className="grid gap-1.5">
                               <Label>{t("form.modeLabel")}</Label>
-                              <Select value={editMode} onValueChange={(value) => setEditMode(value as "online" | "physical")}>
+                              <Select
+                                value={editMode}
+                                onValueChange={(value) => setEditMode(value as "online" | "physical" | "travels_to_student")}
+                              >
                                 <SelectTrigger className="w-full">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="physical">{t("form.modePhysical")}</SelectItem>
                                   <SelectItem value="online">{t("form.modeOnline")}</SelectItem>
+                                  <SelectItem value="travels_to_student">{t("form.modeTravelsToStudent")}</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -677,7 +683,11 @@ export function BatchesTab({
                               {batch.gradeBand ? tg(`grades.${batch.gradeBand}`) : tg("grades.open")}
                             </span>
                             <span className="rounded-sm border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground/80">
-                              {batch.mode === "online" ? t("form.modeOnline") : t("form.modePhysical")}
+                              {batch.mode === "online"
+                                ? t("form.modeOnline")
+                                : batch.mode === "travels_to_student"
+                                  ? t("form.modeTravelsToStudent")
+                                  : t("form.modePhysical")}
                             </span>
                             {batch.location && (
                               <span className="rounded-sm border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground/80">

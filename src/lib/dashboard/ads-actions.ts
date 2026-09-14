@@ -217,6 +217,81 @@ export async function upsertBatchAd(input: {
   return {};
 }
 
+const lessonAdSchema = z.object({
+  lessonId: z.string().uuid(),
+  title: z.string().trim().min(2),
+  content: z.string().trim().min(1),
+});
+
+/**
+ * "Lesson/Grade-wise Ad" (0138) — a narrower promotion than upsertBatchAd's
+ * ongoing Class Ad: one already-scheduled live class, offered as a one-off
+ * trial/drop-in rather than a recurring arrangement. Find-or-update by
+ * lesson_id, same upsert shape as upsertBatchAd (one ad per lesson, editing
+ * re-runs this rather than erroring on a duplicate). Pause/resume and
+ * delete reuse setBatchAdActive/deleteBatchAd below unchanged — neither
+ * filters on batch_id, so they already work for any teacher-owned ad
+ * regardless of whether it points at a batch or a lesson.
+ */
+export async function createLessonAd(input: { lessonId: string; title: string; content: string }): Promise<ActionResult> {
+  const parsed = lessonAdSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: "Please fill in the title and details, then try again." };
+  }
+  const content = sanitizeRichText(parsed.data.content);
+  if (!hasRichText(content)) {
+    return { error: "Please fill in the title and details, then try again." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { data: lesson } = await supabase
+    .from("live_classes")
+    .select("id, subject_id")
+    .eq("id", parsed.data.lessonId)
+    .eq("owner_type", "teacher")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (!lesson) {
+    return { error: "That lesson couldn't be found." };
+  }
+
+  const { data: existing } = await supabase
+    .from("advertisements")
+    .select("id")
+    .eq("owner_type", "teacher")
+    .eq("owner_id", user.id)
+    .eq("lesson_id", lesson.id)
+    .eq("placement", "search_results")
+    .maybeSingle();
+
+  const { error } = existing
+    ? await supabase
+        .from("advertisements")
+        .update({ title: parsed.data.title, content, status: "active" })
+        .eq("id", existing.id)
+    : await supabase.from("advertisements").insert({
+        owner_type: "teacher",
+        owner_id: user.id,
+        lesson_id: lesson.id,
+        subject_id: lesson.subject_id,
+        title: parsed.data.title,
+        content,
+        placement: "search_results",
+        plan: "basic",
+      });
+  if (error) {
+    return { error: "Couldn't save this ad. Please try again." };
+  }
+  return {};
+}
+
 const classBatchAdContentSchema = z.object({
   title: z.string().trim().min(2),
   content: z.string().trim().min(1),
@@ -584,7 +659,7 @@ const gradeBands = ["1-5", "6-9", "10-11", "12-13", "campus"] as const;
 
 const createIndividualAdSchema = z.object({
   subjectId: z.string().uuid(),
-  mode: z.enum(["online", "physical"]),
+  mode: z.enum(["online", "physical", "travels_to_student"]),
   gradeBand: z.enum(gradeBands).optional(),
   title: z.string().trim().min(2),
   content: z.string().trim().min(1),
@@ -608,7 +683,7 @@ const createIndividualAdSchema = z.object({
  */
 export async function createIndividualAd(input: {
   subjectId: string;
-  mode: "online" | "physical";
+  mode: "online" | "physical" | "travels_to_student";
   gradeBand?: string;
   title: string;
   content: string;

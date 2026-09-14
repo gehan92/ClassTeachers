@@ -351,7 +351,11 @@ function SchedulePanel({ teacher }: { teacher: TeacherProfileDetail }) {
           const row = (
             <>
               <span className="w-16 shrink-0 font-mono text-xs uppercase text-accent-deep">
-                {item.mode === "online" ? t("classTypeOnline") : t("classTypePhysical")}
+                {item.mode === "online"
+                  ? t("classTypeOnline")
+                  : item.mode === "travels_to_student"
+                    ? t("classTypeTravelsToStudent")
+                    : t("classTypePhysical")}
               </span>
               <span className="flex-1 text-sm font-medium text-foreground">{item.title}</span>
               <span className="text-xs text-muted-foreground">{item.scheduleNote ?? item.location ?? "—"}</span>

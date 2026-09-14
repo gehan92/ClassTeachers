@@ -11,7 +11,7 @@ export type ClassBatch = {
   title: string;
   teacherName: string | null;
   status: "started" | "upcoming";
-  mode: "online" | "physical";
+  mode: "online" | "physical" | "travels_to_student";
   location: string | null;
   scheduleNote: string | null;
   /** Active search_results ads for this batch (0103/0104) — the ad copy an

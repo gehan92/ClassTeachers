@@ -4,11 +4,13 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ArrowLeft, BadgeCheck, FileText, MapPin, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { JoinRequestBox } from "@/components/features/join-request-box";
+import { LessonInquiryBox } from "@/components/features/lesson-inquiry-box";
 import { ShareButtons } from "@/components/features/share-buttons";
 import { createClient } from "@/lib/supabase/server";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { sanitizeRichText } from "@/lib/dashboard/sanitize-rich-text";
 import { hasRichText, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
+import { createDateTimeFormatter } from "@/lib/format-date";
 
 /**
  * A search-result ad can belong to a teacher (get_public_ad, 0040/0041/0076)
@@ -132,15 +134,80 @@ async function loadAd(adId: string): Promise<NormalizedAd | null> {
   return null;
 }
 
+/**
+ * "Lesson/Grade-wise Ad" (0138) — a narrower promotion than the batch-shaped
+ * ads above: one already-scheduled live class, not an ongoing arrangement.
+ * Deliberately a separate type/loader/render branch rather than folding
+ * into NormalizedAd — every field above (batchId, isOpenEnrollment,
+ * capacity, spotsTaken, hourlyRate...) is a batch concept that simply
+ * doesn't apply to a single lesson, and JoinRequestBox needs a real
+ * batchId to request into.
+ */
+type NormalizedLessonAd = {
+  adId: string;
+  teacherId: string;
+  name: string | null;
+  photoUrl: string | null;
+  adTitle: string;
+  adContent: string | null;
+  subject: string | null;
+  lessonTitle: string;
+  scheduledAtIso: string;
+  durationMinutes: number;
+  mode: string;
+  location: string | null;
+  rating: number;
+  reviewCount: number;
+  isCampusLecturer: boolean;
+  institutionVerified: boolean;
+};
+
+async function loadLessonAd(adId: string): Promise<NormalizedLessonAd | null> {
+  const supabase = await createClient();
+
+  const { data: rows } = await supabase.rpc("get_public_lesson_ad", { p_ad_id: adId });
+  if (!rows || rows.length === 0) return null;
+  const r = rows[0];
+  await supabase.rpc("increment_ad_view", { p_ad_id: adId });
+  return {
+    adId: r.ad_id,
+    teacherId: r.teacher_id,
+    name: r.display_name,
+    photoUrl: r.photo_url,
+    adTitle: r.ad_title,
+    adContent: r.ad_content,
+    subject: r.subject,
+    lessonTitle: r.lesson_title,
+    scheduledAtIso: r.scheduled_at,
+    durationMinutes: r.duration_minutes,
+    mode: r.mode,
+    location: r.location,
+    rating: r.rating,
+    reviewCount: r.review_count,
+    isCampusLecturer: r.is_campus_lecturer,
+    institutionVerified: r.institution_verified,
+  };
+}
+
 export async function generateMetadata({ params }: PageProps<"/[locale]/ad/[id]">): Promise<Metadata> {
   const { locale, id } = await params;
   const [ad, t] = await Promise.all([loadAd(id), getTranslations({ locale, namespace: "meta" })]);
-  if (!ad) return {};
-  const name = ad.name ?? (ad.ownerType === "class" ? t("classRoleFallback") : t("teacherRoleFallback"));
-  return {
-    title: t("adTitle", { adTitle: ad.adTitle, name }),
-    description: t("adDescription", { name }),
-  };
+  if (ad) {
+    const name = ad.name ?? (ad.ownerType === "class" ? t("classRoleFallback") : t("teacherRoleFallback"));
+    return {
+      title: t("adTitle", { adTitle: ad.adTitle, name }),
+      description: t("adDescription", { name }),
+    };
+  }
+  const lessonAd = await loadLessonAd(id);
+  if (lessonAd) {
+    const name = lessonAd.name ?? t("teacherRoleFallback");
+    return {
+      title: t("adTitle", { adTitle: lessonAd.adTitle, name }),
+      description: t("adDescription", { name }),
+    };
+  }
+  return {};
 }
 
 /**
@@ -156,6 +223,10 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
 
   const ad = await loadAd(id);
   if (!ad) {
+    const lessonAd = await loadLessonAd(id);
+    if (lessonAd) {
+      return <LessonAdView ad={lessonAd} locale={locale} />;
+    }
     notFound();
   }
 
@@ -275,7 +346,7 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
                 </span>
               )}
               <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs">
-                {ad.mode === "online" ? t("online") : t("physical")}
+                {ad.mode === "online" ? t("online") : ad.mode === "travels_to_student" ? t("travelsToStudent") : t("physical")}
               </span>
               {ad.medium && (
                 <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs">
@@ -372,6 +443,103 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
             </div>
           )}
 
+          <ShareButtons title={ad.adTitle} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * "Lesson/Grade-wise Ad" landing page (0138) — deliberately much lighter
+ * than the batch-shaped view above: one date/time instead of a recurring
+ * schedule, no grade/rate/open-enrollment panels (a lesson ad carries none
+ * of that), and LessonInquiryBox instead of JoinRequestBox since there's
+ * nothing here to enroll in — just a trial someone can ask about.
+ */
+async function LessonAdView({ ad, locale }: { ad: NormalizedLessonAd; locale: string }) {
+  const t = await getTranslations("adPage");
+  const tl = await getTranslations("listing");
+  const displayName = ad.name ?? t("teacherFallback");
+  const richContent = sanitizeRichText(ad.adContent ?? "");
+  const scheduledLabel = createDateTimeFormatter(locale).format(new Date(ad.scheduledAtIso));
+
+  return (
+    <div className="mx-auto max-w-[860px] px-7 py-10">
+      <Link
+        href="/teachers"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary"
+      >
+        <ArrowLeft className="size-4" />
+        {t("breadcrumbHome")}
+      </Link>
+
+      <div className="mb-6 rounded-xl bg-gradient-to-br from-primary to-primary-light p-7 text-white">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          {ad.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={ad.photoUrl}
+              alt=""
+              className="mx-auto size-20 shrink-0 rounded-full border-4 border-white object-cover shadow-sm sm:mx-0"
+            />
+          ) : (
+            <div
+              className={`mx-auto flex size-20 shrink-0 items-center justify-center rounded-full border-4 border-white font-display text-2xl font-bold text-white shadow-sm sm:mx-0 ${avatarGradientClass(ad.teacherId)}`}
+            >
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            {ad.subject && <div className="mb-1 font-mono text-xs uppercase tracking-[0.12em] text-white/70">{ad.subject}</div>}
+            <h1 className="mb-1.5 flex items-center gap-1.5 text-2xl text-white">
+              {displayName}
+              <span title={ad.institutionVerified ? tl("institutionVerified") : tl("reviewed")}>
+                <BadgeCheck
+                  className="size-4 shrink-0"
+                  aria-label={ad.institutionVerified ? tl("institutionVerified") : tl("reviewed")}
+                />
+              </span>
+            </h1>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-white/85">
+              {ad.reviewCount > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <Star className="size-3.5" fill="currentColor" />
+                  {ad.rating.toFixed(1)} ({ad.reviewCount})
+                </span>
+              )}
+              {ad.location && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="size-3.5" />
+                  {ad.location}
+                </span>
+              )}
+              <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs">
+                {ad.mode === "online" ? t("online") : ad.mode === "travels_to_student" ? t("travelsToStudent") : t("physical")}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2 className="mt-7 mb-4 text-2xl text-primary sm:text-[26px]">{ad.adTitle}</h2>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
+        <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+          <h3 className="mb-3 text-lg">{ad.isCampusLecturer ? t("aboutHeadingCampus") : t("aboutHeading")}</h3>
+          {hasRichText(richContent) && (
+            <div
+              className={`text-sm text-foreground/85 ${RICH_TEXT_DISPLAY_CLASS}`}
+              dangerouslySetInnerHTML={{ __html: richContent }}
+            />
+          )}
+          <p className="mt-4 text-sm text-muted-foreground">
+            {t("schedule")}: {scheduledLabel} ({t("durationMinutes", { minutes: ad.durationMinutes })})
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-6">
+          <LessonInquiryBox teacherId={ad.teacherId} />
           <ShareButtons title={ad.adTitle} />
         </div>
       </div>

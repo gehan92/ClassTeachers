@@ -21,6 +21,7 @@ import {
   setBatchAdActive,
   deleteBatchAd,
   createIndividualAd,
+  createLessonAd,
 } from "@/lib/dashboard/ads-actions";
 import type { GradeBand } from "@/types/grade-band";
 import { GRADE_BAND_SELECT_VALUES, OPEN_GRADE_VALUE } from "@/lib/grade-band-options";
@@ -120,9 +121,20 @@ export type TeacherAdBatchRow = {
   ad: { id: string; title: string; content: string; status: "active" | "expired" | "removed"; viewCount: number } | null;
 };
 
+/** "Lesson/Grade-wise Ad" (0138) — one already-scheduled live class,
+ * promoted as a one-off trial/drop-in, narrower than a Class Ad's ongoing
+ * batch. `ad` mirrors TeacherAdBatchRow's own shape (null until posted). */
+export type TeacherLessonAdRow = {
+  id: string;
+  title: string;
+  scheduledLabel: string;
+  ad: { id: string; title: string; content: string; status: "active" | "expired" | "removed"; viewCount: number } | null;
+};
+
 export function AdvertisementTab({
   initialContent,
   batches,
+  lessons,
   subjectOptions,
   defaultHourlyRate,
   defaultMonthlyRate,
@@ -130,6 +142,7 @@ export function AdvertisementTab({
 }: {
   initialContent: string;
   batches: TeacherAdBatchRow[];
+  lessons: TeacherLessonAdRow[];
   subjectOptions: { id: string; name: string }[];
   defaultHourlyRate?: number | null;
   defaultMonthlyRate?: number | null;
@@ -187,6 +200,23 @@ export function AdvertisementTab({
             ))
           )}
         </div>
+      </div>
+
+      <div>
+        <h3 className="mb-1 text-lg">{t("lessonAds.heading")}</h3>
+        <p className="mb-4 text-sm text-muted-foreground">{t("lessonAds.subtitle")}</p>
+
+        {lessons.length === 0 ? (
+          <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">
+            {t("lessonAds.noLessons")}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {lessons.map((lesson) => (
+              <LessonAdCard key={lesson.id} lesson={lesson} />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg border border-border bg-white p-5">
@@ -573,6 +603,165 @@ function BatchAdCard({
   );
 }
 
+function LessonAdCard({ lesson }: { lesson: TeacherLessonAdRow }) {
+  const t = useTranslations("teacherDashboard.ads.lessonAds");
+  const tp = useTranslations("teacherDashboard.ads.classAds.preview");
+  const tc = useTranslations("teacherDashboard.common");
+
+  const [editing, setEditing] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [title, setTitle] = useState(lesson.ad?.title ?? "");
+  const [content, setContent] = useState(lesson.ad?.content ?? "");
+  const [active, setActive] = useState(lesson.ad?.status === "active");
+  const [deleted, setDeleted] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [toggling, setToggling] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { refresh } = useDashboardRefresh();
+
+  async function handleSave() {
+    if (!title.trim() || !hasRichText(content)) return;
+    setSaving(true);
+    setError(null);
+    const result = await createLessonAd({ lessonId: lesson.id, title, content });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setActive(true);
+    setEditing(false);
+    refresh();
+  }
+
+  async function handleToggle(checked: boolean) {
+    if (!lesson.ad) return;
+    setToggling(true);
+    const result = await setBatchAdActive(lesson.ad.id, checked);
+    setToggling(false);
+    if (!result.error) {
+      setActive(checked);
+    }
+  }
+
+  async function handleDelete() {
+    if (!lesson.ad) return;
+    if (!window.confirm(t("confirmDelete"))) return;
+    setDeleting(true);
+    setError(null);
+    const result = await deleteBatchAd(lesson.ad.id);
+    setDeleting(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setDeleted(true);
+    refresh();
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-white p-5">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h4 className="text-base font-medium text-foreground">{lesson.title}</h4>
+          <p className="text-sm text-muted-foreground">{lesson.scheduledLabel}</p>
+        </div>
+        {lesson.ad && !deleted && !editing && (
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs text-muted-foreground">{t("viewCount", { count: lesson.ad.viewCount })}</span>
+            <span className={`text-sm font-medium ${active ? "text-success" : "text-muted-foreground"}`}>
+              {active ? t("active") : t("paused")}
+            </span>
+            <Switch checked={active} onCheckedChange={handleToggle} disabled={toggling} />
+          </div>
+        )}
+      </div>
+
+      {!editing && (
+        <div>
+          {lesson.ad && !deleted ? (
+            <div className="mb-3">
+              <p className="text-sm font-medium text-foreground">{lesson.ad.title}</p>
+              <div
+                className={`mt-1 text-sm text-muted-foreground ${RICH_TEXT_DISPLAY_CLASS}`}
+                dangerouslySetInnerHTML={{ __html: lesson.ad.content }}
+              />
+            </div>
+          ) : (
+            <p className="mb-3 text-sm text-muted-foreground">{t("noAdYet")}</p>
+          )}
+          <div className="flex items-center gap-3">
+            <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
+              {lesson.ad && !deleted ? t("editAd") : t("createAd")}
+            </Button>
+            {lesson.ad && !deleted && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {t("deleteAd")}
+              </Button>
+            )}
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+          </div>
+        </div>
+      )}
+
+      {editing && (
+        <div className="flex flex-col gap-4">
+          <div className="grid gap-1.5">
+            <Label htmlFor={`lesson-ad-title-${lesson.id}`}>{t("titleLabel")}</Label>
+            <Input
+              id={`lesson-ad-title-${lesson.id}`}
+              placeholder={t("titlePlaceholder")}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor={`lesson-ad-content-${lesson.id}`}>{t("contentLabel")}</Label>
+            <RichTextEditor
+              id={`lesson-ad-content-${lesson.id}`}
+              value={content}
+              onChange={setContent}
+              placeholder={t("contentPlaceholder")}
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <Button type="button" size="sm" onClick={handleSave} disabled={saving || !title.trim() || !hasRichText(content)}>
+              {t("save")}
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+              {tp("button")}
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setEditing(false)}>
+              {tc("close")}
+            </Button>
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+          </div>
+          <AdPreviewDialog
+            open={previewOpen}
+            onOpenChange={setPreviewOpen}
+            dialogTitle={tp("dialogTitle")}
+            dialogSubtitle={tp("dialogSubtitle")}
+            badgeLabel={t("previewBadge")}
+            emptyLabel={t("previewEmpty")}
+            title={title}
+            content={content}
+            richContent
+            meta={[lesson.scheduledLabel]}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 /**
  * Advertising used to require an existing batch (a scheduled class), which
  * meant a teacher who just does flexible one-on-one tutoring — no fixed
@@ -602,7 +791,7 @@ function IndividualAdCreator({
   const [open, setOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [subjectId, setSubjectId] = useState(subjectOptions[0]?.id ?? "");
-  const [mode, setMode] = useState<"online" | "physical">("online");
+  const [mode, setMode] = useState<"online" | "physical" | "travels_to_student">("online");
   const [gradeBand, setGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>("12-13");
   const [medium, setMedium] = useState<Medium>("sinhala");
   const [classType, setClassType] = useState<ClassType>("new");
@@ -629,7 +818,12 @@ function IndividualAdCreator({
   useEffect(() => {
     if (contentTouched) return;
     const gradeLabel = gradeBand === OPEN_GRADE_VALUE ? undefined : tg(`grades.${gradeBand}`);
-    const modeLabel = mode === "online" ? td("descriptionModeSentenceOnline") : td("descriptionModeSentencePhysical");
+    const modeLabel =
+      mode === "online"
+        ? td("descriptionModeSentenceOnline")
+        : mode === "travels_to_student"
+          ? td("descriptionModeSentenceTravelsToStudent")
+          : td("descriptionModeSentencePhysical");
     const draft = buildAdDescription(td, subjectName, tr(`mediumOptions.${medium}`), classType, modeLabel, gradeLabel);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- drafting a suggestion from other field state, not derived render state
     setContent(`<p>${escapeHtml(draft)}</p>`);
@@ -725,13 +919,17 @@ function IndividualAdCreator({
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="individual-mode">{t("modeLabel")}</Label>
-              <Select value={mode} onValueChange={(value) => setMode((value as "online" | "physical") ?? "online")}>
+              <Select
+                value={mode}
+                onValueChange={(value) => setMode((value as "online" | "physical" | "travels_to_student") ?? "online")}
+              >
                 <SelectTrigger id="individual-mode" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="online">{t("modeOnline")}</SelectItem>
                   <SelectItem value="physical">{t("modePhysical")}</SelectItem>
+                  <SelectItem value="travels_to_student">{t("modeTravelsToStudent")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -887,7 +1085,7 @@ function IndividualAdCreator({
             richContent
             meta={[
               subjectName,
-              mode === "online" ? t("modeOnline") : t("modePhysical"),
+              mode === "online" ? t("modeOnline") : mode === "travels_to_student" ? t("modeTravelsToStudent") : t("modePhysical"),
               tr(`mediumOptions.${medium}`),
               classType === "revision" ? tr("classTypeOptions.revision") : null,
             ].filter((v): v is string => Boolean(v))}

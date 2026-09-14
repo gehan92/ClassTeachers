@@ -21,6 +21,7 @@ import {
   setTeacherVisibility,
   respondToTeacherJoinRequest,
 } from "@/lib/dashboard/institute-actions";
+import { respondToTeacherSeekingAd } from "@/lib/dashboard/teacher-seeking-ads-actions";
 
 export type InstituteTeacherRow = {
   id: string;
@@ -39,6 +40,22 @@ export type InstituteTeacherRow = {
   isCampusLecturer: boolean;
 };
 
+/** A teacher's "seeking an institute" post (0136), browsable here the same
+ * way teachers/institutes browse students' wanted ads. */
+export type TeacherSeekingAdBrowseRow = {
+  id: string;
+  teacherName: string | null;
+  photoUrl: string | null;
+  subject: string | null;
+  gradeBand: string | null;
+  mode: "online" | "physical" | "travels_to_student" | null;
+  title: string;
+  content: string;
+  createdLabel: string;
+  myResponse: string | null;
+  myResponseStatus: "new" | "read" | "accepted" | "declined" | null;
+};
+
 function initialsFor(name: string) {
   return name
     .split(" ")
@@ -49,7 +66,13 @@ function initialsFor(name: string) {
     .toUpperCase();
 }
 
-export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
+export function TeachersTab({
+  teachers,
+  seekingAds,
+}: {
+  teachers: InstituteTeacherRow[];
+  seekingAds: TeacherSeekingAdBrowseRow[];
+}) {
   const t = useTranslations("instituteDashboard.teachers");
   const tc = useTranslations("instituteDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
@@ -307,6 +330,126 @@ export function TeachersTab({ teachers }: { teachers: InstituteTeacherRow[] }) {
           />
         )}
       </div>
+
+      <SeekingAdsBrowsePanel ads={seekingAds} />
+    </div>
+  );
+}
+
+/**
+ * "Institute-Seeking Ad" (Gehan's mockup, section 2.2) — mirrors
+ * wanted-ads-browse-tab.tsx's own shape (a teacher/institute browsing and
+ * responding to a student's wanted ad), just for the reverse direction: a
+ * teacher advertises availability, an institute browses and responds.
+ */
+function SeekingAdsBrowsePanel({ ads }: { ads: TeacherSeekingAdBrowseRow[] }) {
+  const t = useTranslations("instituteDashboard.teachers.seekingAds");
+  const tg = useTranslations("search");
+
+  function modeLabel(m: "online" | "physical" | "travels_to_student" | null) {
+    if (m === "online") return t("modeOnline");
+    if (m === "travels_to_student") return t("modeTravelsToStudent");
+    return t("modePhysical");
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-white p-5">
+      <h3 className="mb-1 text-lg">{t("heading")}</h3>
+      <p className="mb-3 text-sm text-muted-foreground">{t("subtitle")}</p>
+      {ads.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("empty")}</p>
+      ) : (
+        <div className="flex flex-col divide-y divide-border">
+          {ads.map((ad) => (
+            <SeekingAdBrowseItem key={ad.id} ad={ad} modeLabel={modeLabel} tg={tg} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SeekingAdBrowseItem({
+  ad,
+  modeLabel,
+  tg,
+}: {
+  ad: TeacherSeekingAdBrowseRow;
+  modeLabel: (m: "online" | "physical" | "travels_to_student" | null) => string;
+  tg: (key: string) => string;
+}) {
+  const t = useTranslations("instituteDashboard.teachers.seekingAds");
+  const [responding, setResponding] = useState(false);
+  const [message, setMessage] = useState("");
+  const [myResponse, setMyResponse] = useState(ad.myResponse);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSend() {
+    if (!message.trim()) return;
+    setSending(true);
+    setError(null);
+    const result = await respondToTeacherSeekingAd(ad.id, message);
+    setSending(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setMyResponse(message);
+    setResponding(false);
+    setMessage("");
+  }
+
+  return (
+    <div className="flex flex-col gap-2 py-4 first:pt-0 last:pb-0">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-medium text-foreground">{ad.teacherName ?? t("teacherFallback")}</span>
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+            {ad.title}
+          </span>
+        </div>
+        <span className="text-xs text-muted-foreground">{ad.createdLabel}</span>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {[ad.subject, modeLabel(ad.mode), ad.gradeBand ? tg(`grades.${ad.gradeBand}`) : null].filter(Boolean).join(" · ")}
+      </p>
+      <p className="text-sm text-foreground/80">{ad.content}</p>
+
+      {myResponse ? (
+        <div className="mt-1 rounded-md bg-secondary/60 px-3 py-2">
+          <p className="mb-0.5 text-xs font-semibold text-muted-foreground">{t("yourResponse")}</p>
+          <p className="text-sm text-foreground/85">{myResponse}</p>
+          {ad.myResponseStatus === "accepted" && <p className="mt-1 text-xs font-medium text-success">{t("responseStatusAccepted")}</p>}
+          {ad.myResponseStatus === "declined" && (
+            <p className="mt-1 text-xs font-medium text-destructive">{t("responseStatusDeclined")}</p>
+          )}
+        </div>
+      ) : responding ? (
+        <div className="mt-1 flex flex-col gap-2">
+          <textarea
+            className="min-h-20 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            placeholder={t("responsePlaceholder")}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <div className="flex items-center gap-2">
+            <Button type="button" size="sm" onClick={handleSend} disabled={sending || !message.trim()}>
+              {t("sendResponse")}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setResponding(false)}>
+              {t("cancelReply")}
+            </Button>
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+          </div>
+        </div>
+      ) : (
+        <div className="flex justify-end">
+          <Button type="button" variant="ghost" size="sm" onClick={() => setResponding(true)}>
+            {t("respond")}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

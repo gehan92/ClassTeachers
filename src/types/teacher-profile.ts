@@ -35,7 +35,7 @@ export type TeacherProfileDetail = {
   schedule: {
     id: string;
     title: string;
-    mode: "online" | "physical";
+    mode: "online" | "physical" | "travels_to_student";
     location: string | null;
     scheduleNote: string | null;
     gradeBand: string | null;

@@ -12,7 +12,7 @@ const classSizeTypes = ["group", "individual"] as const;
 const createBatchSchema = z.object({
   ownerType: z.enum(["teacher", "class"]),
   title: z.string().trim().min(2),
-  mode: z.enum(["online", "physical"]),
+  mode: z.enum(["online", "physical", "travels_to_student"]),
   classSizeType: z.enum(classSizeTypes).optional(),
   location: z.string().trim().optional(),
   scheduleNote: z.string().trim().optional(),
@@ -29,7 +29,7 @@ const createBatchSchema = z.object({
 export async function createBatch(input: {
   ownerType: "teacher" | "class";
   title: string;
-  mode: "online" | "physical";
+  mode: "online" | "physical" | "travels_to_student";
   classSizeType?: "group" | "individual";
   location: string;
   scheduleNote: string;
@@ -138,7 +138,7 @@ export async function createBatch(input: {
 const updateBatchSchema = z.object({
   ownerType: z.enum(["teacher", "class"]),
   title: z.string().trim().min(2),
-  mode: z.enum(["online", "physical"]),
+  mode: z.enum(["online", "physical", "travels_to_student"]),
   classSizeType: z.enum(classSizeTypes).optional(),
   location: z.string().trim().optional(),
   scheduleNote: z.string().trim().optional(),
@@ -157,7 +157,7 @@ export async function updateBatch(
   input: {
     ownerType: "teacher" | "class";
     title: string;
-    mode: "online" | "physical";
+    mode: "online" | "physical" | "travels_to_student";
     classSizeType?: "group" | "individual";
     location: string;
     scheduleNote: string;

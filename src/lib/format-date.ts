@@ -17,3 +17,9 @@ export function createDateFormatter(locale: string): Intl.DateTimeFormat {
 export function createScheduleFormatter(locale: string): Intl.DateTimeFormat {
   return new Intl.DateTimeFormat(locale, { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: TIME_ZONE });
 }
+
+/** "Aug 24, 2026, 9:48 PM" — for a one-off, possibly-far-off event (a
+ * lesson ad's specific date) where "Mon" alone wouldn't be enough context. */
+export function createDateTimeFormatter(locale: string): Intl.DateTimeFormat {
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: TIME_ZONE });
+}

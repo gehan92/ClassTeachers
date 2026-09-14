@@ -15,7 +15,7 @@ export function ClassBatchCard({
 }) {
   const t = useTranslations("classBatch");
   const chips = [
-    batch.mode === "online" ? t("modeOnline") : t("modePhysical"),
+    batch.mode === "online" ? t("modeOnline") : batch.mode === "travels_to_student" ? t("modeTravelsToStudent") : t("modePhysical"),
     ...(batch.scheduleNote ? [batch.scheduleNote] : []),
     ...(batch.location ? [batch.location] : []),
   ];

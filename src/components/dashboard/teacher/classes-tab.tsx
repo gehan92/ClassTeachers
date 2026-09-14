@@ -31,7 +31,7 @@ const textareaClass =
 export type TeacherBatchRow = {
   id: string;
   title: string;
-  mode: "online" | "physical";
+  mode: "online" | "physical" | "travels_to_student";
   classSizeType: "group" | "individual";
   location: string | null;
   scheduleNote: string | null;
@@ -95,7 +95,7 @@ export function ClassesTab({
   const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
-  const [mode, setMode] = useState<"online" | "physical">("physical");
+  const [mode, setMode] = useState<"online" | "physical" | "travels_to_student">("physical");
   const [classSizeType, setClassSizeType] = useState<"group" | "individual">("group");
   const [location, setLocation] = useState("");
   const [scheduleNote, setScheduleNote] = useState("");
@@ -111,7 +111,7 @@ export function ClassesTab({
 
   const [editingBatchId, setEditingBatchId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
-  const [editMode, setEditMode] = useState<"online" | "physical">("physical");
+  const [editMode, setEditMode] = useState<"online" | "physical" | "travels_to_student">("physical");
   const [editClassSizeType, setEditClassSizeType] = useState<"group" | "individual">("group");
   const [editLocation, setEditLocation] = useState("");
   const [editScheduleNote, setEditScheduleNote] = useState("");
@@ -328,13 +328,14 @@ export function ClassesTab({
             )}
             <div className="grid gap-1.5">
               <Label htmlFor="batch-mode">{t("form.modeLabel")}</Label>
-              <Select value={mode} onValueChange={(value) => setMode(value as "online" | "physical")}>
+              <Select value={mode} onValueChange={(value) => setMode(value as "online" | "physical" | "travels_to_student")}>
                 <SelectTrigger id="batch-mode" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="physical">{t("form.modePhysical")}</SelectItem>
                   <SelectItem value="online">{t("form.modeOnline")}</SelectItem>
+                  <SelectItem value="travels_to_student">{t("form.modeTravelsToStudent")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -482,13 +483,17 @@ export function ClassesTab({
                       )}
                       <div className="grid gap-1.5">
                         <Label>{t("form.modeLabel")}</Label>
-                        <Select value={editMode} onValueChange={(value) => setEditMode(value as "online" | "physical")}>
+                        <Select
+                          value={editMode}
+                          onValueChange={(value) => setEditMode(value as "online" | "physical" | "travels_to_student")}
+                        >
                           <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="physical">{t("form.modePhysical")}</SelectItem>
                             <SelectItem value="online">{t("form.modeOnline")}</SelectItem>
+                            <SelectItem value="travels_to_student">{t("form.modeTravelsToStudent")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -598,7 +603,11 @@ export function ClassesTab({
                       </h3>
                       <p className="mt-0.5 text-sm text-muted-foreground">
                         {batch.gradeBand ? `${tg(`grades.${batch.gradeBand}`)} · ` : `${tg("grades.open")} · `}
-                        {batch.mode === "online" ? t("form.modeOnline") : t("form.modePhysical")}
+                        {batch.mode === "online"
+                          ? t("form.modeOnline")
+                          : batch.mode === "travels_to_student"
+                            ? t("form.modeTravelsToStudent")
+                            : t("form.modePhysical")}
                         {" · "}
                         {batch.classSizeType === "individual" ? t("form.classSizeIndividual") : t("form.classSizeGroup")}
                         {batch.location ? ` · ${batch.location}` : ""}

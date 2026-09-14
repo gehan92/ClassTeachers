@@ -292,27 +292,32 @@ export async function respondToWantedAdDecision(responseId: string, accepted: bo
   if (error) {
     return { error: "Couldn't update this. Please try again." };
   }
-
-  if (updated) {
-    let recipientId = updated.responder_id;
-    if (updated.responder_type === "class") {
-      const { data: cp } = await supabase
-        .from("class_profiles")
-        .select("owner_id")
-        .eq("id", updated.responder_id)
-        .maybeSingle();
-      recipientId = cp?.owner_id ?? updated.responder_id;
-    }
-    // No dedicated notification-preference toggle for this yet (unlike most
-    // other notify() call sites) — narrow enough, and infrequent enough,
-    // that it isn't worth its own Settings entry right now.
-    await notify(
-      supabase,
-      recipientId,
-      accepted ? "wanted_ad_response_accepted" : "wanted_ad_response_declined",
-      {},
-      "studentRequests",
-    );
+  if (!updated) {
+    // RLS (0073) already restricts this update to the ad's own posting
+    // student, so a mismatched caller or a stale/already-gone responseId
+    // lands here as zero rows updated — surface that instead of silently
+    // returning success for a decision that never actually happened.
+    return { error: "This response could not be found, or you don't have permission to update it." };
   }
+
+  let recipientId = updated.responder_id;
+  if (updated.responder_type === "class") {
+    const { data: cp } = await supabase
+      .from("class_profiles")
+      .select("owner_id")
+      .eq("id", updated.responder_id)
+      .maybeSingle();
+    recipientId = cp?.owner_id ?? updated.responder_id;
+  }
+  // No dedicated notification-preference toggle for this yet (unlike most
+  // other notify() call sites) — narrow enough, and infrequent enough,
+  // that it isn't worth its own Settings entry right now.
+  await notify(
+    supabase,
+    recipientId,
+    accepted ? "wanted_ad_response_accepted" : "wanted_ad_response_declined",
+    {},
+    "studentRequests",
+  );
   return {};
 }

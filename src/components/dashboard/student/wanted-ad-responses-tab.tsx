@@ -66,12 +66,17 @@ function ResponseItem({ response }: { response: WantedAdResponseRow }) {
   const { refresh } = useDashboardRefresh();
   const [deciding, setDeciding] = useState(false);
   const [status, setStatus] = useState(response.status);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleDecision(accepted: boolean) {
     setDeciding(true);
+    setError(null);
     const result = await respondToWantedAdDecision(response.id, accepted);
     setDeciding(false);
-    if (result.error) return;
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
     setStatus(accepted ? "accepted" : "declined");
     refresh();
   }
@@ -102,6 +107,7 @@ function ResponseItem({ response }: { response: WantedAdResponseRow }) {
           <Button type="button" variant="outline" size="sm" onClick={() => handleDecision(false)} disabled={deciding}>
             {t("declineResponse")}
           </Button>
+          {error && <span className="text-sm font-medium text-destructive">{error}</span>}
         </div>
       )}
     </div>

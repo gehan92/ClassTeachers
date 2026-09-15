@@ -1193,10 +1193,7 @@ export default async function TeacherDashboardPage({
           ],
         },
         {
-          items: [
-            { key: "ads", label: t("tabs.ads"), highlight: true },
-            { key: "institute", label: t("tabs.institute") },
-          ],
+          items: [{ key: "institute", label: t("tabs.institute") }],
         },
         {
           key: "account",
@@ -1205,6 +1202,9 @@ export default async function TeacherDashboardPage({
             { key: "profile", label: t("tabs.profile") },
             { key: "settings", label: t("tabs.settings") },
           ],
+        },
+        {
+          items: [{ key: "ads", label: t("tabs.ads"), highlight: true }],
         },
       ]}
       panels={{

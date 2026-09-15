@@ -119,15 +119,19 @@ export function ListingCard({ listing, index }: { listing: Listing; index?: numb
           ) : (
             <LockPill>{t("signInForContact")}</LockPill>
           )}
-          <span className="font-mono text-sm font-semibold text-primary">
-            {listing.price.fromPrice ? "From " : ""}
-            {listing.price.currency === "LKR" ? "Rs. " : ""}
-            {listing.price.amount.toLocaleString()}
-            {listing.price.maxAmount && `–${listing.price.maxAmount.toLocaleString()}`}
-            <small className="ml-0.5 text-[11px] font-normal text-muted-foreground">
-              /{listing.price.interval}
-            </small>
-          </span>
+          {listing.price ? (
+            <span className="font-mono text-sm font-semibold text-primary">
+              {listing.price.fromPrice ? "From " : ""}
+              {listing.price.currency === "LKR" ? "Rs. " : ""}
+              {listing.price.amount.toLocaleString()}
+              {listing.price.maxAmount && `–${listing.price.maxAmount.toLocaleString()}`}
+              <small className="ml-0.5 text-[11px] font-normal text-muted-foreground">
+                /{listing.price.interval}
+              </small>
+            </span>
+          ) : (
+            <span className="text-[12.5px] font-medium text-muted-foreground">{t("contactForPrice")}</span>
+          )}
         </div>
       </div>
     </Link>

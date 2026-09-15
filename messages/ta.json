@@ -347,7 +347,8 @@
     "viewClass": "வகுப்பைக் காண்க",
     "reviewsCount": "{count} மதிப்புரைகள்",
     "institutionVerified": "நிறுவனம் சரிபார்க்கப்பட்டது",
-    "reviewed": "ClassPortals மூலம் சரிபார்க்கப்பட்டது"
+    "reviewed": "ClassPortals மூலம் சரிபார்க்கப்பட்டது",
+    "contactForPrice": "விவரங்களுக்கு தொடர்பு கொள்ளவும்"
   },
   "reviews": {
     "replyPrefix": "பதிலளிக்கப்பட்டது:"
@@ -3610,6 +3611,8 @@
     "roleTeacher": "தனிப்பட்ட ஆசிரியர்",
     "roleCampusLecturer": "வளாக விரிவுரையாளர்",
     "roleClass": "வகுப்பு",
+    "roleLesson": "சோதனை பாடம்",
+    "roleFeaturedTeacher": "சிறப்பு ஆசிரியர்",
     "online": "ஆன்லைன்",
     "teacherCount": "ஆசிரியர்கள் {count}",
     "allSubjects": "அனைத்து பாடங்களும்",

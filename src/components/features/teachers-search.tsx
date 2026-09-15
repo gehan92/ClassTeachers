@@ -191,9 +191,13 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
       // several grade levels across its teachers, so it should match if it
       // covers the selected grade at all, not just its single most-common one.
       const matchesGrade = !grade || listing.gradeBands.includes(grade);
-      const matchesPriceInterval = priceInterval === "any" || listing.price.interval === priceInterval;
-      const matchesPriceMin = minPrice === undefined || Number.isNaN(minPrice) || listing.price.amount >= minPrice;
-      const matchesPriceMax = maxPrice === undefined || Number.isNaN(maxPrice) || listing.price.amount <= maxPrice;
+      // A listing with no price (a Lesson Ad or Teacher-Wise Ad, 0142) can't
+      // satisfy a specific price filter — it only ever matches "any"/unset.
+      const matchesPriceInterval = priceInterval === "any" || listing.price?.interval === priceInterval;
+      const matchesPriceMin =
+        minPrice === undefined || Number.isNaN(minPrice) || (listing.price !== undefined && listing.price.amount >= minPrice);
+      const matchesPriceMax =
+        maxPrice === undefined || Number.isNaN(maxPrice) || (listing.price !== undefined && listing.price.amount <= maxPrice);
       const matchesRating = minRating === "any" || listing.rating >= Number(minRating);
       const matchesVerified = !verifiedOnly || listing.verified;
       return (

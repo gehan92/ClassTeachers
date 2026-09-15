@@ -39,7 +39,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
     getTranslations({ locale, namespace: "teachersPage" }),
     getTranslations({ locale, namespace: "search" }),
   ]);
-  const [allListings, siteAd] = await Promise.all([getPublicListings(tPage, tSearch), getActiveSiteAd()]);
+  const [allListings, siteAd] = await Promise.all([getPublicListings(tPage, tSearch, locale), getActiveSiteAd()]);
   const listings = allListings.slice(0, 6);
 
   // Real computed numbers, not the reference mockup's fabricated "2,400+

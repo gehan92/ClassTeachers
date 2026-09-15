@@ -2029,7 +2029,7 @@ export type Database = {
         Returns: {
           ad_id: string;
           class_id: string;
-          batch_id: string;
+          batch_id: string | null;
           name: string;
           photo_url: string | null;
           ad_title: string;
@@ -2037,8 +2037,8 @@ export type Database = {
           subject: string | null;
           grade_band: string | null;
           location: string | null;
-          mode: string;
-          batch_title: string;
+          mode: string | null;
+          batch_title: string | null;
           hourly_rate: number | null;
           monthly_rate: number | null;
           rating: number;
@@ -2046,6 +2046,8 @@ export type Database = {
           institution_verified: boolean;
           course_code: string | null;
           total_sessions: number | null;
+          is_teacher_wise: boolean;
+          featured_teacher_headline: string | null;
         }[];
       };
       get_public_class_ad: {
@@ -2259,6 +2261,10 @@ export type Database = {
           hourly_rate_max: number | null;
           monthly_rate_max: number | null;
           total_sessions: number | null;
+          is_lesson: boolean;
+          lesson_title: string | null;
+          lesson_scheduled_at: string | null;
+          lesson_duration_minutes: number | null;
         }[];
       };
       get_public_ad: {

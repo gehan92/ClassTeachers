@@ -28,7 +28,7 @@ export default async function AdvertisePage({ params }: PageProps<"/[locale]/adv
     getTranslations({ locale, namespace: "teachersPage" }),
     getTranslations({ locale, namespace: "search" }),
   ]);
-  const listings = await getPublicListings(tPage, tSearch);
+  const listings = await getPublicListings(tPage, tSearch, locale);
 
   return (
     <>

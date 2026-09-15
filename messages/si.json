@@ -347,7 +347,8 @@
     "viewClass": "පන්තිය බලන්න",
     "reviewsCount": "සමාලෝචන {count}",
     "institutionVerified": "ආයතනය තහවුරු කර ඇත",
-    "reviewed": "ClassPortals විසින් සමාලෝචනය කර ඇත"
+    "reviewed": "ClassPortals විසින් සමාලෝචනය කර ඇත",
+    "contactForPrice": "විස්තර සඳහා සම්බන්ධ වන්න"
   },
   "reviews": {
     "replyPrefix": "පිළිතුරු දුන්නා:"
@@ -3615,6 +3616,8 @@
     "roleTeacher": "පුද්ගලික ගුරුවරයා",
     "roleCampusLecturer": "කැම්පස් කථිකාචාර්ය",
     "roleClass": "පන්තිය",
+    "roleLesson": "අත්හදා බැලීමේ පාඩම",
+    "roleFeaturedTeacher": "විශේෂිත ගුරුවරයා",
     "online": "මාර්ගගත",
     "teacherCount": "ගුරුවරුන් {count}",
     "allSubjects": "සියලුම විෂයයන්",

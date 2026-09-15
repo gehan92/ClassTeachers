@@ -31,7 +31,8 @@ export type Listing = {
   rating: number;
   reviewCount: number;
   subjects: string[];
-  price: {
+  /** Undefined only for a Lesson Ad or Teacher-Wise Ad (0142) — neither is a rate-bearing concept (a single lesson, a "meet this teacher" promo), so the card shows a "Contact for details" pill instead of a price. Every other listing kind always has one. */
+  price?: {
     amount: number;
     /** Set only for a teacher ad with an optional upper rate (0120) — renders as "Rs. {amount}–{maxAmount}" instead of a single number. Undefined everywhere else (institute listings have no range). */
     maxAmount?: number;

@@ -347,7 +347,8 @@
     "viewClass": "View class",
     "reviewsCount": "{count} reviews",
     "institutionVerified": "Institution verified",
-    "reviewed": "Reviewed by ClassPortals"
+    "reviewed": "Reviewed by ClassPortals",
+    "contactForPrice": "Contact for details"
   },
   "reviews": {
     "replyPrefix": "Replied:"
@@ -3618,6 +3619,8 @@
     "roleTeacher": "Individual Teacher",
     "roleCampusLecturer": "Campus Lecturer",
     "roleClass": "Class",
+    "roleLesson": "Trial lesson",
+    "roleFeaturedTeacher": "Featured teacher",
     "online": "Online",
     "teacherCount": "{count} teachers",
     "allSubjects": "All subjects",

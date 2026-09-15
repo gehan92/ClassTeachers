@@ -40,7 +40,7 @@ export default async function TeachersPage({ params, searchParams }: PageProps<"
     getTranslations({ locale, namespace: "search" }),
     searchParams,
   ]);
-  const listings = await getPublicListings(tPage, tSearch);
+  const listings = await getPublicListings(tPage, tSearch, locale);
   const { title, subtitle } = headingKeys(resolvedSearchParams.category, resolvedSearchParams.online);
 
   return (

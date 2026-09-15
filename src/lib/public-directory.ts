@@ -1,6 +1,7 @@
 import type { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
+import { createDateTimeFormatter } from "@/lib/format-date";
 import type { GradeBand } from "@/types/grade-band";
 import type { Listing } from "@/types/listing";
 
@@ -56,8 +57,9 @@ function priceFrom(
  * dashboard). Each card links to the limited-detail /ad/[id] landing page,
  * not the full /teacher/[id] profile.
  */
-export async function getPublicListings(tPage: Translator, tSearch: Translator): Promise<Listing[]> {
+export async function getPublicListings(tPage: Translator, tSearch: Translator, locale: string): Promise<Listing[]> {
   const supabase = await createClient();
+  const dateTimeFormatter = createDateTimeFormatter(locale);
   const [{ data: adRows }, { data: classRows }, { data: classAdRows }] = await Promise.all([
     supabase.rpc("list_teacher_ads"),
     supabase.rpc("list_public_classes"),
@@ -66,20 +68,27 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
 
   const teacherListings: Listing[] = (adRows ?? []).flatMap((row) => {
     const price = priceFrom(row.hourly_rate, row.monthly_rate, row.hourly_rate_max, row.monthly_rate_max);
-    if (!price || !row.display_name) return [];
+    // A Lesson Ad (0138/0142) has no rate of its own -- it's a single
+    // already-scheduled trial, not something to compare on price -- so it's
+    // exempt from the "no price = leave it out of search" rule every other
+    // teacher-ad kind still follows.
+    if (!row.display_name || (!price && !row.is_lesson)) return [];
 
     const online = row.mode === "online";
     const subjects = row.subject ? [row.subject] : [];
-    const roleLabel = row.is_campus_lecturer
-      ? [
-          tPage("roleCampusLecturer"),
-          row.institution ?? row.location,
-          row.total_sessions ? tPage("sessionsCount", { count: row.total_sessions }) : null,
-          online ? tPage("online") : null,
-        ]
-          .filter(Boolean)
-          .join(" · ")
-      : [tPage("roleTeacher"), row.location, online ? tPage("online") : null].filter(Boolean).join(" · ");
+    const lessonWhen = row.is_lesson && row.lesson_scheduled_at ? dateTimeFormatter.format(new Date(row.lesson_scheduled_at)) : null;
+    const roleLabel = row.is_lesson
+      ? [tPage("roleLesson"), row.location, online ? tPage("online") : null, lessonWhen].filter(Boolean).join(" · ")
+      : row.is_campus_lecturer
+        ? [
+            tPage("roleCampusLecturer"),
+            row.institution ?? row.location,
+            row.total_sessions ? tPage("sessionsCount", { count: row.total_sessions }) : null,
+            online ? tPage("online") : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")
+        : [tPage("roleTeacher"), row.location, online ? tPage("online") : null].filter(Boolean).join(" · ");
 
     const listing: Listing = {
       id: row.ad_id,
@@ -87,7 +96,7 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
       name: row.display_name,
       masked: true,
       roleLabel,
-      headline: row.ad_title,
+      headline: row.is_lesson ? row.lesson_title ?? row.ad_title : row.ad_title,
       excerpt: sanitizeRichTextNullable(row.ad_content) ?? undefined,
       excerptIsRichText: true,
       medium: (row.medium as Listing["medium"]) ?? undefined,
@@ -103,7 +112,7 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
       rating: Number(row.rating),
       reviewCount: Number(row.review_count),
       subjects,
-      price,
+      price: price ?? undefined,
       href: `/ad/${row.ad_id}`,
       campusCredential: row.is_campus_lecturer
         ? {
@@ -157,11 +166,16 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
   // from the batch (falling back to the institute's default rate).
   const classAdListings: Listing[] = (classAdRows ?? []).flatMap((row) => {
     const price = priceFrom(row.hourly_rate, row.monthly_rate);
-    if (!price) return [];
+    // A Teacher-Wise Ad (0140/0142) promotes a person, not a batch -- it has
+    // no rate of its own, so like a Lesson Ad above it's exempt from the "no
+    // price = leave it out of search" rule every rate-bearing ad type follows.
+    if (!price && !row.is_teacher_wise) return [];
 
     const online = row.mode === "online";
     const subjects = row.subject ? [row.subject] : [];
-    const roleLabel = [tPage("roleClass"), row.location, online ? tPage("online") : null].filter(Boolean).join(" · ");
+    const roleLabel = row.is_teacher_wise
+      ? [tPage("roleFeaturedTeacher"), row.subject].filter(Boolean).join(" · ")
+      : [tPage("roleClass"), row.location, online ? tPage("online") : null].filter(Boolean).join(" · ");
 
     const listing: Listing = {
       id: row.ad_id,
@@ -182,7 +196,7 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
       rating: Number(row.rating),
       reviewCount: Number(row.review_count),
       subjects,
-      price,
+      price: price ?? undefined,
       href: `/ad/${row.ad_id}`,
     };
     return [listing];

@@ -7,6 +7,7 @@ import { ReviewItem } from "@/components/features/review-item";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { usePagination } from "@/lib/hooks/use-pagination";
 import { replyToReview, flagReview } from "@/lib/dashboard/reviews-actions";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import type { ReviewDisplay } from "@/types/review";
 
 const textareaClass =
@@ -31,6 +32,7 @@ export function ReviewsTab({
   const [error, setError] = useState<string | null>(null);
   const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(reviews.length);
   const pagedReviews = reviews.slice(offset, offset + pageSize);
+  const { refresh } = useDashboardRefresh();
 
   function startReply(id: string) {
     setReplyingId(id);
@@ -53,6 +55,7 @@ export function ReviewsTab({
     setReviews((list) => list.map((review) => (review.id === id ? { ...review, reply: replyText.trim() } : review)));
     setReplyingId(null);
     setReplyText("");
+    refresh();
   }
 
   async function handleFlag(id: string) {
@@ -64,6 +67,7 @@ export function ReviewsTab({
     }
     setError(null);
     setFlaggedIds((prev) => new Set(prev).add(id));
+    refresh();
   }
 
   return (

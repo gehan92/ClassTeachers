@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ClassProfileView } from "@/components/features/class-profile-view";
 import { loadClassProfile } from "@/lib/load-class-profile";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/auth-user";
 
 export async function generateMetadata({
   params,
@@ -32,10 +33,8 @@ export default async function ClassProfilePage({
     notFound();
   }
 
+  const user = await getAuthUser();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   let isStudent = false;
   let isTeacher = false;

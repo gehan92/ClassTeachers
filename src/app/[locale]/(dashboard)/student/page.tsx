@@ -23,6 +23,7 @@ import type { SentInquiryRow, SentInquiryMessage } from "@/components/dashboard/
 import { ProgressTab } from "@/components/dashboard/student/progress-tab";
 import type { ProgressAttendanceRow } from "@/components/dashboard/student/progress-tab";
 import { createClient } from "@/lib/supabase/server";
+import { getCachedSubjects } from "@/lib/supabase/cached-subjects";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 import type { MyClassRow, AvailableBatchRow } from "@/components/dashboard/student/classes-tab";
@@ -185,7 +186,9 @@ export default async function StudentDashboardPage({
     // in — unlike the teacher Ads tab (scoped to subject_links, what that
     // teacher already teaches), a student can be looking for help with any
     // subject that exists, including ones they've never had a class for.
-    supabase.from("subjects").select("id, translations"),
+    // Cached (lib/supabase/cached-subjects.ts) since this reference table
+    // rarely changes and was otherwise refetched in full on every load.
+    getCachedSubjects(),
     supabase.rpc("list_wanted_ad_responses_for_student"),
     // Same anon-safe RPC the public /requests page uses — reused here to
     // show a few real, other-students' requests as posting inspiration

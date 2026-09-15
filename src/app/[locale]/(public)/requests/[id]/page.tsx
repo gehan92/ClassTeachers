@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/auth-user";
 import { createDateFormatter } from "@/lib/format-date";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { getSubjectIcon } from "@/lib/subject-icon";
@@ -49,10 +50,8 @@ export default async function RequestDetailPage({ params }: PageProps<"/[locale]
     notFound();
   }
 
+  const user = await getAuthUser();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
   const respondHref = await getWantedAdRespondHref(supabase, user?.id);
 
   const responder = await resolveWantedAdResponder(supabase, user?.id);

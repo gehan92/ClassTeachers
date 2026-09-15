@@ -7,6 +7,7 @@ import { JoinRequestBox } from "@/components/features/join-request-box";
 import { InquiryBox } from "@/components/features/inquiry-box";
 import { ShareButtons } from "@/components/features/share-buttons";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/auth-user";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { sanitizeRichText } from "@/lib/dashboard/sanitize-rich-text";
 import { hasRichText, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
@@ -300,10 +301,8 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
     notFound();
   }
 
+  const user = await getAuthUser();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   let viewerRole: string | null = null;
   let existingStatus: "pending" | "accepted" | "declined" | null = null;

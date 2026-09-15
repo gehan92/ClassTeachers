@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/features/status-badge";
 import { markInquiryRead, deleteInquiry, replyToInquiry } from "@/lib/inquiries-actions";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 
 export type InquiryMessageRow = {
   id: string;
@@ -27,13 +28,19 @@ export function InquiriesTab({ inquiries: initialInquiries }: { inquiries: Inqui
   const t = useTranslations("inquiriesTab");
   const [inquiries, setInquiries] = useState(initialInquiries);
   const [error, setError] = useState<string | null>(null);
+  const { refresh } = useDashboardRefresh();
 
   async function handleMarkRead(id: string) {
     setInquiries((list) => list.map((inquiry) => (inquiry.id === id ? { ...inquiry, status: "read" } : inquiry)));
     const result = await markInquiryRead(id);
     if (result.error) {
       setError(result.error);
+      return;
     }
+    // Local list updates instantly above, but the header's unread-inquiries
+    // bell badge is a server-computed count passed in as a prop elsewhere on
+    // the dashboard — it won't drop until the dashboard re-fetches.
+    refresh();
   }
 
   async function handleDelete(id: string) {
@@ -44,6 +51,7 @@ export function InquiriesTab({ inquiries: initialInquiries }: { inquiries: Inqui
       return;
     }
     setInquiries((list) => list.filter((inquiry) => inquiry.id !== id));
+    refresh();
   }
 
   function handleSent(id: string, message: InquiryMessageRow) {
@@ -52,6 +60,7 @@ export function InquiriesTab({ inquiries: initialInquiries }: { inquiries: Inqui
         inquiry.id === id ? { ...inquiry, messages: [...inquiry.messages, message], status: "read" } : inquiry,
       ),
     );
+    refresh();
   }
 
   return (

@@ -1,12 +1,11 @@
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/auth-user";
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+  const authUser = await getAuthUser();
   const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
 
   let headerUser = null;
   let inquiriesCount: number | undefined = undefined;

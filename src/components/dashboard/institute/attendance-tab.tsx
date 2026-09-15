@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StatusBadge } from "@/components/features/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { setAttendanceStatus } from "@/lib/dashboard/live-classes-actions";
+import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { cn } from "@/lib/utils";
 
 type AttendanceStatus = "present" | "absent" | "late";
@@ -43,6 +44,7 @@ export function AttendanceTab({
   const [sessionId, setSessionId] = useState<string>(sessions[0]?.id ?? "");
   const [overrides, setOverrides] = useState<Record<string, AttendanceStatus>>({});
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  const { refresh } = useDashboardRefresh();
 
   const session = useMemo(() => sessions.find((s) => s.id === sessionId), [sessions, sessionId]);
 
@@ -54,6 +56,11 @@ export function AttendanceTab({
     setSavingKey(null);
     if (!result.error) {
       setOverrides((prev) => ({ ...prev, [key]: status }));
+      // The row's own badge updates instantly from local state above, but
+      // batchSummaries (trend table + low-attendance alert) is a server-
+      // computed rollup passed in as a prop — it won't reflect this change
+      // until the dashboard re-fetches.
+      refresh();
     }
   }
 

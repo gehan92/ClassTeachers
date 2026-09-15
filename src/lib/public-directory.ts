@@ -113,6 +113,8 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator, 
       reviewCount: Number(row.review_count),
       subjects,
       price: price ?? undefined,
+      totalSessions: row.total_sessions,
+      isIndependent: row.is_independent,
       href: `/ad/${row.ad_id}`,
       campusCredential: row.is_campus_lecturer
         ? {
@@ -155,6 +157,7 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator, 
       reviewCount: Number(row.review_count),
       subjects: row.subjects,
       price,
+      totalSessions: null,
       href: `/class/${row.id}`,
     };
     return [listing];
@@ -197,6 +200,7 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator, 
       reviewCount: Number(row.review_count),
       subjects,
       price: price ?? undefined,
+      totalSessions: row.total_sessions,
       href: `/ad/${row.ad_id}`,
     };
     return [listing];

@@ -31,6 +31,10 @@ export type Listing = {
   rating: number;
   reviewCount: number;
   subjects: string[];
+  /** Set (from batches.total_sessions) whenever this listing is a structured, fixed-session course rather than an ongoing class — feeds the /courses browse page's filter. Undefined for a whole-institute profile card (list_public_classes), which has no single batch to read it from. */
+  totalSessions?: number | null;
+  /** True only for a `kind: "teacher"` listing (0143) whose poster has no accepted staff role at any institute (class_teachers) — feeds the /teachers?type=independent filter. Undefined for a class listing, which has no such distinction. */
+  isIndependent?: boolean;
   /** Undefined only for a Lesson Ad or Teacher-Wise Ad (0142) — neither is a rate-bearing concept (a single lesson, a "meet this teacher" promo), so the card shows a "Contact for details" pill instead of a price. Every other listing kind always has one. */
   price?: {
     amount: number;

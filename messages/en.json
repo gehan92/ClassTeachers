@@ -4,6 +4,8 @@
     "homeDescription": "Search verified teachers, tuition classes and campus lecturers across Sri Lanka. Compare qualifications, rates and reviews before you ever pick up the phone.",
     "teachersTitle": "Find Teachers, Classes & Campus Lecturers | ClassPortals",
     "teachersDescription": "Filter by subject, location and grade to compare verified teachers, tuition classes and campus lecturers across Sri Lanka.",
+    "coursesTitle": "Find Courses | ClassPortals",
+    "coursesDescription": "Browse structured, multi-session courses from verified teachers, campus lecturers and institutes across Sri Lanka.",
     "rolesTitle": "How ClassPortals Works | ClassPortals",
     "rolesDescription": "Whether you teach one student or run an institute, ClassPortals gives every role the same tools to be found, compared and contacted.",
     "pricingTitle": "Pricing | ClassPortals",
@@ -46,13 +48,25 @@
     "logout": "Log out",
     "menu": "Menu",
     "search": "Search",
-    "searchAll": "All teachers & classes",
     "searchTeachers": "Private tutors",
     "searchInstitutes": "Institutes / classes",
     "searchCampusLecturers": "Campus lecturers",
     "searchOnlineLessons": "Online lessons",
-    "studentRequestsTeacher": "Teacher requests",
-    "studentRequestsInstitute": "Institute requests",
+    "browseGroupLabel": "Browse",
+    "browseAll": "All teachers & classes",
+    "browseIndependent": "Independent tutors",
+    "browseInstitutes": "Institutes / classes",
+    "browseCampusLecturers": "Campus lecturers",
+    "browseCourses": "Courses",
+    "browseAdultLearning": "Adult & professional learning",
+    "browseOnlineOnly": "Online lessons only",
+    "requestsGroupLabel": "Requests",
+    "requestsStudent": "Student requests",
+    "requestsStudentTag": "students → teachers",
+    "requestsTeacher": "Teacher requests",
+    "requestsTeacherTag": "teachers → institutes",
+    "requestsInstitute": "Institute vacancies",
+    "requestsInstituteTag": "institutes → teachers",
     "postYourAd": "Post your ad",
     "inCallBanner": "In call — {title}",
     "stillExposedBanner": "Camera/mic still on — {title}",
@@ -712,7 +726,8 @@
     "modeOptions": {
       "online": "Online",
       "physical": "In-person",
-      "both": "Either"
+      "both": "Either",
+      "travels_to_student": "Travels to student"
     },
     "mediumOptions": {
       "english": "English medium",
@@ -753,7 +768,46 @@
     },
     "budgetRange": "Rs. {min}–{max}/mo",
     "budgetUpTo": "Up to Rs. {max}/mo",
-    "budgetFrom": "From Rs. {min}/mo"
+    "budgetFrom": "From Rs. {min}/mo",
+    "teacherRequests": {
+      "heroTitle": "Teachers available to join an institute",
+      "heroSubtitle": "Teachers and campus lecturers looking for a placement — respond if your institute has an opening.",
+      "badge": "Available to teach",
+      "searchPlaceholder": "Search by subject or keyword...",
+      "resultsCount": "{count} teachers",
+      "clearFilters": "Clear search",
+      "empty": "No teacher requests match this search yet.",
+      "modeOptions": {
+        "online": "Online",
+        "physical": "In-person",
+        "travels_to_student": "Travels to student"
+      },
+      "pagination": {
+        "showingCount": "Showing {shown} of {total}",
+        "previous": "Previous",
+        "next": "Next",
+        "pageInfo": "Page {page} of {totalPages}"
+      }
+    },
+    "instituteVacancies": {
+      "heroTitle": "Institutes hiring right now",
+      "heroSubtitle": "Open teaching positions posted by institutes — respond if you're a good fit.",
+      "badge": "Vacancy",
+      "searchPlaceholder": "Search by subject, location or keyword...",
+      "resultsCount": "{count} vacancies",
+      "clearFilters": "Clear search",
+      "empty": "No vacancies match this search yet.",
+      "modeOptions": {
+        "online": "Online",
+        "physical": "In-person"
+      },
+      "pagination": {
+        "showingCount": "Showing {shown} of {total}",
+        "previous": "Previous",
+        "next": "Next",
+        "pageInfo": "Page {page} of {totalPages}"
+      }
+    }
   },
   "termsPage": {
     "title": "Terms of service",
@@ -3605,6 +3659,12 @@
     "subtitleCampus": "Filter by subject, location and grade to compare verified campus & professional lecturers.",
     "titleOnline": "Find online lessons",
     "subtitleOnline": "Filter by subject, location and grade to compare verified teachers running live online classes.",
+    "titleIndependent": "Find independent tutors",
+    "subtitleIndependent": "Individual teachers with no institute affiliation — filter by subject, location and grade to compare them.",
+    "titleCourses": "Find a course",
+    "subtitleCourses": "Structured, multi-session courses — filter by subject, location and grade to compare verified offerings.",
+    "titleCoursesAdult": "Adult & professional learning",
+    "subtitleCoursesAdult": "Structured courses aimed at an adult audience, not school-grade students.",
     "resultsCount": "{count} results",
     "sessionsCount": "{count} sessions",
     "noResults": "No teachers or classes match your filters yet. Try clearing a filter or searching a different subject.",

@@ -158,6 +158,7 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
   const t = useTranslations("teachersPage");
   const tSearch = useTranslations("search");
   const [category, setCategory] = useState<Category>("all");
+  const [independentOnly, setIndependentOnly] = useState(false);
   const [subject, setSubject] = useState("");
   const [location, setLocation] = useState("");
   const [onlineOnly, setOnlineOnly] = useState(false);
@@ -200,6 +201,10 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
         maxPrice === undefined || Number.isNaN(maxPrice) || (listing.price !== undefined && listing.price.amount <= maxPrice);
       const matchesRating = minRating === "any" || listing.rating >= Number(minRating);
       const matchesVerified = !verifiedOnly || listing.verified;
+      // "Independent tutors" (header dropdown, 0143) narrows to teacher-kind
+      // listings whose poster has no accepted staff role at any institute —
+      // a class/institute listing never matches this, regardless of category.
+      const matchesIndependent = !independentOnly || (listing.kind === "teacher" && listing.isIndependent === true);
       return (
         matchesCategory(listing, category) &&
         matchesSubject &&
@@ -210,10 +215,11 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
         matchesPriceMin &&
         matchesPriceMax &&
         matchesRating &&
-        matchesVerified
+        matchesVerified &&
+        matchesIndependent
       );
     });
-  }, [listings, category, subject, location, onlineOnly, grade, priceInterval, priceMin, priceMax, minRating, verifiedOnly]);
+  }, [listings, category, subject, location, onlineOnly, grade, priceInterval, priceMin, priceMax, minRating, verifiedOnly, independentOnly]);
 
   const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(results.length);
   const pagedResults = results.slice(offset, offset + pageSize);
@@ -233,6 +239,7 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
     const resolvedCategory = categoryFromUrl && isCategory(categoryFromUrl) ? categoryFromUrl : "all";
     // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from the URL, not derived render state
     setCategory(resolvedCategory);
+    setIndependentOnly(searchParams.get("type") === "independent");
     setSubject(subjectFromUrl ?? "");
     setLocation(locationFromUrl ?? "");
     setOnlineOnly(searchParams.get("online") === "true");
@@ -251,6 +258,7 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
 
   const hasFilters =
     category !== "all" ||
+    independentOnly ||
     subject.length > 0 ||
     location.length > 0 ||
     onlineOnly ||
@@ -263,6 +271,7 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
 
   function clearFilters() {
     setCategory("all");
+    setIndependentOnly(false);
     setSubject("");
     setLocation("");
     setOnlineOnly(false);

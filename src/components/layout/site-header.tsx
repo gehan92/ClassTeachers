@@ -5,13 +5,18 @@ import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useLinkStatus } from "next/link";
 import { Bell, Menu, LogOut, ChevronDown, Loader2 } from "lucide-react";
-import { Link, usePathname } from "@/i18n/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LocaleSwitcher } from "./locale-switcher";
@@ -35,33 +40,56 @@ const HERO_PAGES = ["/", "/advertise"];
 // visitor searching for a teacher or class needs first. Advertise is
 // promoted to the top nav as "Post your ad" since it's a primary
 // business-facing CTA.
-const searchItems = [
-  { href: { pathname: "/teachers", query: { category: "all" } }, key: "searchAll" },
-  { href: { pathname: "/teachers", query: { category: "teacher" } }, key: "searchTeachers" },
-  { href: { pathname: "/teachers", query: { category: "class" } }, key: "searchInstitutes" },
-  { href: { pathname: "/teachers", query: { category: "campus" } }, key: "searchCampusLecturers" },
-  {
-    href: { pathname: "/teachers", query: { category: "teacher", online: "true" } },
-    key: "searchOnlineLessons",
-  },
-  { href: { pathname: "/requests", query: { lookingFor: "teacher" } }, key: "studentRequestsTeacher" },
-  { href: { pathname: "/requests", query: { lookingFor: "institute" } }, key: "studentRequestsInstitute" },
+//
+// "Institutes / classes", "Campus lecturers" and "Courses" each link to
+// their own clean route rather than a /teachers?category= query string —
+// /institutes and /lecturers are thin redirects onto the existing
+// /teachers?category=class|campus view (same fully-featured search, just a
+// friendlier URL), while /courses and its ?audience=adult view are genuinely
+// new pages (0143).
+const browseItems = [
+  { href: { pathname: "/teachers", query: { category: "all" } }, key: "browseAll" },
+  { href: { pathname: "/teachers", query: { type: "independent" } }, key: "browseIndependent" },
+  { href: "/institutes", key: "browseInstitutes" },
+  { href: "/lecturers", key: "browseCampusLecturers" },
+  { href: "/courses", key: "browseCourses" },
+  { href: { pathname: "/courses", query: { audience: "adult" } }, key: "browseAdultLearning" },
 ] as const;
 
-// Every item's query keys map to a single string value, and pathname is
-// checked first — so an item is "active" exactly when every one of its own
-// query params (category, or category+online, or lookingFor) matches the
-// current URL. Handles both /teachers and /requests items generically
-// instead of hardcoding one pathname/param pair.
-function isSearchItemActive(
-  item: (typeof searchItems)[number],
-  pathname: string,
-  searchParams: URLSearchParams,
-): boolean {
-  if (pathname !== item.href.pathname) return false;
-  const query: Record<string, string> = item.href.query;
-  return Object.keys(query).every((key) => searchParams.get(key) === query[key]);
+// Each direction is a genuinely different ad type (wanted_ads / a
+// teacher_seeking_ads / vacancy_ads) that /requests renders based on this
+// param — see that page's own `direction` handling (0143).
+const requestItems = [
+  {
+    href: { pathname: "/requests", query: { direction: "student_to_teacher" } },
+    key: "requestsStudent",
+    tagKey: "requestsStudentTag",
+  },
+  {
+    href: { pathname: "/requests", query: { direction: "teacher_to_institute" } },
+    key: "requestsTeacher",
+    tagKey: "requestsTeacherTag",
+  },
+  {
+    href: { pathname: "/requests", query: { direction: "institute_to_teacher" } },
+    key: "requestsInstitute",
+    tagKey: "requestsInstituteTag",
+  },
+] as const;
+
+type NavHref = string | { pathname: string; query: Record<string, string> };
+
+// Handles both a plain string href (/institutes, /lecturers, /courses) and
+// an object href with query params (every /teachers and /requests item) —
+// an item is "active" when the pathname matches and, for the object form,
+// every one of its own query params matches the current URL too.
+function isNavItemActive(href: NavHref, pathname: string, searchParams: URLSearchParams): boolean {
+  if (typeof href === "string") return pathname === href;
+  if (pathname !== href.pathname) return false;
+  return Object.keys(href.query).every((key) => searchParams.get(key) === href.query[key]);
 }
+
+const SEARCH_PATHNAMES = ["/teachers", "/requests", "/institutes", "/lecturers", "/courses"];
 
 // Clicking "Dashboard" jumps to a whole different route group ((public) ->
 // (dashboard)), so the RSC fetch for the new layout+page can take a visible
@@ -93,8 +121,19 @@ export function SiteHeader({
   const t = useTranslations("nav");
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const isSearchActive = pathname === "/teachers" || pathname === "/requests";
+  const isSearchActive = SEARCH_PATHNAMES.includes(pathname);
+  const onlineOnly = searchParams.get("online") === "true";
+  // "Online lessons only" (BROWSE group) applies mode=online to whichever
+  // page is currently open rather than navigating anywhere — every other
+  // query param on the current URL is preserved, only `online` toggles.
+  function toggleOnlineOnly(checked: boolean) {
+    const query: Record<string, string> = Object.fromEntries(searchParams.entries());
+    if (checked) query.online = "true";
+    else delete query.online;
+    router.push({ pathname, query });
+  }
   // Students have no "inquiries" tab (they submit them, don't receive them)
   // — their equivalent inbound-message tab is Post an Ad's wanted-ad
   // responses.
@@ -155,9 +194,12 @@ export function SiteHeader({
                 )}
               />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              {searchItems.map((item) => {
-                const active = isSearchItemActive(item, pathname, searchParams);
+            <DropdownMenuContent align="start" className="w-72">
+              <DropdownMenuLabel className="font-mono text-[11px] tracking-wide text-muted-foreground">
+                {t("browseGroupLabel")}
+              </DropdownMenuLabel>
+              {browseItems.map((item) => {
+                const active = isNavItemActive(item.href, pathname, searchParams);
                 return (
                   <DropdownMenuItem
                     key={item.key}
@@ -165,6 +207,30 @@ export function SiteHeader({
                     className={cn("py-2", active && "font-semibold text-primary")}
                   >
                     {t(item.key)}
+                  </DropdownMenuItem>
+                );
+              })}
+              <DropdownMenuCheckboxItem checked={onlineOnly} onCheckedChange={toggleOnlineOnly} className="py-2">
+                {t("browseOnlineOnly")}
+              </DropdownMenuCheckboxItem>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuLabel className="font-mono text-[11px] tracking-wide text-muted-foreground">
+                {t("requestsGroupLabel")}
+              </DropdownMenuLabel>
+              {requestItems.map((item) => {
+                const active = isNavItemActive(item.href, pathname, searchParams);
+                return (
+                  <DropdownMenuItem
+                    key={item.key}
+                    render={<Link href={item.href} />}
+                    className={cn("flex items-center justify-between gap-2 py-2", active && "font-semibold text-primary")}
+                  >
+                    {t(item.key)}
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] font-normal tracking-wide text-muted-foreground">
+                      {t(item.tagKey)}
+                    </span>
                   </DropdownMenuItem>
                 );
               })}
@@ -258,10 +324,10 @@ export function SiteHeader({
               <SheetTitle className="sr-only">{t("menu")}</SheetTitle>
               <nav className="mt-10 flex flex-col gap-1 px-4">
                 <div className="px-3 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-                  {t("search")}
+                  {t("browseGroupLabel")}
                 </div>
-                {searchItems.map((item) => {
-                  const active = isSearchItemActive(item, pathname, searchParams);
+                {browseItems.map((item) => {
+                  const active = isNavItemActive(item.href, pathname, searchParams);
                   return (
                     <Link
                       key={item.key}
@@ -276,6 +342,36 @@ export function SiteHeader({
                     </Link>
                   );
                 })}
+                <div className="flex items-center gap-2 px-3 py-2.5">
+                  <Checkbox id="mobile-online-only" checked={onlineOnly} onCheckedChange={toggleOnlineOnly} />
+                  <Label htmlFor="mobile-online-only" className="cursor-pointer text-sm font-normal text-foreground/80">
+                    {t("browseOnlineOnly")}
+                  </Label>
+                </div>
+
+                <div className="mt-3 px-3 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                  {t("requestsGroupLabel")}
+                </div>
+                {requestItems.map((item) => {
+                  const active = isNavItemActive(item.href, pathname, searchParams);
+                  return (
+                    <Link
+                      key={item.key}
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "flex items-center justify-between gap-2 rounded-md px-3 py-3 text-sm font-medium transition-colors",
+                        active ? "bg-secondary text-primary" : "text-foreground hover:bg-muted",
+                      )}
+                    >
+                      {t(item.key)}
+                      <span className="rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] font-normal tracking-wide text-muted-foreground">
+                        {t(item.tagKey)}
+                      </span>
+                    </Link>
+                  );
+                })}
+
                 <Link
                   href="/advertise"
                   className="mt-3 rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-muted"

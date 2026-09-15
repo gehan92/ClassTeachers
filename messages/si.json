@@ -4,6 +4,8 @@
     "homeDescription": "ශ්‍රී ලංකාව පුරා සත්‍යාපිත ගුරුවරුන්, උපකාරක පන්ති සහ කැම්පස් කථිකාචාර්යවරුන් සොයන්න. දුරකථනයෙන් අමතන්නට පෙර සුදුසුකම්, මිල ගණන් සහ සමාලෝචන සසඳන්න.",
     "teachersTitle": "ගුරුවරුන්, පන්ති සහ කැම්පස් කථිකාචාර්යවරුන් සොයන්න | ClassPortals",
     "teachersDescription": "විෂය, ස්ථානය සහ ශ්‍රේණිය අනුව පෙරා ශ්‍රී ලංකාව පුරා සත්‍යාපිත ගුරුවරුන්, උපකාරක පන්ති සහ කැම්පස් කථිකාචාර්යවරුන් සසඳන්න.",
+    "coursesTitle": "පාඨමාලා සොයාගන්න | ClassPortals",
+    "coursesDescription": "ශ්‍රී ලංකාව පුරා සත්‍යාපිත ගුරුවරුන්, කැම්පස් කථිකාචාර්යවරුන් සහ ආයතන වෙතින් ව්‍යුහගත, බහු-සැසි පාඨමාලා පිරික්සන්න.",
     "rolesTitle": "ClassPortals ක්‍රියා කරන ආකාරය | ClassPortals",
     "rolesDescription": "ඔබ එක් සිසුවෙකුට උගන්වන්නේ වුවත් ආයතනයක් පවත්වාගෙන යන්නේ වුවත්, සොයාගැනීමට, සැසඳීමට සහ සම්බන්ධ වීමට සෑම භූමිකාවකටම එකම මෙවලම් ClassPortals විසින් ලබා දේ.",
     "pricingTitle": "මිල ගණන් | ClassPortals",
@@ -46,13 +48,25 @@
     "logout": "ඉවත් වන්න",
     "menu": "මෙනුව",
     "search": "සොයන්න",
-    "searchAll": "සියලුම ගුරුවරු සහ පන්ති",
     "searchTeachers": "පෞද්ගලික උපදේශකවරු",
     "searchInstitutes": "ආයතන / පන්ති",
     "searchCampusLecturers": "කැම්පස් කථිකාචාර්යවරු",
     "searchOnlineLessons": "මාර්ගගත පාඩම්",
-    "studentRequestsTeacher": "ගුරු ඉල්ලීම්",
-    "studentRequestsInstitute": "ආයතන ඉල්ලීම්",
+    "browseGroupLabel": "පිරික්සන්න",
+    "browseAll": "සියලුම ගුරුවරු සහ පන්ති",
+    "browseIndependent": "ස්වාධීන උපදේශකවරු",
+    "browseInstitutes": "ආයතන / පන්ති",
+    "browseCampusLecturers": "කැම්පස් කථිකාචාර්යවරු",
+    "browseCourses": "පාඨමාලා",
+    "browseAdultLearning": "වැඩිහිටි සහ වෘත්තීය ඉගෙනුම",
+    "browseOnlineOnly": "මාර්ගගත පාඩම් පමණක්",
+    "requestsGroupLabel": "ඉල්ලීම්",
+    "requestsStudent": "සිසුන්ගේ ඉල්ලීම්",
+    "requestsStudentTag": "සිසුන් → ගුරුවරුන්",
+    "requestsTeacher": "ගුරුවරුන්ගේ ඉල්ලීම්",
+    "requestsTeacherTag": "ගුරුවරුන් → ආයතන",
+    "requestsInstitute": "ආයතන පුරප්පාඩු",
+    "requestsInstituteTag": "ආයතන → ගුරුවරුන්",
     "postYourAd": "ඔබේ දැන්වීම පළ කරන්න",
     "inCallBanner": "ඇමතුමේ පවතී — {title}",
     "stillExposedBanner": "කැමරාව/මයික්‍රෆෝනය තවම ක්‍රියාත්මකයි — {title}",
@@ -712,7 +726,8 @@
     "modeOptions": {
       "online": "සජීවී අන්තර්ජාලය",
       "physical": "සජීවීව මුණගැසී",
-      "both": "දෙකම සුදුසුයි"
+      "both": "දෙකම සුදුසුයි",
+      "travels_to_student": "සිසුවා වෙත පැමිණේ"
     },
     "mediumOptions": {
       "english": "ඉංග්‍රීසි මාධ්‍යය",
@@ -753,7 +768,46 @@
     },
     "budgetRange": "රු. {min}–{max}/මාසිකව",
     "budgetUpTo": "රු. {max} දක්වා/මාසිකව",
-    "budgetFrom": "රු. {min} සිට/මාසිකව"
+    "budgetFrom": "රු. {min} සිට/මාසිකව",
+    "teacherRequests": {
+      "heroTitle": "ආයතනයකට එකතු වීමට සූදානම් ගුරුවරුන්",
+      "heroSubtitle": "පත්වීමක් සොයන ගුරුවරුන් සහ කැම්පස් කථිකාචාර්යවරුන් — ඔබේ ආයතනයේ පුරප්පාඩුවක් ඇත්නම් පිළිතුරු දෙන්න.",
+      "badge": "ඉගැන්වීමට සූදානම්",
+      "searchPlaceholder": "විෂය හෝ මූලපදයකින් සොයන්න...",
+      "resultsCount": "ගුරුවරුන් {count}",
+      "clearFilters": "සෙවීම ඉවත් කරන්න",
+      "empty": "මෙම සෙවීමට ගැළපෙන ගුරු ඉල්ලීම් තවම නැත.",
+      "modeOptions": {
+        "online": "සජීවී අන්තර්ජාලය",
+        "physical": "සජීවීව මුණගැසී",
+        "travels_to_student": "සිසුවා වෙත පැමිණේ"
+      },
+      "pagination": {
+        "showingCount": "{total} න් {shown} පෙන්වයි",
+        "previous": "පෙර",
+        "next": "ඊළඟ",
+        "pageInfo": "පිටුව {page} න් {totalPages}"
+      }
+    },
+    "instituteVacancies": {
+      "heroTitle": "දැන් බඳවා ගන්නා ආයතන",
+      "heroSubtitle": "ආයතන විසින් පළ කරන ලද විවෘත ඉගැන්වීම් තනතුරු — ඔබ සුදුසු පුද්ගලයෙක් නම් පිළිතුරු දෙන්න.",
+      "badge": "පුරප්පාඩුව",
+      "searchPlaceholder": "විෂය, ස්ථානය හෝ මූලපදයකින් සොයන්න...",
+      "resultsCount": "පුරප්පාඩු {count}",
+      "clearFilters": "සෙවීම ඉවත් කරන්න",
+      "empty": "මෙම සෙවීමට ගැළපෙන පුරප්පාඩු තවම නැත.",
+      "modeOptions": {
+        "online": "සජීවී අන්තර්ජාලය",
+        "physical": "සජීවීව මුණගැසී"
+      },
+      "pagination": {
+        "showingCount": "{total} න් {shown} පෙන්වයි",
+        "previous": "පෙර",
+        "next": "ඊළඟ",
+        "pageInfo": "පිටුව {page} න් {totalPages}"
+      }
+    }
   },
   "termsPage": {
     "title": "සේවා නියමයන්",
@@ -3624,6 +3678,12 @@
     "titleTeacher": "ඔබේ ගුරුවරයා සොයාගන්න",
     "titleOnline": "මාර්ගගත පාඩම් සොයාගන්න",
     "subtitleOnline": "සජීවී මාර්ගගත පන්ති පවත්වන සත්‍යාපිත ගුරුවරුන් සසඳන්න විෂය, ස්ථානය සහ ශ්‍රේණිය අනුව පෙරහන් කරන්න.",
+    "titleIndependent": "ස්වාධීන උපදේශකවරුන් සොයාගන්න",
+    "subtitleIndependent": "කිසිදු ආයතන සම්බන්ධතාවයක් නොමැති පුද්ගලික ගුරුවරුන් — විෂය, ස්ථානය සහ ශ්‍රේණිය අනුව පෙරහන් කර සසඳන්න.",
+    "titleCourses": "පාඨමාලාවක් සොයාගන්න",
+    "subtitleCourses": "ව්‍යුහගත, බහු-සැසි පාඨමාලා — විෂය, ස්ථානය සහ ශ්‍රේණිය අනුව පෙරහන් කර සත්‍යාපිත පිරිනැමීම් සසඳන්න.",
+    "titleCoursesAdult": "වැඩිහිටි සහ වෘත්තීය ඉගෙනුම",
+    "subtitleCoursesAdult": "පාසල් ශ්‍රේණි සිසුන් සඳහා නොව වැඩිහිටි ප්‍රේක්ෂකයන් අරමුණු කරගත් ව්‍යුහගත පාඨමාලා.",
     "pagination": {
       "showingCount": "{total} න් {shown} පෙන්වයි",
       "previous": "පෙර",

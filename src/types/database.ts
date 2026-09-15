@@ -2265,6 +2265,38 @@ export type Database = {
           lesson_title: string | null;
           lesson_scheduled_at: string | null;
           lesson_duration_minutes: number | null;
+          is_independent: boolean;
+        }[];
+      };
+      list_public_teacher_seeking_ads: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          teacher_id: string;
+          display_name: string | null;
+          photo_url: string | null;
+          subject: string | null;
+          grade_band: string | null;
+          mode: string | null;
+          title: string;
+          content: string;
+          created_at: string;
+        }[];
+      };
+      list_public_vacancy_ads: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          institute_id: string;
+          institute_name: string;
+          photo_url: string | null;
+          institution_verified: boolean;
+          subject: string | null;
+          mode: string;
+          location: string | null;
+          title: string;
+          content: string;
+          created_at: string;
         }[];
       };
       get_public_ad: {

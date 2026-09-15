@@ -16,5 +16,6 @@ export const GRADE_BAND_SELECT_VALUES: (GradeBand | typeof OPEN_GRADE_VALUE)[] =
   "10-11",
   "12-13",
   "campus",
+  "adult",
   OPEN_GRADE_VALUE,
 ];

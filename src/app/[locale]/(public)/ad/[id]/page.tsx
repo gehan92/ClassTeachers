@@ -4,7 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ArrowLeft, BadgeCheck, FileText, MapPin, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { JoinRequestBox } from "@/components/features/join-request-box";
-import { LessonInquiryBox } from "@/components/features/lesson-inquiry-box";
+import { InquiryBox } from "@/components/features/inquiry-box";
 import { ShareButtons } from "@/components/features/share-buttons";
 import { createClient } from "@/lib/supabase/server";
 import { avatarGradientClass } from "@/lib/avatar-color";
@@ -54,6 +54,9 @@ type NormalizedAd = {
   /** Optional upper end of the rate (0120, teacher ads only). */
   hourlyRateMax: number | null;
   monthlyRateMax: number | null;
+  /** Set only for a "Course Ad" (0139, teacher/campus-lecturer ads only) —
+   * a structured, multi-session course rather than an ongoing class. */
+  totalSessions: number | null;
 };
 
 async function loadAd(adId: string): Promise<NormalizedAd | null> {
@@ -93,6 +96,7 @@ async function loadAd(adId: string): Promise<NormalizedAd | null> {
       classType: r.class_type as "new" | "revision" | null,
       hourlyRateMax: r.hourly_rate_max,
       monthlyRateMax: r.monthly_rate_max,
+      totalSessions: r.total_sessions,
     };
   }
 
@@ -120,7 +124,7 @@ async function loadAd(adId: string): Promise<NormalizedAd | null> {
       reviewCount: r.review_count,
       institutionVerified: r.institution_verified,
       isCampusLecturer: false,
-      courseCode: null,
+      courseCode: r.course_code,
       isOpenEnrollment: r.is_open_enrollment,
       capacity: r.capacity,
       spotsTaken: r.spots_taken,
@@ -128,6 +132,7 @@ async function loadAd(adId: string): Promise<NormalizedAd | null> {
       classType: null,
       hourlyRateMax: null,
       monthlyRateMax: null,
+      totalSessions: r.total_sessions,
     };
   }
 
@@ -189,6 +194,59 @@ async function loadLessonAd(adId: string): Promise<NormalizedLessonAd | null> {
   };
 }
 
+/**
+ * "Teacher-Wise Ad" (0140, mockup section 2.4) -- an institute-owned ad
+ * about a specific staff member, not a batch. Its own type/loader/render
+ * branch for the same reason NormalizedLessonAd got one: every batch-shaped
+ * field above (batchId, isOpenEnrollment, hourlyRate...) simply doesn't
+ * apply, and the "owner" here (the institute) and the "subject" of the ad
+ * (the featured teacher) are two different identities, unlike every other
+ * ad type on this page.
+ */
+type NormalizedTeacherWiseAd = {
+  adId: string;
+  instituteId: string;
+  instituteName: string;
+  institutePhotoUrl: string | null;
+  institutionVerified: boolean;
+  teacherId: string;
+  teacherName: string | null;
+  teacherPhotoUrl: string | null;
+  headline: string | null;
+  subjects: string[];
+  experienceYears: number | null;
+  rating: number;
+  reviewCount: number;
+  adTitle: string;
+  adContent: string | null;
+};
+
+async function loadTeacherWiseAd(adId: string): Promise<NormalizedTeacherWiseAd | null> {
+  const supabase = await createClient();
+
+  const { data: rows } = await supabase.rpc("get_public_teacher_wise_ad", { p_ad_id: adId });
+  if (!rows || rows.length === 0) return null;
+  const r = rows[0];
+  await supabase.rpc("increment_ad_view", { p_ad_id: adId });
+  return {
+    adId: r.ad_id,
+    instituteId: r.institute_id,
+    instituteName: r.institute_name,
+    institutePhotoUrl: r.institute_photo_url,
+    institutionVerified: r.institution_verified,
+    teacherId: r.teacher_id,
+    teacherName: r.display_name,
+    teacherPhotoUrl: r.photo_url,
+    headline: r.headline,
+    subjects: r.subjects,
+    experienceYears: r.experience_years,
+    rating: r.rating,
+    reviewCount: r.review_count,
+    adTitle: r.ad_title,
+    adContent: r.ad_content,
+  };
+}
+
 export async function generateMetadata({ params }: PageProps<"/[locale]/ad/[id]">): Promise<Metadata> {
   const { locale, id } = await params;
   const [ad, t] = await Promise.all([loadAd(id), getTranslations({ locale, namespace: "meta" })]);
@@ -204,6 +262,14 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/ad/[id]"
     const name = lessonAd.name ?? t("teacherRoleFallback");
     return {
       title: t("adTitle", { adTitle: lessonAd.adTitle, name }),
+      description: t("adDescription", { name }),
+    };
+  }
+  const teacherWiseAd = await loadTeacherWiseAd(id);
+  if (teacherWiseAd) {
+    const name = teacherWiseAd.instituteName ?? t("classRoleFallback");
+    return {
+      title: t("adTitle", { adTitle: teacherWiseAd.adTitle, name }),
       description: t("adDescription", { name }),
     };
   }
@@ -226,6 +292,10 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
     const lessonAd = await loadLessonAd(id);
     if (lessonAd) {
       return <LessonAdView ad={lessonAd} locale={locale} />;
+    }
+    const teacherWiseAd = await loadTeacherWiseAd(id);
+    if (teacherWiseAd) {
+      return <TeacherWiseAdView ad={teacherWiseAd} />;
     }
     notFound();
   }
@@ -358,19 +428,26 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
                   {tr("classTypeOptions.revision")}
                 </span>
               )}
+              {ad.totalSessions && (
+                <span className="rounded-full border border-white/25 bg-white/10 px-2 py-0.5 text-xs">
+                  {t("sessionsCount", { count: ad.totalSessions })}
+                </span>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       <h2 className="mt-7 mb-4 text-2xl text-primary sm:text-[26px]">
-        {ad.isCampusLecturer && ad.courseCode && <span className="text-muted-foreground">{ad.courseCode} · </span>}
+        {ad.courseCode && <span className="text-muted-foreground">{ad.courseCode} · </span>}
         {ad.adTitle}
       </h2>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
-          <h3 className="mb-3 text-lg">{ad.isCampusLecturer ? t("aboutHeadingCampus") : t("aboutHeading")}</h3>
+          <h3 className="mb-3 text-lg">
+            {ad.isCampusLecturer || ad.totalSessions ? t("aboutHeadingCampus") : t("aboutHeading")}
+          </h3>
           {richContent !== null ? (
             hasRichText(richContent) && (
               <div
@@ -539,7 +616,136 @@ async function LessonAdView({ ad, locale }: { ad: NormalizedLessonAd; locale: st
         </div>
 
         <div className="flex flex-col gap-6">
-          <LessonInquiryBox teacherId={ad.teacherId} />
+          <InquiryBox ownerType="teacher" ownerId={ad.teacherId} />
+          <ShareButtons title={ad.adTitle} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * "Teacher-Wise Ad" landing page (0140) -- the institute is the brand
+ * (hero identical in spirit to the class-ad view above: institute name/
+ * photo/verified badge), but the ad is about one specific staff member, so
+ * a dedicated "Meet the teacher" panel carries their own masked identity,
+ * subjects and rating. No batch here to enroll in, so InquiryBox (pointed
+ * at the institute, not the teacher -- the institute owns this ad) stands
+ * in for JoinRequestBox, same reasoning as LessonAdView's own.
+ */
+async function TeacherWiseAdView({ ad }: { ad: NormalizedTeacherWiseAd }) {
+  const t = await getTranslations("adPage");
+  const tl = await getTranslations("listing");
+  const displayInstituteName = ad.instituteName ?? t("classFallback");
+  const displayTeacherName = ad.teacherName ?? t("teacherFallback");
+  const richContent = sanitizeRichText(ad.adContent ?? "");
+
+  return (
+    <div className="mx-auto max-w-[860px] px-7 py-10">
+      <Link
+        href="/teachers"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary"
+      >
+        <ArrowLeft className="size-4" />
+        {t("breadcrumbHome")}
+      </Link>
+
+      <div className="mb-6 rounded-xl bg-gradient-to-br from-primary to-primary-light p-7 text-white">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          {ad.institutePhotoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={ad.institutePhotoUrl}
+              alt=""
+              className="mx-auto size-20 shrink-0 rounded-full border-4 border-white object-cover shadow-sm sm:mx-0"
+            />
+          ) : (
+            <div
+              className={`mx-auto flex size-20 shrink-0 items-center justify-center rounded-full border-4 border-white font-display text-2xl font-bold text-white shadow-sm sm:mx-0 ${avatarGradientClass(ad.instituteId)}`}
+            >
+              {displayInstituteName.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <h1 className="mb-1.5 flex items-center gap-1.5 text-2xl text-white">
+              {displayInstituteName}
+              <span title={ad.institutionVerified ? tl("institutionVerified") : tl("reviewed")}>
+                <BadgeCheck
+                  className="size-4 shrink-0"
+                  aria-label={ad.institutionVerified ? tl("institutionVerified") : tl("reviewed")}
+                />
+              </span>
+            </h1>
+          </div>
+        </div>
+      </div>
+
+      <h2 className="mt-7 mb-4 text-2xl text-primary sm:text-[26px]">{ad.adTitle}</h2>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
+        <div className="flex flex-col gap-6">
+          <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+            <h3 className="mb-3 text-lg">{t("aboutHeading")}</h3>
+            {hasRichText(richContent) && (
+              <div
+                className={`text-sm text-foreground/85 ${RICH_TEXT_DISPLAY_CLASS}`}
+                dangerouslySetInnerHTML={{ __html: richContent }}
+              />
+            )}
+          </div>
+
+          <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+            <div className="mb-3 flex items-center gap-3">
+              {ad.teacherPhotoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={ad.teacherPhotoUrl}
+                  alt=""
+                  className="size-12 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div
+                  className={`flex size-12 shrink-0 items-center justify-center rounded-full font-display text-lg font-bold text-white ${avatarGradientClass(ad.teacherId)}`}
+                >
+                  {displayTeacherName.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0">
+                <h3 className="text-base font-semibold text-foreground">{t("teacherWiseAd.meetHeading", { teacherName: displayTeacherName })}</h3>
+                {ad.headline && <p className="text-sm text-muted-foreground">{ad.headline}</p>}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
+              {ad.reviewCount > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <Star className="size-3.5 text-cta" fill="currentColor" />
+                  {ad.rating.toFixed(1)} ({ad.reviewCount})
+                </span>
+              )}
+              {ad.experienceYears !== null && <span>{t("teacherWiseAd.experienceYears", { count: ad.experienceYears })}</span>}
+            </div>
+            {ad.subjects.length > 0 && (
+              <div className="mt-3">
+                <p className="mb-1.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                  {t("teacherWiseAd.subjectsHeading")}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {ad.subjects.map((subject) => (
+                    <span
+                      key={subject}
+                      className="rounded-full border border-border bg-background px-2.5 py-1 text-xs text-foreground/80"
+                    >
+                      {subject}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-6">
+          <InquiryBox ownerType="class" ownerId={ad.instituteId} tNamespace="adPage.teacherWiseInquiry" />
           <ShareButtons title={ad.adTitle} />
         </div>
       </div>

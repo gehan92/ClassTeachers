@@ -22,6 +22,7 @@ import {
   deleteBatchAd,
   createIndividualAd,
   createLessonAd,
+  createCourseAd,
 } from "@/lib/dashboard/ads-actions";
 import type { GradeBand } from "@/types/grade-band";
 import { GRADE_BAND_SELECT_VALUES, OPEN_GRADE_VALUE } from "@/lib/grade-band-options";
@@ -74,6 +75,29 @@ function buildAdDescription(
 }
 
 /**
+ * Course Ad's own auto-draft composer (0139) — structurally like
+ * buildAdDescription above, but built around total_sessions (the field that
+ * actually distinguishes a "Course" from an ongoing "Class") instead of
+ * grade/classType, which don't apply to a structured course.
+ */
+function buildCourseAdDescription(
+  t: ReturnType<typeof useTranslations>,
+  subjectName: string | undefined,
+  totalSessions: number,
+  modeLabel: string,
+  mediumLabel: string,
+): string {
+  const sentences = [
+    subjectName ? t("descriptionSubjectSentence", { subject: subjectName }) : t("descriptionNoSubjectSentence"),
+    t("descriptionSessionsSentence", { count: totalSessions }),
+    modeLabel,
+    t("descriptionMediumSentence", { medium: mediumLabel }),
+    t("descriptionClosingSentence"),
+  ];
+  return sentences.join(" ");
+}
+
+/**
  * Mirrors wanted-ads-tab.tsx's WantedAdPreviewDialog — a "Preview" button
  * opens this instead of the preview sitting inline in the form all the
  * time, matching the student "Post an ad" composer's Post ad/Preview/Close
@@ -118,6 +142,9 @@ export type TeacherAdBatchRow = {
   monthlyRateMax: number | null;
   medium: Medium | null;
   classType: ClassType | null;
+  /** Set only for a "Course Ad" (0139, campus lecturers) — distinguishes a
+   * structured multi-session course from an ongoing tuition class. */
+  totalSessions: number | null;
   ad: { id: string; title: string; content: string; status: "active" | "expired" | "removed"; viewCount: number } | null;
 };
 
@@ -139,6 +166,7 @@ export function AdvertisementTab({
   defaultHourlyRate,
   defaultMonthlyRate,
   history = [],
+  isCampusLecturer = false,
 }: {
   initialContent: string;
   batches: TeacherAdBatchRow[];
@@ -147,6 +175,9 @@ export function AdvertisementTab({
   defaultHourlyRate?: number | null;
   defaultMonthlyRate?: number | null;
   history?: AdHistoryRow[];
+  /** "Course Ad" (0139, mockup section 2.3) is lecturer-only — everything
+   * else on this tab stays exactly as-is for a regular teacher. */
+  isCampusLecturer?: boolean;
 }) {
   const t = useTranslations("teacherDashboard.ads");
   const tc = useTranslations("teacherDashboard.common");
@@ -201,6 +232,18 @@ export function AdvertisementTab({
           )}
         </div>
       </div>
+
+      {isCampusLecturer && (
+        <div>
+          <h3 className="mb-1 text-lg">{t("courseAds.heading")}</h3>
+          <p className="mb-4 text-sm text-muted-foreground">{t("courseAds.subtitle")}</p>
+          <CourseAdCreator
+            subjectOptions={subjectOptions}
+            defaultHourlyRate={defaultHourlyRate}
+            defaultMonthlyRate={defaultMonthlyRate}
+          />
+        </div>
+      )}
 
       <div>
         <h3 className="mb-1 text-lg">{t("lessonAds.heading")}</h3>
@@ -280,6 +323,7 @@ function BatchAdCard({
   const td = useTranslations("teacherDashboard.ads.autoDraft");
   const tr = useTranslations("requestsPage");
   const tc = useTranslations("teacherDashboard.common");
+  const tCourse = useTranslations("teacherDashboard.ads.courseAds");
 
   const [editing, setEditing] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -392,6 +436,7 @@ function BatchAdCard({
           </h4>
           <p className="text-sm text-muted-foreground">
             {batch.subjectName ? t("batchSubject", { subject: batch.subjectName }) : t("noSubjectYet")}
+            {batch.totalSessions ? ` · ${tCourse("sessionsCount", { count: batch.totalSessions })}` : ""}
           </p>
         </div>
         {batch.ad && !deleted && !editing && (
@@ -593,9 +638,13 @@ function BatchAdCard({
             title={title}
             content={content}
             richContent
-            meta={[batch.courseCode, subjectName, tr(`mediumOptions.${medium}`), classType === "revision" ? tr("classTypeOptions.revision") : null].filter(
-              (v): v is string => Boolean(v),
-            )}
+            meta={[
+              batch.courseCode,
+              subjectName,
+              tr(`mediumOptions.${medium}`),
+              classType === "revision" ? tr("classTypeOptions.revision") : null,
+              batch.totalSessions ? tCourse("sessionsCount", { count: batch.totalSessions }) : null,
+            ].filter((v): v is string => Boolean(v))}
           />
         </div>
       )}
@@ -1088,6 +1137,337 @@ function IndividualAdCreator({
               mode === "online" ? t("modeOnline") : mode === "travels_to_student" ? t("modeTravelsToStudent") : t("modePhysical"),
               tr(`mediumOptions.${medium}`),
               classType === "revision" ? tr("classTypeOptions.revision") : null,
+            ].filter((v): v is string => Boolean(v))}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * "Course Ad" (0139, mockup section 2.3 Lecturer/Professor — Supply-Side) —
+ * a structured, multi-session course rather than an ongoing tuition class.
+ * Mirrors IndividualAdCreator's own "create the batch and its ad together in
+ * one step" shape, substituting a real course title + total sessions for
+ * that composer's grade/classType fields, which don't apply to a course.
+ * Only ever rendered when isCampusLecturer (see AdvertisementTab above).
+ */
+function CourseAdCreator({
+  subjectOptions,
+  defaultHourlyRate,
+  defaultMonthlyRate,
+}: {
+  subjectOptions: { id: string; name: string }[];
+  defaultHourlyRate?: number | null;
+  defaultMonthlyRate?: number | null;
+}) {
+  const t = useTranslations("teacherDashboard.ads.courseAds");
+  const tp = useTranslations("teacherDashboard.ads.courseAds.preview");
+  const td = useTranslations("teacherDashboard.ads.autoDraft");
+  const tr = useTranslations("requestsPage");
+  const tc = useTranslations("teacherDashboard.common");
+  const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
+
+  const [open, setOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [courseTitle, setCourseTitle] = useState("");
+  const [courseCode, setCourseCode] = useState("");
+  const [subjectId, setSubjectId] = useState(subjectOptions[0]?.id ?? "");
+  const [mode, setMode] = useState<"online" | "physical" | "travels_to_student">("online");
+  const [totalSessions, setTotalSessions] = useState("");
+  const [medium, setMedium] = useState<Medium>("english");
+  const [title, setTitle] = useState("");
+  const [titleTouched, setTitleTouched] = useState(false);
+  const [content, setContent] = useState("");
+  const [contentTouched, setContentTouched] = useState(false);
+  const [hourlyRate, setHourlyRate] = useState("");
+  const [monthlyRate, setMonthlyRate] = useState("");
+  const [hourlyRateMax, setHourlyRateMax] = useState("");
+  const [monthlyRateMax, setMonthlyRateMax] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const subjectName = subjectOptions.find((s) => s.id === subjectId)?.name;
+  const sessionsCount = totalSessions.trim() ? Number(totalSessions) : null;
+
+  useEffect(() => {
+    if (titleTouched) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- drafting a suggestion from other field state, not derived render state
+    setTitle(courseTitle);
+  }, [courseTitle, titleTouched]);
+
+  useEffect(() => {
+    if (contentTouched || !sessionsCount) return;
+    const modeLabel =
+      mode === "online"
+        ? td("descriptionModeSentenceOnline")
+        : mode === "travels_to_student"
+          ? td("descriptionModeSentenceTravelsToStudent")
+          : td("descriptionModeSentencePhysical");
+    const draft = buildCourseAdDescription(td, subjectName, sessionsCount, modeLabel, tr(`mediumOptions.${medium}`));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- drafting a suggestion from other field state, not derived render state
+    setContent(`<p>${escapeHtml(draft)}</p>`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- td/tr/subjectOptions are stable for this component's lifetime; only the actual field values should retrigger the draft
+  }, [subjectId, mode, sessionsCount, medium, contentTouched]);
+
+  function handleTitleChange(value: string) {
+    setTitleTouched(true);
+    setTitle(value);
+  }
+
+  function handleContentChange(value: string) {
+    setContentTouched(true);
+    setContent(value);
+  }
+
+  async function handleSave() {
+    if (!courseTitle.trim() || !subjectId || !sessionsCount || !title.trim() || !hasRichText(content)) return;
+    setSaving(true);
+    setError(null);
+    const result = await createCourseAd({
+      courseTitle,
+      courseCode: courseCode || undefined,
+      subjectId,
+      mode,
+      totalSessions: sessionsCount,
+      medium,
+      title,
+      content,
+      hourlyRate: hourlyRate.trim() ? Number(hourlyRate) : undefined,
+      monthlyRate: monthlyRate.trim() ? Number(monthlyRate) : undefined,
+      hourlyRateMax: hourlyRateMax.trim() ? Number(hourlyRateMax) : undefined,
+      monthlyRateMax: monthlyRateMax.trim() ? Number(monthlyRateMax) : undefined,
+    });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setOpen(false);
+    setCourseTitle("");
+    setCourseCode("");
+    setTotalSessions("");
+    setTitle("");
+    setTitleTouched(false);
+    setContent("");
+    setContentTouched(false);
+    setHourlyRate("");
+    setMonthlyRate("");
+    setHourlyRateMax("");
+    setMonthlyRateMax("");
+    refresh();
+  }
+
+  if (!open) {
+    return (
+      <div className="rounded-lg border border-dashed border-input bg-white p-5">
+        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
+          {t("createAd")}
+        </Button>
+        <RefreshStatus
+          pending={isRefreshing}
+          stuck={refreshStuck}
+          pendingLabel={tc("updatingList")}
+          stuckLabel={tc("updateStuck")}
+          reloadLabel={tc("reloadPage")}
+          className="mt-3"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-white p-5">
+      {subjectOptions.length === 0 ? (
+        <p className="text-sm text-destructive">{t("noSubjects")}</p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="course-title">{t("courseTitleLabel")}</Label>
+              <Input
+                id="course-title"
+                placeholder={t("courseTitlePlaceholder")}
+                value={courseTitle}
+                onChange={(e) => setCourseTitle(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="course-code">{t("courseCodeLabel")}</Label>
+              <Input
+                id="course-code"
+                placeholder={t("courseCodePlaceholder")}
+                value={courseCode}
+                onChange={(e) => setCourseCode(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="course-subject">{t("subjectLabel")}</Label>
+              <Select value={subjectId} onValueChange={(value) => setSubjectId(value ?? "")}>
+                <SelectTrigger id="course-subject" className="w-full">
+                  <SelectValue placeholder={t("subjectPlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjectOptions.map((subject) => (
+                    <SelectItem key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="course-mode">{t("modeLabel")}</Label>
+              <Select
+                value={mode}
+                onValueChange={(value) => setMode((value as "online" | "physical" | "travels_to_student") ?? "online")}
+              >
+                <SelectTrigger id="course-mode" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="online">{t("modeOnline")}</SelectItem>
+                  <SelectItem value="physical">{t("modePhysical")}</SelectItem>
+                  <SelectItem value="travels_to_student">{t("modeTravelsToStudent")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="course-sessions">{t("totalSessionsLabel")}</Label>
+              <Input
+                id="course-sessions"
+                type="number"
+                min="1"
+                inputMode="numeric"
+                placeholder={t("totalSessionsPlaceholder")}
+                value={totalSessions}
+                onChange={(e) => setTotalSessions(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="grid gap-1.5 sm:max-w-56">
+            <Label htmlFor="course-medium">{t("mediumLabel")}</Label>
+            <Select value={medium} onValueChange={(value) => setMedium((value as Medium) ?? "english")}>
+              <SelectTrigger id="course-medium" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MEDIUM_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {tr(`mediumOptions.${option}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="course-ad-title">{t("titleLabel")}</Label>
+            <Input
+              id="course-ad-title"
+              placeholder={t("titlePlaceholder")}
+              value={title}
+              onChange={(e) => handleTitleChange(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">{t("titleAutoDraftHint")}</p>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="course-ad-content">{t("contentLabel")}</Label>
+            <RichTextEditor
+              id="course-ad-content"
+              value={content}
+              onChange={handleContentChange}
+              placeholder={t("contentPlaceholder")}
+            />
+            <p className="text-xs text-muted-foreground">{t("descriptionAutoDraftHint")}</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="course-hourly">{t("hourlyRateLabel")}</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="course-hourly"
+                  type="number"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder={
+                    defaultHourlyRate != null ? t("ratePlaceholderDefault", { rate: defaultHourlyRate }) : t("ratePlaceholderNone")
+                  }
+                  value={hourlyRate}
+                  onChange={(e) => setHourlyRate(e.target.value)}
+                />
+                <span className="shrink-0 text-muted-foreground">–</span>
+                <Input
+                  aria-label={t("hourlyRateMaxLabel")}
+                  type="number"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder={t("rateMaxPlaceholder")}
+                  value={hourlyRateMax}
+                  onChange={(e) => setHourlyRateMax(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="course-monthly">{t("monthlyRateLabel")}</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="course-monthly"
+                  type="number"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder={
+                    defaultMonthlyRate != null
+                      ? t("ratePlaceholderDefault", { rate: defaultMonthlyRate })
+                      : t("ratePlaceholderNone")
+                  }
+                  value={monthlyRate}
+                  onChange={(e) => setMonthlyRate(e.target.value)}
+                />
+                <span className="shrink-0 text-muted-foreground">–</span>
+                <Input
+                  aria-label={t("monthlyRateMaxLabel")}
+                  type="number"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder={t("rateMaxPlaceholder")}
+                  value={monthlyRateMax}
+                  onChange={(e) => setMonthlyRateMax(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
+          <div className="flex items-center gap-3">
+            <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
+              {t("save")}
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+              {tp("button")}
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setOpen(false)}>
+              {tc("close")}
+            </Button>
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+          </div>
+          <AdPreviewDialog
+            open={previewOpen}
+            onOpenChange={setPreviewOpen}
+            dialogTitle={tp("dialogTitle")}
+            dialogSubtitle={tp("dialogSubtitle")}
+            badgeLabel={t("previewBadge")}
+            emptyLabel={t("previewEmpty")}
+            title={title}
+            content={content}
+            richContent
+            meta={[
+              courseCode,
+              subjectName,
+              mode === "online" ? t("modeOnline") : mode === "travels_to_student" ? t("modeTravelsToStudent") : t("modePhysical"),
+              tr(`mediumOptions.${medium}`),
+              sessionsCount ? t("sessionsCount", { count: sessionsCount }) : null,
             ].filter((v): v is string => Boolean(v))}
           />
         </div>

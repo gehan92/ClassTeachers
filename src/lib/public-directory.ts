@@ -71,7 +71,12 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator):
     const online = row.mode === "online";
     const subjects = row.subject ? [row.subject] : [];
     const roleLabel = row.is_campus_lecturer
-      ? [tPage("roleCampusLecturer"), row.institution ?? row.location, online ? tPage("online") : null]
+      ? [
+          tPage("roleCampusLecturer"),
+          row.institution ?? row.location,
+          row.total_sessions ? tPage("sessionsCount", { count: row.total_sessions }) : null,
+          online ? tPage("online") : null,
+        ]
           .filter(Boolean)
           .join(" · ")
       : [tPage("roleTeacher"), row.location, online ? tPage("online") : null].filter(Boolean).join(" · ");

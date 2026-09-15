@@ -13,13 +13,13 @@ import { usePagination } from "@/lib/hooks/use-pagination";
 import { cn } from "@/lib/utils";
 import type { Listing } from "@/types/listing";
 
-type Grade = "1-5" | "6-9" | "10-11" | "12-13" | "campus";
+type Grade = "1-5" | "6-9" | "10-11" | "12-13" | "campus" | "adult";
 type Category = "all" | "teacher" | "class" | "campus";
 type PriceInterval = "any" | "hr" | "mo";
 type MinRating = "any" | "3" | "4";
 
 const categories: Category[] = ["all", "teacher", "class", "campus"];
-const grades: Grade[] = ["1-5", "6-9", "10-11", "12-13", "campus"];
+const grades: Grade[] = ["1-5", "6-9", "10-11", "12-13", "campus", "adult"];
 const priceIntervals: PriceInterval[] = ["any", "hr", "mo"];
 const minRatings: MinRating[] = ["any", "3", "4"];
 

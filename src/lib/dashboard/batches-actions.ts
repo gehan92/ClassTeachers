@@ -6,7 +6,7 @@ import { notify } from "./notify";
 
 type ActionResult = { error: string } | { error?: undefined };
 
-const gradeBands = ["1-5", "6-9", "10-11", "12-13", "campus"] as const;
+const gradeBands = ["1-5", "6-9", "10-11", "12-13", "campus", "adult"] as const;
 const classSizeTypes = ["group", "individual"] as const;
 
 const createBatchSchema = z.object({
@@ -21,6 +21,10 @@ const createBatchSchema = z.object({
   taughtByTeacherId: z.string().uuid().optional(),
   gradeBand: z.enum(gradeBands).optional(),
   courseCode: z.string().trim().max(30).optional(),
+  /** Campus lecturer only, same UI-gated convention as courseCode above —
+   * a batch with this set reads as a "Course" (multi-session, structured)
+   * rather than an ongoing "Class" (0139, Course Ad). */
+  totalSessions: z.number().int().positive().optional(),
   subjectName: z.string().trim().min(1).max(80).optional(),
   isOpenEnrollment: z.boolean().optional(),
   capacity: z.number().int().positive().optional(),
@@ -38,6 +42,7 @@ export async function createBatch(input: {
   taughtByTeacherId?: string;
   gradeBand: string;
   courseCode?: string;
+  totalSessions?: number;
   /** Institute class-builder only (Institute Blueprint step 5) — the
    * teacher's own batch builder deliberately has no subject field, since
    * upsertBatchAd/createIndividualAd is already the one place a teacher
@@ -64,6 +69,7 @@ export async function createBatch(input: {
     taughtByTeacherId: input.taughtByTeacherId || undefined,
     gradeBand: input.gradeBand || undefined,
     courseCode: input.courseCode || undefined,
+    totalSessions: input.totalSessions,
     subjectName: input.ownerType === "class" ? input.subjectName || undefined : undefined,
     isOpenEnrollment: input.isOpenEnrollment,
     capacity: input.capacity,
@@ -119,6 +125,7 @@ export async function createBatch(input: {
       taught_by_teacher_id: parsed.data.ownerType === "class" ? parsed.data.taughtByTeacherId ?? null : null,
       grade_band: parsed.data.gradeBand ?? null,
       course_code: parsed.data.courseCode ?? null,
+      total_sessions: parsed.data.totalSessions ?? null,
       subject_id: subjectId,
       is_open_enrollment: parsed.data.isOpenEnrollment ?? false,
       capacity: parsed.data.isOpenEnrollment ? (parsed.data.capacity ?? null) : null,
@@ -147,6 +154,7 @@ const updateBatchSchema = z.object({
   taughtByTeacherId: z.string().uuid().optional(),
   gradeBand: z.enum(gradeBands).optional(),
   courseCode: z.string().trim().max(30).optional(),
+  totalSessions: z.number().int().positive().optional(),
   subjectName: z.string().trim().min(1).max(80).optional(),
   isOpenEnrollment: z.boolean().optional(),
   capacity: z.number().int().positive().optional(),
@@ -166,6 +174,7 @@ export async function updateBatch(
     taughtByTeacherId?: string;
     gradeBand: string;
     courseCode?: string;
+    totalSessions?: number;
     subjectName?: string;
     isOpenEnrollment?: boolean;
     capacity?: number;
@@ -186,6 +195,7 @@ export async function updateBatch(
     taughtByTeacherId: input.ownerType === "class" ? input.taughtByTeacherId || undefined : undefined,
     gradeBand: input.gradeBand || undefined,
     courseCode: input.courseCode || undefined,
+    totalSessions: input.totalSessions,
     subjectName: input.ownerType === "class" ? input.subjectName || undefined : undefined,
     isOpenEnrollment: input.isOpenEnrollment,
     capacity: input.capacity,
@@ -256,6 +266,7 @@ export async function updateBatch(
       description: parsed.data.description || null,
       grade_band: parsed.data.gradeBand ?? null,
       course_code: parsed.data.courseCode ?? null,
+      total_sessions: parsed.data.totalSessions ?? null,
       ...(parsed.data.ownerType === "class"
         ? {
             teacher_label: parsed.data.teacherLabel || null,

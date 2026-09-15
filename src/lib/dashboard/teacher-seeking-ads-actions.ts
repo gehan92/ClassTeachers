@@ -6,7 +6,7 @@ import { notify } from "@/lib/dashboard/notify";
 
 type ActionResult = { error: string } | { error?: undefined };
 
-const gradeBands = ["1-5", "6-9", "10-11", "12-13", "campus"] as const;
+const gradeBands = ["1-5", "6-9", "10-11", "12-13", "campus", "adult"] as const;
 const modeOptions = ["online", "physical", "travels_to_student"] as const;
 
 const teacherSeekingAdSchema = z.object({

@@ -10,7 +10,14 @@ import {
 import { TeachersTab, type InstituteTeacherRow, type TeacherSeekingAdBrowseRow } from "@/components/dashboard/institute/teachers-tab";
 import { BatchesTab } from "@/components/dashboard/institute/batches-tab";
 import { StudentsTab, type InstituteStudentRow, type InstituteJoinRequestRow } from "@/components/dashboard/institute/students-tab";
-import { AdvertisementTab, type InstituteAdBatchRow } from "@/components/dashboard/institute/advertisement-tab";
+import {
+  AdvertisementTab,
+  type InstituteAdBatchRow,
+  type InstituteTeacherOption,
+  type InstituteTeacherAdRow,
+  type InstituteVacancyRow,
+  type VacancyApplicationRow,
+} from "@/components/dashboard/institute/advertisement-tab";
 import type { AdHistoryRow } from "@/components/dashboard/ad-history-list";
 import { ReviewsTab } from "@/components/dashboard/institute/reviews-tab";
 import { ProfileTab } from "@/components/dashboard/institute/profile-tab";
@@ -160,6 +167,8 @@ export default async function InstituteDashboardPage({
     { data: extracurricularActivityRows },
     { data: extracurricularParticipantRows },
     { data: teacherSeekingAdRows },
+    { data: vacancyAdRows },
+    { data: vacancyApplicationRows },
   ] = await Promise.all([
     instituteId
       ? supabase.from("class_teachers").select("teacher_id, is_visible, status, requested_by").eq("class_id", instituteId)
@@ -237,7 +246,7 @@ export default async function InstituteDashboardPage({
       ? supabase
           .from("batches")
           .select(
-            "id, title, mode, location, schedule_note, teacher_label, taught_by_teacher_id, subject_id, grade_band, hourly_rate, monthly_rate, is_open_enrollment, capacity, join_code",
+            "id, title, mode, location, schedule_note, teacher_label, taught_by_teacher_id, subject_id, grade_band, hourly_rate, monthly_rate, is_open_enrollment, capacity, join_code, course_code, total_sessions",
           )
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
@@ -258,6 +267,8 @@ export default async function InstituteDashboardPage({
             is_open_enrollment: boolean;
             capacity: number | null;
             join_code: string | null;
+            course_code: string | null;
+            total_sessions: number | null;
           }[],
         }),
     instituteId
@@ -274,7 +285,7 @@ export default async function InstituteDashboardPage({
     instituteId
       ? supabase
           .from("advertisements")
-          .select("id, batch_id, title, content, status, created_at, view_count")
+          .select("id, batch_id, featured_teacher_id, title, content, status, created_at, view_count")
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
           .eq("placement", "search_results")
@@ -282,6 +293,7 @@ export default async function InstituteDashboardPage({
           data: [] as {
             id: string;
             batch_id: string | null;
+            featured_teacher_id: string | null;
             title: string;
             content: string | null;
             status: "active" | "expired" | "removed" | "deleted";
@@ -365,6 +377,29 @@ export default async function InstituteDashboardPage({
     // instituteId (it reads auth.uid() internally, same as
     // list_wanted_ads_for_responder above), so it's called unconditionally.
     supabase.rpc("list_teacher_seeking_ads_for_institutes"),
+    // Vacancy Ad (Gehan's mockup, section 2.4) — this institute's own posts,
+    // any status (RLS already scopes this to institute owner OR active).
+    instituteId
+      ? supabase
+          .from("vacancy_ads")
+          .select("id, subject_id, mode, location, title, content, status, created_at")
+          .eq("institute_id", instituteId)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            subject_id: string | null;
+            mode: "online" | "physical" | null;
+            location: string | null;
+            title: string;
+            content: string;
+            status: "active" | "closed";
+            created_at: string;
+          }[],
+        }),
+    // Who applied to this institute's vacancies — doesn't depend on
+    // instituteId (reads auth.uid() internally via is_owner()).
+    supabase.rpc("list_vacancy_applications_for_institute"),
   ]);
 
   const batchSubjectIds = [...new Set((batchRows ?? []).map((b) => b.subject_id).filter((id): id is string => !!id))];
@@ -691,6 +726,8 @@ export default async function InstituteDashboardPage({
     capacity: b.capacity,
     scheduleSlots: scheduleSlotsByBatchId.get(b.id) ?? [],
     joinCode: b.join_code,
+    courseCode: b.course_code,
+    totalSessions: b.total_sessions,
   }));
 
   // Class-wise ads (0103, multiple per class since 0104) — mirrors the
@@ -720,9 +757,55 @@ export default async function InstituteDashboardPage({
       subjectName: b.subject_id ? (subjectNameById.get(b.subject_id) ?? null) : null,
       hourlyRate: b.hourly_rate,
       monthlyRate: b.monthly_rate,
+      courseCode: b.course_code,
+      totalSessions: b.total_sessions,
       ads: ads.map((ad) => ({ id: ad.id, title: ad.title, content: ad.content ?? "", status: ad.status, viewCount: ad.view_count })),
     };
   });
+
+  // "Teacher-Wise Ad" (0140, mockup section 2.4) — every ad this institute
+  // has posted about a specific staff member (featured_teacher_id set
+  // instead of batch_id), and the accepted-roster teachers eligible to be
+  // featured in a new one.
+  const instituteTeacherAds: InstituteTeacherAdRow[] = (classAdRows ?? [])
+    .filter((ad): ad is typeof ad & { featured_teacher_id: string } => Boolean(ad.featured_teacher_id) && ad.status !== "deleted")
+    .map((ad) => ({
+      id: ad.id,
+      teacherId: ad.featured_teacher_id,
+      teacherName: teacherNameById.get(ad.featured_teacher_id) ?? "—",
+      title: ad.title,
+      content: ad.content ?? "",
+      status: ad.status as "active" | "expired" | "removed",
+      viewCount: ad.view_count,
+    }));
+  const teacherAdOptions: InstituteTeacherOption[] = instituteTeachers
+    .filter((teacher) => teacher.rosterStatus === "accepted")
+    .map((teacher) => ({ id: teacher.id, name: teacher.name }));
+
+  // Vacancy Ad (0141, mockup section 2.4) — this institute's own postings
+  // and who's applied to each.
+  const subjectOptionsForAds = [...subjectNameById.entries()]
+    .filter((entry): entry is [string, string] => Boolean(entry[1]))
+    .map(([id, name]) => ({ id, name }));
+  const instituteVacancies: InstituteVacancyRow[] = (vacancyAdRows ?? []).map((v) => ({
+    id: v.id,
+    subjectId: v.subject_id,
+    subjectName: v.subject_id ? (subjectNameById.get(v.subject_id) ?? null) : null,
+    mode: v.mode,
+    location: v.location,
+    title: v.title,
+    content: v.content,
+    active: v.status === "active",
+    createdLabel: dateFormatter.format(new Date(v.created_at)),
+  }));
+  const vacancyApplications: VacancyApplicationRow[] = (vacancyApplicationRows ?? []).map((row) => ({
+    id: row.id,
+    vacancyId: row.vacancy_id,
+    teacherName: row.teacher_name ?? "—",
+    message: row.message,
+    status: row.status as "new" | "read" | "accepted" | "declined",
+    createdLabel: dateFormatter.format(new Date(row.created_at)),
+  }));
 
   // Institute Blueprint step 6 — cross-class calendar. Reuses the same
   // live_classes rows the Analytics tab already fetched above (no new
@@ -1192,6 +1275,11 @@ export default async function InstituteDashboardPage({
             batches={instituteAdBatches}
             adHistory={instituteAdHistory}
             promotionHistory={institutePromotionHistory}
+            teacherOptions={teacherAdOptions}
+            teacherAds={instituteTeacherAds}
+            subjectOptions={subjectOptionsForAds}
+            vacancies={instituteVacancies}
+            vacancyApplications={vacancyApplications}
           />
         ),
         attendance: <AttendanceTab sessions={instituteAttendanceSessions} batchSummaries={batchAttendanceSummaries} />,

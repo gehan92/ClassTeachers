@@ -19,6 +19,7 @@ import {
   deleteTeacherSeekingAd,
   respondToTeacherSeekingAdDecision,
 } from "@/lib/dashboard/teacher-seeking-ads-actions";
+import { applyToVacancy } from "@/lib/dashboard/vacancy-ads-actions";
 import type { BatchRosterEntry } from "@/components/dashboard/teacher/classes-tab";
 import type { GradeBand } from "@/types/grade-band";
 import { GRADE_BAND_SELECT_VALUES, OPEN_GRADE_VALUE } from "@/lib/grade-band-options";
@@ -79,6 +80,23 @@ export type TeacherSeekingAdResponseRow = {
   createdLabel: string;
 };
 
+/** An institute's "we're hiring" post (0141), browsable here the same way
+ * institutes browse a teacher's own seeking ad (the reverse direction). */
+export type VacancyAdRow = {
+  id: string;
+  instituteName: string | null;
+  photoUrl: string | null;
+  institutionVerified: boolean;
+  subject: string | null;
+  mode: "online" | "physical" | null;
+  location: string | null;
+  title: string;
+  content: string;
+  createdLabel: string;
+  myApplication: string | null;
+  myApplicationStatus: "new" | "read" | "accepted" | "declined" | null;
+};
+
 const panelClass = "rounded-lg border border-border bg-white p-5";
 
 export function InstituteTab({
@@ -88,6 +106,7 @@ export function InstituteTab({
   seekingAds,
   seekingAdResponses,
   subjectOptions,
+  vacancies,
 }: {
   links: TeacherInstituteLinkRow[];
   taughtBatches: InstituteTaughtBatchRow[];
@@ -95,6 +114,7 @@ export function InstituteTab({
   seekingAds: TeacherSeekingAdRow[];
   seekingAdResponses: TeacherSeekingAdResponseRow[];
   subjectOptions: { id: string; name: string }[];
+  vacancies: VacancyAdRow[];
 }) {
   const t = useTranslations("teacherDashboard.institute");
   const tClasses = useTranslations("teacherDashboard.classes");
@@ -208,6 +228,8 @@ export function InstituteTab({
       </div>
 
       <SeekingAdSection ads={seekingAds} responses={seekingAdResponses} subjectOptions={subjectOptions} />
+
+      <VacancyBrowsePanel vacancies={vacancies} />
 
       {links.length === 0 ? (
         <div className={panelClass}>
@@ -632,6 +654,123 @@ function SeekingAdResponseItem({ response }: { response: TeacherSeekingAdRespons
             {t("declineResponse")}
           </Button>
           {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * "Vacancy Ad" (0141, mockup section 2.4) — the reverse direction of
+ * SeekingAdSection above: here an institute posts an opening and this
+ * teacher browses+applies, mirroring institute/teachers-tab.tsx's own
+ * SeekingAdsBrowsePanel (which is the institute browsing a teacher's
+ * seeking ad) for the opposite pairing.
+ */
+function VacancyBrowsePanel({ vacancies }: { vacancies: VacancyAdRow[] }) {
+  const t = useTranslations("teacherDashboard.institute.vacancies");
+
+  function modeLabel(m: "online" | "physical" | null) {
+    if (m === "online") return t("modeOnline");
+    return t("modePhysical");
+  }
+
+  return (
+    <div className={panelClass}>
+      <h3 className="mb-1 text-lg">{t("heading")}</h3>
+      <p className="mb-3 text-sm text-muted-foreground">{t("subtitle")}</p>
+      {vacancies.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("empty")}</p>
+      ) : (
+        <div className="flex flex-col divide-y divide-border">
+          {vacancies.map((vacancy) => (
+            <VacancyBrowseItem key={vacancy.id} vacancy={vacancy} modeLabel={modeLabel} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VacancyBrowseItem({
+  vacancy,
+  modeLabel,
+}: {
+  vacancy: VacancyAdRow;
+  modeLabel: (m: "online" | "physical" | null) => string;
+}) {
+  const t = useTranslations("teacherDashboard.institute.vacancies");
+  const [applying, setApplying] = useState(false);
+  const [message, setMessage] = useState("");
+  const [myApplication, setMyApplication] = useState(vacancy.myApplication);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSend() {
+    if (!message.trim()) return;
+    setSending(true);
+    setError(null);
+    const result = await applyToVacancy(vacancy.id, message);
+    setSending(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setMyApplication(message);
+    setApplying(false);
+    setMessage("");
+  }
+
+  return (
+    <div className="flex flex-col gap-2 py-4 first:pt-0 last:pb-0">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-medium text-foreground">{vacancy.instituteName ?? "—"}</span>
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+            {vacancy.title}
+          </span>
+        </div>
+        <span className="text-xs text-muted-foreground">{vacancy.createdLabel}</span>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {[vacancy.subject, modeLabel(vacancy.mode), vacancy.location].filter(Boolean).join(" · ")}
+      </p>
+      <p className="text-sm text-foreground/80">{vacancy.content}</p>
+
+      {myApplication ? (
+        <div className="mt-1 rounded-md bg-secondary/60 px-3 py-2">
+          <p className="mb-0.5 text-xs font-semibold text-muted-foreground">{t("yourApplication")}</p>
+          <p className="text-sm text-foreground/85">{myApplication}</p>
+          {vacancy.myApplicationStatus === "accepted" && (
+            <p className="mt-1 text-xs font-medium text-success">{t("applicationStatusAccepted")}</p>
+          )}
+          {vacancy.myApplicationStatus === "declined" && (
+            <p className="mt-1 text-xs font-medium text-destructive">{t("applicationStatusDeclined")}</p>
+          )}
+        </div>
+      ) : applying ? (
+        <div className="mt-1 flex flex-col gap-2">
+          <textarea
+            className="min-h-20 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            placeholder={t("applicationPlaceholder")}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <div className="flex items-center gap-2">
+            <Button type="button" size="sm" onClick={handleSend} disabled={sending || !message.trim()}>
+              {t("sendApplication")}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setApplying(false)}>
+              {t("cancelApply")}
+            </Button>
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+          </div>
+        </div>
+      ) : (
+        <div className="flex justify-end">
+          <Button type="button" variant="ghost" size="sm" onClick={() => setApplying(true)}>
+            {t("apply")}
+          </Button>
         </div>
       )}
     </div>

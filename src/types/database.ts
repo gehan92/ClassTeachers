@@ -15,7 +15,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 type OwnerType = "teacher" | "class";
 export type ProfileStatus = "pending" | "approved" | "rejected" | "suspended";
-type GradeBand = "1-5" | "6-9" | "10-11" | "12-13" | "campus";
+type GradeBand = "1-5" | "6-9" | "10-11" | "12-13" | "campus" | "adult";
 
 export type Database = {
   public: {
@@ -464,6 +464,7 @@ export type Database = {
           hourly_rate_max: number | null;
           monthly_rate_max: number | null;
           join_code: string | null;
+          total_sessions: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -492,6 +493,7 @@ export type Database = {
           hourly_rate_max?: number | null;
           monthly_rate_max?: number | null;
           join_code?: string | null;
+          total_sessions?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -520,6 +522,7 @@ export type Database = {
           hourly_rate_max?: number | null;
           monthly_rate_max?: number | null;
           join_code?: string | null;
+          total_sessions?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1042,6 +1045,7 @@ export type Database = {
           subject_id: string | null;
           batch_id: string | null;
           lesson_id: string | null;
+          featured_teacher_id: string | null;
           starts_at: string;
           expires_at: string | null;
           created_at: string;
@@ -1060,6 +1064,7 @@ export type Database = {
           subject_id?: string | null;
           batch_id?: string | null;
           lesson_id?: string | null;
+          featured_teacher_id?: string | null;
           starts_at?: string;
           expires_at?: string | null;
           created_at?: string;
@@ -1078,6 +1083,7 @@ export type Database = {
           subject_id?: string | null;
           batch_id?: string | null;
           lesson_id?: string | null;
+          featured_teacher_id?: string | null;
           starts_at?: string;
           expires_at?: string | null;
           created_at?: string;
@@ -1235,6 +1241,74 @@ export type Database = {
           id?: string;
           teacher_seeking_ad_id?: string;
           institute_id?: string;
+          message?: string;
+          status?: "new" | "read" | "accepted" | "declined";
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+
+      vacancy_ads: {
+        Row: {
+          id: string;
+          institute_id: string;
+          subject_id: string | null;
+          mode: "online" | "physical" | null;
+          location: string | null;
+          title: string;
+          content: string;
+          status: "active" | "closed";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institute_id: string;
+          subject_id?: string | null;
+          mode?: "online" | "physical" | null;
+          location?: string | null;
+          title: string;
+          content: string;
+          status?: "active" | "closed";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          institute_id?: string;
+          subject_id?: string | null;
+          mode?: "online" | "physical" | null;
+          location?: string | null;
+          title?: string;
+          content?: string;
+          status?: "active" | "closed";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+
+      vacancy_applications: {
+        Row: {
+          id: string;
+          vacancy_id: string;
+          teacher_id: string;
+          message: string;
+          status: "new" | "read" | "accepted" | "declined";
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          vacancy_id: string;
+          teacher_id: string;
+          message: string;
+          status?: "new" | "read" | "accepted" | "declined";
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          vacancy_id?: string;
+          teacher_id?: string;
           message?: string;
           status?: "new" | "read" | "accepted" | "declined";
           created_at?: string;
@@ -1970,6 +2044,8 @@ export type Database = {
           rating: number;
           review_count: number;
           institution_verified: boolean;
+          course_code: string | null;
+          total_sessions: number | null;
         }[];
       };
       get_public_class_ad: {
@@ -1996,6 +2072,58 @@ export type Database = {
           is_open_enrollment: boolean;
           capacity: number | null;
           spots_taken: number;
+          course_code: string | null;
+          total_sessions: number | null;
+        }[];
+      };
+      get_public_teacher_wise_ad: {
+        Args: { p_ad_id: string };
+        Returns: {
+          ad_id: string;
+          institute_id: string;
+          institute_name: string;
+          institute_photo_url: string | null;
+          institution_verified: boolean;
+          teacher_id: string;
+          display_name: string | null;
+          photo_url: string | null;
+          headline: string | null;
+          subjects: string[];
+          experience_years: number | null;
+          rating: number;
+          review_count: number;
+          ad_title: string;
+          ad_content: string | null;
+        }[];
+      };
+      list_vacancy_ads_for_teachers: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          institute_id: string;
+          institute_name: string;
+          institute_photo_url: string | null;
+          institution_verified: boolean;
+          subject: string | null;
+          mode: string | null;
+          location: string | null;
+          title: string;
+          content: string;
+          created_at: string;
+          my_application: string | null;
+          my_application_status: string | null;
+        }[];
+      };
+      list_vacancy_applications_for_institute: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          vacancy_id: string;
+          teacher_id: string;
+          teacher_name: string | null;
+          message: string;
+          status: string;
+          created_at: string;
         }[];
       };
       owns_exam: {
@@ -2130,6 +2258,7 @@ export type Database = {
           class_type: string | null;
           hourly_rate_max: number | null;
           monthly_rate_max: number | null;
+          total_sessions: number | null;
         }[];
       };
       get_public_ad: {
@@ -2161,6 +2290,7 @@ export type Database = {
           class_type: string | null;
           hourly_rate_max: number | null;
           monthly_rate_max: number | null;
+          total_sessions: number | null;
         }[];
       };
       get_public_lesson_ad: {

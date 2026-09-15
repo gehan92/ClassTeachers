@@ -33,6 +33,7 @@ import {
   type InstituteTaughtBatchRow,
   type TeacherSeekingAdRow,
   type TeacherSeekingAdResponseRow,
+  type VacancyAdRow,
 } from "@/components/dashboard/teacher/institute-tab";
 import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { TeacherOnboardingWizard } from "@/components/onboarding/teacher-onboarding-wizard";
@@ -169,6 +170,7 @@ export default async function TeacherDashboardPage({
     { data: notificationRows },
     { data: teacherSeekingAdRows },
     { data: teacherSeekingAdResponseRows },
+    { data: vacancyAdRows },
   ] = await Promise.all([
     supabase.from("profiles").select("full_name, phone, notification_prefs, role").eq("id", userId).single(),
     supabase.from("teacher_profiles").select("*").eq("id", userId).maybeSingle(),
@@ -205,7 +207,7 @@ export default async function TeacherDashboardPage({
     supabase
       .from("batches")
       .select(
-        "id, title, mode, class_size_type, location, schedule_note, description, grade_band, status, subject_id, hourly_rate, monthly_rate, course_code, is_open_enrollment, capacity, medium, class_type, hourly_rate_max, monthly_rate_max, join_code",
+        "id, title, mode, class_size_type, location, schedule_note, description, grade_band, status, subject_id, hourly_rate, monthly_rate, course_code, is_open_enrollment, capacity, medium, class_type, hourly_rate_max, monthly_rate_max, join_code, total_sessions",
       )
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
@@ -303,6 +305,9 @@ export default async function TeacherDashboardPage({
       .eq("teacher_id", userId)
       .order("created_at", { ascending: false }),
     supabase.rpc("list_teacher_seeking_ad_responses_for_teacher"),
+    // Vacancy Ad (Gehan's mockup, section 2.4) — every open institute
+    // vacancy, plus whether this teacher already applied (0141).
+    supabase.rpc("list_vacancy_ads_for_teachers"),
   ]);
 
   const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({
@@ -550,6 +555,7 @@ export default async function TeacherDashboardPage({
     description: b.description,
     gradeBand: b.grade_band,
     courseCode: b.course_code,
+    totalSessions: b.total_sessions,
     hasActiveAd: activeAdBatchIds.has(b.id),
     isOpenEnrollment: b.is_open_enrollment,
     capacity: b.capacity,
@@ -615,6 +621,7 @@ export default async function TeacherDashboardPage({
       id: b.id,
       title: b.title,
       courseCode: b.course_code,
+      totalSessions: b.total_sessions,
       subjectId: b.subject_id,
       subjectName: b.subject_id ? (subjectNameById.get(b.subject_id) ?? null) : null,
       hourlyRate: b.hourly_rate,
@@ -1098,6 +1105,23 @@ export default async function TeacherDashboardPage({
     createdLabel: dateFormatter.format(new Date(row.created_at)),
   }));
 
+  // Vacancy Ad (Gehan's mockup, section 2.4) — every open institute vacancy
+  // this teacher can browse, plus their own application status if any.
+  const vacancies: VacancyAdRow[] = (vacancyAdRows ?? []).map((row) => ({
+    id: row.id,
+    instituteName: row.institute_name,
+    photoUrl: row.institute_photo_url,
+    institutionVerified: row.institution_verified,
+    subject: row.subject,
+    mode: row.mode as "online" | "physical" | null,
+    location: row.location,
+    title: row.title,
+    content: row.content,
+    createdLabel: dateFormatter.format(new Date(row.created_at)),
+    myApplication: row.my_application,
+    myApplicationStatus: row.my_application_status as "new" | "read" | "accepted" | "declined" | null,
+  }));
+
   return (
     <DashboardShell
       userLabel={fullName}
@@ -1338,6 +1362,7 @@ export default async function TeacherDashboardPage({
             defaultHourlyRate={priceRow?.hourly_rate}
             defaultMonthlyRate={priceRow?.monthly_rate}
             history={teacherAdHistory}
+            isCampusLecturer={isCampusLecturer}
           />
         ),
         settings: (
@@ -1359,6 +1384,7 @@ export default async function TeacherDashboardPage({
             seekingAds={teacherSeekingAds}
             seekingAdResponses={teacherSeekingAdResponses}
             subjectOptions={subjectOptions}
+            vacancies={vacancies}
           />
         ),
       }}

@@ -67,6 +67,13 @@ export type InstituteBatchRow = {
   /** Short code (0131) a student can enter to join instantly, independent of
    * isOpenEnrollment — null until the owner generates one. */
   joinCode: string | null;
+  /** Course code (0075's column, exposed for institutes 0140) — an optional
+   * module/course identifier, e.g. "CS301". */
+  courseCode: string | null;
+  /** Set for a "Course-Wise Ad" (mockup section 2.4) — a structured,
+   * multi-session course rather than an ongoing "Class-Wise Ad". Null for a
+   * regular class batch. */
+  totalSessions: number | null;
 };
 
 export type InstituteRosterTeacherOption = {
@@ -99,6 +106,8 @@ export function BatchesTab({
   const [gradeBand, setGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>(OPEN_GRADE_VALUE);
   const [mode, setMode] = useState<"online" | "physical" | "travels_to_student">("physical");
   const [schedule, setSchedule] = useState("");
+  const [courseCode, setCourseCode] = useState("");
+  const [totalSessions, setTotalSessions] = useState("");
   const [isOpenEnrollment, setIsOpenEnrollment] = useState(false);
   const [capacity, setCapacity] = useState("");
   const [added, setAdded] = useState(false);
@@ -113,6 +122,8 @@ export function BatchesTab({
   const [editMode, setEditMode] = useState<"online" | "physical" | "travels_to_student">("physical");
   const [editLocation, setEditLocation] = useState("");
   const [editSchedule, setEditSchedule] = useState("");
+  const [editCourseCode, setEditCourseCode] = useState("");
+  const [editTotalSessions, setEditTotalSessions] = useState("");
   const [editIsOpenEnrollment, setEditIsOpenEnrollment] = useState(false);
   const [editCapacity, setEditCapacity] = useState("");
   const [editScheduleSlots, setEditScheduleSlots] = useState<ScheduleSlotDraft[]>([]);
@@ -138,6 +149,8 @@ export function BatchesTab({
     setGradeBand(OPEN_GRADE_VALUE);
     setMode("physical");
     setSchedule("");
+    setCourseCode("");
+    setTotalSessions("");
     setIsOpenEnrollment(false);
     setCapacity("");
   }
@@ -155,6 +168,8 @@ export function BatchesTab({
       taughtByTeacherId: teacherId || undefined,
       gradeBand: gradeBand === OPEN_GRADE_VALUE ? "" : gradeBand,
       subjectName: subject.trim() || undefined,
+      courseCode: courseCode || undefined,
+      totalSessions: totalSessions.trim() ? Number(totalSessions) : undefined,
       isOpenEnrollment,
       capacity: isOpenEnrollment && capacity.trim() ? Number(capacity) : undefined,
     });
@@ -179,6 +194,8 @@ export function BatchesTab({
     setEditMode(batch.mode);
     setEditLocation(batch.location ?? "");
     setEditSchedule(batch.scheduleNote ?? "");
+    setEditCourseCode(batch.courseCode ?? "");
+    setEditTotalSessions(batch.totalSessions !== null ? String(batch.totalSessions) : "");
     setEditIsOpenEnrollment(batch.isOpenEnrollment);
     setEditCapacity(batch.capacity !== null ? String(batch.capacity) : "");
     setEditScheduleSlots(batch.scheduleSlots);
@@ -203,6 +220,8 @@ export function BatchesTab({
       taughtByTeacherId: editTeacherId || undefined,
       gradeBand: editGradeBand === OPEN_GRADE_VALUE ? "" : editGradeBand,
       subjectName: editSubject.trim() || undefined,
+      courseCode: editCourseCode || undefined,
+      totalSessions: editTotalSessions.trim() ? Number(editTotalSessions) : undefined,
       isOpenEnrollment: editIsOpenEnrollment,
       capacity: editIsOpenEnrollment && editCapacity.trim() ? Number(editCapacity) : undefined,
     });
@@ -357,6 +376,28 @@ export function BatchesTab({
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
               />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="batch-course-code">{t("form.courseCodeLabel")}</Label>
+              <Input
+                id="batch-course-code"
+                placeholder={t("form.courseCodePlaceholder")}
+                value={courseCode}
+                onChange={(e) => setCourseCode(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="batch-total-sessions">{t("form.totalSessionsLabel")}</Label>
+              <Input
+                id="batch-total-sessions"
+                type="number"
+                min="1"
+                inputMode="numeric"
+                placeholder={t("form.totalSessionsPlaceholder")}
+                value={totalSessions}
+                onChange={(e) => setTotalSessions(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">{t("form.totalSessionsHint")}</p>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="batch-grade">{t("form.gradeLabel")}</Label>
@@ -547,6 +588,27 @@ export function BatchesTab({
                               />
                             </div>
                             <div className="grid gap-1.5">
+                              <Label htmlFor={`edit-course-code-${batch.id}`}>{t("form.courseCodeLabel")}</Label>
+                              <Input
+                                id={`edit-course-code-${batch.id}`}
+                                placeholder={t("form.courseCodePlaceholder")}
+                                value={editCourseCode}
+                                onChange={(e) => setEditCourseCode(e.target.value)}
+                              />
+                            </div>
+                            <div className="grid gap-1.5">
+                              <Label htmlFor={`edit-total-sessions-${batch.id}`}>{t("form.totalSessionsLabel")}</Label>
+                              <Input
+                                id={`edit-total-sessions-${batch.id}`}
+                                type="number"
+                                min="1"
+                                inputMode="numeric"
+                                placeholder={t("form.totalSessionsPlaceholder")}
+                                value={editTotalSessions}
+                                onChange={(e) => setEditTotalSessions(e.target.value)}
+                              />
+                            </div>
+                            <div className="grid gap-1.5">
                               <Label>{t("form.gradeLabel")}</Label>
                               <Select
                                 value={editGradeBand}
@@ -639,7 +701,10 @@ export function BatchesTab({
                         <>
                           <div className="mb-2.5 flex flex-wrap items-start justify-between gap-2">
                             <div>
-                              <div className="font-display text-base text-primary">{batch.title}</div>
+                              <div className="font-display text-base text-primary">
+                                {batch.courseCode && <span className="text-muted-foreground">{batch.courseCode} · </span>}
+                                {batch.title}
+                              </div>
                               {batch.teacherLabel && (
                                 <div className="mt-0.5 text-[13px] text-muted-foreground">{batch.teacherLabel}</div>
                               )}
@@ -697,6 +762,11 @@ export function BatchesTab({
                             {batch.scheduleNote && (
                               <span className="rounded-sm border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground/80">
                                 {batch.scheduleNote}
+                              </span>
+                            )}
+                            {batch.totalSessions && (
+                              <span className="rounded-sm border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground/80">
+                                {t("sessionsCount", { count: batch.totalSessions })}
                               </span>
                             )}
                           </div>

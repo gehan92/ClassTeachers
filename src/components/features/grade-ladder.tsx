@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
-const grades = ["1-5", "6-9", "10-11", "12-13", "campus"] as const;
+const grades = ["1-5", "6-9", "10-11", "12-13", "campus", "adult"] as const;
 type Grade = (typeof grades)[number];
 
 export function GradeLadder({

@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 
-type Grade = "1-5" | "6-9" | "10-11" | "12-13" | "campus";
+type Grade = "1-5" | "6-9" | "10-11" | "12-13" | "campus" | "adult";
 const ANY_GRADE = "all";
-const GRADES: Grade[] = ["1-5", "6-9", "10-11", "12-13", "campus"];
+const GRADES: Grade[] = ["1-5", "6-9", "10-11", "12-13", "campus", "adult"];
 
 export function SearchCard() {
   const t = useTranslations("search");

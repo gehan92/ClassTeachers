@@ -39,6 +39,10 @@ export type TeacherBatchRow = {
   gradeBand: GradeBand | null;
   /** Campus lecturer only (0076) — a module/course code distinct from the generic subject list, e.g. "CS301". Null for regular teacher batches. */
   courseCode: string | null;
+  /** Campus lecturer only (0139) — set for a "Course" (a structured,
+   * multi-session listing created via the Advertisement tab's Course Ad)
+   * rather than an ongoing "Class". Null for a regular class batch. */
+  totalSessions: number | null;
   /** Deleting a batch cascades to delete its search-results ad (0039) —
    * used to disable/explain the Delete action up front rather than let the
    * teacher hit the server-side block after clicking. */
@@ -102,6 +106,7 @@ export function ClassesTab({
   const [description, setDescription] = useState("");
   const [gradeBand, setGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>("12-13");
   const [courseCode, setCourseCode] = useState("");
+  const [totalSessions, setTotalSessions] = useState("");
   const [isOpenEnrollment, setIsOpenEnrollment] = useState(false);
   const [capacity, setCapacity] = useState("");
   const [newScheduleSlots, setNewScheduleSlots] = useState<ScheduleSlotDraft[]>([]);
@@ -118,6 +123,7 @@ export function ClassesTab({
   const [editDescription, setEditDescription] = useState("");
   const [editGradeBand, setEditGradeBand] = useState<GradeBand | typeof OPEN_GRADE_VALUE>("12-13");
   const [editCourseCode, setEditCourseCode] = useState("");
+  const [editTotalSessions, setEditTotalSessions] = useState("");
   const [editIsOpenEnrollment, setEditIsOpenEnrollment] = useState(false);
   const [editCapacity, setEditCapacity] = useState("");
   const [editScheduleSlots, setEditScheduleSlots] = useState<ScheduleSlotDraft[]>([]);
@@ -138,6 +144,7 @@ export function ClassesTab({
     setDescription("");
     setGradeBand("12-13");
     setCourseCode("");
+    setTotalSessions("");
     setIsOpenEnrollment(false);
     setCapacity("");
     setNewScheduleSlots([]);
@@ -157,6 +164,7 @@ export function ClassesTab({
       description,
       gradeBand: gradeBand === OPEN_GRADE_VALUE ? "" : gradeBand,
       courseCode: isCampusLecturer ? courseCode : undefined,
+      totalSessions: isCampusLecturer && totalSessions.trim() ? Number(totalSessions) : undefined,
       isOpenEnrollment,
       capacity: isOpenEnrollment && capacity.trim() ? Number(capacity) : undefined,
     });
@@ -186,6 +194,7 @@ export function ClassesTab({
     setEditDescription(batch.description ?? "");
     setEditGradeBand(batch.gradeBand ?? OPEN_GRADE_VALUE);
     setEditCourseCode(batch.courseCode ?? "");
+    setEditTotalSessions(batch.totalSessions !== null ? String(batch.totalSessions) : "");
     setEditIsOpenEnrollment(batch.isOpenEnrollment);
     setEditCapacity(batch.capacity !== null ? String(batch.capacity) : "");
     setEditScheduleSlots(batch.scheduleSlots);
@@ -211,6 +220,7 @@ export function ClassesTab({
       description: editDescription,
       gradeBand: editGradeBand === OPEN_GRADE_VALUE ? "" : editGradeBand,
       courseCode: isCampusLecturer ? editCourseCode : undefined,
+      totalSessions: isCampusLecturer && editTotalSessions.trim() ? Number(editTotalSessions) : undefined,
       isOpenEnrollment: editIsOpenEnrollment,
       capacity: editIsOpenEnrollment && editCapacity.trim() ? Number(editCapacity) : undefined,
     });
@@ -323,6 +333,20 @@ export function ClassesTab({
                   placeholder={t("form.courseCodePlaceholder")}
                   value={courseCode}
                   onChange={(e) => setCourseCode(e.target.value)}
+                />
+              </div>
+            )}
+            {isCampusLecturer && (
+              <div className="grid gap-1.5">
+                <Label htmlFor="batch-total-sessions">{t("form.totalSessionsLabel")}</Label>
+                <Input
+                  id="batch-total-sessions"
+                  type="number"
+                  min="1"
+                  inputMode="numeric"
+                  placeholder={t("form.totalSessionsPlaceholder")}
+                  value={totalSessions}
+                  onChange={(e) => setTotalSessions(e.target.value)}
                 />
               </div>
             )}
@@ -481,6 +505,20 @@ export function ClassesTab({
                           />
                         </div>
                       )}
+                      {isCampusLecturer && (
+                        <div className="grid gap-1.5">
+                          <Label htmlFor={`edit-total-sessions-${batch.id}`}>{t("form.totalSessionsLabel")}</Label>
+                          <Input
+                            id={`edit-total-sessions-${batch.id}`}
+                            type="number"
+                            min="1"
+                            inputMode="numeric"
+                            placeholder={t("form.totalSessionsPlaceholder")}
+                            value={editTotalSessions}
+                            onChange={(e) => setEditTotalSessions(e.target.value)}
+                          />
+                        </div>
+                      )}
                       <div className="grid gap-1.5">
                         <Label>{t("form.modeLabel")}</Label>
                         <Select
@@ -612,6 +650,7 @@ export function ClassesTab({
                         {batch.classSizeType === "individual" ? t("form.classSizeIndividual") : t("form.classSizeGroup")}
                         {batch.location ? ` · ${batch.location}` : ""}
                         {batch.scheduleNote ? ` · ${batch.scheduleNote}` : ""}
+                        {batch.totalSessions ? ` · ${t("sessionsCount", { count: batch.totalSessions })}` : ""}
                       </p>
                       {batch.description && <p className="mt-1.5 text-sm text-foreground">{batch.description}</p>}
                     </div>

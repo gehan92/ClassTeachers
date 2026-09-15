@@ -13,14 +13,25 @@ const boxClass =
   "flex h-fit flex-col gap-2.5 rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]";
 
 /**
- * A lesson ad's counterpart to JoinRequestBox — there's no batch to enroll
- * in for a single one-off lesson, so "interested" is just a plain inquiry to
- * the teacher (same submitInquiry RPC AnonymousRequestForm already uses,
- * which works whether or not the visitor is signed in), shown unconditionally
- * rather than branching on login state the way JoinRequestBox does.
+ * The plain-inquiry counterpart to JoinRequestBox, for an ad shape with no
+ * batch to enroll in -- a one-off lesson (0138) or a teacher-wise ad (0140,
+ * institute-owned but about a specific staff member, so the inquiry goes to
+ * the institute rather than the featured teacher). Just submitInquiry (the
+ * one anon-writable action in this codebase, works whether or not the
+ * visitor is signed in), shown unconditionally rather than branching on
+ * login state the way JoinRequestBox does. `tNamespace` lets each call site
+ * supply its own heading/placeholder copy while sharing the same form.
  */
-export function LessonInquiryBox({ teacherId }: { teacherId: string }) {
-  const t = useTranslations("adPage.lessonInquiry");
+export function InquiryBox({
+  ownerType,
+  ownerId,
+  tNamespace = "adPage.lessonInquiry",
+}: {
+  ownerType: "teacher" | "class";
+  ownerId: string;
+  tNamespace?: string;
+}) {
+  const t = useTranslations(tNamespace);
   const [form, setForm] = useState({ name: "", contact: "", message: "" });
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -29,7 +40,7 @@ export function LessonInquiryBox({ teacherId }: { teacherId: string }) {
   async function handleSend() {
     setSending(true);
     setError(null);
-    const result = await submitInquiry({ ownerType: "teacher", ownerId: teacherId, ...form });
+    const result = await submitInquiry({ ownerType, ownerId, ...form });
     setSending(false);
     if (result.error) {
       setError(result.error);

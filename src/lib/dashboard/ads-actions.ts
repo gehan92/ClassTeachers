@@ -292,6 +292,119 @@ export async function createLessonAd(input: { lessonId: string; title: string; c
   return {};
 }
 
+const createCourseAdSchema = z.object({
+  courseTitle: z.string().trim().min(2),
+  courseCode: z.string().trim().max(30).optional(),
+  subjectId: z.string().uuid(),
+  mode: z.enum(["online", "physical", "travels_to_student"]),
+  totalSessions: z.number().int().positive(),
+  medium: z.enum(["english", "sinhala", "tamil", "other"]),
+  title: z.string().trim().min(2),
+  content: z.string().trim().min(1),
+  hourlyRate: z.number().positive().optional(),
+  monthlyRate: z.number().positive().optional(),
+  hourlyRateMax: z.number().positive().optional(),
+  monthlyRateMax: z.number().positive().optional(),
+});
+
+/**
+ * "Course Ad" (Gehan's mockup, section 2.3 Lecturer/Professor — Supply-Side)
+ * — a structured, multi-session course rather than an ongoing tuition class.
+ * Same "create the batch and its ad together" shape as createIndividualAd
+ * above, with total_sessions (0139) as the field that actually distinguishes
+ * a Course from a Class — grade_band is fixed to 'campus' since this row is
+ * lecturer/professor-specific by definition. The resulting batch behaves
+ * exactly like any other afterwards (Classes tab, search, roster), same as
+ * createIndividualAd's own.
+ */
+export async function createCourseAd(input: {
+  courseTitle: string;
+  courseCode?: string;
+  subjectId: string;
+  mode: "online" | "physical" | "travels_to_student";
+  totalSessions: number;
+  medium: "english" | "sinhala" | "tamil" | "other";
+  title: string;
+  content: string;
+  hourlyRate?: number;
+  monthlyRate?: number;
+  hourlyRateMax?: number;
+  monthlyRateMax?: number;
+}): Promise<ActionResult> {
+  const parsed = createCourseAdSchema.safeParse({ ...input, courseCode: input.courseCode || undefined });
+  if (!parsed.success) {
+    return { error: "Please fill in the course title, subject, sessions and details." };
+  }
+  const rangeError =
+    validateRateRange(parsed.data.hourlyRate, parsed.data.hourlyRateMax) ??
+    validateRateRange(parsed.data.monthlyRate, parsed.data.monthlyRateMax);
+  if (rangeError) {
+    return { error: rangeError };
+  }
+  const content = sanitizeRichText(parsed.data.content);
+  if (!hasRichText(content)) {
+    return { error: "Please fill in the course title, subject, sessions and details." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { data: subjectLink } = await supabase
+    .from("subject_links")
+    .select("subject_id")
+    .eq("owner_type", "teacher")
+    .eq("owner_id", user.id)
+    .eq("subject_id", parsed.data.subjectId)
+    .maybeSingle();
+  if (!subjectLink) {
+    return { error: "Add that subject to your profile first, then try again." };
+  }
+
+  const { data: batch, error: batchError } = await supabase
+    .from("batches")
+    .insert({
+      owner_type: "teacher",
+      owner_id: user.id,
+      title: parsed.data.courseTitle,
+      mode: parsed.data.mode,
+      grade_band: "campus",
+      course_code: parsed.data.courseCode ?? null,
+      total_sessions: parsed.data.totalSessions,
+      subject_id: parsed.data.subjectId,
+      hourly_rate: parsed.data.hourlyRate ?? null,
+      monthly_rate: parsed.data.monthlyRate ?? null,
+      hourly_rate_max: parsed.data.hourlyRateMax ?? null,
+      monthly_rate_max: parsed.data.monthlyRateMax ?? null,
+      class_size_type: "group",
+      medium: parsed.data.medium,
+    })
+    .select("id")
+    .single();
+  if (batchError || !batch) {
+    return { error: "Couldn't create this course. Please try again." };
+  }
+
+  const { error: adError } = await supabase.from("advertisements").insert({
+    owner_type: "teacher",
+    owner_id: user.id,
+    batch_id: batch.id,
+    subject_id: parsed.data.subjectId,
+    title: parsed.data.title,
+    content,
+    placement: "search_results",
+    plan: "basic",
+  });
+  if (adError) {
+    return { error: "Couldn't save this ad. Please try again." };
+  }
+  return {};
+}
+
 const classBatchAdContentSchema = z.object({
   title: z.string().trim().min(2),
   content: z.string().trim().min(1),
@@ -477,6 +590,68 @@ export async function restoreAd(input: { adId: string; ownerType: "teacher" | "c
   return {};
 }
 
+const createTeacherWiseAdSchema = z.object({
+  teacherId: z.string().uuid(),
+  title: z.string().trim().min(2),
+  content: z.string().trim().min(1),
+});
+
+/**
+ * "Teacher-Wise Ad" (0140, mockup section 2.4) — an institute-owned ad
+ * about a specific staff member, e.g. "Meet our senior Physics lecturer".
+ * Only ever a teacher genuinely on this institute's own roster (accepted,
+ * not merely invited) can be featured — resolved from class_teachers
+ * server-side, never trusted from the client. Editing/pausing/deleting
+ * reuse updateClassBatchAd/setClassBatchAdActive/deleteClassBatchAd below
+ * unchanged — none of them filter on batch_id, so they already work for any
+ * class-owned ad regardless of whether it points at a batch or a teacher,
+ * same reuse as the teacher dashboard's own lesson ads (0138).
+ */
+export async function createTeacherWiseAd(input: { teacherId: string; title: string; content: string }): Promise<ActionResult> {
+  const parsed = createTeacherWiseAdSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: "Please choose a teacher and fill in the title and details." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { data: classProfile } = await supabase.from("class_profiles").select("id").eq("owner_id", user.id).maybeSingle();
+  if (!classProfile) {
+    return { error: "No institute profile found for this account." };
+  }
+
+  const { data: link } = await supabase
+    .from("class_teachers")
+    .select("teacher_id")
+    .eq("class_id", classProfile.id)
+    .eq("teacher_id", parsed.data.teacherId)
+    .eq("status", "accepted")
+    .maybeSingle();
+  if (!link) {
+    return { error: "That teacher isn't on your accepted roster." };
+  }
+
+  const { error } = await supabase.from("advertisements").insert({
+    owner_type: "class",
+    owner_id: classProfile.id,
+    featured_teacher_id: parsed.data.teacherId,
+    title: parsed.data.title,
+    content: parsed.data.content,
+    placement: "search_results",
+    plan: "basic",
+  });
+  if (error) {
+    return { error: "Couldn't save this ad. Please try again." };
+  }
+  return {};
+}
+
 export async function updateClassBatchRate(input: {
   batchId: string;
   hourlyRate?: number;
@@ -655,7 +830,7 @@ export async function setBatchAdActive(adId: string, active: boolean): Promise<A
   return {};
 }
 
-const gradeBands = ["1-5", "6-9", "10-11", "12-13", "campus"] as const;
+const gradeBands = ["1-5", "6-9", "10-11", "12-13", "campus", "adult"] as const;
 
 const createIndividualAdSchema = z.object({
   subjectId: z.string().uuid(),

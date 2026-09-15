@@ -56,7 +56,10 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LocaleSwitcher } from "@/components/layout/locale-switcher";
@@ -69,15 +72,31 @@ import { VideoCallPanel } from "@/components/dashboard/inline-file-viewer";
 import { notifyLiveClassEnded } from "@/lib/dashboard/live-classes-actions";
 import type { DashboardNavGroup, DemoRole } from "@/types/dashboard";
 
-/** Same picker as the public SiteHeader's "Search" dropdown — kept as its own small copy here since the dashboard header's dark theme needs different trigger/item styling, not because the destinations differ. */
-const searchItems = [
-  { href: { pathname: "/teachers", query: { category: "teacher" } }, key: "searchTeachers" },
-  { href: { pathname: "/teachers", query: { category: "class" } }, key: "searchInstitutes" },
-  { href: { pathname: "/teachers", query: { category: "campus" } }, key: "searchCampusLecturers" },
-  {
-    href: { pathname: "/teachers", query: { category: "teacher", online: "true" } },
-    key: "searchOnlineLessons",
-  },
+/**
+ * Same grouped BROWSE/REQUESTS picker as the public SiteHeader's "Search"
+ * dropdown (0143/0144) — kept as its own small copy here since the
+ * dashboard header's dark theme needs different trigger/item styling, not
+ * because the destinations differ. One deliberate adaptation: SiteHeader's
+ * "Online lessons only" is an in-place checkbox that toggles `online=true`
+ * on whatever page is currently open, because a visitor there really is
+ * mid-browse. Here, every dashboard user is always navigating *away* to a
+ * different page (there's no "current browsable page" to apply a toggle
+ * to), so it's a plain link straight to the filtered teacher search instead.
+ */
+const browseItems = [
+  { href: { pathname: "/teachers", query: { category: "all" } }, key: "browseAll" },
+  { href: { pathname: "/teachers", query: { type: "independent" } }, key: "browseIndependent" },
+  { href: "/institutes", key: "browseInstitutes" },
+  { href: "/lecturers", key: "browseCampusLecturers" },
+  { href: "/courses", key: "browseCourses" },
+  { href: { pathname: "/courses", query: { audience: "adult" } }, key: "browseAdultLearning" },
+  { href: { pathname: "/teachers", query: { category: "teacher", online: "true" } }, key: "browseOnlineOnly" },
+] as const;
+
+const requestItems = [
+  { href: { pathname: "/requests", query: { direction: "student_to_teacher" } }, key: "requestsStudent", tagKey: "requestsStudentTag" },
+  { href: { pathname: "/requests", query: { direction: "teacher_to_institute" } }, key: "requestsTeacher", tagKey: "requestsTeacherTag" },
+  { href: { pathname: "/requests", query: { direction: "institute_to_teacher" } }, key: "requestsInstitute", tagKey: "requestsInstituteTag" },
 ] as const;
 
 /** Master list of destinations, shared with the public SiteHeader's hrefs — which subset shows depends on role, see navKeysByRole below. */
@@ -517,12 +536,33 @@ function DashboardShellInner({
               {t("search")}
               <ChevronDown className="size-3.5 transition-transform group-aria-expanded:rotate-180" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              {searchItems.map((item) => (
-                <DropdownMenuItem key={item.key} render={<Link href={item.href} />} className="py-2">
-                  {t(item.key)}
-                </DropdownMenuItem>
-              ))}
+            <DropdownMenuContent align="start" className="w-72">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="font-mono text-[11px] tracking-wide text-muted-foreground">
+                  {t("browseGroupLabel")}
+                </DropdownMenuLabel>
+                {browseItems.map((item) => (
+                  <DropdownMenuItem key={item.key} render={<Link href={item.href} />} className="py-2">
+                    {t(item.key)}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="font-mono text-[11px] tracking-wide text-muted-foreground">
+                  {t("requestsGroupLabel")}
+                </DropdownMenuLabel>
+                {requestItems.map((item) => (
+                  <DropdownMenuItem key={item.key} render={<Link href={item.href} />} className="flex flex-col items-start gap-1 py-2">
+                    {t(item.key)}
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] font-normal tracking-wide whitespace-nowrap text-muted-foreground">
+                      {t(item.tagKey)}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
           {siteNavItems.map((item) => (
@@ -582,15 +622,30 @@ function DashboardShellInner({
               <SheetTitle className="sr-only">{t("menu")}</SheetTitle>
               <nav className="mt-10 flex flex-col gap-1 px-4">
                 <div className="px-3 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-                  {t("search")}
+                  {t("browseGroupLabel")}
                 </div>
-                {searchItems.map((item) => (
+                {browseItems.map((item) => (
                   <Link
                     key={item.key}
                     href={item.href}
                     className="rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
                   >
                     {t(item.key)}
+                  </Link>
+                ))}
+                <div className="mt-3 px-3 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                  {t("requestsGroupLabel")}
+                </div>
+                {requestItems.map((item) => (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    className="flex flex-col items-start gap-1 rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+                  >
+                    {t(item.key)}
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] font-normal tracking-wide whitespace-nowrap text-muted-foreground">
+                      {t(item.tagKey)}
+                    </span>
                   </Link>
                 ))}
                 <div className="mt-3 flex flex-col gap-1">

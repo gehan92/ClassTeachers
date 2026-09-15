@@ -292,19 +292,29 @@
   }
 }
 
-/* Bootstrap's .form-control/.form-select ship with its stock grey border
-   and blue focus ring (#86b7fe) — every text input/select in the app
-   (search bar, dashboard forms, wanted-ads board, etc.) used them
-   unstyled. --input/--ring already exist as the brand's warm-tan border
-   and chalk-gold focus tokens (globals.css :root) but nothing consumed
-   them for form fields until now. Sits in the "components" layer, which
-   the pre-registered layer order (top of this file) places after
-   "bootstrap", so plain-specificity rules here beat Bootstrap's without
-   needing !important. */
+/* Themes Bootstrap's OWN CSS custom property (its native theming hook)
+   instead of overriding .form-control/.form-select rules directly:
+   --bs-border-color is the single variable bootstrap.min.css's :root
+   defines and every unstyled form/border reads from (confirmed by
+   inspecting the compiled CSS — .form-control/.form-select never
+   redefine it themselves, just consume the :root value), so redefining
+   it here — in the "components" layer, which the pre-registered layer
+   order (top of this file) places after "bootstrap" — recolors every
+   text input/select's resting border via Bootstrap's own mechanism,
+   the way changing a Sass variable and recompiling would, with no
+   !important needed (later layer wins regardless of specificity).
+   The vanilla CDN build has no such hook for the :focus state, though —
+   its border-color/box-shadow are hardcoded literal Bootstrap-blue
+   values in the compiled CSS, not variable-driven (checked: no
+   --bs-focus-ring-color reference anywhere on these two selectors).
+   Getting the focus ring on a real Bootstrap variable too would mean
+   dropping the CDN-import-into-layer approach (see the (public) layout's
+   own comment on why that was chosen) for a full Sass build step — so
+   this one rule stays a plain override, everything else here is native
+   Bootstrap theming. */
 @layer components {
-  .form-control,
-  .form-select {
-    border-color: var(--input);
+  :root {
+    --bs-border-color: var(--input);
   }
   .form-control:focus,
   .form-select:focus {

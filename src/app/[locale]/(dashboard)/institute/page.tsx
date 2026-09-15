@@ -1199,7 +1199,6 @@ export default async function InstituteDashboardPage({
               count: wantedAdRequests.filter((r) => !r.myResponse).length,
               countUrgent: wantedAdRequests.some((r) => !r.myResponse),
             },
-            { key: "ads", label: t("tabs.ads"), highlight: true },
             { key: "attendance", label: t("tabs.attendance") },
             { key: "finance", label: t("tabs.finance") },
             { key: "analytics", label: t("tabs.analytics") },
@@ -1218,6 +1217,9 @@ export default async function InstituteDashboardPage({
             { key: "library", label: t("tabs.library") },
             { key: "extracurriculars", label: t("tabs.extracurriculars") },
           ],
+        },
+        {
+          items: [{ key: "ads", label: t("tabs.ads"), highlight: true }],
         },
       ]}
       panels={{

@@ -71,6 +71,7 @@ import { LiveCallProvider, useLiveCall } from "@/components/dashboard/live-call-
 import { VideoCallPanel } from "@/components/dashboard/inline-file-viewer";
 import { notifyLiveClassEnded } from "@/lib/dashboard/live-classes-actions";
 import type { DashboardNavGroup, DemoRole } from "@/types/dashboard";
+import type { NavAvailability } from "@/lib/nav-availability";
 
 /**
  * Same grouped BROWSE/REQUESTS picker as the public SiteHeader's "Search"
@@ -400,6 +401,10 @@ export function DashboardShell(props: {
    * header bell renders these directly rather than jumping to one hardcoded
    * tab's count like it used to. */
   notifications?: NotificationRow[];
+  /** A Browse/Requests item is hidden entirely when its destination page
+   * would currently show zero results (see lib/nav-availability.ts) —
+   * undefined fails open, showing every item. */
+  navAvailability?: NavAvailability;
 }) {
   // The call's connection lifetime needs to survive tab switches, so its
   // state has to live above wherever panels[activeTab] gets swapped — see
@@ -424,6 +429,7 @@ function DashboardShellInner({
   defaultTab,
   realtimeWatch,
   notifications = [],
+  navAvailability,
 }: {
   brandBadge?: string;
   userLabel: string;
@@ -436,8 +442,19 @@ function DashboardShellInner({
   defaultTab: string;
   realtimeWatch?: RealtimeWatch[];
   notifications?: NotificationRow[];
+  navAvailability?: NavAvailability;
 }) {
   const [activeTab, setActiveTab] = useState(defaultTab);
+  // browseOnlineOnly has no matching NavAvailability field (it's a filter
+  // modifier, not tied to one category's data) — the Record<string, ...>
+  // cast lets that key look up as `undefined` (never hidden) alongside the
+  // ones that do have a field, rather than needing `keyof NavAvailability`.
+  const visibleBrowseItems = browseItems.filter(
+    (item) => (navAvailability as Record<string, boolean> | undefined)?.[item.key] !== false,
+  );
+  const visibleRequestItems = requestItems.filter(
+    (item) => (navAvailability as Record<string, boolean> | undefined)?.[item.key] !== false,
+  );
   const t = useTranslations("nav");
   const { activeCall, minimizeCall, restoreCall, leaveCall } = useLiveCall();
 
@@ -541,7 +558,7 @@ function DashboardShellInner({
                 <DropdownMenuLabel className="font-mono text-[11px] tracking-wide text-muted-foreground">
                   {t("browseGroupLabel")}
                 </DropdownMenuLabel>
-                {browseItems.map((item) => (
+                {visibleBrowseItems.map((item) => (
                   <DropdownMenuItem key={item.key} render={<Link href={item.href} />} className="py-2">
                     {t(item.key)}
                   </DropdownMenuItem>
@@ -554,7 +571,7 @@ function DashboardShellInner({
                 <DropdownMenuLabel className="font-mono text-[11px] tracking-wide text-muted-foreground">
                   {t("requestsGroupLabel")}
                 </DropdownMenuLabel>
-                {requestItems.map((item) => (
+                {visibleRequestItems.map((item) => (
                   <DropdownMenuItem key={item.key} render={<Link href={item.href} />} className="flex flex-col items-start gap-1 py-2">
                     {t(item.key)}
                     <span className="rounded-full bg-primary/8 px-1.5 py-0.5 font-mono text-[10px] font-normal tracking-wide whitespace-nowrap text-primary">
@@ -624,7 +641,7 @@ function DashboardShellInner({
                 <div className="px-3 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
                   {t("browseGroupLabel")}
                 </div>
-                {browseItems.map((item) => (
+                {visibleBrowseItems.map((item) => (
                   <Link
                     key={item.key}
                     href={item.href}
@@ -636,7 +653,7 @@ function DashboardShellInner({
                 <div className="mt-3 px-3 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
                   {t("requestsGroupLabel")}
                 </div>
-                {requestItems.map((item) => (
+                {visibleRequestItems.map((item) => (
                   <Link
                     key={item.key}
                     href={item.href}

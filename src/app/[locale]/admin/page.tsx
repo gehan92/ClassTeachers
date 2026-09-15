@@ -11,6 +11,7 @@ import { FlaggedReviewsTab } from "@/components/dashboard/admin/flagged-reviews-
 import { ConnectionsTab } from "@/components/dashboard/admin/connections-tab";
 import { ReferralsTab } from "@/components/dashboard/admin/referrals-tab";
 import { createClient } from "@/lib/supabase/server";
+import { getNavAvailability } from "@/lib/nav-availability";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createDateFormatter } from "@/lib/format-date";
 import { roleDashboardPath } from "@/lib/auth/routes";
@@ -348,11 +349,14 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     ? { sponsor: expiringSiteAds[0].sponsor, expiresDisplay: expiringSiteAds[0].expiresDisplay }
     : null;
 
+  const navAvailability = await getNavAvailability();
+
   return (
     <DashboardShell
       brandBadge="ADMIN"
       userLabel={profile.full_name}
       userInitial={userInitial}
+      navAvailability={navAvailability}
       logoutLabel={t("logout")}
       demoRole="admin"
       notifications={notifications}

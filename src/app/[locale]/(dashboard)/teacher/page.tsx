@@ -38,6 +38,7 @@ import {
 import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { TeacherOnboardingWizard } from "@/components/onboarding/teacher-onboarding-wizard";
 import { createClient } from "@/lib/supabase/server";
+import { getNavAvailability } from "@/lib/nav-availability";
 import { classState } from "@/lib/dashboard/live-class-state";
 import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 import { stripRichText } from "@/lib/rich-text";
@@ -1122,6 +1123,8 @@ export default async function TeacherDashboardPage({
     myApplicationStatus: row.my_application_status as "new" | "read" | "accepted" | "declined" | null,
   }));
 
+  const navAvailability = await getNavAvailability();
+
   return (
     <DashboardShell
       userLabel={fullName}
@@ -1130,6 +1133,7 @@ export default async function TeacherDashboardPage({
       logoutLabel={t("logout")}
       demoRole="teacher"
       notifications={notifications}
+      navAvailability={navAvailability}
       realtimeWatch={[
         { table: "inquiries", filter: `owner_id=eq.${userId}` },
         { table: "enrollments", filter: `owner_id=eq.${userId}` },

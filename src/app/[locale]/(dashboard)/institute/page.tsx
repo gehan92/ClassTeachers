@@ -58,6 +58,7 @@ import { ClassProfileView } from "@/components/features/class-profile-view";
 import { InstituteOnboardingWizard } from "@/components/onboarding/institute-onboarding-wizard";
 import { loadClassProfile } from "@/lib/load-class-profile";
 import { createClient } from "@/lib/supabase/server";
+import { getNavAvailability } from "@/lib/nav-availability";
 import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 import { createDateFormatter } from "@/lib/format-date";
 import type { TeachersAtGlance } from "@/types/dashboard-institute";
@@ -1138,12 +1139,15 @@ export default async function InstituteDashboardPage({
     batchLabel: row.batch,
   }));
 
+  const navAvailability = await getNavAvailability();
+
   return (
     <DashboardShell
       userLabel={fullName}
       userInitial={userInitial}
       userPhotoUrl={classProfile?.photo_url ?? null}
       logoutLabel={t("logout")}
+      navAvailability={navAvailability}
       demoRole="class"
       // owner_id on inquiries/enrollments is class_profiles.id for an
       // institute, not the auth user's own id — same distinction every

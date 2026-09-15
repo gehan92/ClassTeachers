@@ -24,6 +24,7 @@ import { ProgressTab } from "@/components/dashboard/student/progress-tab";
 import type { ProgressAttendanceRow } from "@/components/dashboard/student/progress-tab";
 import { createClient } from "@/lib/supabase/server";
 import { getCachedSubjects } from "@/lib/supabase/cached-subjects";
+import { getNavAvailability } from "@/lib/nav-availability";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 import type { MyClassRow, AvailableBatchRow } from "@/components/dashboard/student/classes-tab";
@@ -1088,6 +1089,8 @@ export default async function StudentDashboardPage({
     createdLabel: dateFormatter.format(new Date(row.created_at)),
   }));
 
+  const navAvailability = await getNavAvailability();
+
   return (
     <DashboardShell
       userLabel={fullName}
@@ -1095,6 +1098,7 @@ export default async function StudentDashboardPage({
       userPhotoUrl={profile?.avatar_url ?? null}
       logoutLabel={t("logout")}
       demoRole="student"
+      navAvailability={navAvailability}
       notifications={notifications}
       realtimeWatch={[
         { table: "live_class_reminders", filter: `student_id=eq.${userId}` },

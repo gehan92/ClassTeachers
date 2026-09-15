@@ -25,6 +25,7 @@ import { logOutAction } from "@/lib/auth/actions";
 import { roleDashboardPath, type UserRole } from "@/lib/auth/routes";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { cn } from "@/lib/utils";
+import type { NavAvailability } from "@/lib/nav-availability";
 
 // Home and Advertise open with a full-bleed photo hero — the header sits
 // transparent on top of it until the visitor scrolls past it, then becomes
@@ -114,15 +115,23 @@ export function SiteHeader({
   user,
   inquiriesCount,
   userPhotoUrl,
+  navAvailability,
 }: {
   user: { name: string; role: UserRole } | null;
   inquiriesCount?: number;
   userPhotoUrl?: string | null;
+  /** A Browse/Requests item is hidden entirely when its destination page
+   * would currently show zero results (see lib/nav-availability.ts) —
+   * undefined (e.g. a caller that hasn't wired this up) fails open, showing
+   * every item, rather than hiding everything on missing data. */
+  navAvailability?: NavAvailability;
 }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const visibleBrowseItems = browseItems.filter((item) => navAvailability?.[item.key] !== false);
+  const visibleRequestItems = requestItems.filter((item) => navAvailability?.[item.key] !== false);
 
   const isSearchActive = SEARCH_PATHNAMES.includes(pathname);
   const onlineOnly = searchParams.get("online") === "true";
@@ -200,7 +209,7 @@ export function SiteHeader({
                 <DropdownMenuLabel className="font-mono text-[11px] tracking-wide text-muted-foreground">
                   {t("browseGroupLabel")}
                 </DropdownMenuLabel>
-                {browseItems.map((item) => {
+                {visibleBrowseItems.map((item) => {
                   const active = isNavItemActive(item.href, pathname, searchParams);
                   return (
                     <DropdownMenuItem
@@ -223,7 +232,7 @@ export function SiteHeader({
                 <DropdownMenuLabel className="font-mono text-[11px] tracking-wide text-muted-foreground">
                   {t("requestsGroupLabel")}
                 </DropdownMenuLabel>
-                {requestItems.map((item) => {
+                {visibleRequestItems.map((item) => {
                   const active = isNavItemActive(item.href, pathname, searchParams);
                   return (
                     <DropdownMenuItem
@@ -331,7 +340,7 @@ export function SiteHeader({
                 <div className="px-3 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
                   {t("browseGroupLabel")}
                 </div>
-                {browseItems.map((item) => {
+                {visibleBrowseItems.map((item) => {
                   const active = isNavItemActive(item.href, pathname, searchParams);
                   return (
                     <Link
@@ -357,7 +366,7 @@ export function SiteHeader({
                 <div className="mt-3 px-3 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
                   {t("requestsGroupLabel")}
                 </div>
-                {requestItems.map((item) => {
+                {visibleRequestItems.map((item) => {
                   const active = isNavItemActive(item.href, pathname, searchParams);
                   return (
                     <Link

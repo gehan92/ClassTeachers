@@ -14,6 +14,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -195,45 +196,49 @@ export function SiteHeader({
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-72">
-              <DropdownMenuLabel className="font-mono text-[11px] tracking-wide text-muted-foreground">
-                {t("browseGroupLabel")}
-              </DropdownMenuLabel>
-              {browseItems.map((item) => {
-                const active = isNavItemActive(item.href, pathname, searchParams);
-                return (
-                  <DropdownMenuItem
-                    key={item.key}
-                    render={<Link href={item.href} />}
-                    className={cn("py-2", active && "font-semibold text-primary")}
-                  >
-                    {t(item.key)}
-                  </DropdownMenuItem>
-                );
-              })}
-              <DropdownMenuCheckboxItem checked={onlineOnly} onCheckedChange={toggleOnlineOnly} className="py-2">
-                {t("browseOnlineOnly")}
-              </DropdownMenuCheckboxItem>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="font-mono text-[11px] tracking-wide text-muted-foreground">
+                  {t("browseGroupLabel")}
+                </DropdownMenuLabel>
+                {browseItems.map((item) => {
+                  const active = isNavItemActive(item.href, pathname, searchParams);
+                  return (
+                    <DropdownMenuItem
+                      key={item.key}
+                      render={<Link href={item.href} />}
+                      className={cn("py-2", active && "font-semibold text-primary")}
+                    >
+                      {t(item.key)}
+                    </DropdownMenuItem>
+                  );
+                })}
+                <DropdownMenuCheckboxItem checked={onlineOnly} onCheckedChange={toggleOnlineOnly} className="py-2">
+                  {t("browseOnlineOnly")}
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuGroup>
 
               <DropdownMenuSeparator />
 
-              <DropdownMenuLabel className="font-mono text-[11px] tracking-wide text-muted-foreground">
-                {t("requestsGroupLabel")}
-              </DropdownMenuLabel>
-              {requestItems.map((item) => {
-                const active = isNavItemActive(item.href, pathname, searchParams);
-                return (
-                  <DropdownMenuItem
-                    key={item.key}
-                    render={<Link href={item.href} />}
-                    className={cn("flex items-center justify-between gap-2 py-2", active && "font-semibold text-primary")}
-                  >
-                    {t(item.key)}
-                    <span className="rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] font-normal tracking-wide text-muted-foreground">
-                      {t(item.tagKey)}
-                    </span>
-                  </DropdownMenuItem>
-                );
-              })}
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="font-mono text-[11px] tracking-wide text-muted-foreground">
+                  {t("requestsGroupLabel")}
+                </DropdownMenuLabel>
+                {requestItems.map((item) => {
+                  const active = isNavItemActive(item.href, pathname, searchParams);
+                  return (
+                    <DropdownMenuItem
+                      key={item.key}
+                      render={<Link href={item.href} />}
+                      className={cn("flex flex-col items-start gap-1 py-2", active && "font-semibold text-primary")}
+                    >
+                      {t(item.key)}
+                      <span className="rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] font-normal tracking-wide whitespace-nowrap text-muted-foreground">
+                        {t(item.tagKey)}
+                      </span>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -360,12 +365,12 @@ export function SiteHeader({
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex items-center justify-between gap-2 rounded-md px-3 py-3 text-sm font-medium transition-colors",
+                        "flex flex-col items-start gap-1 rounded-md px-3 py-3 text-sm font-medium transition-colors",
                         active ? "bg-secondary text-primary" : "text-foreground hover:bg-muted",
                       )}
                     >
                       {t(item.key)}
-                      <span className="rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] font-normal tracking-wide text-muted-foreground">
+                      <span className="rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] font-normal tracking-wide whitespace-nowrap text-muted-foreground">
                         {t(item.tagKey)}
                       </span>
                     </Link>

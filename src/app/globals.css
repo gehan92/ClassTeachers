@@ -292,6 +292,27 @@
   }
 }
 
+/* Bootstrap's .form-control/.form-select ship with its stock grey border
+   and blue focus ring (#86b7fe) — every text input/select in the app
+   (search bar, dashboard forms, wanted-ads board, etc.) used them
+   unstyled. --input/--ring already exist as the brand's warm-tan border
+   and chalk-gold focus tokens (globals.css :root) but nothing consumed
+   them for form fields until now. Sits in the "components" layer, which
+   the pre-registered layer order (top of this file) places after
+   "bootstrap", so plain-specificity rules here beat Bootstrap's without
+   needing !important. */
+@layer components {
+  .form-control,
+  .form-select {
+    border-color: var(--input);
+  }
+  .form-control:focus,
+  .form-select:focus {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 0.2rem color-mix(in oklab, var(--ring) 25%, transparent);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

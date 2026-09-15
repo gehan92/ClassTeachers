@@ -557,7 +557,7 @@ function DashboardShellInner({
                 {requestItems.map((item) => (
                   <DropdownMenuItem key={item.key} render={<Link href={item.href} />} className="flex flex-col items-start gap-1 py-2">
                     {t(item.key)}
-                    <span className="rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] font-normal tracking-wide whitespace-nowrap text-muted-foreground">
+                    <span className="rounded-full bg-primary/8 px-1.5 py-0.5 font-mono text-[10px] font-normal tracking-wide whitespace-nowrap text-primary">
                       {t(item.tagKey)}
                     </span>
                   </DropdownMenuItem>
@@ -643,7 +643,7 @@ function DashboardShellInner({
                     className="flex flex-col items-start gap-1 rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
                   >
                     {t(item.key)}
-                    <span className="rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] font-normal tracking-wide whitespace-nowrap text-muted-foreground">
+                    <span className="rounded-full bg-primary/8 px-1.5 py-0.5 font-mono text-[10px] font-normal tracking-wide whitespace-nowrap text-primary">
                       {t(item.tagKey)}
                     </span>
                   </Link>

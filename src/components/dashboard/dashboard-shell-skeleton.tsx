@@ -1,5 +1,4 @@
 import { getTranslations } from "next-intl/server";
-import { Loader2 } from "lucide-react";
 
 /**
  * First-paint placeholder for the dashboard route groups (teacher/student/
@@ -16,12 +15,24 @@ import { Loader2 } from "lucide-react";
  * unambiguous "this is loading" signal layered on top of the same shape
  * preview, the way most polished dashboards (this app's own is one) pair a
  * skeleton with a spinner rather than relying on the pulse alone.
+ *
+ * Uses Bootstrap's own spinner-border component for that indicator rather
+ * than a hand-drawn one (Gehan asked for Bootstrap's spinner specifically).
+ * The dashboards otherwise never load Bootstrap at all (only the (public)
+ * route group does, see its layout.tsx) — scoping the CDN import to just
+ * this skeleton means it's only ever present for this brief loading window,
+ * never bleeding into the dashboard's own Tailwind/shadcn styling once the
+ * real page mounts and this component unmounts. Sits in the same
+ * pre-registered "bootstrap" cascade layer globals.css already declares
+ * (loaded by the root layout for every route), so it inherits the same
+ * layer ordering/brand-override behavior already documented there.
  */
 export async function DashboardShellSkeleton() {
   const t = await getTranslations("dashboardShell");
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
+      <style>{`@import url("https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css") layer(bootstrap);`}</style>
       <header className="flex h-15 shrink-0 items-center justify-between gap-4 border-b border-primary-dark bg-primary-dark px-5">
         <div className="flex items-center gap-2.5">
           <span className="size-7 animate-pulse rounded-[6px] bg-white/15" />
@@ -61,8 +72,15 @@ export async function DashboardShellSkeleton() {
           </div>
 
           <div className="pointer-events-none sticky bottom-5 left-0 flex w-full justify-center">
-            <div className="flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-medium text-foreground/80 shadow-[0_4px_16px_-4px_rgba(14,33,29,0.25)]">
-              <Loader2 className="size-4 animate-spin text-primary" />
+            <div
+              role="status"
+              className="flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-medium text-foreground/80 shadow-[0_4px_16px_-4px_rgba(14,33,29,0.25)]"
+            >
+              {/* aria-hidden: the visible text right after already IS this
+                  status's accessible name — a Bootstrap spinner normally
+                  pairs with a visually-hidden label instead, only needed
+                  when there's no other visible text next to it. */}
+              <div className="spinner-grow spinner-grow-sm text-cta" aria-hidden="true" />
               {t("loading")}
             </div>
           </div>

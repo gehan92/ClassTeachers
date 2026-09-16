@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -168,6 +169,13 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
   const [priceMax, setPriceMax] = useState("");
   const [minRating, setMinRating] = useState<MinRating>("any");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  // Collapsed by default (see below) — the full panel (checkboxes/price/
+  // rating/level) was taking up a lot of vertical space above the fold on
+  // every visit, most of which most visitors never touch. Auto-opens when a
+  // shared/bookmarked link already carries one of these in the URL, in the
+  // sync effect below, so a filter is never silently active behind a closed
+  // panel.
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const onlineOnlyId = useId();
   const verifiedOnlyId = useId();
   const searchParams = useSearchParams();
@@ -253,6 +261,15 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
     setMinRating(minRatingFromUrl && isMinRating(minRatingFromUrl) ? minRatingFromUrl : "any");
     setVerifiedOnly(searchParams.get("verified") === "true");
     setPage(1);
+    setShowAdvanced(
+      searchParams.get("online") === "true" ||
+        searchParams.get("verified") === "true" ||
+        (priceIntervalFromUrl != null && priceIntervalFromUrl !== "any") ||
+        Boolean(searchParams.get("priceMin")) ||
+        Boolean(searchParams.get("priceMax")) ||
+        (minRatingFromUrl != null && minRatingFromUrl !== "any") ||
+        (resolvedCategory !== "campus" && gradeFromUrl != null),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setPage is a stable setState setter from usePagination, intentionally omitted like every other setter above
   }, [searchParams]);
 
@@ -268,6 +285,18 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
     priceMax.length > 0 ||
     minRating !== "any" ||
     verifiedOnly;
+
+  // Shown as a badge on the collapsed "Advanced filters" toggle so an active
+  // filter is never invisible just because the panel holding it is closed.
+  const advancedFilterCount = [
+    onlineOnly,
+    verifiedOnly,
+    priceInterval !== "any",
+    priceMin.length > 0,
+    priceMax.length > 0,
+    minRating !== "any",
+    grade !== undefined,
+  ].filter(Boolean).length;
 
   function clearFilters() {
     setCategory("all");
@@ -287,7 +316,7 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
   return (
     <>
       <div className="mb-7 rounded-2xl border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
-        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input
             value={subject}
             onChange={(e) => {
@@ -307,68 +336,90 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
             className="bg-white"
           />
         </div>
-        <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id={onlineOnlyId}
-              checked={onlineOnly}
-              onCheckedChange={(checked) => {
-                setOnlineOnly(checked);
-                setPage(1);
-              }}
-            />
-            <Label htmlFor={onlineOnlyId} className="cursor-pointer text-sm font-normal text-foreground/80">
-              {tSearch("onlineOnly")}
-            </Label>
+
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((v) => !v)}
+          aria-expanded={showAdvanced}
+          className="mt-3 flex w-full items-center justify-between gap-2 rounded-md py-1.5 text-sm font-semibold text-primary"
+        >
+          <span className="flex items-center gap-1.5">
+            {tSearch("advancedFilters")}
+            {advancedFilterCount > 0 && (
+              <span className="flex size-4.5 items-center justify-center rounded-full bg-cta font-mono text-[10px] font-bold text-cta-foreground">
+                {advancedFilterCount}
+              </span>
+            )}
+          </span>
+          <ChevronDown className={cn("size-4 shrink-0 transition-transform", showAdvanced && "rotate-180")} />
+        </button>
+
+        {showAdvanced && (
+          <div className="mt-3 flex flex-col gap-3 border-t border-border pt-3.5">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={onlineOnlyId}
+                  checked={onlineOnly}
+                  onCheckedChange={(checked) => {
+                    setOnlineOnly(checked);
+                    setPage(1);
+                  }}
+                />
+                <Label htmlFor={onlineOnlyId} className="cursor-pointer text-sm font-normal text-foreground/80">
+                  {tSearch("onlineOnly")}
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={verifiedOnlyId}
+                  checked={verifiedOnly}
+                  onCheckedChange={(checked) => {
+                    setVerifiedOnly(checked);
+                    setPage(1);
+                  }}
+                />
+                <Label htmlFor={verifiedOnlyId} className="cursor-pointer text-sm font-normal text-foreground/80">
+                  {tSearch("verifiedOnly")}
+                </Label>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <PriceFilter
+                interval={priceInterval}
+                onIntervalChange={(interval) => {
+                  setPriceInterval(interval);
+                  setPage(1);
+                }}
+                min={priceMin}
+                onMinChange={(value) => {
+                  setPriceMin(value);
+                  setPage(1);
+                }}
+                max={priceMax}
+                onMaxChange={(value) => {
+                  setPriceMax(value);
+                  setPage(1);
+                }}
+              />
+              <RatingFilter
+                value={minRating}
+                onChange={(value) => {
+                  setMinRating(value);
+                  setPage(1);
+                }}
+              />
+            </div>
+            {category !== "campus" && (
+              <GradeLadder
+                value={grade}
+                onChange={(value) => {
+                  setGrade(value);
+                  setPage(1);
+                }}
+              />
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id={verifiedOnlyId}
-              checked={verifiedOnly}
-              onCheckedChange={(checked) => {
-                setVerifiedOnly(checked);
-                setPage(1);
-              }}
-            />
-            <Label htmlFor={verifiedOnlyId} className="cursor-pointer text-sm font-normal text-foreground/80">
-              {tSearch("verifiedOnly")}
-            </Label>
-          </div>
-        </div>
-        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <PriceFilter
-            interval={priceInterval}
-            onIntervalChange={(interval) => {
-              setPriceInterval(interval);
-              setPage(1);
-            }}
-            min={priceMin}
-            onMinChange={(value) => {
-              setPriceMin(value);
-              setPage(1);
-            }}
-            max={priceMax}
-            onMaxChange={(value) => {
-              setPriceMax(value);
-              setPage(1);
-            }}
-          />
-          <RatingFilter
-            value={minRating}
-            onChange={(value) => {
-              setMinRating(value);
-              setPage(1);
-            }}
-          />
-        </div>
-        {category !== "campus" && (
-          <GradeLadder
-            value={grade}
-            onChange={(value) => {
-              setGrade(value);
-              setPage(1);
-            }}
-          />
         )}
       </div>
 

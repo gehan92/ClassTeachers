@@ -272,6 +272,7 @@
     "subjectPlaceholder": "Subject — e.g. Combined Maths, Organic Chemistry",
     "subjectPlaceholderCampus": "Subject / course area — e.g. Data Structures & Algorithms",
     "locationPlaceholder": "Location — e.g. Matara, or 'Online'",
+    "advancedFilters": "Advanced filters",
     "onlineOnly": "Online classes only",
     "verifiedOnly": "Verified only",
     "level": "Level",

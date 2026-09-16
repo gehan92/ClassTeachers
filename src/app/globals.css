@@ -360,3 +360,30 @@
     opacity: 0;
   }
 }
+
+/* Skeleton shimmer sweep (dashboard-shell-skeleton.tsx) — a moving highlight
+   across each placeholder block, the standard Facebook/LinkedIn/YouTube
+   skeleton-loader treatment. Replaces a plain opacity pulse, which on a
+   still screenshot reads as just a blank/unfinished box rather than
+   something actively loading (Gehan flagged this from a screenshot of the
+   card grid). `overflow: hidden` here also clips the sweep to whatever
+   border-radius the block itself declares. */
+@layer components {
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, color-mix(in oklab, white 45%, transparent), transparent);
+    animation: skeleton-shimmer-sweep 1.6s ease-in-out infinite;
+  }
+}
+@keyframes skeleton-shimmer-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}

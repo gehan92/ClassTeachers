@@ -2542,6 +2542,9 @@
       }
     }
   },
+  "dashboardShell": {
+    "loading": "ඔබේ උපකරණ පුවරුව පූරණය වෙමින්…"
+  },
   "teacherDashboard": {
     "logout": "පිටවන්න",
     "groupTeaching": "ඉගැන්වීම",

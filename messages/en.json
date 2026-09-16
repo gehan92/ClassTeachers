@@ -2542,6 +2542,9 @@
       }
     }
   },
+  "dashboardShell": {
+    "loading": "Loading your dashboard…"
+  },
   "teacherDashboard": {
     "logout": "Log out",
     "groupTeaching": "Teaching",

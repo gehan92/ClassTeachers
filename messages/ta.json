@@ -2542,6 +2542,9 @@
       }
     }
   },
+  "dashboardShell": {
+    "loading": "உங்கள் டாஷ்போர்டு ஏற்றப்படுகிறது…"
+  },
   "teacherDashboard": {
     "logout": "வெளியேறு",
     "groupTeaching": "கற்பித்தல்",

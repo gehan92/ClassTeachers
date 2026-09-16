@@ -18,8 +18,14 @@ import { getTranslations } from "next-intl/server";
  * route-level loading: it never sits over page content (unlike a floating
  * pill, which Gehan felt looked stuck in the middle of the UI) and reads
  * as "the whole page is arriving" rather than "one small thing finished".
- * Sweep animation + keyframes live in globals.css (`loading-bar-sweep`),
- * already covered by the file's global prefers-reduced-motion rule.
+ * Also centers a plain grow-and-fade dot over the whole viewport (icon
+ * only, no label text — Gehan asked for a silent center spinner alongside
+ * the top bar) so the wait reads as "loading" even to someone looking at
+ * the middle of the screen rather than the top edge. `role="status"` +
+ * an `sr-only` label keep it announced to screen readers despite having
+ * no visible text. Both animations' keyframes live in globals.css
+ * (`loading-bar-sweep`, `spinner-grow-fade`), already covered by the
+ * file's global prefers-reduced-motion rule.
  */
 export async function DashboardShellSkeleton() {
   const t = await getTranslations("dashboardShell");
@@ -32,6 +38,11 @@ export async function DashboardShellSkeleton() {
         className="fixed inset-x-0 top-0 z-50 h-[3px] overflow-hidden bg-primary/15"
       >
         <div className="h-full w-2/5 animate-[loading-bar-sweep_1.2s_ease-in-out_infinite] rounded-full bg-gradient-to-r from-primary via-cta to-primary" />
+      </div>
+      <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center">
+        <div role="status" className="size-12 animate-[spinner-grow-fade_1s_ease-in-out_infinite] rounded-full bg-cta">
+          <span className="sr-only">{t("loading")}</span>
+        </div>
       </div>
       <header className="flex h-15 shrink-0 items-center justify-between gap-4 border-b border-primary-dark bg-primary-dark px-5">
         <div className="flex items-center gap-2.5">

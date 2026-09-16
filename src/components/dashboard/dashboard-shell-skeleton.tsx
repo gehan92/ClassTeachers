@@ -11,28 +11,28 @@ import { getTranslations } from "next-intl/server";
  *
  * The pulsing placeholder blocks alone read as "blank/broken" at a glance
  * (Gehan flagged this after watching a real Dashboard-button click) rather
- * than obviously "in progress" — the small pill below is the explicit,
- * unambiguous "this is loading" signal layered on top of the same shape
- * preview, the way most polished dashboards (this app's own is one) pair a
- * skeleton with a spinner rather than relying on the pulse alone.
- *
- * Uses Bootstrap's own spinner-border component for that indicator rather
- * than a hand-drawn one (Gehan asked for Bootstrap's spinner specifically).
- * The dashboards otherwise never load Bootstrap at all (only the (public)
- * route group does, see its layout.tsx) — scoping the CDN import to just
- * this skeleton means it's only ever present for this brief loading window,
- * never bleeding into the dashboard's own Tailwind/shadcn styling once the
- * real page mounts and this component unmounts. Sits in the same
- * pre-registered "bootstrap" cascade layer globals.css already declares
- * (loaded by the root layout for every route), so it inherits the same
- * layer ordering/brand-override behavior already documented there.
+ * than obviously "in progress" — the thin bar across the very top of the
+ * viewport is the explicit, unambiguous "this is loading" signal layered
+ * on top of the same shape preview. This is the same top-of-viewport
+ * progress-bar convention GitHub, YouTube, Vercel and Linear all use for
+ * route-level loading: it never sits over page content (unlike a floating
+ * pill, which Gehan felt looked stuck in the middle of the UI) and reads
+ * as "the whole page is arriving" rather than "one small thing finished".
+ * Sweep animation + keyframes live in globals.css (`loading-bar-sweep`),
+ * already covered by the file's global prefers-reduced-motion rule.
  */
 export async function DashboardShellSkeleton() {
   const t = await getTranslations("dashboardShell");
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
-      <style>{`@import url("https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css") layer(bootstrap);`}</style>
+      <div
+        role="progressbar"
+        aria-label={t("loading")}
+        className="fixed inset-x-0 top-0 z-50 h-[3px] overflow-hidden bg-primary/15"
+      >
+        <div className="h-full w-2/5 animate-[loading-bar-sweep_1.2s_ease-in-out_infinite] rounded-full bg-gradient-to-r from-primary via-cta to-primary" />
+      </div>
       <header className="flex h-15 shrink-0 items-center justify-between gap-4 border-b border-primary-dark bg-primary-dark px-5">
         <div className="flex items-center gap-2.5">
           <span className="size-7 animate-pulse rounded-[6px] bg-white/15" />
@@ -69,20 +69,6 @@ export async function DashboardShellSkeleton() {
               ))}
             </div>
             <div className="h-64 animate-pulse rounded-lg border border-border bg-muted/60" />
-          </div>
-
-          <div className="pointer-events-none sticky bottom-5 left-0 flex w-full justify-center">
-            <div
-              role="status"
-              className="flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-medium text-foreground/80 shadow-[0_4px_16px_-4px_rgba(14,33,29,0.25)]"
-            >
-              {/* aria-hidden: the visible text right after already IS this
-                  status's accessible name — a Bootstrap spinner normally
-                  pairs with a visually-hidden label instead, only needed
-                  when there's no other visible text next to it. */}
-              <div className="spinner-grow spinner-grow-sm text-cta" aria-hidden="true" />
-              {t("loading")}
-            </div>
           </div>
         </main>
       </div>

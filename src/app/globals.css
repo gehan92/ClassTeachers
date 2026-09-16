@@ -333,3 +333,16 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Route-level top loading bar (dashboard-shell-skeleton.tsx) — the
+   YouTube/GitHub/Vercel/Linear convention for "something is loading" that
+   never covers page content. The reduced-motion rule above already forces
+   this to a single 0.01ms frame, which still reads fine as a static bar. */
+@keyframes loading-bar-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}

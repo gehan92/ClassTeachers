@@ -2562,6 +2562,7 @@
       "updatingList": "Updating…",
       "updateStuck": "Still not updated — your change was saved.",
       "reloadPage": "Reload page",
+      "view": "View",
       "pagination": {
         "showingCount": "Showing {shown} of {total}",
         "previous": "Previous",
@@ -3287,6 +3288,12 @@
         "active": "Active — visible in search",
         "paused": "Paused — hidden from search",
         "viewCount": "{count} views",
+        "table": {
+          "className": "Class",
+          "date": "Date posted",
+          "status": "Status",
+          "actions": "Actions"
+        },
         "subjectLabel": "Subject",
         "subjectPlaceholder": "Select a subject",
         "noSubjects": "Add a subject to your profile first (Profile → Subjects), then come back here.",

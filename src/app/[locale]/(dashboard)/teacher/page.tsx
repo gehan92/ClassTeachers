@@ -241,7 +241,7 @@ export default async function TeacherDashboardPage({
     // from the single own_profile promo box fetched above.
     supabase
       .from("advertisements")
-      .select("id, batch_id, lesson_id, title, content, status, view_count")
+      .select("id, batch_id, lesson_id, title, content, status, view_count, created_at")
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
       .eq("placement", "search_results"),
@@ -598,11 +598,25 @@ export default async function TeacherDashboardPage({
   // aside here rather than treated as a batch's live ad.
   const batchAdByBatchId = new Map<
     string,
-    { id: string; title: string; content: string | null; status: "active" | "expired" | "removed"; viewCount: number }
+    {
+      id: string;
+      title: string;
+      content: string | null;
+      status: "active" | "expired" | "removed";
+      viewCount: number;
+      createdAt: string;
+    }
   >();
   const lessonAdByLessonId = new Map<
     string,
-    { id: string; title: string; content: string | null; status: "active" | "expired" | "removed"; viewCount: number }
+    {
+      id: string;
+      title: string;
+      content: string | null;
+      status: "active" | "expired" | "removed";
+      viewCount: number;
+      createdAt: string;
+    }
   >();
   const deletedBatchAdRows: NonNullable<typeof batchAdRows> = [];
   for (const a of batchAdRows ?? []) {
@@ -611,9 +625,23 @@ export default async function TeacherDashboardPage({
       continue;
     }
     if (a.batch_id)
-      batchAdByBatchId.set(a.batch_id, { id: a.id, title: a.title, content: a.content, status: a.status, viewCount: a.view_count });
+      batchAdByBatchId.set(a.batch_id, {
+        id: a.id,
+        title: a.title,
+        content: a.content,
+        status: a.status,
+        viewCount: a.view_count,
+        createdAt: a.created_at,
+      });
     if (a.lesson_id)
-      lessonAdByLessonId.set(a.lesson_id, { id: a.id, title: a.title, content: a.content, status: a.status, viewCount: a.view_count });
+      lessonAdByLessonId.set(a.lesson_id, {
+        id: a.id,
+        title: a.title,
+        content: a.content,
+        status: a.status,
+        viewCount: a.view_count,
+        createdAt: a.created_at,
+      });
   }
 
   const adBatches: TeacherAdBatchRow[] = (batchRows ?? []).map((b) => {
@@ -632,7 +660,15 @@ export default async function TeacherDashboardPage({
       medium: b.medium,
       classType: b.class_type,
       ad: ad
-        ? { id: ad.id, title: ad.title, content: sanitizeRichTextNullable(ad.content) ?? "", status: ad.status, viewCount: ad.viewCount }
+        ? {
+            id: ad.id,
+            title: ad.title,
+            content: sanitizeRichTextNullable(ad.content) ?? "",
+            status: ad.status,
+            viewCount: ad.viewCount,
+            createdAtIso: ad.createdAt,
+            createdLabel: dateFormatter.format(new Date(ad.createdAt)),
+          }
         : null,
     };
   });
@@ -650,7 +686,15 @@ export default async function TeacherDashboardPage({
         title: c.title,
         scheduledLabel: scheduleFormatter.format(new Date(c.scheduled_at)),
         ad: ad
-          ? { id: ad.id, title: ad.title, content: sanitizeRichTextNullable(ad.content) ?? "", status: ad.status, viewCount: ad.viewCount }
+          ? {
+              id: ad.id,
+              title: ad.title,
+              content: sanitizeRichTextNullable(ad.content) ?? "",
+              status: ad.status,
+              viewCount: ad.viewCount,
+              createdAtIso: ad.createdAt,
+              createdLabel: dateFormatter.format(new Date(ad.createdAt)),
+            }
           : null,
       };
     });

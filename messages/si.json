@@ -2562,6 +2562,7 @@
       "updatingList": "යාවත්කාලීන කරමින්…",
       "updateStuck": "තවම යාවත්කාලීන වී නැත — ඔබේ වෙනස්කම සුරකින ලදී.",
       "reloadPage": "පිටුව නැවත පූරණය කරන්න",
+      "view": "බලන්න",
       "pagination": {
         "showingCount": "{total} න් {shown} පෙන්වයි",
         "previous": "පෙර",
@@ -3287,6 +3288,12 @@
         "active": "සක්‍රීයයි — සෙවුමේ පෙනේ",
         "paused": "විරාම කර ඇත — සෙවුමෙන් සඟවා ඇත",
         "viewCount": "නැරඹීම් {count}",
+        "table": {
+          "className": "පන්තිය",
+          "date": "පළ කළ දිනය",
+          "status": "තත්ත්වය",
+          "actions": "ක්‍රියා"
+        },
         "subjectLabel": "විෂය",
         "subjectPlaceholder": "විෂයක් තෝරන්න",
         "noSubjects": "පළමුව ඔබේ පැතිකඩට විෂයක් එකතු කරන්න (Profile → Subjects), පසුව මෙහි ආපසු එන්න.",

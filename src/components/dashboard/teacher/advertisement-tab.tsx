@@ -1,19 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { StatusBadge } from "@/components/features/status-badge";
 import { AdSlot } from "@/components/features/ad-slot";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { AdPreviewCard } from "@/components/dashboard/ad-preview-card";
 import { AdHistoryList, type AdHistoryRow } from "@/components/dashboard/ad-history-list";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
+import { usePagination } from "@/lib/hooks/use-pagination";
 import { hasRichText, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
 import {
   updateOwnProfileAd,
@@ -145,7 +152,22 @@ export type TeacherAdBatchRow = {
   /** Set only for a "Course Ad" (0139, campus lecturers) — distinguishes a
    * structured multi-session course from an ongoing tuition class. */
   totalSessions: number | null;
-  ad: { id: string; title: string; content: string; status: "active" | "expired" | "removed"; viewCount: number } | null;
+  ad: TeacherAdRow | null;
+};
+
+/** Shared "posted ad" shape both TeacherAdBatchRow and TeacherLessonAdRow
+ * embed — `createdAtIso` is the raw timestamp for sorting the ads table
+ * newest-first, `createdLabel` the already-locale-formatted display string
+ * (server-formatted via dateFormatter, same convention as every other
+ * dashboard list's createdAtIso/createdLabel pair, e.g. TeacherNoteRow). */
+export type TeacherAdRow = {
+  id: string;
+  title: string;
+  content: string;
+  status: "active" | "expired" | "removed";
+  viewCount: number;
+  createdAtIso: string;
+  createdLabel: string;
 };
 
 /** "Lesson/Grade-wise Ad" (0138) — one already-scheduled live class,
@@ -155,7 +177,7 @@ export type TeacherLessonAdRow = {
   id: string;
   title: string;
   scheduledLabel: string;
-  ad: { id: string; title: string; content: string; status: "active" | "expired" | "removed"; viewCount: number } | null;
+  ad: TeacherAdRow | null;
 };
 
 export function AdvertisementTab({
@@ -220,15 +242,12 @@ export function AdvertisementTab({
               {t("classAds.noBatches")}
             </div>
           ) : (
-            batches.map((batch) => (
-              <BatchAdCard
-                key={batch.id}
-                batch={batch}
-                subjectOptions={subjectOptions}
-                defaultHourlyRate={defaultHourlyRate}
-                defaultMonthlyRate={defaultMonthlyRate}
-              />
-            ))
+            <ClassAdsTable
+              batches={batches}
+              subjectOptions={subjectOptions}
+              defaultHourlyRate={defaultHourlyRate}
+              defaultMonthlyRate={defaultMonthlyRate}
+            />
           )}
         </div>
       </div>
@@ -307,13 +326,89 @@ export function AdvertisementTab({
   );
 }
 
-function BatchAdCard({
+/**
+ * Striped, paginated table replacing the old one-card-per-batch list (Gehan
+ * asked for a compact Class/Date/Status/Actions table with "View" opening
+ * the live public ad in a new tab, matching how a real ad-management screen
+ * usually looks rather than a stack of always-expanded forms). Newest-
+ * posted ad first — a batch with no ad yet has nothing to sort by date, so
+ * it sinks to the bottom instead of interleaving with real timestamps.
+ */
+function ClassAdsTable({
+  batches,
+  subjectOptions,
+  defaultHourlyRate,
+  defaultMonthlyRate,
+}: {
+  batches: TeacherAdBatchRow[];
+  subjectOptions: { id: string; name: string }[];
+  defaultHourlyRate?: number | null;
+  defaultMonthlyRate?: number | null;
+}) {
+  const t = useTranslations("teacherDashboard.ads.classAds");
+  const tc = useTranslations("teacherDashboard.common");
+
+  const sorted = useMemo(
+    () =>
+      [...batches].sort((a, b) => {
+        if (!a.ad && !b.ad) return 0;
+        if (!a.ad) return 1;
+        if (!b.ad) return -1;
+        return new Date(b.ad.createdAtIso).getTime() - new Date(a.ad.createdAtIso).getTime();
+      }),
+    [batches],
+  );
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(sorted.length);
+  const paged = sorted.slice(offset, offset + pageSize);
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-border bg-white">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t("table.className")}</TableHead>
+            <TableHead>{t("table.date")}</TableHead>
+            <TableHead>{t("table.status")}</TableHead>
+            <TableHead className="text-right">{t("table.actions")}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {paged.map((batch, i) => (
+            <BatchAdRow
+              key={batch.id}
+              batch={batch}
+              striped={i % 2 === 1}
+              subjectOptions={subjectOptions}
+              defaultHourlyRate={defaultHourlyRate}
+              defaultMonthlyRate={defaultMonthlyRate}
+            />
+          ))}
+        </TableBody>
+      </Table>
+      <div className="px-4 pb-4">
+        <PaginationFooter
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          showingLabel={tc("pagination.showingCount", { shown: paged.length, total: sorted.length })}
+          previousLabel={tc("pagination.previous")}
+          nextLabel={tc("pagination.next")}
+          pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+        />
+      </div>
+    </div>
+  );
+}
+
+function BatchAdRow({
   batch,
+  striped,
   subjectOptions,
   defaultHourlyRate,
   defaultMonthlyRate,
 }: {
   batch: TeacherAdBatchRow;
+  striped: boolean;
   subjectOptions: { id: string; name: string }[];
   defaultHourlyRate?: number | null;
   defaultMonthlyRate?: number | null;
@@ -427,46 +522,43 @@ function BatchAdCard({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-white p-5">
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h4 className="text-base font-medium text-foreground">
+    <>
+      <TableRow className={striped ? "bg-muted/70" : undefined}>
+        <TableCell className="whitespace-normal">
+          <p className="font-medium text-foreground">
             {batch.courseCode && <span className="text-muted-foreground">{batch.courseCode} · </span>}
             {batch.title}
-          </h4>
-          <p className="text-sm text-muted-foreground">
+          </p>
+          <p className="text-xs text-muted-foreground">
             {batch.subjectName ? t("batchSubject", { subject: batch.subjectName }) : t("noSubjectYet")}
             {batch.totalSessions ? ` · ${tCourse("sessionsCount", { count: batch.totalSessions })}` : ""}
           </p>
-        </div>
-        {batch.ad && !deleted && !editing && (
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs text-muted-foreground">
-              {t("viewCount", { count: batch.ad.viewCount })}
-            </span>
-            <span className={`text-sm font-medium ${active ? "text-success" : "text-muted-foreground"}`}>
-              {active ? t("active") : t("paused")}
-            </span>
-            <Switch checked={active} onCheckedChange={handleToggle} disabled={toggling} />
-          </div>
-        )}
-      </div>
-
-      {!editing && (
-        <div>
+        </TableCell>
+        <TableCell className="text-sm text-muted-foreground">{batch.ad && !deleted ? batch.ad.createdLabel : "—"}</TableCell>
+        <TableCell>
           {batch.ad && !deleted ? (
-            <div className="mb-3">
-              <p className="text-sm font-medium text-foreground">{batch.ad.title}</p>
-              <div
-                className={`mt-1 text-sm text-muted-foreground ${RICH_TEXT_DISPLAY_CLASS}`}
-                dangerouslySetInnerHTML={{ __html: batch.ad.content }}
-              />
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-xs text-muted-foreground">{t("viewCount", { count: batch.ad.viewCount })}</span>
+              <StatusBadge variant={active ? "active" : "closed"}>{active ? t("active") : t("paused")}</StatusBadge>
+              <Switch checked={active} onCheckedChange={handleToggle} disabled={toggling} />
             </div>
           ) : (
-            <p className="mb-3 text-sm text-muted-foreground">{t("noAdYet")}</p>
+            <span className="text-xs text-muted-foreground">{t("noAdYet")}</span>
           )}
-          <div className="flex items-center gap-3">
-            <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
+        </TableCell>
+        <TableCell>
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
+            {batch.ad && !deleted && active && (
+              <Link
+                href={`/ad/${batch.ad.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+              >
+                {tc("view")}
+              </Link>
+            )}
+            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(true)}>
               {batch.ad && !deleted ? t("editAd") : t("createAd")}
             </Button>
             {batch.ad && !deleted && (
@@ -481,13 +573,17 @@ function BatchAdCard({
                 {t("deleteAd")}
               </Button>
             )}
-            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
           </div>
-        </div>
-      )}
+          {error && <p className="mt-1 text-right text-xs font-medium text-destructive">{error}</p>}
+        </TableCell>
+      </TableRow>
 
-      {editing && (
-        <div className="flex flex-col gap-4">
+      <Dialog open={editing} onOpenChange={setEditing}>
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{batch.ad && !deleted ? t("editAd") : t("createAd")}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
           {subjectOptions.length === 0 ? (
             <p className="text-sm text-destructive">{t("noSubjects")}</p>
           ) : (
@@ -646,9 +742,10 @@ function BatchAdCard({
               batch.totalSessions ? tCourse("sessionsCount", { count: batch.totalSessions }) : null,
             ].filter((v): v is string => Boolean(v))}
           />
-        </div>
-      )}
-    </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

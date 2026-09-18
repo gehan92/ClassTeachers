@@ -7,8 +7,9 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { StatusBadge } from "@/components/features/status-badge";
 import { AdSlot } from "@/components/features/ad-slot";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
@@ -18,6 +19,7 @@ import { AdHistoryList, type AdHistoryRow } from "@/components/dashboard/ad-hist
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { usePagination } from "@/lib/hooks/use-pagination";
+import { hasRichText } from "@/lib/rich-text";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -41,6 +43,39 @@ import {
 
 const textareaClass =
   "w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40";
+
+/**
+ * Mirrors the teacher dashboard's own local AdPreviewDialog (advertisement-
+ * tab.tsx) — a "Preview" button opens this instead of the preview sitting
+ * inline in the form all the time, matching the Post/Preview/Cancel button
+ * row Gehan asked to keep consistent between the two dashboards.
+ */
+function AdPreviewDialog({
+  open,
+  onOpenChange,
+  dialogTitle,
+  dialogSubtitle,
+  ...cardProps
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  dialogTitle: string;
+  dialogSubtitle: string;
+} & Parameters<typeof AdPreviewCard>[0]) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogSubtitle}</DialogDescription>
+        </DialogHeader>
+        <div className="overflow-y-auto px-4 pb-4">
+          <AdPreviewCard {...cardProps} />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export type InstituteAdRow = {
   id: string;
@@ -527,10 +562,11 @@ function ClassAdEditForm({
   const [hourlyRate, setHourlyRate] = useState(batch.hourlyRate != null ? String(batch.hourlyRate) : "");
   const [monthlyRate, setMonthlyRate] = useState(batch.monthlyRate != null ? String(batch.monthlyRate) : "");
   const [saving, setSaving] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSave() {
-    if (!title.trim() || !content.trim()) return;
+    if (!title.trim() || !hasRichText(content)) return;
     setSaving(true);
     setError(null);
     const [adResult, rateResult] = await Promise.all([
@@ -563,12 +599,11 @@ function ClassAdEditForm({
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor={`ad-content-${ad.id}`}>{t("contentLabel")}</Label>
-          <textarea
+          <RichTextEditor
             id={`ad-content-${ad.id}`}
-            className={textareaClass}
-            rows={4}
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={setContent}
+            placeholder={t("contentPlaceholder")}
           />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -598,16 +633,30 @@ function ClassAdEditForm({
           </div>
         </div>
         <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
-        <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
         <div className="flex items-center gap-3">
           <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
             {t("save")}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+            {tc("preview.button")}
           </Button>
           <Button type="button" size="sm" variant="outline" onClick={onCancel}>
             {tc("cancel")}
           </Button>
           {error && <span className="text-sm font-medium text-destructive">{error}</span>}
         </div>
+        <AdPreviewDialog
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          dialogTitle={tc("preview.dialogTitle")}
+          dialogSubtitle={tc("preview.dialogSubtitle")}
+          badgeLabel={t("previewBadge")}
+          emptyLabel={t("previewEmpty")}
+          title={title}
+          content={content}
+          richContent
+          meta={[batch.courseCode, batch.subjectName].filter((v): v is string => Boolean(v))}
+        />
       </div>
     </div>
   );
@@ -633,10 +682,11 @@ function ClassAdCreateForm({
   const [hourlyRate, setHourlyRate] = useState(initialBatch?.hourlyRate != null ? String(initialBatch.hourlyRate) : "");
   const [monthlyRate, setMonthlyRate] = useState(initialBatch?.monthlyRate != null ? String(initialBatch.monthlyRate) : "");
   const [saving, setSaving] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleCreate() {
-    if (!batchId || !title.trim() || !content.trim()) return;
+    if (!batchId || !title.trim() || !hasRichText(content)) return;
     setSaving(true);
     setError(null);
     const [adResult, rateResult] = await Promise.all([
@@ -685,14 +735,7 @@ function ClassAdCreateForm({
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="new-ad-content">{t("contentLabel")}</Label>
-          <textarea
-            id="new-ad-content"
-            className={textareaClass}
-            rows={4}
-            placeholder={t("contentPlaceholder")}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-          />
+          <RichTextEditor id="new-ad-content" value={content} onChange={setContent} placeholder={t("contentPlaceholder")} />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid gap-1.5">
@@ -721,16 +764,29 @@ function ClassAdCreateForm({
           </div>
         </div>
         <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
-        <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
         <div className="flex items-center gap-3">
           <Button type="button" size="sm" onClick={handleCreate} disabled={saving || !batchId}>
             {t("save")}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+            {tc("preview.button")}
           </Button>
           <Button type="button" size="sm" variant="outline" onClick={onCancel}>
             {tc("cancel")}
           </Button>
           {error && <span className="text-sm font-medium text-destructive">{error}</span>}
         </div>
+        <AdPreviewDialog
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          dialogTitle={tc("preview.dialogTitle")}
+          dialogSubtitle={tc("preview.dialogSubtitle")}
+          badgeLabel={t("previewBadge")}
+          emptyLabel={t("previewEmpty")}
+          title={title}
+          content={content}
+          richContent
+        />
       </div>
     </div>
   );
@@ -1113,10 +1169,11 @@ function TeacherAdEditForm({
   const [title, setTitle] = useState(ad.title);
   const [content, setContent] = useState(ad.content);
   const [saving, setSaving] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSave() {
-    if (!title.trim() || !content.trim()) return;
+    if (!title.trim() || !hasRichText(content)) return;
     setSaving(true);
     setError(null);
     const result = await updateClassBatchAd(ad.id, { title, content });
@@ -1139,24 +1196,37 @@ function TeacherAdEditForm({
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor={`teacher-ad-edit-content-${ad.id}`}>{t("contentLabel")}</Label>
-          <textarea
+          <RichTextEditor
             id={`teacher-ad-edit-content-${ad.id}`}
-            className={textareaClass}
-            rows={4}
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={setContent}
+            placeholder={t("contentPlaceholder")}
           />
         </div>
-        <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
         <div className="flex items-center gap-3">
           <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
             {t("save")}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+            {tc("preview.button")}
           </Button>
           <Button type="button" size="sm" variant="outline" onClick={onCancel}>
             {tc("cancel")}
           </Button>
           {error && <span className="text-sm font-medium text-destructive">{error}</span>}
         </div>
+        <AdPreviewDialog
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          dialogTitle={tc("preview.dialogTitle")}
+          dialogSubtitle={tc("preview.dialogSubtitle")}
+          badgeLabel={t("previewBadge")}
+          emptyLabel={t("previewEmpty")}
+          title={title}
+          content={content}
+          richContent
+          meta={[ad.teacherName]}
+        />
       </div>
     </div>
   );
@@ -1177,10 +1247,11 @@ function TeacherAdCreateForm({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleCreate() {
-    if (!teacherId || !title.trim() || !content.trim()) return;
+    if (!teacherId || !title.trim() || !hasRichText(content)) return;
     setSaving(true);
     setError(null);
     const result = await createTeacherWiseAd({ teacherId, title, content });
@@ -1222,25 +1293,32 @@ function TeacherAdCreateForm({
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="teacher-ad-content">{t("contentLabel")}</Label>
-          <textarea
-            id="teacher-ad-content"
-            rows={4}
-            className={textareaClass}
-            placeholder={t("contentPlaceholder")}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-          />
+          <RichTextEditor id="teacher-ad-content" value={content} onChange={setContent} placeholder={t("contentPlaceholder")} />
         </div>
-        <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
         <div className="flex items-center gap-3">
           <Button type="button" size="sm" onClick={handleCreate} disabled={saving}>
             {t("save")}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+            {tc("preview.button")}
           </Button>
           <Button type="button" size="sm" variant="outline" onClick={onCancel}>
             {tc("cancel")}
           </Button>
           {error && <span className="text-sm font-medium text-destructive">{error}</span>}
         </div>
+        <AdPreviewDialog
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          dialogTitle={tc("preview.dialogTitle")}
+          dialogSubtitle={tc("preview.dialogSubtitle")}
+          badgeLabel={t("previewBadge")}
+          emptyLabel={t("previewEmpty")}
+          title={title}
+          content={content}
+          richContent
+          meta={[teacherOptions.find((t2) => t2.id === teacherId)?.name].filter((v): v is string => Boolean(v))}
+        />
       </div>
     </div>
   );
@@ -1476,10 +1554,11 @@ function VacancyEditForm({
   const [title, setTitle] = useState(vacancy.title);
   const [content, setContent] = useState(vacancy.content);
   const [saving, setSaving] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSave() {
-    if (!title.trim() || !content.trim()) return;
+    if (!title.trim() || !hasRichText(content)) return;
     setSaving(true);
     setError(null);
     const result = await updateVacancyAd(vacancy.id, { subjectId, mode, location, title, content });
@@ -1541,18 +1620,34 @@ function VacancyEditForm({
         </div>
         <div className="grid gap-1.5">
           <Label>{t("contentLabel")}</Label>
-          <textarea className={textareaClass} rows={4} value={content} onChange={(e) => setContent(e.target.value)} />
+          <RichTextEditor value={content} onChange={setContent} placeholder={t("contentPlaceholder")} />
         </div>
-        <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
         <div className="flex items-center gap-3">
           <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
             {tc("save")}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+            {tc("preview.button")}
           </Button>
           <Button type="button" size="sm" variant="outline" onClick={onCancel}>
             {tc("cancel")}
           </Button>
           {error && <span className="text-sm font-medium text-destructive">{error}</span>}
         </div>
+        <AdPreviewDialog
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          dialogTitle={tc("preview.dialogTitle")}
+          dialogSubtitle={tc("preview.dialogSubtitle")}
+          badgeLabel={t("previewBadge")}
+          emptyLabel={t("previewEmpty")}
+          title={title}
+          content={content}
+          richContent
+          meta={[subjectOptions.find((s) => s.id === subjectId)?.name, mode === "online" ? t("modeOnline") : t("modePhysical"), location].filter(
+            (v): v is string => Boolean(v),
+          )}
+        />
       </div>
     </div>
   );
@@ -1575,10 +1670,11 @@ function VacancyCreateForm({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleCreate() {
-    if (!title.trim() || !content.trim()) return;
+    if (!title.trim() || !hasRichText(content)) return;
     setSaving(true);
     setError(null);
     const result = await createVacancyAd({ subjectId, mode, location, title, content });
@@ -1650,25 +1746,34 @@ function VacancyCreateForm({
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="vacancy-content">{t("contentLabel")}</Label>
-          <textarea
-            id="vacancy-content"
-            rows={4}
-            className={textareaClass}
-            placeholder={t("contentPlaceholder")}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-          />
+          <RichTextEditor id="vacancy-content" value={content} onChange={setContent} placeholder={t("contentPlaceholder")} />
         </div>
-        <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
         <div className="flex items-center gap-3">
           <Button type="button" size="sm" onClick={handleCreate} disabled={saving}>
             {t("save")}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+            {tc("preview.button")}
           </Button>
           <Button type="button" size="sm" variant="outline" onClick={onCancel}>
             {tc("cancel")}
           </Button>
           {error && <span className="text-sm font-medium text-destructive">{error}</span>}
         </div>
+        <AdPreviewDialog
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          dialogTitle={tc("preview.dialogTitle")}
+          dialogSubtitle={tc("preview.dialogSubtitle")}
+          badgeLabel={t("previewBadge")}
+          emptyLabel={t("previewEmpty")}
+          title={title}
+          content={content}
+          richContent
+          meta={[subjectOptions.find((s) => s.id === subjectId)?.name, mode === "online" ? t("modeOnline") : t("modePhysical"), location].filter(
+            (v): v is string => Boolean(v),
+          )}
+        />
       </div>
     </div>
   );

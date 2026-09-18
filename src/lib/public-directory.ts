@@ -1,6 +1,7 @@
 import type { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
+import { looksLikeRichTextHtml } from "@/lib/rich-text";
 import { createDateTimeFormatter } from "@/lib/format-date";
 import type { GradeBand } from "@/types/grade-band";
 import type { Listing } from "@/types/listing";
@@ -179,6 +180,11 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator, 
     const roleLabel = row.is_teacher_wise
       ? [tPage("roleFeaturedTeacher"), row.subject].filter(Boolean).join(" · ")
       : [tPage("roleClass"), row.location, online ? tPage("online") : null].filter(Boolean).join(" · ");
+    // Institute ad composers only started producing real RichTextEditor HTML
+    // later (see ads-actions.ts) — an already-posted ad from before that
+    // switch is still plain text, so only sanitize+flag as rich when the
+    // content actually looks like HTML, same detection the /ad/[id] page uses.
+    const classAdIsRichText = looksLikeRichTextHtml(row.ad_content);
 
     const listing: Listing = {
       id: row.ad_id,
@@ -187,7 +193,8 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator, 
       masked: false,
       roleLabel,
       headline: row.ad_title,
-      excerpt: row.ad_content ?? undefined,
+      excerpt: (classAdIsRichText ? sanitizeRichTextNullable(row.ad_content) : row.ad_content) ?? undefined,
+      excerptIsRichText: classAdIsRichText,
       gradeChip: gradeChip(row.grade_band, subjects, tPage, tSearch),
       location: row.location ?? "",
       online,

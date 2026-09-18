@@ -1729,6 +1729,11 @@
         "previous": "පෙර",
         "next": "ඊළඟ",
         "pageInfo": "පිටුව {page} න් {totalPages}"
+      },
+      "preview": {
+        "button": "පෙරදසුන",
+        "dialogTitle": "මෙය පෙනෙන ආකාරය",
+        "dialogSubtitle": "අන් අය දකින්නේ මෙයයි."
       }
     },
     "profile": {

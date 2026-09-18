@@ -424,6 +424,10 @@ export async function createClassBatchAd(input: { batchId: string; title: string
   if (!parsed.success) {
     return { error: "Please fill in the title and details, then try again." };
   }
+  const content = sanitizeRichText(parsed.data.content);
+  if (!hasRichText(content)) {
+    return { error: "Please fill in the title and details, then try again." };
+  }
 
   const supabase = await createClient();
   const {
@@ -455,7 +459,7 @@ export async function createClassBatchAd(input: { batchId: string; title: string
     batch_id: batch.id,
     subject_id: batch.subject_id,
     title: parsed.data.title,
-    content: parsed.data.content,
+    content,
     placement: "search_results",
     plan: "basic",
   });
@@ -468,6 +472,10 @@ export async function createClassBatchAd(input: { batchId: string; title: string
 export async function updateClassBatchAd(adId: string, input: { title: string; content: string }): Promise<ActionResult> {
   const parsed = classBatchAdContentSchema.safeParse(input);
   if (!parsed.success) {
+    return { error: "Please fill in the title and details, then try again." };
+  }
+  const content = sanitizeRichText(parsed.data.content);
+  if (!hasRichText(content)) {
     return { error: "Please fill in the title and details, then try again." };
   }
 
@@ -486,7 +494,7 @@ export async function updateClassBatchAd(adId: string, input: { title: string; c
 
   const { error } = await supabase
     .from("advertisements")
-    .update({ title: parsed.data.title, content: parsed.data.content })
+    .update({ title: parsed.data.title, content })
     .eq("id", adId)
     .eq("owner_type", "class")
     .eq("owner_id", classProfile.id);
@@ -612,6 +620,10 @@ export async function createTeacherWiseAd(input: { teacherId: string; title: str
   if (!parsed.success) {
     return { error: "Please choose a teacher and fill in the title and details." };
   }
+  const content = sanitizeRichText(parsed.data.content);
+  if (!hasRichText(content)) {
+    return { error: "Please choose a teacher and fill in the title and details." };
+  }
 
   const supabase = await createClient();
   const {
@@ -642,7 +654,7 @@ export async function createTeacherWiseAd(input: { teacherId: string; title: str
     owner_id: classProfile.id,
     featured_teacher_id: parsed.data.teacherId,
     title: parsed.data.title,
-    content: parsed.data.content,
+    content,
     placement: "search_results",
     plan: "basic",
   });

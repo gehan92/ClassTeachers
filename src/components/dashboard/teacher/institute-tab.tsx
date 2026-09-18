@@ -11,6 +11,7 @@ import { StatusBadge } from "@/components/features/status-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { avatarGradientClass } from "@/lib/avatar-color";
+import { looksLikeRichTextHtml, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { respondToRosterInvite, requestToJoinInstitute, searchInstitutes } from "@/lib/dashboard/institute-actions";
 import {
@@ -735,7 +736,14 @@ function VacancyBrowseItem({
       <p className="text-xs text-muted-foreground">
         {[vacancy.subject, modeLabel(vacancy.mode), vacancy.location].filter(Boolean).join(" · ")}
       </p>
-      <p className="text-sm text-foreground/80">{vacancy.content}</p>
+      {looksLikeRichTextHtml(vacancy.content) ? (
+        <div
+          className={`text-sm text-foreground/80 ${RICH_TEXT_DISPLAY_CLASS}`}
+          dangerouslySetInnerHTML={{ __html: vacancy.content }}
+        />
+      ) : (
+        <p className="text-sm text-foreground/80">{vacancy.content}</p>
+      )}
 
       {myApplication ? (
         <div className="mt-1 rounded-md bg-secondary/60 px-3 py-2">

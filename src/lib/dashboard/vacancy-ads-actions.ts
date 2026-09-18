@@ -3,6 +3,8 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { notify } from "@/lib/dashboard/notify";
+import { sanitizeRichText } from "@/lib/dashboard/sanitize-rich-text";
+import { hasRichText } from "@/lib/rich-text";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -38,6 +40,10 @@ export async function createVacancyAd(input: {
   if (!parsed.success) {
     return { error: "Please fill in a role title and description, then try again." };
   }
+  const content = sanitizeRichText(parsed.data.content);
+  if (!hasRichText(content)) {
+    return { error: "Please fill in a role title and description, then try again." };
+  }
 
   const supabase = await createClient();
   const {
@@ -58,7 +64,7 @@ export async function createVacancyAd(input: {
     mode: parsed.data.mode ?? null,
     location: parsed.data.location ?? null,
     title: parsed.data.title,
-    content: parsed.data.content,
+    content,
   });
   if (error) {
     return { error: "Couldn't post this vacancy. Please try again." };
@@ -78,6 +84,10 @@ export async function updateVacancyAd(
     content: input.content,
   });
   if (!parsed.success) {
+    return { error: "Please fill in a role title and description, then try again." };
+  }
+  const content = sanitizeRichText(parsed.data.content);
+  if (!hasRichText(content)) {
     return { error: "Please fill in a role title and description, then try again." };
   }
 
@@ -101,7 +111,7 @@ export async function updateVacancyAd(
       mode: parsed.data.mode ?? null,
       location: parsed.data.location ?? null,
       title: parsed.data.title,
-      content: parsed.data.content,
+      content,
     })
     .eq("id", vacancyId)
     .eq("institute_id", instituteId);

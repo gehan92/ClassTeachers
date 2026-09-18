@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/supabase/auth-user";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { sanitizeRichText } from "@/lib/dashboard/sanitize-rich-text";
-import { hasRichText, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
+import { hasRichText, looksLikeRichTextHtml, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
 import { createDateTimeFormatter } from "@/lib/format-date";
 
 /**
@@ -47,9 +47,6 @@ type NormalizedAd = {
   isOpenEnrollment: boolean;
   capacity: number | null;
   spotsTaken: number;
-  /** Only ever set for a teacher ad (0119) — content is sanitized rich-text
-   * HTML for this owner type, plain text for a class ad (institute's own
-   * composer wasn't converted), so rendering must branch on ownerType. */
   medium: "english" | "sinhala" | "tamil" | "other" | null;
   classType: "new" | "revision" | null;
   /** Optional upper end of the rate (0120, teacher ads only). */
@@ -344,14 +341,17 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
 
   const displayName = ad.name ?? (ad.ownerType === "class" ? t("classFallback") : t("teacherFallback"));
 
-  // A teacher ad's content is rich-text HTML (0119, sanitized again here per
-  // this app's read-time sanitize convention); an institute class ad's is
-  // still free text written one point per line (e.g. "Program Highlights:",
-  // "Interactive lessons...") — its own composer wasn't converted, so it
-  // keeps the older line-split rendering, one real bullet per line once
-  // there's more than one, a single line (or none) staying a plain paragraph
-  // rather than showing one lonely bullet.
-  const richContent = ad.ownerType === "teacher" ? sanitizeRichText(ad.adContent ?? "") : null;
+  // A teacher ad's content has always been rich-text HTML (0119, sanitized
+  // again here per this app's read-time sanitize convention). An institute
+  // class ad's composer only started producing real HTML later — any
+  // already-posted class ad from before that switch is still free text
+  // written one point per line (e.g. "Program Highlights:", "Interactive
+  // lessons..."), so detect which shape this particular row actually is
+  // rather than trusting ownerType, and keep the older line-split rendering
+  // (one real bullet per line once there's more than one) for genuine
+  // legacy plain text.
+  const richContent =
+    ad.ownerType === "teacher" || looksLikeRichTextHtml(ad.adContent) ? sanitizeRichText(ad.adContent ?? "") : null;
   const contentLines =
     richContent === null
       ? (ad.adContent ?? "")

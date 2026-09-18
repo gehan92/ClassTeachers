@@ -24,6 +24,19 @@ export function countRichTextWords(html: string): number {
   return text ? text.split(/\s+/).length : 0;
 }
 
+/**
+ * Tells apart genuine RichTextEditor output from legacy plain text saved by
+ * a composer that predates its switch to rich text (e.g. institute ads,
+ * 0104-era vacancy ads) — every real RichTextEditor value is wrapped in at
+ * least a <p>, so a bare "<letter" pattern reliably distinguishes the two
+ * without needing to know which composer produced the row. Read sites use
+ * this to keep rendering old rows the old (safe) way while switching new
+ * ones to HTML, instead of a data migration.
+ */
+export function looksLikeRichTextHtml(value: string | null | undefined): boolean {
+  return Boolean(value && /<[a-z][\s\S]*>/i.test(value));
+}
+
 // Tailwind utility classes for rendering sanitized RichTextEditor HTML wherever
 // it's displayed (dashboard cards, preview cards, public board/detail pages) —
 // kept in one place so every render site stays visually consistent.

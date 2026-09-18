@@ -1729,6 +1729,11 @@
         "previous": "Previous",
         "next": "Next",
         "pageInfo": "Page {page} of {totalPages}"
+      },
+      "preview": {
+        "button": "Preview",
+        "dialogTitle": "How this will look",
+        "dialogSubtitle": "This is what others will see."
       }
     },
     "profile": {

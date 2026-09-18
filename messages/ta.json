@@ -1729,6 +1729,11 @@
         "previous": "முந்தைய",
         "next": "அடுத்து",
         "pageInfo": "பக்கம் {page} / {totalPages}"
+      },
+      "preview": {
+        "button": "முன்னோட்டம்",
+        "dialogTitle": "இது எப்படித் தெரியும்",
+        "dialogSubtitle": "மற்றவர்கள் இதைத்தான் பார்ப்பார்கள்."
       }
     },
     "profile": {

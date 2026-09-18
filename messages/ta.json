@@ -3787,7 +3787,11 @@
       "joinedNow": "நீங்கள் சேர்ந்துவிட்டீர்கள்! இந்த வகுப்பில் இணைந்துவிட்டீர்கள்.",
       "signUpToJoin": "உடனடியாக சேர பதிவு செய்யவும்"
     },
-    "resourcesHeading": "{name} இடமிருந்து இலவச குறிப்புகள்"
+    "resourcesHeading": "{name} இடமிருந்து இலவச குறிப்புகள்",
+    "aboutTeacherHeading": "ஆசிரியர் பற்றி",
+    "reviewsHeading": "மாணவர் மதிப்புரைகள்",
+    "reviewsSummary": "{count} மதிப்புரைகள் · {rating} சராசரி",
+    "noReviewsYet": "இதுவரை மதிப்புரைகள் இல்லை."
   },
   "helpPage": {
     "eyebrow": "உதவி மையம்",

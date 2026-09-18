@@ -6,12 +6,14 @@ import { Link } from "@/i18n/navigation";
 import { JoinRequestBox } from "@/components/features/join-request-box";
 import { InquiryBox } from "@/components/features/inquiry-box";
 import { ShareButtons } from "@/components/features/share-buttons";
+import { ReviewItem } from "@/components/features/review-item";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/supabase/auth-user";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { sanitizeRichText } from "@/lib/dashboard/sanitize-rich-text";
 import { hasRichText, looksLikeRichTextHtml, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
-import { createDateTimeFormatter } from "@/lib/format-date";
+import { createDateFormatter, createDateTimeFormatter } from "@/lib/format-date";
+import type { ReviewDisplay } from "@/types/review";
 
 /**
  * A search-result ad can belong to a teacher (get_public_ad, 0040/0041/0076)
@@ -276,10 +278,13 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/ad/[id]"
 
 /**
  * Landing page for a clicked search-result ad (0039/0040, extended to
- * institute batches by 0103) — deliberately shows less than the full
- * /teacher/[id] or /class/[id] profile (no bio, qualifications, work
- * history or reviews list): just what this one class/subject is, and a way
- * to request to join. Full details unlock once the owner accepts.
+ * institute batches by 0103) — still lighter than the full /teacher/[id]
+ * profile (no work history, affiliated institutes, or full schedule), but a
+ * teacher ad now also surfaces their real bio/qualifications/experience and
+ * a few actual reviews (pulled from the same public RPCs the profile page
+ * uses) so a visitor gets a real sense of the teacher without leaving this
+ * page. An institute class ad keeps the plainer version — there's no single
+ * teacher bio to show for a whole class.
  */
 export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/[id]">) {
   const { locale, id } = await params;
@@ -333,6 +338,30 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
     .eq("owner_id", ad.ownerId)
     .eq("is_public", true)
     .order("created_at", { ascending: false });
+
+  // Reuses the same public RPCs the full /teacher/[id] profile page calls —
+  // bio/qualifications/experience and a real review list, not fabricated
+  // content. Only for a teacher-owned ad; an institute class ad has no
+  // single teacher to show a bio for.
+  const [{ data: teacherProfileRows }, { data: reviewRows }] =
+    ad.ownerType === "teacher"
+      ? await Promise.all([
+          supabase.rpc("get_public_teacher_profile", { p_teacher_id: ad.ownerId }),
+          supabase.rpc("list_public_reviews", { p_target_type: "teacher", p_target_id: ad.ownerId }),
+        ])
+      : [{ data: null }, { data: null }];
+  const teacherProfile = teacherProfileRows?.[0] ?? null;
+  const dateFormatter = createDateFormatter(locale);
+  const reviews: ReviewDisplay[] = (reviewRows ?? [])
+    .slice(0, 3)
+    .map((r) => ({
+      id: r.id,
+      author: r.author ?? "Anonymous",
+      date: dateFormatter.format(new Date(r.created_at)),
+      rating: r.rating,
+      body: r.body ?? "",
+      reply: r.reply ?? undefined,
+    }));
 
   const t = await getTranslations("adPage");
   const tg = await getTranslations("search");
@@ -403,6 +432,9 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
                   {ad.rating.toFixed(1)} ({ad.reviewCount})
                 </span>
               )}
+              {teacherProfile?.experience_years != null && (
+                <span>{t("teacherWiseAd.experienceYears", { count: teacherProfile.experience_years })}</span>
+              )}
               {ad.location && (
                 <span className="flex items-center gap-1">
                   <MapPin className="size-3.5" />
@@ -443,6 +475,7 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
       </h2>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
+        <div className="flex flex-col gap-6">
         <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
           <h3 className="mb-3 text-lg">
             {ad.isCampusLecturer || ad.totalSessions ? t("aboutHeadingCampus") : t("aboutHeading")}
@@ -471,6 +504,51 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
           <p className="mt-6 text-xs text-muted-foreground">
             {ad.isCampusLecturer ? t("limitedNoteCampus") : ad.ownerType === "class" ? t("limitedNoteClass") : t("limitedNote")}
           </p>
+        </div>
+
+        {ad.ownerType === "teacher" &&
+          teacherProfile &&
+          (teacherProfile.bio || (teacherProfile.qualifications?.length ?? 0) > 0 || teacherProfile.experience_years != null) && (
+          <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+            <h3 className="mb-3 text-lg">{t("aboutTeacherHeading")}</h3>
+            {teacherProfile.bio && <p className="text-sm text-foreground/85">{teacherProfile.bio}</p>}
+            {((teacherProfile.qualifications?.length ?? 0) > 0 || teacherProfile.experience_years != null) && (
+              <div className="mt-3.5 flex flex-wrap gap-2">
+                {(teacherProfile.qualifications ?? []).map((qualification: string) => (
+                  <span
+                    key={qualification}
+                    className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
+                  >
+                    {qualification}
+                  </span>
+                ))}
+                {teacherProfile.experience_years != null && (
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                    {t("teacherWiseAd.experienceYears", { count: teacherProfile.experience_years })}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {ad.ownerType === "teacher" && (
+          <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+            <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-lg">{t("reviewsHeading")}</h3>
+              {ad.reviewCount > 0 && (
+                <span className="text-sm text-muted-foreground">
+                  {t("reviewsSummary", { rating: ad.rating.toFixed(1), count: ad.reviewCount })}
+                </span>
+              )}
+            </div>
+            {reviews.length > 0 ? (
+              reviews.map((review) => <ReviewItem key={review.id} review={review} />)
+            ) : (
+              <p className="py-2 text-sm text-muted-foreground">{t("noReviewsYet")}</p>
+            )}
+          </div>
+        )}
         </div>
 
         <div className="flex flex-col gap-6">

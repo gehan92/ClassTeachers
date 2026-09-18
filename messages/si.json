@@ -3787,7 +3787,11 @@
       "joinedNow": "ඔබ එකතු විය! ඔබ මෙම පන්තියට එකතු වී ඇත.",
       "signUpToJoin": "ක්ෂණිකව එකතු වීමට ලියාපදිංචි වන්න"
     },
-    "resourcesHeading": "{name} ගෙන් නොමිලේ සටහන්"
+    "resourcesHeading": "{name} ගෙන් නොමිලේ සටහන්",
+    "aboutTeacherHeading": "ගුරුවරයා ගැන",
+    "reviewsHeading": "ශිෂ්‍ය සමාලෝචන",
+    "reviewsSummary": "සමාලෝචන {count} · සාමාන්‍යය {rating}",
+    "noReviewsYet": "තවම සමාලෝචන නැත."
   },
   "helpPage": {
     "eyebrow": "සහාය මධ්‍යස්ථානය",

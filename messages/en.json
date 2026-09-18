@@ -3787,7 +3787,11 @@
       "joinNow": "Join now",
       "joinedNow": "You're in! You've joined this class.",
       "signUpToJoin": "Sign up to join instantly"
-    }
+    },
+    "aboutTeacherHeading": "About the teacher",
+    "reviewsHeading": "Student reviews",
+    "reviewsSummary": "{count} reviews · {rating} average",
+    "noReviewsYet": "No reviews yet."
   },
   "helpPage": {
     "eyebrow": "Help centre",

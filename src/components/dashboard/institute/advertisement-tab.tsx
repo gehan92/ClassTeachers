@@ -324,18 +324,19 @@ function ClassAdsTable({
           onCancel={() => setCreateOpen(false)}
         />
       ) : (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="self-start"
-          onClick={() => {
-            setCreateBatchId(null);
-            setCreateOpen(true);
-          }}
-        >
-          {t("createAd")}
-        </Button>
+        <div className="rounded-lg border border-dashed border-input bg-white p-5">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setCreateBatchId(null);
+              setCreateOpen(true);
+            }}
+          >
+            {t("createAd")}
+          </Button>
+        </div>
       )}
 
       <div className="overflow-hidden rounded-lg border border-border bg-white">
@@ -549,7 +550,7 @@ function ClassAdEditForm({
   }
 
   return (
-    <div className="rounded-lg border border-dashed border-input bg-muted/20 p-5">
+    <div className="rounded-lg border border-border bg-white p-5">
       <p className="mb-3 font-medium text-foreground">{t("editAd")}</p>
       <div className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">
@@ -655,7 +656,7 @@ function ClassAdCreateForm({
   }
 
   return (
-    <div className="rounded-lg border border-dashed border-input bg-white p-5">
+    <div className="rounded-lg border border-border bg-white p-5">
       <p className="mb-3 font-medium text-foreground">{t("createAd")}</p>
       <div className="flex flex-col gap-4">
         <div className="grid gap-1.5">
@@ -956,9 +957,11 @@ function TeacherAdsTable({
             onCancel={() => setCreateOpen(false)}
           />
         ) : (
-          <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => setCreateOpen(true)}>
-            {t("createAd")}
-          </Button>
+          <div className="rounded-lg border border-dashed border-input bg-white p-5">
+            <Button type="button" variant="outline" size="sm" onClick={() => setCreateOpen(true)}>
+              {t("createAd")}
+            </Button>
+          </div>
         ))}
 
       {sorted.length === 0 ? (
@@ -1126,7 +1129,7 @@ function TeacherAdEditForm({
   }
 
   return (
-    <div className="rounded-lg border border-dashed border-input bg-muted/20 p-5">
+    <div className="rounded-lg border border-border bg-white p-5">
       <p className="mb-3 font-medium text-foreground">{t("editAd")}</p>
       <div className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">{ad.teacherName}</p>
@@ -1190,7 +1193,7 @@ function TeacherAdCreateForm({
   }
 
   return (
-    <div className="rounded-lg border border-dashed border-input bg-white p-5">
+    <div className="rounded-lg border border-border bg-white p-5">
       <p className="mb-3 font-medium text-foreground">{t("createAd")}</p>
       <div className="flex flex-col gap-4">
         <div className="grid gap-1.5">
@@ -1282,9 +1285,11 @@ function VacanciesTable({
           onCancel={() => setCreateOpen(false)}
         />
       ) : (
-        <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => setCreateOpen(true)}>
-          {t("createAd")}
-        </Button>
+        <div className="rounded-lg border border-dashed border-input bg-white p-5">
+          <Button type="button" variant="outline" size="sm" onClick={() => setCreateOpen(true)}>
+            {t("createAd")}
+          </Button>
+        </div>
       )}
 
       {vacancies.length === 0 ? (
@@ -1487,7 +1492,7 @@ function VacancyEditForm({
   }
 
   return (
-    <div className="rounded-lg border border-dashed border-input bg-muted/20 p-5">
+    <div className="rounded-lg border border-border bg-white p-5">
       <p className="mb-3 font-medium text-foreground">{t("editAd")}</p>
       <div className="flex flex-col gap-4">
         <div className="grid gap-3 sm:grid-cols-3">
@@ -1586,7 +1591,7 @@ function VacancyCreateForm({
   }
 
   return (
-    <div className="rounded-lg border border-dashed border-input bg-white p-5">
+    <div className="rounded-lg border border-border bg-white p-5">
       <p className="mb-3 font-medium text-foreground">{t("createAd")}</p>
       <div className="flex flex-col gap-4">
         <div className="grid gap-3 sm:grid-cols-3">

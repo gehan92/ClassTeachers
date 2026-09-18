@@ -327,19 +327,14 @@ function ClassAdsTable({
   const [createOpen, setCreateOpen] = useState(false);
   const [createBatchId, setCreateBatchId] = useState<string | null>(null);
 
-  type Row = { batch: InstituteAdBatchRow; ad: InstituteAdRow | null };
+  type Row = { batch: InstituteAdBatchRow; ad: InstituteAdRow };
   const rows = useMemo(() => {
     const withAds: Row[] = [];
-    const withoutAds: Row[] = [];
     for (const batch of batches) {
-      if (batch.ads.length === 0) {
-        withoutAds.push({ batch, ad: null });
-      } else {
-        for (const ad of batch.ads) withAds.push({ batch, ad });
-      }
+      for (const ad of batch.ads) withAds.push({ batch, ad });
     }
-    withAds.sort((a, b) => new Date(b.ad!.createdAtIso).getTime() - new Date(a.ad!.createdAtIso).getTime());
-    return [...withAds, ...withoutAds];
+    withAds.sort((a, b) => new Date(b.ad.createdAtIso).getTime() - new Date(a.ad.createdAtIso).getTime());
+    return withAds;
   }, [batches]);
 
   const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(rows.length);
@@ -374,45 +369,49 @@ function ClassAdsTable({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-border bg-white">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("table.className")}</TableHead>
-              <TableHead>{t("table.date")}</TableHead>
-              <TableHead>{t("table.status")}</TableHead>
-              <TableHead className="text-right">{t("table.actions")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paged.map((row, i) => (
-              <ClassAdRow
-                key={row.ad?.id ?? `empty-${row.batch.id}`}
-                batch={row.batch}
-                ad={row.ad}
-                striped={i % 2 === 1}
-                onCreateClick={() => {
-                  setCreateBatchId(row.batch.id);
-                  setCreateOpen(true);
-                }}
-                onDeleted={row.ad ? () => onAdDeleted(row.ad!.id) : undefined}
-                onSaved={onChanged}
-              />
-            ))}
-          </TableBody>
-        </Table>
-        <div className="px-4 pb-4">
-          <PaginationFooter
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            showingLabel={tc("pagination.showingCount", { shown: paged.length, total: rows.length })}
-            previousLabel={tc("pagination.previous")}
-            nextLabel={tc("pagination.next")}
-            pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
-          />
+      {rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("noAdYet")}</p>
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-border bg-white">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("table.className")}</TableHead>
+                <TableHead>{t("table.date")}</TableHead>
+                <TableHead>{t("table.status")}</TableHead>
+                <TableHead className="text-right">{t("table.actions")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paged.map((row, i) => (
+                <ClassAdRow
+                  key={row.ad.id}
+                  batch={row.batch}
+                  ad={row.ad}
+                  striped={i % 2 === 1}
+                  onCreateClick={() => {
+                    setCreateBatchId(row.batch.id);
+                    setCreateOpen(true);
+                  }}
+                  onDeleted={() => onAdDeleted(row.ad.id)}
+                  onSaved={onChanged}
+                />
+              ))}
+            </TableBody>
+          </Table>
+          <div className="px-4 pb-4">
+            <PaginationFooter
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              showingLabel={tc("pagination.showingCount", { shown: paged.length, total: rows.length })}
+              previousLabel={tc("pagination.previous")}
+              nextLabel={tc("pagination.next")}
+              pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

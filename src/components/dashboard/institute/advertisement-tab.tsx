@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -312,18 +312,31 @@ function ClassAdsTable({
 
   return (
     <div className="flex flex-col gap-3">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="self-start"
-        onClick={() => {
-          setCreateBatchId(null);
-          setCreateOpen(true);
-        }}
-      >
-        {t("createAd")}
-      </Button>
+      {createOpen ? (
+        <ClassAdCreateForm
+          key={createBatchId ?? "__top"}
+          batches={batches}
+          initialBatchId={createBatchId}
+          onCreated={() => {
+            setCreateOpen(false);
+            onChanged();
+          }}
+          onCancel={() => setCreateOpen(false)}
+        />
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="self-start"
+          onClick={() => {
+            setCreateBatchId(null);
+            setCreateOpen(true);
+          }}
+        >
+          {t("createAd")}
+        </Button>
+      )}
 
       <div className="overflow-hidden rounded-lg border border-border bg-white">
         <Table>
@@ -364,17 +377,6 @@ function ClassAdsTable({
           />
         </div>
       </div>
-
-      <ClassAdCreateDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        batches={batches}
-        initialBatchId={createBatchId}
-        onCreated={() => {
-          setCreateOpen(false);
-          onChanged();
-        }}
-      />
     </div>
   );
 }
@@ -487,34 +489,35 @@ function ClassAdRow({
         </TableCell>
       </TableRow>
 
-      {ad && (
-        <ClassAdEditDialog
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          batch={batch}
-          ad={ad}
-          onSaved={() => {
-            setEditOpen(false);
-            onSaved();
-          }}
-        />
+      {ad && editOpen && (
+        <TableRow className={striped ? "bg-muted/70" : undefined}>
+          <TableCell colSpan={4} className="pt-0">
+            <ClassAdEditForm
+              batch={batch}
+              ad={ad}
+              onSaved={() => {
+                setEditOpen(false);
+                onSaved();
+              }}
+              onCancel={() => setEditOpen(false)}
+            />
+          </TableCell>
+        </TableRow>
       )}
     </>
   );
 }
 
-function ClassAdEditDialog({
-  open,
-  onOpenChange,
+function ClassAdEditForm({
   batch,
   ad,
   onSaved,
+  onCancel,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   batch: InstituteAdBatchRow;
   ad: InstituteAdRow;
   onSaved: () => void;
+  onCancel: () => void;
 }) {
   const t = useTranslations("instituteDashboard.ads.classAds");
   const tc = useTranslations("instituteDashboard.common");
@@ -546,111 +549,90 @@ function ClassAdEditDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{t("editAd")}</DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground">
-            {batch.courseCode && <span>{batch.courseCode} · </span>}
-            {batch.title}
-          </p>
+    <div className="rounded-lg border border-dashed border-input bg-muted/20 p-5">
+      <p className="mb-3 font-medium text-foreground">{t("editAd")}</p>
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-muted-foreground">
+          {batch.courseCode && <span>{batch.courseCode} · </span>}
+          {batch.title}
+        </p>
+        <div className="grid gap-1.5">
+          <Label htmlFor={`ad-title-${ad.id}`}>{t("titleLabel")}</Label>
+          <Input id={`ad-title-${ad.id}`} value={title} onChange={(e) => setTitle(e.target.value)} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor={`ad-content-${ad.id}`}>{t("contentLabel")}</Label>
+          <textarea
+            id={`ad-content-${ad.id}`}
+            className={textareaClass}
+            rows={4}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <Label htmlFor={`ad-title-${ad.id}`}>{t("titleLabel")}</Label>
-            <Input id={`ad-title-${ad.id}`} value={title} onChange={(e) => setTitle(e.target.value)} />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor={`ad-content-${ad.id}`}>{t("contentLabel")}</Label>
-            <textarea
-              id={`ad-content-${ad.id}`}
-              className={textareaClass}
-              rows={4}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+            <Label htmlFor={`ad-hourly-${ad.id}`}>{t("hourlyRateLabel")}</Label>
+            <Input
+              id={`ad-hourly-${ad.id}`}
+              type="number"
+              min="0"
+              inputMode="decimal"
+              placeholder={t("ratePlaceholderNone")}
+              value={hourlyRate}
+              onChange={(e) => setHourlyRate(e.target.value)}
             />
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="grid gap-1.5">
-              <Label htmlFor={`ad-hourly-${ad.id}`}>{t("hourlyRateLabel")}</Label>
-              <Input
-                id={`ad-hourly-${ad.id}`}
-                type="number"
-                min="0"
-                inputMode="decimal"
-                placeholder={t("ratePlaceholderNone")}
-                value={hourlyRate}
-                onChange={(e) => setHourlyRate(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor={`ad-monthly-${ad.id}`}>{t("monthlyRateLabel")}</Label>
-              <Input
-                id={`ad-monthly-${ad.id}`}
-                type="number"
-                min="0"
-                inputMode="decimal"
-                placeholder={t("ratePlaceholderNone")}
-                value={monthlyRate}
-                onChange={(e) => setMonthlyRate(e.target.value)}
-              />
-            </div>
-          </div>
-          <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
-          <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
-          <div className="flex items-center gap-3">
-            <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
-              {t("save")}
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => onOpenChange(false)}>
-              {tc("cancel")}
-            </Button>
-            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+          <div className="grid gap-1.5">
+            <Label htmlFor={`ad-monthly-${ad.id}`}>{t("monthlyRateLabel")}</Label>
+            <Input
+              id={`ad-monthly-${ad.id}`}
+              type="number"
+              min="0"
+              inputMode="decimal"
+              placeholder={t("ratePlaceholderNone")}
+              value={monthlyRate}
+              onChange={(e) => setMonthlyRate(e.target.value)}
+            />
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+        <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
+        <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
+        <div className="flex items-center gap-3">
+          <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
+            {t("save")}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+            {tc("cancel")}
+          </Button>
+          {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+        </div>
+      </div>
+    </div>
   );
 }
 
-function ClassAdCreateDialog({
-  open,
-  onOpenChange,
+function ClassAdCreateForm({
   batches,
   initialBatchId,
   onCreated,
+  onCancel,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   batches: InstituteAdBatchRow[];
   initialBatchId: string | null;
   onCreated: () => void;
+  onCancel: () => void;
 }) {
   const t = useTranslations("instituteDashboard.ads.classAds");
   const tc = useTranslations("instituteDashboard.common");
+  const initialBatch = batches.find((b) => b.id === initialBatchId) ?? null;
   const [batchId, setBatchId] = useState(initialBatchId ?? batches[0]?.id ?? "");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [hourlyRate, setHourlyRate] = useState("");
-  const [monthlyRate, setMonthlyRate] = useState("");
+  const [hourlyRate, setHourlyRate] = useState(initialBatch?.hourlyRate != null ? String(initialBatch.hourlyRate) : "");
+  const [monthlyRate, setMonthlyRate] = useState(initialBatch?.monthlyRate != null ? String(initialBatch.monthlyRate) : "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Re-seed every field whenever the dialog opens fresh, rather than
-  // leaving a stale draft from the last time it was opened — including the
-  // target batch, which a row's own "Create ad" action pre-selects.
-  useEffect(() => {
-    if (!open) return;
-    const batch = batches.find((b) => b.id === initialBatchId) ?? null;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting a dialog's draft fields when it opens, not derived render state
-    setBatchId(initialBatchId ?? batches[0]?.id ?? "");
-    setTitle("");
-    setContent("");
-    setHourlyRate(batch?.hourlyRate != null ? String(batch.hourlyRate) : "");
-    setMonthlyRate(batch?.monthlyRate != null ? String(batch.monthlyRate) : "");
-    setError(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- batches is stable for this component's lifetime; only re-seed when the dialog opens or the target batch changes
-  }, [open, initialBatchId]);
 
   async function handleCreate() {
     if (!batchId || !title.trim() || !content.trim()) return;
@@ -673,87 +655,83 @@ function ClassAdCreateDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{t("createAd")}</DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col gap-4">
+    <div className="rounded-lg border border-dashed border-input bg-white p-5">
+      <p className="mb-3 font-medium text-foreground">{t("createAd")}</p>
+      <div className="flex flex-col gap-4">
+        <div className="grid gap-1.5">
+          <Label htmlFor="new-ad-batch">{t("batchLabel")}</Label>
+          <Select value={batchId} onValueChange={(value) => setBatchId(value ?? "")}>
+            <SelectTrigger id="new-ad-batch" className="w-full">
+              <SelectValue placeholder={t("batchPlaceholder")} />
+            </SelectTrigger>
+            <SelectContent>
+              {batches.map((batch) => (
+                <SelectItem key={batch.id} value={batch.id}>
+                  {batch.courseCode ? `${batch.courseCode} · ${batch.title}` : batch.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="new-ad-title">{t("titleLabel")}</Label>
+          <Input
+            id="new-ad-title"
+            placeholder={t("titlePlaceholder")}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="new-ad-content">{t("contentLabel")}</Label>
+          <textarea
+            id="new-ad-content"
+            className={textareaClass}
+            rows={4}
+            placeholder={t("contentPlaceholder")}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <Label htmlFor="new-ad-batch">{t("batchLabel")}</Label>
-            <Select value={batchId} onValueChange={(value) => setBatchId(value ?? "")}>
-              <SelectTrigger id="new-ad-batch" className="w-full">
-                <SelectValue placeholder={t("batchPlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                {batches.map((batch) => (
-                  <SelectItem key={batch.id} value={batch.id}>
-                    {batch.courseCode ? `${batch.courseCode} · ${batch.title}` : batch.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="new-ad-title">{t("titleLabel")}</Label>
+            <Label htmlFor="new-ad-hourly">{t("hourlyRateLabel")}</Label>
             <Input
-              id="new-ad-title"
-              placeholder={t("titlePlaceholder")}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              id="new-ad-hourly"
+              type="number"
+              min="0"
+              inputMode="decimal"
+              placeholder={t("ratePlaceholderNone")}
+              value={hourlyRate}
+              onChange={(e) => setHourlyRate(e.target.value)}
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="new-ad-content">{t("contentLabel")}</Label>
-            <textarea
-              id="new-ad-content"
-              className={textareaClass}
-              rows={4}
-              placeholder={t("contentPlaceholder")}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+            <Label htmlFor="new-ad-monthly">{t("monthlyRateLabel")}</Label>
+            <Input
+              id="new-ad-monthly"
+              type="number"
+              min="0"
+              inputMode="decimal"
+              placeholder={t("ratePlaceholderNone")}
+              value={monthlyRate}
+              onChange={(e) => setMonthlyRate(e.target.value)}
             />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="grid gap-1.5">
-              <Label htmlFor="new-ad-hourly">{t("hourlyRateLabel")}</Label>
-              <Input
-                id="new-ad-hourly"
-                type="number"
-                min="0"
-                inputMode="decimal"
-                placeholder={t("ratePlaceholderNone")}
-                value={hourlyRate}
-                onChange={(e) => setHourlyRate(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="new-ad-monthly">{t("monthlyRateLabel")}</Label>
-              <Input
-                id="new-ad-monthly"
-                type="number"
-                min="0"
-                inputMode="decimal"
-                placeholder={t("ratePlaceholderNone")}
-                value={monthlyRate}
-                onChange={(e) => setMonthlyRate(e.target.value)}
-              />
-            </div>
-          </div>
-          <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
-          <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
-          <div className="flex items-center gap-3">
-            <Button type="button" size="sm" onClick={handleCreate} disabled={saving || !batchId}>
-              {t("save")}
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => onOpenChange(false)}>
-              {tc("cancel")}
-            </Button>
-            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+        <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
+        <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
+        <div className="flex items-center gap-3">
+          <Button type="button" size="sm" onClick={handleCreate} disabled={saving || !batchId}>
+            {t("save")}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+            {tc("cancel")}
+          </Button>
+          {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -967,11 +945,21 @@ function TeacherAdsTable({
 
   return (
     <div className="flex flex-col gap-3">
-      {teacherOptions.length > 0 && (
-        <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => setCreateOpen(true)}>
-          {t("createAd")}
-        </Button>
-      )}
+      {teacherOptions.length > 0 &&
+        (createOpen ? (
+          <TeacherAdCreateForm
+            teacherOptions={teacherOptions}
+            onCreated={() => {
+              setCreateOpen(false);
+              onChanged();
+            }}
+            onCancel={() => setCreateOpen(false)}
+          />
+        ) : (
+          <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => setCreateOpen(true)}>
+            {t("createAd")}
+          </Button>
+        ))}
 
       {sorted.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("noAdYet")}</p>
@@ -1005,16 +993,6 @@ function TeacherAdsTable({
           </div>
         </div>
       )}
-
-      <TeacherAdCreateDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        teacherOptions={teacherOptions}
-        onCreated={() => {
-          setCreateOpen(false);
-          onChanged();
-        }}
-      />
     </div>
   );
 }
@@ -1100,29 +1078,32 @@ function TeacherAdRow({
         </TableCell>
       </TableRow>
 
-      <TeacherAdEditDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        ad={ad}
-        onSaved={() => {
-          setEditOpen(false);
-          onSaved();
-        }}
-      />
+      {editOpen && (
+        <TableRow className={striped ? "bg-muted/70" : undefined}>
+          <TableCell colSpan={4} className="pt-0">
+            <TeacherAdEditForm
+              ad={ad}
+              onSaved={() => {
+                setEditOpen(false);
+                onSaved();
+              }}
+              onCancel={() => setEditOpen(false)}
+            />
+          </TableCell>
+        </TableRow>
+      )}
     </>
   );
 }
 
-function TeacherAdEditDialog({
-  open,
-  onOpenChange,
+function TeacherAdEditForm({
   ad,
   onSaved,
+  onCancel,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   ad: InstituteTeacherAdRow;
   onSaved: () => void;
+  onCancel: () => void;
 }) {
   const t = useTranslations("instituteDashboard.ads.teacherAds");
   const tc = useTranslations("instituteDashboard.common");
@@ -1145,53 +1126,47 @@ function TeacherAdEditDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{t("editAd")}</DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground">{ad.teacherName}</p>
-          <div className="grid gap-1.5">
-            <Label htmlFor={`teacher-ad-edit-title-${ad.id}`}>{t("titleLabel")}</Label>
-            <Input id={`teacher-ad-edit-title-${ad.id}`} value={title} onChange={(e) => setTitle(e.target.value)} />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor={`teacher-ad-edit-content-${ad.id}`}>{t("contentLabel")}</Label>
-            <textarea
-              id={`teacher-ad-edit-content-${ad.id}`}
-              className={textareaClass}
-              rows={4}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
-          </div>
-          <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
-          <div className="flex items-center gap-3">
-            <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
-              {t("save")}
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => onOpenChange(false)}>
-              {tc("cancel")}
-            </Button>
-            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
-          </div>
+    <div className="rounded-lg border border-dashed border-input bg-muted/20 p-5">
+      <p className="mb-3 font-medium text-foreground">{t("editAd")}</p>
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-muted-foreground">{ad.teacherName}</p>
+        <div className="grid gap-1.5">
+          <Label htmlFor={`teacher-ad-edit-title-${ad.id}`}>{t("titleLabel")}</Label>
+          <Input id={`teacher-ad-edit-title-${ad.id}`} value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
-      </DialogContent>
-    </Dialog>
+        <div className="grid gap-1.5">
+          <Label htmlFor={`teacher-ad-edit-content-${ad.id}`}>{t("contentLabel")}</Label>
+          <textarea
+            id={`teacher-ad-edit-content-${ad.id}`}
+            className={textareaClass}
+            rows={4}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+          />
+        </div>
+        <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
+        <div className="flex items-center gap-3">
+          <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
+            {t("save")}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+            {tc("cancel")}
+          </Button>
+          {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+        </div>
+      </div>
+    </div>
   );
 }
 
-function TeacherAdCreateDialog({
-  open,
-  onOpenChange,
+function TeacherAdCreateForm({
   teacherOptions,
   onCreated,
+  onCancel,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   teacherOptions: InstituteTeacherOption[];
   onCreated: () => void;
+  onCancel: () => void;
 }) {
   const t = useTranslations("instituteDashboard.ads.teacherAds");
   const tc = useTranslations("instituteDashboard.common");
@@ -1200,16 +1175,6 @@ function TeacherAdCreateDialog({
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting a dialog's draft fields when it opens, not derived render state
-    setTeacherId(teacherOptions[0]?.id ?? "");
-    setTitle("");
-    setContent("");
-    setError(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- teacherOptions is stable for this component's lifetime; only re-seed when the dialog opens
-  }, [open]);
 
   async function handleCreate() {
     if (!teacherId || !title.trim() || !content.trim()) return;
@@ -1225,60 +1190,56 @@ function TeacherAdCreateDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{t("createAd")}</DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col gap-4">
-          <div className="grid gap-1.5">
-            <Label htmlFor="teacher-ad-teacher">{t("heading")}</Label>
-            <Select value={teacherId} onValueChange={(value) => setTeacherId(value ?? "")}>
-              <SelectTrigger id="teacher-ad-teacher" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {teacherOptions.map((teacher) => (
-                  <SelectItem key={teacher.id} value={teacher.id}>
-                    {teacher.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="teacher-ad-title">{t("titleLabel")}</Label>
-            <Input
-              id="teacher-ad-title"
-              placeholder={t("titlePlaceholder")}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="teacher-ad-content">{t("contentLabel")}</Label>
-            <textarea
-              id="teacher-ad-content"
-              rows={4}
-              className={textareaClass}
-              placeholder={t("contentPlaceholder")}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
-          </div>
-          <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
-          <div className="flex items-center gap-3">
-            <Button type="button" size="sm" onClick={handleCreate} disabled={saving}>
-              {t("save")}
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => onOpenChange(false)}>
-              {tc("cancel")}
-            </Button>
-            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
-          </div>
+    <div className="rounded-lg border border-dashed border-input bg-white p-5">
+      <p className="mb-3 font-medium text-foreground">{t("createAd")}</p>
+      <div className="flex flex-col gap-4">
+        <div className="grid gap-1.5">
+          <Label htmlFor="teacher-ad-teacher">{t("heading")}</Label>
+          <Select value={teacherId} onValueChange={(value) => setTeacherId(value ?? "")}>
+            <SelectTrigger id="teacher-ad-teacher" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {teacherOptions.map((teacher) => (
+                <SelectItem key={teacher.id} value={teacher.id}>
+                  {teacher.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      </DialogContent>
-    </Dialog>
+        <div className="grid gap-1.5">
+          <Label htmlFor="teacher-ad-title">{t("titleLabel")}</Label>
+          <Input
+            id="teacher-ad-title"
+            placeholder={t("titlePlaceholder")}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="teacher-ad-content">{t("contentLabel")}</Label>
+          <textarea
+            id="teacher-ad-content"
+            rows={4}
+            className={textareaClass}
+            placeholder={t("contentPlaceholder")}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+          />
+        </div>
+        <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
+        <div className="flex items-center gap-3">
+          <Button type="button" size="sm" onClick={handleCreate} disabled={saving}>
+            {t("save")}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+            {tc("cancel")}
+          </Button>
+          {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1311,9 +1272,20 @@ function VacanciesTable({
 
   return (
     <div className="flex flex-col gap-3">
-      <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => setCreateOpen(true)}>
-        {t("createAd")}
-      </Button>
+      {createOpen ? (
+        <VacancyCreateForm
+          subjectOptions={subjectOptions}
+          onCreated={() => {
+            setCreateOpen(false);
+            onChanged();
+          }}
+          onCancel={() => setCreateOpen(false)}
+        />
+      ) : (
+        <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => setCreateOpen(true)}>
+          {t("createAd")}
+        </Button>
+      )}
 
       {vacancies.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("noVacancies")}</p>
@@ -1356,16 +1328,6 @@ function VacanciesTable({
           </div>
         </div>
       )}
-
-      <VacancyCreateDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        subjectOptions={subjectOptions}
-        onCreated={() => {
-          setCreateOpen(false);
-          onChanged();
-        }}
-      />
     </div>
   );
 }
@@ -1456,16 +1418,21 @@ function VacancyRow({
         </TableCell>
       </TableRow>
 
-      <VacancyEditDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        vacancy={vacancy}
-        subjectOptions={subjectOptions}
-        onSaved={() => {
-          setEditOpen(false);
-          onSaved();
-        }}
-      />
+      {editOpen && (
+        <TableRow className={striped ? "bg-muted/70" : undefined}>
+          <TableCell colSpan={5} className="pt-0">
+            <VacancyEditForm
+              vacancy={vacancy}
+              subjectOptions={subjectOptions}
+              onSaved={() => {
+                setEditOpen(false);
+                onSaved();
+              }}
+              onCancel={() => setEditOpen(false)}
+            />
+          </TableCell>
+        </TableRow>
+      )}
 
       <Dialog open={applicantsOpen} onOpenChange={setApplicantsOpen}>
         <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
@@ -1485,18 +1452,16 @@ function VacancyRow({
   );
 }
 
-function VacancyEditDialog({
-  open,
-  onOpenChange,
+function VacancyEditForm({
   vacancy,
   subjectOptions,
   onSaved,
+  onCancel,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   vacancy: InstituteVacancyRow;
   subjectOptions: { id: string; name: string }[];
   onSaved: () => void;
+  onCancel: () => void;
 }) {
   const t = useTranslations("instituteDashboard.ads.vacancies");
   const tc = useTranslations("instituteDashboard.common");
@@ -1522,86 +1487,80 @@ function VacancyEditDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{t("editAd")}</DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col gap-4">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="grid gap-1.5">
-              <Label>{t("subjectLabel")}</Label>
-              {subjectOptions.length > 0 ? (
-                <Select value={subjectId} onValueChange={(value) => setSubjectId(value ?? "")}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t("subjectPlaceholder")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subjectOptions.map((subject) => (
-                      <SelectItem key={subject.id} value={subject.id}>
-                        {subject.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <p className="text-sm text-muted-foreground">{t("subjectPlaceholder")}</p>
-              )}
-            </div>
-            <div className="grid gap-1.5">
-              <Label>{t("modeLabel")}</Label>
-              <Select value={mode} onValueChange={(value) => setMode((value as "online" | "physical") ?? "physical")}>
+    <div className="rounded-lg border border-dashed border-input bg-muted/20 p-5">
+      <p className="mb-3 font-medium text-foreground">{t("editAd")}</p>
+      <div className="flex flex-col gap-4">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-1.5">
+            <Label>{t("subjectLabel")}</Label>
+            {subjectOptions.length > 0 ? (
+              <Select value={subjectId} onValueChange={(value) => setSubjectId(value ?? "")}>
                 <SelectTrigger className="w-full">
-                  <SelectValue />
+                  <SelectValue placeholder={t("subjectPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {VACANCY_MODES.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option === "online" ? t("modeOnline") : t("modePhysical")}
+                  {subjectOptions.map((subject) => (
+                    <SelectItem key={subject.id} value={subject.id}>
+                      {subject.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="grid gap-1.5">
-              <Label>{t("locationLabel")}</Label>
-              <Input value={location} onChange={(e) => setLocation(e.target.value)} />
-            </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">{t("subjectPlaceholder")}</p>
+            )}
           </div>
           <div className="grid gap-1.5">
-            <Label>{t("titleLabel")}</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+            <Label>{t("modeLabel")}</Label>
+            <Select value={mode} onValueChange={(value) => setMode((value as "online" | "physical") ?? "physical")}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {VACANCY_MODES.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option === "online" ? t("modeOnline") : t("modePhysical")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-1.5">
-            <Label>{t("contentLabel")}</Label>
-            <textarea className={textareaClass} rows={4} value={content} onChange={(e) => setContent(e.target.value)} />
-          </div>
-          <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
-          <div className="flex items-center gap-3">
-            <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
-              {tc("save")}
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => onOpenChange(false)}>
-              {tc("cancel")}
-            </Button>
-            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+            <Label>{t("locationLabel")}</Label>
+            <Input value={location} onChange={(e) => setLocation(e.target.value)} />
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+        <div className="grid gap-1.5">
+          <Label>{t("titleLabel")}</Label>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>{t("contentLabel")}</Label>
+          <textarea className={textareaClass} rows={4} value={content} onChange={(e) => setContent(e.target.value)} />
+        </div>
+        <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
+        <div className="flex items-center gap-3">
+          <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
+            {tc("save")}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+            {tc("cancel")}
+          </Button>
+          {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+        </div>
+      </div>
+    </div>
   );
 }
 
-function VacancyCreateDialog({
-  open,
-  onOpenChange,
+function VacancyCreateForm({
   subjectOptions,
   onCreated,
+  onCancel,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   subjectOptions: { id: string; name: string }[];
   onCreated: () => void;
+  onCancel: () => void;
 }) {
   const t = useTranslations("instituteDashboard.ads.vacancies");
   const tc = useTranslations("instituteDashboard.common");
@@ -1612,17 +1571,6 @@ function VacancyCreateDialog({
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting a dialog's draft fields when it opens, not derived render state
-    setSubjectId("");
-    setMode("physical");
-    setLocation("");
-    setTitle("");
-    setContent("");
-    setError(null);
-  }, [open]);
 
   async function handleCreate() {
     if (!title.trim() || !content.trim()) return;
@@ -1638,90 +1586,86 @@ function VacancyCreateDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{t("createAd")}</DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col gap-4">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="grid gap-1.5">
-              <Label htmlFor="vacancy-subject">{t("subjectLabel")}</Label>
-              {subjectOptions.length > 0 ? (
-                <Select value={subjectId} onValueChange={(value) => setSubjectId(value ?? "")}>
-                  <SelectTrigger id="vacancy-subject" className="w-full">
-                    <SelectValue placeholder={t("subjectPlaceholder")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subjectOptions.map((subject) => (
-                      <SelectItem key={subject.id} value={subject.id}>
-                        {subject.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                // Subject is optional here (unlike the class/course ad forms,
-                // where it's required and blocked instead) — with no known
-                // subjects yet to offer, this field just stays skippable rather
-                // than accepting free text into what createVacancyAd validates
-                // as a real subject id.
-                <p className="text-sm text-muted-foreground">{t("subjectPlaceholder")}</p>
-              )}
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="vacancy-mode">{t("modeLabel")}</Label>
-              <Select value={mode} onValueChange={(value) => setMode((value as "online" | "physical") ?? "physical")}>
-                <SelectTrigger id="vacancy-mode" className="w-full">
-                  <SelectValue />
+    <div className="rounded-lg border border-dashed border-input bg-white p-5">
+      <p className="mb-3 font-medium text-foreground">{t("createAd")}</p>
+      <div className="flex flex-col gap-4">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-1.5">
+            <Label htmlFor="vacancy-subject">{t("subjectLabel")}</Label>
+            {subjectOptions.length > 0 ? (
+              <Select value={subjectId} onValueChange={(value) => setSubjectId(value ?? "")}>
+                <SelectTrigger id="vacancy-subject" className="w-full">
+                  <SelectValue placeholder={t("subjectPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {VACANCY_MODES.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option === "online" ? t("modeOnline") : t("modePhysical")}
+                  {subjectOptions.map((subject) => (
+                    <SelectItem key={subject.id} value={subject.id}>
+                      {subject.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="vacancy-location">{t("locationLabel")}</Label>
-              <Input
-                id="vacancy-location"
-                placeholder={t("locationPlaceholder")}
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-              />
-            </div>
+            ) : (
+              // Subject is optional here (unlike the class/course ad forms,
+              // where it's required and blocked instead) — with no known
+              // subjects yet to offer, this field just stays skippable rather
+              // than accepting free text into what createVacancyAd validates
+              // as a real subject id.
+              <p className="text-sm text-muted-foreground">{t("subjectPlaceholder")}</p>
+            )}
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="vacancy-title">{t("titleLabel")}</Label>
-            <Input id="vacancy-title" placeholder={t("titlePlaceholder")} value={title} onChange={(e) => setTitle(e.target.value)} />
+            <Label htmlFor="vacancy-mode">{t("modeLabel")}</Label>
+            <Select value={mode} onValueChange={(value) => setMode((value as "online" | "physical") ?? "physical")}>
+              <SelectTrigger id="vacancy-mode" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {VACANCY_MODES.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option === "online" ? t("modeOnline") : t("modePhysical")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="vacancy-content">{t("contentLabel")}</Label>
-            <textarea
-              id="vacancy-content"
-              rows={4}
-              className={textareaClass}
-              placeholder={t("contentPlaceholder")}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+            <Label htmlFor="vacancy-location">{t("locationLabel")}</Label>
+            <Input
+              id="vacancy-location"
+              placeholder={t("locationPlaceholder")}
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
             />
           </div>
-          <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
-          <div className="flex items-center gap-3">
-            <Button type="button" size="sm" onClick={handleCreate} disabled={saving}>
-              {t("save")}
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => onOpenChange(false)}>
-              {tc("cancel")}
-            </Button>
-            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
-          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+        <div className="grid gap-1.5">
+          <Label htmlFor="vacancy-title">{t("titleLabel")}</Label>
+          <Input id="vacancy-title" placeholder={t("titlePlaceholder")} value={title} onChange={(e) => setTitle(e.target.value)} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="vacancy-content">{t("contentLabel")}</Label>
+          <textarea
+            id="vacancy-content"
+            rows={4}
+            className={textareaClass}
+            placeholder={t("contentPlaceholder")}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+          />
+        </div>
+        <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
+        <div className="flex items-center gap-3">
+          <Button type="button" size="sm" onClick={handleCreate} disabled={saving}>
+            {t("save")}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+            {tc("cancel")}
+          </Button>
+          {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -1573,6 +1573,14 @@
         "editAd": "Edit ad",
         "active": "Active — visible in search",
         "paused": "Paused — hidden from search",
+        "batchLabel": "Class",
+        "batchPlaceholder": "Select a class",
+        "table": {
+          "className": "Class",
+          "date": "Date posted",
+          "status": "Status",
+          "actions": "Actions"
+        },
         "titleLabel": "Ad title",
         "titlePlaceholder": "e.g. Combined Maths — Grade 12/13, weekday evenings",
         "contentLabel": "Ad details",
@@ -1633,6 +1641,12 @@
         "active": "Active — visible in search",
         "paused": "Paused — hidden from search",
         "viewCount": "{count} views",
+        "table": {
+          "teacher": "Teacher",
+          "date": "Date posted",
+          "status": "Status",
+          "actions": "Actions"
+        },
         "titleLabel": "Ad title",
         "titlePlaceholder": "e.g. Meet our senior Physics lecturer",
         "contentLabel": "Ad details",
@@ -1671,6 +1685,13 @@
         "confirmDelete": "Delete this vacancy? This can't be undone.",
         "applicantsHeading": "Applicants",
         "noApplicants": "No applications yet.",
+        "table": {
+          "vacancy": "Vacancy",
+          "date": "Date posted",
+          "applicants": "Applicants",
+          "status": "Status",
+          "actions": "Actions"
+        },
         "applicantStatus": {
           "new": "New",
           "read": "Read",
@@ -1702,6 +1723,7 @@
       "updatingList": "Updating…",
       "updateStuck": "Still not updated — your change was saved.",
       "reloadPage": "Reload page",
+      "view": "View",
       "pagination": {
         "showingCount": "Showing {shown} of {total}",
         "previous": "Previous",

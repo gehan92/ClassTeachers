@@ -1,17 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { StatusBadge } from "@/components/features/status-badge";
 import { AdSlot } from "@/components/features/ad-slot";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { AdPreviewCard } from "@/components/dashboard/ad-preview-card";
 import { AdHistoryList, type AdHistoryRow } from "@/components/dashboard/ad-history-list";
+import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
+import { usePagination } from "@/lib/hooks/use-pagination";
+import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   createClassBatchAd,
@@ -41,6 +48,8 @@ export type InstituteAdRow = {
   content: string;
   status: "active" | "expired" | "removed";
   viewCount: number;
+  createdAtIso: string;
+  createdLabel: string;
 };
 
 export type InstituteAdBatchRow = {
@@ -73,6 +82,8 @@ export type InstituteTeacherAdRow = {
   content: string;
   status: "active" | "expired" | "removed";
   viewCount: number;
+  createdAtIso: string;
+  createdLabel: string;
 };
 
 export type InstituteVacancyRow = {
@@ -84,6 +95,7 @@ export type InstituteVacancyRow = {
   title: string;
   content: string;
   active: boolean;
+  createdAtIso: string;
   createdLabel: string;
 };
 
@@ -160,63 +172,44 @@ export function AdvertisementTab({
             {t("classAds.noBatches")}
           </div>
         ) : (
-          <div className="flex flex-col gap-5">
-            {batches.map((batch) => (
-              <ClassBatchAdsSection
-                key={batch.id}
-                batch={{ ...batch, ads: batch.ads.filter((ad) => !deletedAdIds.has(ad.id)) }}
-                onAdDeleted={(adId) => {
-                  setDeletedAdIds((prev) => new Set(prev).add(adId));
-                  refresh();
-                }}
-                onChanged={refresh}
-              />
-            ))}
-          </div>
+          <ClassAdsTable
+            batches={batches.map((b) => ({ ...b, ads: b.ads.filter((ad) => !deletedAdIds.has(ad.id)) }))}
+            onAdDeleted={(adId) => {
+              setDeletedAdIds((prev) => new Set(prev).add(adId));
+              refresh();
+            }}
+            onChanged={refresh}
+          />
         )}
       </div>
 
       <div>
         <h3 className="mb-1 text-lg">{t("teacherAds.heading")}</h3>
         <p className="mb-4 text-sm text-muted-foreground">{t("teacherAds.subtitle")}</p>
-        <div className="flex flex-col gap-4">
-          <TeacherAdCreateForm teacherOptions={teacherOptions} onCreated={refresh} />
-          {visibleTeacherAds.map((ad) => (
-            <TeacherAdCard
-              key={ad.id}
-              ad={ad}
-              onDeleted={() => {
-                setDeletedTeacherAdIds((prev) => new Set(prev).add(ad.id));
-                refresh();
-              }}
-              onSaved={refresh}
-            />
-          ))}
-        </div>
+        <TeacherAdsTable
+          teacherOptions={teacherOptions}
+          ads={visibleTeacherAds}
+          onDeleted={(adId) => {
+            setDeletedTeacherAdIds((prev) => new Set(prev).add(adId));
+            refresh();
+          }}
+          onChanged={refresh}
+        />
       </div>
 
       <div>
         <h3 className="mb-1 text-lg">{t("vacancies.heading")}</h3>
         <p className="mb-4 text-sm text-muted-foreground">{t("vacancies.subtitle")}</p>
-        <div className="flex flex-col gap-4">
-          <VacancyCreateForm subjectOptions={subjectOptions} onCreated={refresh} />
-          {visibleVacancies.length === 0 && (
-            <p className="text-sm text-muted-foreground">{t("vacancies.noVacancies")}</p>
-          )}
-          {visibleVacancies.map((vacancy) => (
-            <VacancyCard
-              key={vacancy.id}
-              vacancy={vacancy}
-              applications={vacancyApplications.filter((a) => a.vacancyId === vacancy.id)}
-              subjectOptions={subjectOptions}
-              onDeleted={() => {
-                setDeletedVacancyIds((prev) => new Set(prev).add(vacancy.id));
-                refresh();
-              }}
-              onSaved={refresh}
-            />
-          ))}
-        </div>
+        <VacanciesTable
+          subjectOptions={subjectOptions}
+          vacancies={visibleVacancies}
+          applications={vacancyApplications}
+          onDeleted={(id) => {
+            setDeletedVacancyIds((prev) => new Set(prev).add(id));
+            refresh();
+          }}
+          onChanged={refresh}
+        />
       </div>
 
       <div>
@@ -276,165 +269,149 @@ export function AdvertisementTab({
   );
 }
 
-function ClassBatchAdsSection({
-  batch,
+/**
+ * Striped, paginated table mirroring the teacher dashboard's Advertisement
+ * tab (Gehan asked to keep the two designs consistent). A class here can
+ * carry more than one ad (0104), unlike a teacher's single batch ad, so the
+ * table flattens to one row per ad — plus one placeholder row per class
+ * that has no ad yet at all, same "still shows up, nudges you to create
+ * one" behavior the teacher table has. Newest-posted ad first; classes
+ * with zero ads sink to the bottom since they have no date to sort by.
+ */
+function ClassAdsTable({
+  batches,
   onAdDeleted,
   onChanged,
 }: {
-  batch: InstituteAdBatchRow;
+  batches: InstituteAdBatchRow[];
   onAdDeleted: (adId: string) => void;
   onChanged: () => void;
 }) {
   const t = useTranslations("instituteDashboard.ads.classAds");
-  const [creating, setCreating] = useState(false);
+  const tc = useTranslations("instituteDashboard.common");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createBatchId, setCreateBatchId] = useState<string | null>(null);
 
-  return (
-    <div className="rounded-lg border border-border bg-white p-5">
-      <div className="mb-3">
-        <h4 className="text-base font-medium text-foreground">
-          {batch.courseCode && <span className="text-muted-foreground">{batch.courseCode} · </span>}
-          {batch.title}
-        </h4>
-        <p className="text-sm text-muted-foreground">
-          {batch.subjectName ? t("batchSubject", { subject: batch.subjectName }) : t("noSubjectYet")}
-          {batch.totalSessions ? ` · ${t("sessionsCount", { count: batch.totalSessions })}` : ""}
-        </p>
-      </div>
-
-      <ClassBatchRateForm batch={batch} onSaved={onChanged} />
-
-      {batch.ads.length === 0 && !creating && <p className="mb-3 text-sm text-muted-foreground">{t("noAdYet")}</p>}
-
-      {batch.ads.length > 0 && (
-        <div className="mb-4 flex flex-col gap-3">
-          {batch.ads.map((ad) => (
-            <ClassBatchAdCard key={ad.id} ad={ad} onDeleted={() => onAdDeleted(ad.id)} onSaved={onChanged} />
-          ))}
-        </div>
-      )}
-
-      {creating ? (
-        <ClassBatchAdCreateForm
-          batchId={batch.id}
-          onCreated={() => {
-            setCreating(false);
-            onChanged();
-          }}
-          onCancel={() => setCreating(false)}
-        />
-      ) : (
-        <Button type="button" variant="outline" size="sm" onClick={() => setCreating(true)}>
-          {batch.ads.length === 0 ? t("createAd") : t("addAnotherAd")}
-        </Button>
-      )}
-    </div>
-  );
-}
-
-function ClassBatchRateForm({ batch, onSaved }: { batch: InstituteAdBatchRow; onSaved: () => void }) {
-  const t = useTranslations("instituteDashboard.ads.classAds");
-  const [hourlyRate, setHourlyRate] = useState(batch.hourlyRate != null ? String(batch.hourlyRate) : "");
-  const [monthlyRate, setMonthlyRate] = useState(batch.monthlyRate != null ? String(batch.monthlyRate) : "");
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleSave() {
-    setSaving(true);
-    setError(null);
-    const result = await updateClassBatchRate({
-      batchId: batch.id,
-      hourlyRate: hourlyRate.trim() ? Number(hourlyRate) : undefined,
-      monthlyRate: monthlyRate.trim() ? Number(monthlyRate) : undefined,
-    });
-    setSaving(false);
-    if (result.error) {
-      setError(result.error);
-      return;
+  type Row = { batch: InstituteAdBatchRow; ad: InstituteAdRow | null };
+  const rows = useMemo(() => {
+    const withAds: Row[] = [];
+    const withoutAds: Row[] = [];
+    for (const batch of batches) {
+      if (batch.ads.length === 0) {
+        withoutAds.push({ batch, ad: null });
+      } else {
+        for (const ad of batch.ads) withAds.push({ batch, ad });
+      }
     }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-    onSaved();
-  }
+    withAds.sort((a, b) => new Date(b.ad!.createdAtIso).getTime() - new Date(a.ad!.createdAtIso).getTime());
+    return [...withAds, ...withoutAds];
+  }, [batches]);
+
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(rows.length);
+  const paged = rows.slice(offset, offset + pageSize);
 
   return (
-    <div className="mb-4 rounded-md border border-border bg-background p-3.5">
-      <p className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-        {t("rateHeading")}
-      </p>
-      <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-        <div className="grid gap-1.5">
-          <Label htmlFor={`rate-hourly-${batch.id}`}>{t("hourlyRateLabel")}</Label>
-          <Input
-            id={`rate-hourly-${batch.id}`}
-            type="number"
-            min="0"
-            inputMode="decimal"
-            placeholder={t("ratePlaceholderNone")}
-            value={hourlyRate}
-            onChange={(e) => setHourlyRate(e.target.value)}
+    <div className="flex flex-col gap-3">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="self-start"
+        onClick={() => {
+          setCreateBatchId(null);
+          setCreateOpen(true);
+        }}
+      >
+        {t("createAd")}
+      </Button>
+
+      <div className="overflow-hidden rounded-lg border border-border bg-white">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t("table.className")}</TableHead>
+              <TableHead>{t("table.date")}</TableHead>
+              <TableHead>{t("table.status")}</TableHead>
+              <TableHead className="text-right">{t("table.actions")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paged.map((row, i) => (
+              <ClassAdRow
+                key={row.ad?.id ?? `empty-${row.batch.id}`}
+                batch={row.batch}
+                ad={row.ad}
+                striped={i % 2 === 1}
+                onCreateClick={() => {
+                  setCreateBatchId(row.batch.id);
+                  setCreateOpen(true);
+                }}
+                onDeleted={row.ad ? () => onAdDeleted(row.ad!.id) : undefined}
+                onSaved={onChanged}
+              />
+            ))}
+          </TableBody>
+        </Table>
+        <div className="px-4 pb-4">
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            showingLabel={tc("pagination.showingCount", { shown: paged.length, total: rows.length })}
+            previousLabel={tc("pagination.previous")}
+            nextLabel={tc("pagination.next")}
+            pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
           />
         </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor={`rate-monthly-${batch.id}`}>{t("monthlyRateLabel")}</Label>
-          <Input
-            id={`rate-monthly-${batch.id}`}
-            type="number"
-            min="0"
-            inputMode="decimal"
-            placeholder={t("ratePlaceholderNone")}
-            value={monthlyRate}
-            onChange={(e) => setMonthlyRate(e.target.value)}
-          />
-        </div>
-        <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
-          {t("saveRate")}
-        </Button>
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
-      {saved && <p className="animate-in fade-in-0 mt-1 text-xs font-medium text-success duration-200">{t("rateSaved")}</p>}
-      {error && <p className="mt-1 text-xs font-medium text-destructive">{error}</p>}
+
+      <ClassAdCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        batches={batches}
+        initialBatchId={createBatchId}
+        onCreated={() => {
+          setCreateOpen(false);
+          onChanged();
+        }}
+      />
     </div>
   );
 }
 
-function ClassBatchAdCard({ ad, onDeleted, onSaved }: { ad: InstituteAdRow; onDeleted: () => void; onSaved: () => void }) {
+function ClassAdRow({
+  batch,
+  ad,
+  striped,
+  onCreateClick,
+  onDeleted,
+  onSaved,
+}: {
+  batch: InstituteAdBatchRow;
+  ad: InstituteAdRow | null;
+  striped: boolean;
+  onCreateClick: () => void;
+  onDeleted?: () => void;
+  onSaved: () => void;
+}) {
   const t = useTranslations("instituteDashboard.ads.classAds");
   const tc = useTranslations("instituteDashboard.common");
-
-  const [editing, setEditing] = useState(false);
-  const [title, setTitle] = useState(ad.title);
-  const [content, setContent] = useState(ad.content);
-  const [active, setActive] = useState(ad.status === "active");
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [active, setActive] = useState(ad?.status === "active");
   const [toggling, setToggling] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSave() {
-    if (!title.trim() || !content.trim()) return;
-    setSaving(true);
-    setError(null);
-    const result = await updateClassBatchAd(ad.id, { title, content });
-    setSaving(false);
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
-    setEditing(false);
-    onSaved();
-  }
-
   async function handleToggle(checked: boolean) {
+    if (!ad) return;
     setToggling(true);
     const result = await setClassBatchAdActive(ad.id, checked);
     setToggling(false);
-    if (!result.error) {
-      setActive(checked);
-    }
+    if (!result.error) setActive(checked);
   }
 
   async function handleDelete() {
+    if (!ad) return;
     if (!window.confirm(t("confirmDelete"))) return;
     setDeleting(true);
     setError(null);
@@ -444,44 +421,141 @@ function ClassBatchAdCard({ ad, onDeleted, onSaved }: { ad: InstituteAdRow; onDe
       setError(result.error);
       return;
     }
-    onDeleted();
+    onDeleted?.();
   }
 
   return (
-    <div className="rounded-md border border-border p-4">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="font-mono text-xs text-muted-foreground">{t("viewCount", { count: ad.viewCount })}</span>
-        <div className="flex items-center gap-2">
-          <span className={`text-xs font-medium ${active ? "text-success" : "text-muted-foreground"}`}>
-            {active ? t("active") : t("paused")}
-          </span>
-          <Switch checked={active} onCheckedChange={handleToggle} disabled={toggling} />
-        </div>
-      </div>
-
-      {!editing ? (
-        <div>
-          <p className="text-sm font-medium text-foreground">{ad.title}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{ad.content}</p>
-          <div className="mt-3 flex items-center gap-3">
-            <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
-              {t("editAd")}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={handleDelete}
-              disabled={deleting}
-            >
-              {t("deleteAd")}
-            </Button>
+    <>
+      <TableRow className={striped ? "bg-muted/70" : undefined}>
+        <TableCell className="whitespace-normal">
+          <p className="font-medium text-foreground">
+            {batch.courseCode && <span className="text-muted-foreground">{batch.courseCode} · </span>}
+            {batch.title}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {batch.subjectName ? t("batchSubject", { subject: batch.subjectName }) : t("noSubjectYet")}
+            {batch.totalSessions ? ` · ${t("sessionsCount", { count: batch.totalSessions })}` : ""}
+          </p>
+        </TableCell>
+        <TableCell className="text-sm text-muted-foreground">{ad ? ad.createdLabel : "—"}</TableCell>
+        <TableCell>
+          {ad ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-xs text-muted-foreground">{t("viewCount", { count: ad.viewCount })}</span>
+              <StatusBadge variant={active ? "active" : "closed"}>{active ? t("active") : t("paused")}</StatusBadge>
+              <Switch checked={active} onCheckedChange={handleToggle} disabled={toggling} />
+            </div>
+          ) : (
+            <span className="text-xs text-muted-foreground">{t("noAdYet")}</span>
+          )}
+        </TableCell>
+        <TableCell>
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
+            {ad && active && (
+              <Link
+                href={`/ad/${ad.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+              >
+                {tc("view")}
+              </Link>
+            )}
+            {ad ? (
+              <Button type="button" variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
+                {t("editAd")}
+              </Button>
+            ) : (
+              <Button type="button" variant="ghost" size="sm" onClick={onCreateClick}>
+                {t("createAd")}
+              </Button>
+            )}
+            {ad && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {t("deleteAd")}
+              </Button>
+            )}
           </div>
-          {error && <p className="mt-2 text-xs font-medium text-destructive">{error}</p>}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
+          {error && <p className="mt-1 text-right text-xs font-medium text-destructive">{error}</p>}
+        </TableCell>
+      </TableRow>
+
+      {ad && (
+        <ClassAdEditDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          batch={batch}
+          ad={ad}
+          onSaved={() => {
+            setEditOpen(false);
+            onSaved();
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function ClassAdEditDialog({
+  open,
+  onOpenChange,
+  batch,
+  ad,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  batch: InstituteAdBatchRow;
+  ad: InstituteAdRow;
+  onSaved: () => void;
+}) {
+  const t = useTranslations("instituteDashboard.ads.classAds");
+  const tc = useTranslations("instituteDashboard.common");
+  const [title, setTitle] = useState(ad.title);
+  const [content, setContent] = useState(ad.content);
+  const [hourlyRate, setHourlyRate] = useState(batch.hourlyRate != null ? String(batch.hourlyRate) : "");
+  const [monthlyRate, setMonthlyRate] = useState(batch.monthlyRate != null ? String(batch.monthlyRate) : "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave() {
+    if (!title.trim() || !content.trim()) return;
+    setSaving(true);
+    setError(null);
+    const [adResult, rateResult] = await Promise.all([
+      updateClassBatchAd(ad.id, { title, content }),
+      updateClassBatchRate({
+        batchId: batch.id,
+        hourlyRate: hourlyRate.trim() ? Number(hourlyRate) : undefined,
+        monthlyRate: monthlyRate.trim() ? Number(monthlyRate) : undefined,
+      }),
+    ]);
+    setSaving(false);
+    if (adResult.error || rateResult.error) {
+      setError(adResult.error || rateResult.error || null);
+      return;
+    }
+    onSaved();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{t("editAd")}</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">
+            {batch.courseCode && <span>{batch.courseCode} · </span>}
+            {batch.title}
+          </p>
           <div className="grid gap-1.5">
             <Label htmlFor={`ad-title-${ad.id}`}>{t("titleLabel")}</Label>
             <Input id={`ad-title-${ad.id}`} value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -496,84 +570,190 @@ function ClassBatchAdCard({ ad, onDeleted, onSaved }: { ad: InstituteAdRow; onDe
               onChange={(e) => setContent(e.target.value)}
             />
           </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor={`ad-hourly-${ad.id}`}>{t("hourlyRateLabel")}</Label>
+              <Input
+                id={`ad-hourly-${ad.id}`}
+                type="number"
+                min="0"
+                inputMode="decimal"
+                placeholder={t("ratePlaceholderNone")}
+                value={hourlyRate}
+                onChange={(e) => setHourlyRate(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor={`ad-monthly-${ad.id}`}>{t("monthlyRateLabel")}</Label>
+              <Input
+                id={`ad-monthly-${ad.id}`}
+                type="number"
+                min="0"
+                inputMode="decimal"
+                placeholder={t("ratePlaceholderNone")}
+                value={monthlyRate}
+                onChange={(e) => setMonthlyRate(e.target.value)}
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
           <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
           <div className="flex items-center gap-3">
             <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
               {t("save")}
             </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => setEditing(false)}>
+            <Button type="button" size="sm" variant="outline" onClick={() => onOpenChange(false)}>
               {tc("cancel")}
             </Button>
             {error && <span className="text-sm font-medium text-destructive">{error}</span>}
           </div>
         </div>
-      )}
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-function ClassBatchAdCreateForm({
-  batchId,
+function ClassAdCreateDialog({
+  open,
+  onOpenChange,
+  batches,
+  initialBatchId,
   onCreated,
-  onCancel,
 }: {
-  batchId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  batches: InstituteAdBatchRow[];
+  initialBatchId: string | null;
   onCreated: () => void;
-  onCancel: () => void;
 }) {
   const t = useTranslations("instituteDashboard.ads.classAds");
   const tc = useTranslations("instituteDashboard.common");
+  const [batchId, setBatchId] = useState(initialBatchId ?? batches[0]?.id ?? "");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [hourlyRate, setHourlyRate] = useState("");
+  const [monthlyRate, setMonthlyRate] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Re-seed every field whenever the dialog opens fresh, rather than
+  // leaving a stale draft from the last time it was opened — including the
+  // target batch, which a row's own "Create ad" action pre-selects.
+  useEffect(() => {
+    if (!open) return;
+    const batch = batches.find((b) => b.id === initialBatchId) ?? null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting a dialog's draft fields when it opens, not derived render state
+    setBatchId(initialBatchId ?? batches[0]?.id ?? "");
+    setTitle("");
+    setContent("");
+    setHourlyRate(batch?.hourlyRate != null ? String(batch.hourlyRate) : "");
+    setMonthlyRate(batch?.monthlyRate != null ? String(batch.monthlyRate) : "");
+    setError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- batches is stable for this component's lifetime; only re-seed when the dialog opens or the target batch changes
+  }, [open, initialBatchId]);
+
   async function handleCreate() {
-    if (!title.trim() || !content.trim()) return;
+    if (!batchId || !title.trim() || !content.trim()) return;
     setSaving(true);
     setError(null);
-    const result = await createClassBatchAd({ batchId, title, content });
+    const [adResult, rateResult] = await Promise.all([
+      createClassBatchAd({ batchId, title, content }),
+      updateClassBatchRate({
+        batchId,
+        hourlyRate: hourlyRate.trim() ? Number(hourlyRate) : undefined,
+        monthlyRate: monthlyRate.trim() ? Number(monthlyRate) : undefined,
+      }),
+    ]);
     setSaving(false);
-    if (result.error) {
-      setError(result.error);
+    if (adResult.error || rateResult.error) {
+      setError(adResult.error || rateResult.error || null);
       return;
     }
     onCreated();
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-md border border-dashed border-input p-4">
-      <div className="grid gap-1.5">
-        <Label htmlFor={`new-ad-title-${batchId}`}>{t("titleLabel")}</Label>
-        <Input
-          id={`new-ad-title-${batchId}`}
-          placeholder={t("titlePlaceholder")}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor={`new-ad-content-${batchId}`}>{t("contentLabel")}</Label>
-        <textarea
-          id={`new-ad-content-${batchId}`}
-          className={textareaClass}
-          rows={4}
-          placeholder={t("contentPlaceholder")}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-        />
-      </div>
-      <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
-      <div className="flex items-center gap-3">
-        <Button type="button" size="sm" onClick={handleCreate} disabled={saving}>
-          {t("save")}
-        </Button>
-        <Button type="button" size="sm" variant="outline" onClick={onCancel}>
-          {tc("cancel")}
-        </Button>
-        {error && <span className="text-sm font-medium text-destructive">{error}</span>}
-      </div>
-    </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{t("createAd")}</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <div className="grid gap-1.5">
+            <Label htmlFor="new-ad-batch">{t("batchLabel")}</Label>
+            <Select value={batchId} onValueChange={(value) => setBatchId(value ?? "")}>
+              <SelectTrigger id="new-ad-batch" className="w-full">
+                <SelectValue placeholder={t("batchPlaceholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                {batches.map((batch) => (
+                  <SelectItem key={batch.id} value={batch.id}>
+                    {batch.courseCode ? `${batch.courseCode} · ${batch.title}` : batch.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="new-ad-title">{t("titleLabel")}</Label>
+            <Input
+              id="new-ad-title"
+              placeholder={t("titlePlaceholder")}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="new-ad-content">{t("contentLabel")}</Label>
+            <textarea
+              id="new-ad-content"
+              className={textareaClass}
+              rows={4}
+              placeholder={t("contentPlaceholder")}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="new-ad-hourly">{t("hourlyRateLabel")}</Label>
+              <Input
+                id="new-ad-hourly"
+                type="number"
+                min="0"
+                inputMode="decimal"
+                placeholder={t("ratePlaceholderNone")}
+                value={hourlyRate}
+                onChange={(e) => setHourlyRate(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="new-ad-monthly">{t("monthlyRateLabel")}</Label>
+              <Input
+                id="new-ad-monthly"
+                type="number"
+                min="0"
+                inputMode="decimal"
+                placeholder={t("ratePlaceholderNone")}
+                value={monthlyRate}
+                onChange={(e) => setMonthlyRate(e.target.value)}
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-muted-foreground">{t("rateHelper")}</p>
+          <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
+          <div className="flex items-center gap-3">
+            <Button type="button" size="sm" onClick={handleCreate} disabled={saving || !batchId}>
+              {t("save")}
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => onOpenChange(false)}>
+              {tc("cancel")}
+            </Button>
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -759,139 +939,110 @@ function PromotionCreateForm({ onCreated, onCancel }: { onCreated: () => void; o
  * teachers genuinely on the accepted roster (teacherOptions, resolved
  * server-side too in createTeacherWiseAd).
  */
-function TeacherAdCreateForm({ teacherOptions, onCreated }: { teacherOptions: InstituteTeacherOption[]; onCreated: () => void }) {
+function TeacherAdsTable({
+  teacherOptions,
+  ads,
+  onDeleted,
+  onChanged,
+}: {
+  teacherOptions: InstituteTeacherOption[];
+  ads: InstituteTeacherAdRow[];
+  onDeleted: (adId: string) => void;
+  onChanged: () => void;
+}) {
   const t = useTranslations("instituteDashboard.ads.teacherAds");
   const tc = useTranslations("instituteDashboard.common");
-  const [open, setOpen] = useState(false);
-  const [teacherId, setTeacherId] = useState(teacherOptions[0]?.id ?? "");
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
-  async function handleCreate() {
-    if (!teacherId || !title.trim() || !content.trim()) return;
-    setSaving(true);
-    setError(null);
-    const result = await createTeacherWiseAd({ teacherId, title, content });
-    setSaving(false);
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
-    setOpen(false);
-    setTitle("");
-    setContent("");
-    onCreated();
-  }
+  const sorted = useMemo(
+    () => [...ads].sort((a, b) => new Date(b.createdAtIso).getTime() - new Date(a.createdAtIso).getTime()),
+    [ads],
+  );
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(sorted.length);
+  const paged = sorted.slice(offset, offset + pageSize);
 
-  if (teacherOptions.length === 0) {
+  if (teacherOptions.length === 0 && ads.length === 0) {
     return <div className="rounded-lg border border-border bg-white p-5 text-sm text-muted-foreground">{t("noTeachers")}</div>;
   }
 
-  if (!open) {
-    return (
-      <div className="rounded-lg border border-dashed border-input bg-white p-5">
-        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
+  return (
+    <div className="flex flex-col gap-3">
+      {teacherOptions.length > 0 && (
+        <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => setCreateOpen(true)}>
           {t("createAd")}
         </Button>
-      </div>
-    );
-  }
+      )}
 
-  return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-white p-5">
-      <div className="grid gap-1.5 sm:max-w-72">
-        <Label htmlFor="teacher-ad-teacher">{t("heading")}</Label>
-        <Select value={teacherId} onValueChange={(value) => setTeacherId(value ?? "")}>
-          <SelectTrigger id="teacher-ad-teacher" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {teacherOptions.map((teacher) => (
-              <SelectItem key={teacher.id} value={teacher.id}>
-                {teacher.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor="teacher-ad-title">{t("titleLabel")}</Label>
-        <Input
-          id="teacher-ad-title"
-          placeholder={t("titlePlaceholder")}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor="teacher-ad-content">{t("contentLabel")}</Label>
-        <textarea
-          id="teacher-ad-content"
-          rows={4}
-          className={textareaClass}
-          placeholder={t("contentPlaceholder")}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-        />
-      </div>
-      <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
-      <div className="flex items-center gap-3">
-        <Button type="button" size="sm" onClick={handleCreate} disabled={saving}>
-          {t("save")}
-        </Button>
-        <Button type="button" size="sm" variant="outline" onClick={() => setOpen(false)}>
-          {tc("cancel")}
-        </Button>
-        {error && <span className="text-sm font-medium text-destructive">{error}</span>}
-      </div>
+      {sorted.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("noAdYet")}</p>
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-border bg-white">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("table.teacher")}</TableHead>
+                <TableHead>{t("table.date")}</TableHead>
+                <TableHead>{t("table.status")}</TableHead>
+                <TableHead className="text-right">{t("table.actions")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paged.map((ad, i) => (
+                <TeacherAdRow key={ad.id} ad={ad} striped={i % 2 === 1} onDeleted={() => onDeleted(ad.id)} onSaved={onChanged} />
+              ))}
+            </TableBody>
+          </Table>
+          <div className="px-4 pb-4">
+            <PaginationFooter
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              showingLabel={tc("pagination.showingCount", { shown: paged.length, total: sorted.length })}
+              previousLabel={tc("pagination.previous")}
+              nextLabel={tc("pagination.next")}
+              pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+            />
+          </div>
+        </div>
+      )}
+
+      <TeacherAdCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        teacherOptions={teacherOptions}
+        onCreated={() => {
+          setCreateOpen(false);
+          onChanged();
+        }}
+      />
     </div>
   );
 }
 
-function TeacherAdCard({
+function TeacherAdRow({
   ad,
+  striped,
   onDeleted,
   onSaved,
 }: {
   ad: InstituteTeacherAdRow;
+  striped: boolean;
   onDeleted: () => void;
   onSaved: () => void;
 }) {
   const t = useTranslations("instituteDashboard.ads.teacherAds");
   const tc = useTranslations("instituteDashboard.common");
-
-  const [editing, setEditing] = useState(false);
-  const [title, setTitle] = useState(ad.title);
-  const [content, setContent] = useState(ad.content);
+  const [editOpen, setEditOpen] = useState(false);
   const [active, setActive] = useState(ad.status === "active");
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  async function handleSave() {
-    if (!title.trim() || !content.trim()) return;
-    setSaving(true);
-    setError(null);
-    const result = await updateClassBatchAd(ad.id, { title, content });
-    setSaving(false);
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
-    setEditing(false);
-    onSaved();
-  }
 
   async function handleToggle(checked: boolean) {
     setToggling(true);
     const result = await setClassBatchAdActive(ad.id, checked);
     setToggling(false);
-    if (!result.error) {
-      setActive(checked);
-    }
+    if (!result.error) setActive(checked);
   }
 
   async function handleDelete() {
@@ -908,24 +1059,30 @@ function TeacherAdCard({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-white p-5">
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-        <h4 className="text-base font-medium text-foreground">{ad.teacherName}</h4>
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-xs text-muted-foreground">{t("viewCount", { count: ad.viewCount })}</span>
-          <span className={`text-xs font-medium ${active ? "text-success" : "text-muted-foreground"}`}>
-            {active ? t("active") : t("paused")}
-          </span>
-          <Switch checked={active} onCheckedChange={handleToggle} disabled={toggling} />
-        </div>
-      </div>
-
-      {!editing ? (
-        <div>
-          <p className="text-sm font-medium text-foreground">{ad.title}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{ad.content}</p>
-          <div className="mt-3 flex items-center gap-3">
-            <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
+    <>
+      <TableRow className={striped ? "bg-muted/70" : undefined}>
+        <TableCell className="font-medium text-foreground">{ad.teacherName}</TableCell>
+        <TableCell className="text-sm text-muted-foreground">{ad.createdLabel}</TableCell>
+        <TableCell>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-xs text-muted-foreground">{t("viewCount", { count: ad.viewCount })}</span>
+            <StatusBadge variant={active ? "active" : "closed"}>{active ? t("active") : t("paused")}</StatusBadge>
+            <Switch checked={active} onCheckedChange={handleToggle} disabled={toggling} />
+          </div>
+        </TableCell>
+        <TableCell>
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
+            {active && (
+              <Link
+                href={`/ad/${ad.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+              >
+                {tc("view")}
+              </Link>
+            )}
+            <Button type="button" variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
               {t("editAd")}
             </Button>
             <Button
@@ -939,10 +1096,62 @@ function TeacherAdCard({
               {t("deleteAd")}
             </Button>
           </div>
-          {error && <p className="mt-2 text-xs font-medium text-destructive">{error}</p>}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
+          {error && <p className="mt-1 text-right text-xs font-medium text-destructive">{error}</p>}
+        </TableCell>
+      </TableRow>
+
+      <TeacherAdEditDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        ad={ad}
+        onSaved={() => {
+          setEditOpen(false);
+          onSaved();
+        }}
+      />
+    </>
+  );
+}
+
+function TeacherAdEditDialog({
+  open,
+  onOpenChange,
+  ad,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  ad: InstituteTeacherAdRow;
+  onSaved: () => void;
+}) {
+  const t = useTranslations("instituteDashboard.ads.teacherAds");
+  const tc = useTranslations("instituteDashboard.common");
+  const [title, setTitle] = useState(ad.title);
+  const [content, setContent] = useState(ad.content);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave() {
+    if (!title.trim() || !content.trim()) return;
+    setSaving(true);
+    setError(null);
+    const result = await updateClassBatchAd(ad.id, { title, content });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    onSaved();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{t("editAd")}</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">{ad.teacherName}</p>
           <div className="grid gap-1.5">
             <Label htmlFor={`teacher-ad-edit-title-${ad.id}`}>{t("titleLabel")}</Label>
             <Input id={`teacher-ad-edit-title-${ad.id}`} value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -962,14 +1171,114 @@ function TeacherAdCard({
             <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
               {t("save")}
             </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => setEditing(false)}>
+            <Button type="button" size="sm" variant="outline" onClick={() => onOpenChange(false)}>
               {tc("cancel")}
             </Button>
             {error && <span className="text-sm font-medium text-destructive">{error}</span>}
           </div>
         </div>
-      )}
-    </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function TeacherAdCreateDialog({
+  open,
+  onOpenChange,
+  teacherOptions,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  teacherOptions: InstituteTeacherOption[];
+  onCreated: () => void;
+}) {
+  const t = useTranslations("instituteDashboard.ads.teacherAds");
+  const tc = useTranslations("instituteDashboard.common");
+  const [teacherId, setTeacherId] = useState(teacherOptions[0]?.id ?? "");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting a dialog's draft fields when it opens, not derived render state
+    setTeacherId(teacherOptions[0]?.id ?? "");
+    setTitle("");
+    setContent("");
+    setError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- teacherOptions is stable for this component's lifetime; only re-seed when the dialog opens
+  }, [open]);
+
+  async function handleCreate() {
+    if (!teacherId || !title.trim() || !content.trim()) return;
+    setSaving(true);
+    setError(null);
+    const result = await createTeacherWiseAd({ teacherId, title, content });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    onCreated();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{t("createAd")}</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <div className="grid gap-1.5">
+            <Label htmlFor="teacher-ad-teacher">{t("heading")}</Label>
+            <Select value={teacherId} onValueChange={(value) => setTeacherId(value ?? "")}>
+              <SelectTrigger id="teacher-ad-teacher" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {teacherOptions.map((teacher) => (
+                  <SelectItem key={teacher.id} value={teacher.id}>
+                    {teacher.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="teacher-ad-title">{t("titleLabel")}</Label>
+            <Input
+              id="teacher-ad-title"
+              placeholder={t("titlePlaceholder")}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="teacher-ad-content">{t("contentLabel")}</Label>
+            <textarea
+              id="teacher-ad-content"
+              rows={4}
+              className={textareaClass}
+              placeholder={t("contentPlaceholder")}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            />
+          </div>
+          <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
+          <div className="flex items-center gap-3">
+            <Button type="button" size="sm" onClick={handleCreate} disabled={saving}>
+              {t("save")}
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => onOpenChange(false)}>
+              {tc("cancel")}
+            </Button>
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -978,182 +1287,117 @@ const VACANCY_MODES = ["online", "physical"] as const;
 /** "Vacancy Ad" (0141, mockup section 2.4) — institute posts an opening,
  * teachers browse+apply from their own dashboard (teacher/institute-tab.tsx's
  * VacancyBrowsePanel). */
-function VacancyCreateForm({
+function VacanciesTable({
   subjectOptions,
-  onCreated,
+  vacancies,
+  applications,
+  onDeleted,
+  onChanged,
 }: {
   subjectOptions: { id: string; name: string }[];
-  onCreated: () => void;
+  vacancies: InstituteVacancyRow[];
+  applications: VacancyApplicationRow[];
+  onDeleted: (id: string) => void;
+  onChanged: () => void;
 }) {
   const t = useTranslations("instituteDashboard.ads.vacancies");
   const tc = useTranslations("instituteDashboard.common");
-  const [open, setOpen] = useState(false);
-  const [subjectId, setSubjectId] = useState("");
-  const [mode, setMode] = useState<"online" | "physical">("physical");
-  const [location, setLocation] = useState("");
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
-  async function handleCreate() {
-    if (!title.trim() || !content.trim()) return;
-    setSaving(true);
-    setError(null);
-    const result = await createVacancyAd({ subjectId, mode, location, title, content });
-    setSaving(false);
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
-    setOpen(false);
-    setSubjectId("");
-    setLocation("");
-    setTitle("");
-    setContent("");
-    onCreated();
-  }
-
-  if (!open) {
-    return (
-      <div className="rounded-lg border border-dashed border-input bg-white p-5">
-        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
-          {t("createAd")}
-        </Button>
-      </div>
-    );
-  }
+  // Already sorted newest-first server-side (vacancy_ads query orders by
+  // created_at desc) — no re-sort needed, just paginate.
+  const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(vacancies.length);
+  const paged = vacancies.slice(offset, offset + pageSize);
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-white p-5">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="grid gap-1.5">
-          <Label htmlFor="vacancy-subject">{t("subjectLabel")}</Label>
-          {subjectOptions.length > 0 ? (
-            <Select value={subjectId} onValueChange={(value) => setSubjectId(value ?? "")}>
-              <SelectTrigger id="vacancy-subject" className="w-full">
-                <SelectValue placeholder={t("subjectPlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                {subjectOptions.map((subject) => (
-                  <SelectItem key={subject.id} value={subject.id}>
-                    {subject.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            // Subject is optional here (unlike the class/course ad forms,
-            // where it's required and blocked instead) — with no known
-            // subjects yet to offer, this field just stays skippable rather
-            // than accepting free text into what createVacancyAd validates
-            // as a real subject id.
-            <p className="text-sm text-muted-foreground">{t("subjectPlaceholder")}</p>
-          )}
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="vacancy-mode">{t("modeLabel")}</Label>
-          <Select value={mode} onValueChange={(value) => setMode((value as "online" | "physical") ?? "physical")}>
-            <SelectTrigger id="vacancy-mode" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {VACANCY_MODES.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option === "online" ? t("modeOnline") : t("modePhysical")}
-                </SelectItem>
+    <div className="flex flex-col gap-3">
+      <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => setCreateOpen(true)}>
+        {t("createAd")}
+      </Button>
+
+      {vacancies.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("noVacancies")}</p>
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-border bg-white">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("table.vacancy")}</TableHead>
+                <TableHead>{t("table.date")}</TableHead>
+                <TableHead>{t("table.applicants")}</TableHead>
+                <TableHead>{t("table.status")}</TableHead>
+                <TableHead className="text-right">{t("table.actions")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paged.map((vacancy, i) => (
+                <VacancyRow
+                  key={vacancy.id}
+                  vacancy={vacancy}
+                  applications={applications.filter((a) => a.vacancyId === vacancy.id)}
+                  subjectOptions={subjectOptions}
+                  striped={i % 2 === 1}
+                  onDeleted={() => onDeleted(vacancy.id)}
+                  onSaved={onChanged}
+                />
               ))}
-            </SelectContent>
-          </Select>
+            </TableBody>
+          </Table>
+          <div className="px-4 pb-4">
+            <PaginationFooter
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              showingLabel={tc("pagination.showingCount", { shown: paged.length, total: vacancies.length })}
+              previousLabel={tc("pagination.previous")}
+              nextLabel={tc("pagination.next")}
+              pageInfoLabel={tc("pagination.pageInfo", { page: currentPage, totalPages })}
+            />
+          </div>
         </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="vacancy-location">{t("locationLabel")}</Label>
-          <Input
-            id="vacancy-location"
-            placeholder={t("locationPlaceholder")}
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-          />
-        </div>
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor="vacancy-title">{t("titleLabel")}</Label>
-        <Input id="vacancy-title" placeholder={t("titlePlaceholder")} value={title} onChange={(e) => setTitle(e.target.value)} />
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor="vacancy-content">{t("contentLabel")}</Label>
-        <textarea
-          id="vacancy-content"
-          rows={4}
-          className={textareaClass}
-          placeholder={t("contentPlaceholder")}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-        />
-      </div>
-      <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
-      <div className="flex items-center gap-3">
-        <Button type="button" size="sm" onClick={handleCreate} disabled={saving}>
-          {t("save")}
-        </Button>
-        <Button type="button" size="sm" variant="outline" onClick={() => setOpen(false)}>
-          {tc("cancel")}
-        </Button>
-        {error && <span className="text-sm font-medium text-destructive">{error}</span>}
-      </div>
+      )}
+
+      <VacancyCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        subjectOptions={subjectOptions}
+        onCreated={() => {
+          setCreateOpen(false);
+          onChanged();
+        }}
+      />
     </div>
   );
 }
 
-function VacancyCard({
+function VacancyRow({
   vacancy,
   applications,
   subjectOptions,
+  striped,
   onDeleted,
   onSaved,
 }: {
   vacancy: InstituteVacancyRow;
   applications: VacancyApplicationRow[];
   subjectOptions: { id: string; name: string }[];
+  striped: boolean;
   onDeleted: () => void;
   onSaved: () => void;
 }) {
   const t = useTranslations("instituteDashboard.ads.vacancies");
-  const tc = useTranslations("instituteDashboard.common");
-
-  const [editing, setEditing] = useState(false);
-  const [subjectId, setSubjectId] = useState(vacancy.subjectId ?? "");
-  const [mode, setMode] = useState<"online" | "physical">(vacancy.mode ?? "physical");
-  const [location, setLocation] = useState(vacancy.location ?? "");
-  const [title, setTitle] = useState(vacancy.title);
-  const [content, setContent] = useState(vacancy.content);
+  const [editOpen, setEditOpen] = useState(false);
+  const [applicantsOpen, setApplicantsOpen] = useState(false);
   const [active, setActive] = useState(vacancy.active);
-  const [saving, setSaving] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  async function handleSave() {
-    if (!title.trim() || !content.trim()) return;
-    setSaving(true);
-    setError(null);
-    const result = await updateVacancyAd(vacancy.id, { subjectId, mode, location, title, content });
-    setSaving(false);
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
-    setEditing(false);
-    onSaved();
-  }
 
   async function handleToggle(checked: boolean) {
     setToggling(true);
     const result = await setVacancyAdStatus(vacancy.id, checked);
     setToggling(false);
-    if (!result.error) {
-      setActive(checked);
-    }
+    if (!result.error) setActive(checked);
   }
 
   async function handleDelete() {
@@ -1170,29 +1414,31 @@ function VacancyCard({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-white p-5">
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h4 className="text-base font-medium text-foreground">{vacancy.title}</h4>
-          <p className="text-sm text-muted-foreground">
+    <>
+      <TableRow className={striped ? "bg-muted/70" : undefined}>
+        <TableCell className="whitespace-normal">
+          <p className="font-medium text-foreground">{vacancy.title}</p>
+          <p className="text-xs text-muted-foreground">
             {[vacancy.subjectName, vacancy.mode === "online" ? t("modeOnline") : t("modePhysical"), vacancy.location]
               .filter(Boolean)
               .join(" · ")}
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className={`text-xs font-medium ${active ? "text-success" : "text-muted-foreground"}`}>
-            {active ? t("active") : t("closed")}
-          </span>
-          <Switch checked={active} onCheckedChange={handleToggle} disabled={toggling} />
-        </div>
-      </div>
-
-      {!editing ? (
-        <div>
-          <p className="text-sm text-foreground/85">{vacancy.content}</p>
-          <div className="mt-3 flex items-center gap-3">
-            <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
+        </TableCell>
+        <TableCell className="text-sm text-muted-foreground">{vacancy.createdLabel}</TableCell>
+        <TableCell>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setApplicantsOpen(true)} disabled={applications.length === 0}>
+            {t("applicantsHeading")} ({applications.length})
+          </Button>
+        </TableCell>
+        <TableCell>
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge variant={active ? "active" : "closed"}>{active ? t("active") : t("closed")}</StatusBadge>
+            <Switch checked={active} onCheckedChange={handleToggle} disabled={toggling} />
+          </div>
+        </TableCell>
+        <TableCell>
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
               {t("editAd")}
             </Button>
             <Button
@@ -1206,10 +1452,82 @@ function VacancyCard({
               {t("deleteAd")}
             </Button>
           </div>
-          {error && <p className="mt-2 text-xs font-medium text-destructive">{error}</p>}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
+          {error && <p className="mt-1 text-right text-xs font-medium text-destructive">{error}</p>}
+        </TableCell>
+      </TableRow>
+
+      <VacancyEditDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        vacancy={vacancy}
+        subjectOptions={subjectOptions}
+        onSaved={() => {
+          setEditOpen(false);
+          onSaved();
+        }}
+      />
+
+      <Dialog open={applicantsOpen} onOpenChange={setApplicantsOpen}>
+        <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t("applicantsHeading")}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            {applications.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("noApplicants")}</p>
+            ) : (
+              applications.map((application) => <VacancyApplicationItem key={application.id} application={application} />)
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function VacancyEditDialog({
+  open,
+  onOpenChange,
+  vacancy,
+  subjectOptions,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  vacancy: InstituteVacancyRow;
+  subjectOptions: { id: string; name: string }[];
+  onSaved: () => void;
+}) {
+  const t = useTranslations("instituteDashboard.ads.vacancies");
+  const tc = useTranslations("instituteDashboard.common");
+  const [subjectId, setSubjectId] = useState(vacancy.subjectId ?? "");
+  const [mode, setMode] = useState<"online" | "physical">(vacancy.mode ?? "physical");
+  const [location, setLocation] = useState(vacancy.location ?? "");
+  const [title, setTitle] = useState(vacancy.title);
+  const [content, setContent] = useState(vacancy.content);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave() {
+    if (!title.trim() || !content.trim()) return;
+    setSaving(true);
+    setError(null);
+    const result = await updateVacancyAd(vacancy.id, { subjectId, mode, location, title, content });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    onSaved();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{t("editAd")}</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="grid gap-1.5">
               <Label>{t("subjectLabel")}</Label>
@@ -1258,29 +1576,152 @@ function VacancyCard({
             <Label>{t("contentLabel")}</Label>
             <textarea className={textareaClass} rows={4} value={content} onChange={(e) => setContent(e.target.value)} />
           </div>
+          <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
           <div className="flex items-center gap-3">
             <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
               {tc("save")}
             </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => setEditing(false)}>
+            <Button type="button" size="sm" variant="outline" onClick={() => onOpenChange(false)}>
               {tc("cancel")}
             </Button>
             {error && <span className="text-sm font-medium text-destructive">{error}</span>}
           </div>
         </div>
-      )}
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-      {applications.length > 0 && (
-        <div className="mt-4 border-t border-border pt-3">
-          <p className="mb-2 text-xs font-semibold text-muted-foreground">{t("applicantsHeading")}</p>
-          <div className="flex flex-col gap-2">
-            {applications.map((application) => (
-              <VacancyApplicationItem key={application.id} application={application} />
-            ))}
+function VacancyCreateDialog({
+  open,
+  onOpenChange,
+  subjectOptions,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  subjectOptions: { id: string; name: string }[];
+  onCreated: () => void;
+}) {
+  const t = useTranslations("instituteDashboard.ads.vacancies");
+  const tc = useTranslations("instituteDashboard.common");
+  const [subjectId, setSubjectId] = useState("");
+  const [mode, setMode] = useState<"online" | "physical">("physical");
+  const [location, setLocation] = useState("");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting a dialog's draft fields when it opens, not derived render state
+    setSubjectId("");
+    setMode("physical");
+    setLocation("");
+    setTitle("");
+    setContent("");
+    setError(null);
+  }, [open]);
+
+  async function handleCreate() {
+    if (!title.trim() || !content.trim()) return;
+    setSaving(true);
+    setError(null);
+    const result = await createVacancyAd({ subjectId, mode, location, title, content });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    onCreated();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{t("createAd")}</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="vacancy-subject">{t("subjectLabel")}</Label>
+              {subjectOptions.length > 0 ? (
+                <Select value={subjectId} onValueChange={(value) => setSubjectId(value ?? "")}>
+                  <SelectTrigger id="vacancy-subject" className="w-full">
+                    <SelectValue placeholder={t("subjectPlaceholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subjectOptions.map((subject) => (
+                      <SelectItem key={subject.id} value={subject.id}>
+                        {subject.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                // Subject is optional here (unlike the class/course ad forms,
+                // where it's required and blocked instead) — with no known
+                // subjects yet to offer, this field just stays skippable rather
+                // than accepting free text into what createVacancyAd validates
+                // as a real subject id.
+                <p className="text-sm text-muted-foreground">{t("subjectPlaceholder")}</p>
+              )}
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="vacancy-mode">{t("modeLabel")}</Label>
+              <Select value={mode} onValueChange={(value) => setMode((value as "online" | "physical") ?? "physical")}>
+                <SelectTrigger id="vacancy-mode" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {VACANCY_MODES.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option === "online" ? t("modeOnline") : t("modePhysical")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="vacancy-location">{t("locationLabel")}</Label>
+              <Input
+                id="vacancy-location"
+                placeholder={t("locationPlaceholder")}
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="vacancy-title">{t("titleLabel")}</Label>
+            <Input id="vacancy-title" placeholder={t("titlePlaceholder")} value={title} onChange={(e) => setTitle(e.target.value)} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="vacancy-content">{t("contentLabel")}</Label>
+            <textarea
+              id="vacancy-content"
+              rows={4}
+              className={textareaClass}
+              placeholder={t("contentPlaceholder")}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            />
+          </div>
+          <AdPreviewCard badgeLabel={t("previewBadge")} emptyLabel={t("previewEmpty")} title={title} content={content} />
+          <div className="flex items-center gap-3">
+            <Button type="button" size="sm" onClick={handleCreate} disabled={saving}>
+              {t("save")}
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => onOpenChange(false)}>
+              {tc("cancel")}
+            </Button>
+            {error && <span className="text-sm font-medium text-destructive">{error}</span>}
           </div>
         </div>
-      )}
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

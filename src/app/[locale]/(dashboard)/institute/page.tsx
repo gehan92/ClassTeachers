@@ -738,7 +738,14 @@ export default async function InstituteDashboardPage({
   // set here.
   const classAdsByBatchId = new Map<
     string,
-    { id: string; title: string; content: string | null; status: "active" | "expired" | "removed"; view_count: number }[]
+    {
+      id: string;
+      title: string;
+      content: string | null;
+      status: "active" | "expired" | "removed";
+      view_count: number;
+      created_at: string;
+    }[]
   >();
   // Deleted (0109 soft-delete) ads are set aside here rather than filtered
   // out entirely — the Advertisement tab's "Ad history" section below still
@@ -747,7 +754,7 @@ export default async function InstituteDashboardPage({
   for (const ad of classAdRows ?? []) {
     if (!ad.batch_id || ad.status === "deleted") continue;
     const list = classAdsByBatchId.get(ad.batch_id) ?? [];
-    list.push({ id: ad.id, title: ad.title, content: ad.content, status: ad.status, view_count: ad.view_count });
+    list.push({ id: ad.id, title: ad.title, content: ad.content, status: ad.status, view_count: ad.view_count, created_at: ad.created_at });
     classAdsByBatchId.set(ad.batch_id, list);
   }
   const instituteAdBatches: InstituteAdBatchRow[] = (batchRows ?? []).map((b) => {
@@ -760,7 +767,15 @@ export default async function InstituteDashboardPage({
       monthlyRate: b.monthly_rate,
       courseCode: b.course_code,
       totalSessions: b.total_sessions,
-      ads: ads.map((ad) => ({ id: ad.id, title: ad.title, content: ad.content ?? "", status: ad.status, viewCount: ad.view_count })),
+      ads: ads.map((ad) => ({
+        id: ad.id,
+        title: ad.title,
+        content: ad.content ?? "",
+        status: ad.status,
+        viewCount: ad.view_count,
+        createdAtIso: ad.created_at,
+        createdLabel: dateFormatter.format(new Date(ad.created_at)),
+      })),
     };
   });
 
@@ -778,6 +793,8 @@ export default async function InstituteDashboardPage({
       content: ad.content ?? "",
       status: ad.status as "active" | "expired" | "removed",
       viewCount: ad.view_count,
+      createdAtIso: ad.created_at,
+      createdLabel: dateFormatter.format(new Date(ad.created_at)),
     }));
   const teacherAdOptions: InstituteTeacherOption[] = instituteTeachers
     .filter((teacher) => teacher.rosterStatus === "accepted")
@@ -797,6 +814,7 @@ export default async function InstituteDashboardPage({
     title: v.title,
     content: v.content,
     active: v.status === "active",
+    createdAtIso: v.created_at,
     createdLabel: dateFormatter.format(new Date(v.created_at)),
   }));
   const vacancyApplications: VacancyApplicationRow[] = (vacancyApplicationRows ?? []).map((row) => ({

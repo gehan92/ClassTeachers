@@ -56,7 +56,11 @@ function matchesCategory(listing: Listing, category: Category) {
     case "class":
       return listing.kind === "class";
     case "campus":
-      return listing.kind === "teacher" && listing.gradeBand === "campus";
+      // A lecturer's own grade_band is just whatever level their batch/ad
+      // targets (independent of their account role) — campusCredential is
+      // the actual signal for "this account is a campus lecturer" (set from
+      // profiles.role, see public-directory.ts), so match on that instead.
+      return listing.kind === "teacher" && listing.campusCredential != null;
   }
 }
 

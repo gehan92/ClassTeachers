@@ -3791,7 +3791,12 @@
     "aboutTeacherHeading": "ගුරුවරයා ගැන",
     "reviewsHeading": "ශිෂ්‍ය සමාලෝචන",
     "reviewsSummary": "සමාලෝචන {count} · සාමාන්‍යය {rating}",
-    "noReviewsYet": "තවම සමාලෝචන නැත."
+    "noReviewsYet": "තවම සමාලෝචන නැත.",
+    "offersHeading": "මෙම පන්තියෙන් ලැබෙන දේ",
+    "offerNotes": "සටහන් සහ නිබන්ධන",
+    "offerExams": "විභාග",
+    "offerAssignments": "පැවරුම්",
+    "offerHomework": "ගෙදර වැඩ"
   },
   "helpPage": {
     "eyebrow": "සහාය මධ්‍යස්ථානය",

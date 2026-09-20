@@ -3791,7 +3791,12 @@
     "aboutTeacherHeading": "About the teacher",
     "reviewsHeading": "Student reviews",
     "reviewsSummary": "{count} reviews · {rating} average",
-    "noReviewsYet": "No reviews yet."
+    "noReviewsYet": "No reviews yet.",
+    "offersHeading": "What this class offers",
+    "offerNotes": "Notes & tutorials",
+    "offerExams": "Exams",
+    "offerAssignments": "Assignments",
+    "offerHomework": "Homework"
   },
   "helpPage": {
     "eyebrow": "Help centre",

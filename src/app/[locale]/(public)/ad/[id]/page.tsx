@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ArrowLeft, BadgeCheck, FileText, MapPin, Star } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Check, FileText, MapPin, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { JoinRequestBox } from "@/components/features/join-request-box";
 import { InquiryBox } from "@/components/features/inquiry-box";
@@ -363,6 +363,21 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
       reply: r.reply ?? undefined,
     }));
 
+  // "What this class offers" (0145) — notes/exams/assignments/homework are
+  // all locked behind enrolled-only RLS, so this only ever surfaces whether
+  // at least one of each exists (never the content itself), same shape as
+  // get_public_teacher_profile's own notes_count trick above. Works for
+  // either owner type — a class's offerings are just as real as a
+  // teacher's.
+  const { data: offeringsRows } = await supabase.rpc("get_public_class_offerings", {
+    p_owner_type: ad.ownerType,
+    p_owner_id: ad.ownerId,
+  });
+  const offerings = offeringsRows?.[0] ?? null;
+  const hasAnyOffering =
+    offerings != null &&
+    (offerings.has_notes || offerings.has_exams || offerings.has_assignments || offerings.has_homework);
+
   const t = await getTranslations("adPage");
   const tg = await getTranslations("search");
   const tl = await getTranslations("listing");
@@ -510,6 +525,38 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
             {ad.isCampusLecturer ? t("limitedNoteCampus") : ad.ownerType === "class" ? t("limitedNoteClass") : t("limitedNote")}
           </p>
         </div>
+
+        {hasAnyOffering && offerings && (
+          <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
+            <h3 className="mb-3 text-lg">{t("offersHeading")}</h3>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {offerings.has_notes && (
+                <div className="flex items-center gap-2 text-sm text-foreground/85">
+                  <Check className="size-4 shrink-0 text-success" />
+                  {t("offerNotes")}
+                </div>
+              )}
+              {offerings.has_exams && (
+                <div className="flex items-center gap-2 text-sm text-foreground/85">
+                  <Check className="size-4 shrink-0 text-success" />
+                  {t("offerExams")}
+                </div>
+              )}
+              {offerings.has_assignments && (
+                <div className="flex items-center gap-2 text-sm text-foreground/85">
+                  <Check className="size-4 shrink-0 text-success" />
+                  {t("offerAssignments")}
+                </div>
+              )}
+              {offerings.has_homework && (
+                <div className="flex items-center gap-2 text-sm text-foreground/85">
+                  <Check className="size-4 shrink-0 text-success" />
+                  {t("offerHomework")}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {ad.ownerType === "teacher" &&
           teacherProfile &&

@@ -2223,6 +2223,15 @@ export type Database = {
           publications: string[] | null;
         }[];
       };
+      get_public_class_offerings: {
+        Args: { p_owner_type: string; p_owner_id: string };
+        Returns: {
+          has_notes: boolean;
+          has_exams: boolean;
+          has_assignments: boolean;
+          has_homework: boolean;
+        }[];
+      };
       list_public_reviews: {
         Args: { p_target_type: string; p_target_id: string };
         Returns: {

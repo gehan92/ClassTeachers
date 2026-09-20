@@ -3791,7 +3791,12 @@
     "aboutTeacherHeading": "ஆசிரியர் பற்றி",
     "reviewsHeading": "மாணவர் மதிப்புரைகள்",
     "reviewsSummary": "{count} மதிப்புரைகள் · {rating} சராசரி",
-    "noReviewsYet": "இதுவரை மதிப்புரைகள் இல்லை."
+    "noReviewsYet": "இதுவரை மதிப்புரைகள் இல்லை.",
+    "offersHeading": "இந்த வகுப்பில் கிடைப்பவை",
+    "offerNotes": "குறிப்புகள் மற்றும் பயிற்சிகள்",
+    "offerExams": "தேர்வுகள்",
+    "offerAssignments": "பணிகள்",
+    "offerHomework": "வீட்டுப்பாடம்"
   },
   "helpPage": {
     "eyebrow": "உதவி மையம்",

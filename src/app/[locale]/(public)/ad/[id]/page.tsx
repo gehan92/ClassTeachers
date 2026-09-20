@@ -367,6 +367,11 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
   const tg = await getTranslations("search");
   const tl = await getTranslations("listing");
   const tr = await getTranslations("requestsPage");
+  // Reuses the full /teacher/[id] profile page's own labels (Qualifications,
+  // Work experience, Subjects, Languages...) instead of duplicating the same
+  // English/Sinhala/Tamil strings under adPage — same wording either place a
+  // visitor sees a teacher's credentials.
+  const tp = await getTranslations("profilePage");
 
   const displayName = ad.name ?? (ad.ownerType === "class" ? t("classFallback") : t("teacherFallback"));
 
@@ -508,25 +513,76 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
 
         {ad.ownerType === "teacher" &&
           teacherProfile &&
-          (teacherProfile.bio || (teacherProfile.qualifications?.length ?? 0) > 0 || teacherProfile.experience_years != null) && (
+          (teacherProfile.bio ||
+            (teacherProfile.qualifications?.length ?? 0) > 0 ||
+            (teacherProfile.work_experience?.length ?? 0) > 0 ||
+            (teacherProfile.subjects?.length ?? 0) > 0 ||
+            (teacherProfile.languages?.length ?? 0) > 0 ||
+            teacherProfile.experience_years != null) && (
           <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
             <h3 className="mb-3 text-lg">{t("aboutTeacherHeading")}</h3>
+            {teacherProfile.is_campus_lecturer && (teacherProfile.academic_title || teacherProfile.institution) && (
+              <p className="mb-2 text-sm font-medium text-foreground">
+                {[teacherProfile.academic_title, teacherProfile.institution].filter(Boolean).join(" · ")}
+              </p>
+            )}
             {teacherProfile.bio && <p className="text-sm text-foreground/85">{teacherProfile.bio}</p>}
-            {((teacherProfile.qualifications?.length ?? 0) > 0 || teacherProfile.experience_years != null) && (
-              <div className="mt-3.5 flex flex-wrap gap-2">
-                {(teacherProfile.qualifications ?? []).map((qualification: string) => (
-                  <span
-                    key={qualification}
-                    className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
-                  >
-                    {qualification}
-                  </span>
-                ))}
+
+            {(teacherProfile.qualifications?.length ?? 0) > 0 && (
+              <div className="mt-3.5">
+                <p className="mb-1.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{tp("degreeLabel")}</p>
+                <ul className="m-0 list-disc space-y-1 pl-4.5 text-sm text-foreground/85">
+                  {(teacherProfile.qualifications ?? []).map((q: string, i: number) => (
+                    <li key={i}>{q}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {(teacherProfile.work_experience?.length ?? 0) > 0 && (
+              <div className="mt-3.5">
+                <p className="mb-1.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{tp("workExperienceLabel")}</p>
+                <ul className="m-0 list-disc space-y-1 pl-4.5 text-sm text-foreground/85">
+                  {(teacherProfile.work_experience ?? []).map((w: string, i: number) => (
+                    <li key={i}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {teacherProfile.is_campus_lecturer && (teacherProfile.publications?.length ?? 0) > 0 && (
+              <div className="mt-3.5">
+                <p className="mb-1.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{tp("publicationsLabel")}</p>
+                <ul className="m-0 list-disc space-y-1 pl-4.5 text-sm text-foreground/85">
+                  {(teacherProfile.publications ?? []).map((pub: string, i: number) => (
+                    <li key={i}>{pub}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {(teacherProfile.experience_years != null ||
+              (teacherProfile.subjects?.length ?? 0) > 0 ||
+              (teacherProfile.languages?.length ?? 0) > 0) && (
+              <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-3.5">
                 {teacherProfile.experience_years != null && (
                   <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                     {t("teacherWiseAd.experienceYears", { count: teacherProfile.experience_years })}
                   </span>
                 )}
+                {(teacherProfile.subjects ?? []).map((subject: string) => (
+                  <span key={subject} className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
+                    {subject}
+                  </span>
+                ))}
+                {(teacherProfile.languages ?? []).map((language: string) => (
+                  <span
+                    key={language}
+                    className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground/80"
+                  >
+                    {language}
+                  </span>
+                ))}
               </div>
             )}
           </div>

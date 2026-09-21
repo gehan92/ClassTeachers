@@ -1,0 +1,19 @@
+-- Security bug: Postgres grants EXECUTE on a newly created function to
+-- PUBLIC by default unless explicitly revoked (see 0085's identical fix
+-- for get_my_question_answers/grade_mcq_answers/get_revealed_question_
+-- answers). mark_payment_completed() (0147) was written with a comment
+-- saying it's "only reachable via the webhook's admin/service-role
+-- client" — but nothing ever actually revoked the default PUBLIC grant,
+-- so any authenticated (or even anon) caller could invoke it directly via
+-- supabase.rpc('mark_payment_completed', { p_payhere_order_id: '<their own
+-- known order id>', ... }) and mark their own pending payment 'completed'
+-- without ever paying PayHere anything — a straight payment bypass, since
+-- the function itself trusts its caller entirely and never re-verifies
+-- PayHere's signature (that check only happens in the calling webhook
+-- route, src/app/api/payhere/notify/route.ts, before this RPC is invoked).
+--
+-- service_role is unaffected by this revoke — Supabase grants it broad
+-- schema-level privileges independent of a function's own PUBLIC grant,
+-- which is exactly why createAdminClient() (used only by the notify
+-- webhook, after signature verification) can still call this.
+revoke all on function public.mark_payment_completed(text, text) from public;

@@ -2328,6 +2328,10 @@ export type Database = {
         Args: { p_enrollment_id: string };
         Returns: void;
       };
+      waive_platform_fee: {
+        Args: { p_enrollment_id: string };
+        Returns: void;
+      };
       list_public_reviews: {
         Args: { p_target_type: string; p_target_id: string };
         Returns: {

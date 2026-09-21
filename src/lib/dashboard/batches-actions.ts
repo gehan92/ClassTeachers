@@ -552,10 +552,11 @@ export async function joinAfterQna(
 
   const { data: waiveEligible } = await supabase.rpc("is_first_platform_connection");
   if (waiveEligible) {
-    const { error } = await supabase
-      .from("enrollments")
-      .update({ status: "joined", platform_fee_waived: true })
-      .eq("id", enrollmentId);
+    // A plain .update() here would be silently no-op'd by RLS — students
+    // have no UPDATE grant on enrollments (only the owner/admin do, 0039).
+    // waive_platform_fee() (0150) is a SECURITY DEFINER RPC that re-checks
+    // ownership/status/eligibility server-side before flipping the row.
+    const { error } = await supabase.rpc("waive_platform_fee", { p_enrollment_id: enrollmentId });
     if (error) {
       return { error: "Couldn't complete your join. Please try again." };
     }

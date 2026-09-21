@@ -87,6 +87,7 @@
       "join_request_declined": "{ownerName} declined your request to join.",
       "join_request_declined_with_reason": "{ownerName} declined your request to join: \"{reason}\"",
       "join_request_expired": "Your join request expired after 7 days with no response.",
+      "platform_fee_join_completed": "{studentName} completed their platform fee and joined.",
       "open_batch_joined": "{studentName} joined your open class \"{batchTitle}\".",
       "exam_graded": "Your exam \"{examTitle}\" was graded: {grade}.",
       "exam_submitted": "{studentName} submitted \"{examTitle}\".",

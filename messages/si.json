@@ -87,6 +87,7 @@
       "join_request_declined": "{ownerName} ඔබේ එකතු වීමේ ඉල්ලීම ප්‍රතික්ෂේප කළා.",
       "join_request_declined_with_reason": "{ownerName} ඔබේ එකතු වීමේ ඉල්ලීම ප්‍රතික්ෂේප කළා: \"{reason}\"",
       "join_request_expired": "දින 7ක් ඇතුළත පිළිතුරක් නොලැබී ඔබේ එකතු වීමේ ඉල්ලීම කල් ඉකුත් විය.",
+      "platform_fee_join_completed": "{studentName} වේදිකා ගාස්තුව සම්පූර්ණ කර එකතු විය.",
       "open_batch_joined": "{studentName} ඔබේ විවෘත පන්තියට එකතු විය: \"{batchTitle}\".",
       "exam_graded": "ඔබේ \"{examTitle}\" විභාගය ලකුණු කරන ලදී: {grade}.",
       "exam_submitted": "{studentName} \"{examTitle}\" ඉදිරිපත් කළේය.",

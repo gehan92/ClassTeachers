@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/auth-user";
 import { createDateFormatter } from "@/lib/format-date";
+import { INSTITUTE_UNLOCK_FEE } from "@/lib/payhere/fees";
 import type { ClassProfileDetail } from "@/types/class-profile";
 
 /**
@@ -13,12 +15,30 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
 
   const { data: classProfile, error } = await supabase
     .from("class_profiles")
-    .select("id, name, description, location, class_type, established, photo_url, institution_verified")
+    .select("id, owner_id, name, description, location, class_type, established, photo_url, institution_verified, status")
     .eq("id", id)
     .maybeSingle();
 
   if (error || !classProfile) {
     return null;
+  }
+
+  // Two-tier institute unlock (0147/Flow B) — the owner previewing their
+  // own page (institute dashboard's "view live page") and any admin always
+  // see the full page; everyone else needs an institute_access row. A
+  // guest (no user) is never unlocked.
+  const user = await getAuthUser();
+  let unlocked = false;
+  if (user) {
+    if (user.id === classProfile.owner_id) {
+      unlocked = true;
+    } else {
+      const [{ data: profile }, { data: access }] = await Promise.all([
+        supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+        supabase.from("institute_access").select("id").eq("student_id", user.id).eq("institute_id", id).maybeSingle(),
+      ]);
+      unlocked = profile?.role === "admin" || access != null;
+    }
   }
 
   const [
@@ -118,18 +138,20 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
     reviewCount,
     hourlyRate: priceRow?.hourly_rate ?? undefined,
     monthlyRate: priceRow?.monthly_rate ?? undefined,
-    promotions: (adRows ?? []).map((row) => ({ id: row.id, headline: row.title, text: row.content ?? "" })),
+    promotions: unlocked ? (adRows ?? []).map((row) => ({ id: row.id, headline: row.title, text: row.content ?? "" })) : [],
     batches: (batchRows ?? []).map((b) => ({
       id: b.id,
       title: b.title,
-      teacherName: (b.taught_by_teacher_id && teacherNameById.get(b.taught_by_teacher_id)) || b.teacher_label,
+      // Locked: title only (entice, don't hide) — schedule/teacher/syllabus
+      // detail stays behind the institute-unlock fee (Flow B step 1/3).
+      teacherName: unlocked ? (b.taught_by_teacher_id && teacherNameById.get(b.taught_by_teacher_id)) || b.teacher_label : null,
       status: b.status === "upcoming" ? "upcoming" : "started",
       mode: b.mode as "online" | "physical",
-      location: b.location,
-      scheduleNote: b.schedule_note,
-      ads: batchAdsByBatchId.get(b.id) ?? [],
-      isOpenEnrollment: b.is_open_enrollment,
-      capacity: b.capacity,
+      location: unlocked ? b.location : null,
+      scheduleNote: unlocked ? b.schedule_note : null,
+      ads: unlocked ? (batchAdsByBatchId.get(b.id) ?? []) : [],
+      isOpenEnrollment: unlocked && b.is_open_enrollment,
+      capacity: unlocked ? b.capacity : null,
       spotsTaken: spotsTakenByBatchId.get(b.id) ?? 0,
     })),
     reviews: reviews.map((r) => ({
@@ -140,26 +162,31 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
       body: r.body ?? "",
       reply: r.reply ?? undefined,
     })),
-    phone,
-    teachers: (teacherRows ?? []).map((t) => ({
-      id: t.teacher_id,
-      displayName: t.display_name ?? "—",
-      photoUrl: t.photo_url,
-      headline: t.headline,
-      subjects: t.subjects ?? [],
-      hourlyRate: t.hourly_rate ?? undefined,
-      monthlyRate: t.monthly_rate ?? undefined,
-      rating: t.rating,
-      reviewCount: t.review_count,
-      isCampusLecturer: t.is_campus_lecturer,
-      bio: t.bio,
-      qualifications: t.qualifications ?? [],
-      workExperience: t.work_experience ?? [],
-      experienceYears: t.experience_years,
-      languages: t.languages ?? [],
-      academicTitle: t.academic_title,
-      institution: t.institution,
-      publications: t.publications ?? [],
-    })),
+    phone: unlocked ? phone : null,
+    teachers: unlocked
+      ? (teacherRows ?? []).map((t) => ({
+          id: t.teacher_id,
+          displayName: t.display_name ?? "—",
+          photoUrl: t.photo_url,
+          headline: t.headline,
+          subjects: t.subjects ?? [],
+          hourlyRate: t.hourly_rate ?? undefined,
+          monthlyRate: t.monthly_rate ?? undefined,
+          rating: t.rating,
+          reviewCount: t.review_count,
+          isCampusLecturer: t.is_campus_lecturer,
+          bio: t.bio,
+          qualifications: t.qualifications ?? [],
+          workExperience: t.work_experience ?? [],
+          experienceYears: t.experience_years,
+          languages: t.languages ?? [],
+          academicTitle: t.academic_title,
+          institution: t.institution,
+          publications: t.publications ?? [],
+        }))
+      : [],
+    unlocked,
+    instituteUnlockFee: INSTITUTE_UNLOCK_FEE,
+    suspended: classProfile.status === "suspended",
   } satisfies ClassProfileDetail;
 }

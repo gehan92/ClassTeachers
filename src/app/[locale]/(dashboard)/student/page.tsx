@@ -14,8 +14,9 @@ import { ProfileTab } from "@/components/dashboard/student/profile-tab";
 import { SettingsTab } from "@/components/dashboard/student/settings-tab";
 import { WantedAdsTab } from "@/components/dashboard/student/wanted-ads-tab";
 import { WantedAdResponsesTab } from "@/components/dashboard/student/wanted-ad-responses-tab";
-import { JoinRequestsTab } from "@/components/dashboard/student/join-requests-tab";
-import type { JoinRequestRow } from "@/components/dashboard/student/join-requests-tab";
+import { ConnectionsTab } from "@/components/dashboard/student/connections-tab";
+import type { ConnectionRow, MyInstituteRow } from "@/components/dashboard/student/connections-tab";
+import { loadQnaThreadsForEnrollments } from "@/lib/dashboard/qna";
 import { CalendarTab } from "@/components/dashboard/student/calendar-tab";
 import type { StudentScheduleSlotRow } from "@/components/dashboard/student/calendar-tab";
 import { SentInquiriesTab } from "@/components/dashboard/student/sent-inquiries-tab";
@@ -255,7 +256,7 @@ export default async function StudentDashboardPage({
   const fullName = profile?.full_name ?? user!.email ?? "Student";
   const userInitial = fullName.charAt(0).toUpperCase();
 
-  const acceptedEnrollments = (enrollments ?? []).filter((e) => e.status === "accepted");
+  const acceptedEnrollments = (enrollments ?? []).filter((e) => e.status === "accepted" || e.status === "joined");
   const classesCount = acceptedEnrollments.length;
   const submissionByExamId = new Map((submissionRows ?? []).map((s) => [s.exam_id, s]));
   const allExamIds = (examRows ?? []).map((e) => e.id);
@@ -648,7 +649,9 @@ export default async function StudentDashboardPage({
   // deliberately "not declined" so a pending request still blocks a
   // duplicate re-request).
   const acceptedOwnerKeys = new Set(
-    (enrollments ?? []).filter((e) => e.status === "accepted").map((e) => `${e.owner_type}:${e.owner_id}`),
+    (enrollments ?? [])
+      .filter((e) => e.status === "accepted" || e.status === "joined")
+      .map((e) => `${e.owner_type}:${e.owner_id}`),
   );
   // A student can now hold more than one batch at the same institute
   // (0091/0092), so "already joined" for a class-owned batch has to be
@@ -669,7 +672,7 @@ export default async function StudentDashboardPage({
   );
   const enrolledBatchIds = new Set(
     (enrollments ?? [])
-      .filter((e) => e.status === "accepted")
+      .filter((e) => e.status === "accepted" || e.status === "joined")
       .map((e) => e.batch_id)
       .filter((id): id is string => Boolean(id)),
   );
@@ -692,34 +695,54 @@ export default async function StudentDashboardPage({
       };
     });
 
-  // Its own tab (Requests), separate from My Classes — pending requests the
-  // student can still withdraw, plus declined ones kept as a record (with
-  // the owner's optional reason, 0115). Accepted ones already show up in
-  // My Classes above, so they're excluded here.
-  const joinRequests: JoinRequestRow[] = (enrollments ?? [])
-    .filter((e) => e.status === "pending" || e.status === "declined")
-    .map((e) => {
-      const batch = e.batch_id ? batchById.get(e.batch_id) : undefined;
-      return {
-        enrollmentId: e.id,
-        ownerId: e.owner_id,
-        ownerType: e.owner_type,
-        ownerName: ownerName(e.owner_type, e.owner_id),
-        batchId: e.batch_id,
-        batchTitle: batch?.title ?? null,
-        isCampusLecturer: e.owner_type === "teacher" && campusLecturerTeacherIds.has(e.owner_id),
-        status: e.status as "pending" | "declined",
-        declineReason: e.decline_reason,
-        requestedAtLabel: dateFormatter.format(new Date(e.joined_at)),
-      };
-    });
-  const pendingRequestsCount = joinRequests.filter((r) => r.status === "pending").length;
+  // Its own tab (Connections, formerly Requests) — pending/Q&A-open requests
+  // the student can still act on, plus declined ones kept as a record (with
+  // the owner's optional reason, 0115). Accepted-and-joined ones already
+  // show up in My Classes above, so they're excluded here.
+  const connectionEnrollments = (enrollments ?? []).filter(
+    (e) => e.status === "pending" || e.status === "qna_open" || e.status === "declined",
+  );
+  const qnaOpenConnectionIds = connectionEnrollments.filter((e) => e.status === "qna_open").map((e) => e.id);
+  const connectionQnaThreadsByEnrollmentId = await loadQnaThreadsForEnrollments(supabase, qnaOpenConnectionIds, locale);
+  const connections: ConnectionRow[] = connectionEnrollments.map((e) => {
+    const batch = e.batch_id ? batchById.get(e.batch_id) : undefined;
+    const thread = connectionQnaThreadsByEnrollmentId.get(e.id);
+    return {
+      enrollmentId: e.id,
+      ownerId: e.owner_id,
+      ownerType: e.owner_type,
+      ownerName: ownerName(e.owner_type, e.owner_id),
+      batchId: e.batch_id,
+      batchTitle: batch?.title ?? null,
+      isCampusLecturer: e.owner_type === "teacher" && campusLecturerTeacherIds.has(e.owner_id),
+      status: e.status as "pending" | "qna_open" | "declined",
+      declineReason: e.decline_reason,
+      requestedAtLabel: dateFormatter.format(new Date(e.joined_at)),
+      qnaThread: thread ? { inquiryId: thread.inquiryId, messages: thread.messages } : undefined,
+    };
+  });
+  const pendingRequestsCount = connections.filter((r) => r.status === "pending").length;
+
+  // "My Institutes" (Flow B step 5) — every institute this student has
+  // already paid to unlock (institute_access, 0147); clicking one goes
+  // straight into its full class list, never re-prompting for the fee.
+  const { data: instituteAccessRows } = await supabase.from("institute_access").select("institute_id").eq("student_id", userId);
+  const unlockedInstituteIds = (instituteAccessRows ?? []).map((row) => row.institute_id);
+  const { data: unlockedInstituteRows } = unlockedInstituteIds.length
+    ? await supabase.from("class_profiles").select("id, name").in("id", unlockedInstituteIds)
+    : { data: [] as { id: string; name: string }[] };
+  const myInstitutes: MyInstituteRow[] = unlockedInstituteIds.map((id) => ({
+    instituteId: id,
+    name: unlockedInstituteRows?.find((r) => r.id === id)?.name ?? "—",
+  }));
 
   // Weekly timetable grid (Calendar tab) — only this student's own accepted,
   // batch-scoped classes get a row here; a general (batch-less) institute
   // join has nothing to show since a schedule is always set per-batch.
   const acceptedClassByBatchId = new Map(
-    myClasses.filter((c) => c.status === "accepted" && c.batchId).map((c) => [c.batchId as string, c]),
+    myClasses
+      .filter((c) => (c.status === "accepted" || c.status === "joined") && c.batchId)
+      .map((c) => [c.batchId as string, c]),
   );
   const scheduleSlots: StudentScheduleSlotRow[] = (scheduleSlotRows ?? [])
     .filter((s) => acceptedClassByBatchId.has(s.batch_id))
@@ -1214,7 +1237,7 @@ export default async function StudentDashboardPage({
             scope="history"
           />
         ),
-        requests: <JoinRequestsTab requests={joinRequests} />,
+        requests: <ConnectionsTab connections={connections} myInstitutes={myInstitutes} />,
         calendar: (
           <CalendarTab
             scheduleSlots={scheduleSlots}

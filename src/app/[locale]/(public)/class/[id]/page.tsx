@@ -38,8 +38,8 @@ export default async function ClassProfilePage({
 
   let isStudent = false;
   let isTeacher = false;
-  let generalStatus: "pending" | "accepted" | "declined" | null = null;
-  const batchStatusById: Record<string, "pending" | "accepted" | "declined" | null> = {};
+  let generalStatus: "pending" | "accepted" | "declined" | "qna_open" | "joined" | null = null;
+  const batchStatusById: Record<string, "pending" | "accepted" | "declined" | "qna_open" | "joined" | null> = {};
   let teacherStatus: "pending" | "accepted" | "declined" | null = null;
   let teacherRequestedBy: "institute" | "teacher" | null = null;
   if (user) {

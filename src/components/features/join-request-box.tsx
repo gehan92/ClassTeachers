@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { requestToJoin, joinOpenBatch } from "@/lib/dashboard/batches-actions";
 import { submitInquiry } from "@/lib/inquiries-actions";
+import type { QnaMessageRow } from "@/components/features/qna-thread";
+import { JoinAfterQnaPanel } from "@/components/features/join-after-qna-panel";
 
 const fieldClass =
   "w-full min-w-0 rounded-md border border-input bg-transparent px-2.5 py-1.75 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -22,6 +24,8 @@ export function JoinRequestBox({
   loggedIn,
   isStudent,
   existingStatus,
+  enrollmentId,
+  qnaThread,
   isCampusLecturer = false,
   isOpenEnrollment = false,
   capacity,
@@ -37,7 +41,11 @@ export function JoinRequestBox({
   monthlyRateMax?: number;
   loggedIn: boolean;
   isStudent: boolean;
-  existingStatus: "pending" | "accepted" | "declined" | null;
+  existingStatus: "pending" | "accepted" | "declined" | "qna_open" | "joined" | null;
+  /** The caller's own enrollment row id — needed once status is 'qna_open' to
+   * open the Q&A thread and drive the "Join" click (joinAfterQna). */
+  enrollmentId?: string;
+  qnaThread?: { inquiryId: string; messages: QnaMessageRow[] };
   isCampusLecturer?: boolean;
   /** Open-enrollment batch (0106) — any signed-in student joins instantly,
    * no accept/decline step. capacity/spotsTaken drive the "X spots left" /
@@ -54,7 +62,10 @@ export function JoinRequestBox({
   const [joinedNow, setJoinedNow] = useState(false);
   const spotsLeft = capacity !== undefined ? Math.max(0, capacity - spotsTaken) : undefined;
   const isFull = spotsLeft === 0;
-  const showAsAccepted = existingStatus === "accepted" || joinedNow;
+  // "joined" (paid/waived platform fee) shows the same fully-in view as the
+  // legacy instant "accepted" state. "qna_open" (owner accepted, fee not
+  // paid yet) renders its own JoinAfterQnaPanel branch below instead.
+  const showAsAccepted = existingStatus === "accepted" || existingStatus === "joined" || joinedNow;
 
   return (
     <div className="flex h-fit flex-col gap-4 rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
@@ -114,6 +125,8 @@ export function JoinRequestBox({
               </Link>
             )}
           </div>
+        ) : existingStatus === "qna_open" && enrollmentId ? (
+          <JoinAfterQnaPanel enrollmentId={enrollmentId} ownerType={ownerType} qnaThread={qnaThread} onJoined={() => setJoinedNow(true)} />
         ) : existingStatus === "pending" ? (
           <p className="text-sm font-medium text-muted-foreground">{t("pending")}</p>
         ) : existingStatus === "declined" ? (

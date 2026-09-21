@@ -86,6 +86,7 @@
       "join_request_accepted": "{ownerName} accepted your request to join.",
       "join_request_declined": "{ownerName} declined your request to join.",
       "join_request_declined_with_reason": "{ownerName} declined your request to join: \"{reason}\"",
+      "join_request_expired": "Your join request expired after 7 days with no response.",
       "open_batch_joined": "{studentName} joined your open class \"{batchTitle}\".",
       "exam_graded": "Your exam \"{examTitle}\" was graded: {grade}.",
       "exam_submitted": "{studentName} submitted \"{examTitle}\".",
@@ -501,7 +502,8 @@
     "joinDeclined": "Declined",
     "openEnrollmentBadge": "Open — join instantly",
     "spotsLeft": "{count} spots left",
-    "full": "Class full"
+    "full": "Class full",
+    "qnaOpenContinue": "Q&A open — continue in Connections"
   },
   "adSlot": {
     "eyebrow": "Site-wide advertisement",
@@ -1096,7 +1098,9 @@
       "previous": "Previous",
       "next": "Next",
       "pageInfo": "Page {page} of {totalPages}"
-    }
+    },
+    "classLocked": "Locked",
+    "qnaOpenContinue": "Q&A open — continue in Connections"
   },
   "adminDashboard": {
     "logout": "Log out",
@@ -1312,7 +1316,9 @@
       "requestStatus": {
         "pending": "Pending",
         "accepted": "Accepted",
-        "declined": "Declined"
+        "declined": "Declined",
+        "qna_open": "Q&A open",
+        "joined": "Joined"
       }
     },
     "common": {
@@ -1834,6 +1840,10 @@
         "summary": "{enrolled} enrolled · {already} already enrolled · {notFound} not found",
         "notFoundHeading": "No account found for these numbers — ask the student to sign up first:",
         "importMore": "Import more"
+      },
+      "qnaOpen": {
+        "heading": "Q&A open",
+        "subtitle": "You accepted these requests — answer any questions before the student joins."
       }
     },
     "attendance": {
@@ -2028,7 +2038,7 @@
       "reviews": "Reviews",
       "profile": "Profile",
       "settings": "Settings",
-      "requests": "Requests",
+      "requests": "Connections",
       "calendar": "Calendar",
       "wantedAds": "Post an Ad",
       "wantedAdResponses": "Responses",
@@ -2152,19 +2162,6 @@
         "join": "Join",
         "joining": "Joining…"
       }
-    },
-    "requests": {
-      "heading": "Requests",
-      "subtitle": "Track the classes you've asked to join.",
-      "empty": "You haven't sent any join requests yet.",
-      "typeTeacher": "Teacher",
-      "typeClass": "Class",
-      "typeCampusLecturer": "Campus Lecturer",
-      "statusPending": "Waiting for a response",
-      "statusDeclined": "Declined",
-      "declineReasonLabel": "Reason given",
-      "cancelRequest": "Cancel request",
-      "cancelling": "Cancelling…"
     },
     "calendar": {
       "title": "Calendar",
@@ -2567,6 +2564,23 @@
         "next": "Next",
         "pageInfo": "Page {page} of {totalPages}"
       }
+    },
+    "connections": {
+      "heading": "Connections",
+      "subtitle": "Track institutes you've unlocked and classes you've asked to join.",
+      "myInstitutesHeading": "My institutes",
+      "viewClasses": "View classes",
+      "requestsHeading": "Requests",
+      "empty": "You haven't sent any join requests yet.",
+      "typeTeacher": "Teacher",
+      "typeClass": "Class",
+      "typeCampusLecturer": "Campus Lecturer",
+      "statusPending": "Waiting for a response",
+      "statusQnaOpen": "Q&A open",
+      "statusDeclined": "Declined",
+      "declineReasonLabel": "Reason given",
+      "cancelRequest": "Cancel request",
+      "cancelling": "Cancelling…"
     }
   },
   "dashboardShell": {
@@ -3221,6 +3235,10 @@
         "gradesHeading": "Grades",
         "gradesEmpty": "No exams graded yet.",
         "gradePending": "Pending"
+      },
+      "qnaOpen": {
+        "heading": "Q&A open",
+        "subtitle": "You accepted these requests — answer any questions before the student joins."
       }
     },
     "analytics": {
@@ -3786,7 +3804,11 @@
       "full": "This class is full.",
       "joinNow": "Join now",
       "joinedNow": "You're in! You've joined this class.",
-      "signUpToJoin": "Sign up to join instantly"
+      "signUpToJoin": "Sign up to join instantly",
+      "qnaOpen": "The teacher accepted your request — ask any questions below before joining.",
+      "join": "Join",
+      "unlockTeacherConnection": "Teacher connection fee",
+      "unlockClassJoin": "Class join fee"
     },
     "aboutTeacherHeading": "About the teacher",
     "reviewsHeading": "Student reviews",
@@ -3856,5 +3878,24 @@
     "regenerate": "Regenerate",
     "copy": "Copy",
     "copied": "Copied"
+  },
+  "payhere": {
+    "nonRefundable": "This fee is non-refundable once paid.",
+    "redirecting": "Redirecting to payment...",
+    "payNow": "Pay now"
+  },
+  "qnaThread": {
+    "placeholder": "Ask a question or add a note...",
+    "send": "Send",
+    "justNow": "Just now"
+  },
+  "instituteUnlock": {
+    "heading": "Unlock this institute",
+    "body": "Pay a one-time Rs. {fee} fee to see the full class list — schedules, teachers, and pricing for every class. Non-refundable once paid.",
+    "unlockButton": "Unlock for Rs. {fee}",
+    "unlocking": "Redirecting to payment...",
+    "signInToUnlock": "Sign in to unlock",
+    "unlockLabel": "Institute unlock fee",
+    "suspendedBanner": "This institute is currently suspended. You still have access to its page, but new joins are paused."
   }
 }

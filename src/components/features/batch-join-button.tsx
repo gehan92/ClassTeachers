@@ -25,7 +25,7 @@ export function BatchJoinButton({
   batchId: string;
   loggedIn: boolean;
   isStudent: boolean;
-  initialStatus: "pending" | "accepted" | "declined" | null;
+  initialStatus: "pending" | "accepted" | "declined" | "qna_open" | "joined" | null;
   isOpenEnrollment?: boolean;
   capacity?: number | null;
   spotsTaken?: number;
@@ -37,7 +37,9 @@ export function BatchJoinButton({
   const spotsLeft = capacity != null ? Math.max(0, capacity - spotsTaken) : undefined;
   const isFull = spotsLeft === 0;
 
-  if (status === "accepted") {
+  // "joined" (platform fee paid/waived) shows the same fully-in view as the
+  // legacy instant "accepted" state.
+  if (status === "accepted" || status === "joined") {
     return <span className="text-xs font-medium text-success">{t("joinAccepted")}</span>;
   }
 
@@ -61,6 +63,16 @@ export function BatchJoinButton({
   if (!isOpenEnrollment) {
     if (status === "pending") {
       return <span className="text-xs font-medium text-muted-foreground">{t("joinPending")}</span>;
+    }
+    // qna_open's real Q&A thread + "Join" button live in the student's
+    // Connections tab (not here — no room on a compact batch-card button
+    // for a whole thread), so this links there instead of a dead-end label.
+    if (status === "qna_open") {
+      return (
+        <Link href={{ pathname: "/student", query: { tab: "requests" } }} className="text-xs font-semibold text-primary hover:underline">
+          {t("qnaOpenContinue")}
+        </Link>
+      );
     }
     if (status === "declined") {
       return <span className="text-xs font-medium text-destructive">{t("joinDeclined")}</span>;

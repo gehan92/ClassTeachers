@@ -14,6 +14,7 @@ import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { usePagination } from "@/lib/hooks/use-pagination";
 import { respondToJoinRequest, bulkEnrollStudentsByPhone, type BulkEnrollResult } from "@/lib/dashboard/batches-actions";
+import { QnaThread, type QnaMessageRow } from "@/components/features/qna-thread";
 
 export type InstituteStudentRow = {
   id: string;
@@ -21,6 +22,16 @@ export type InstituteStudentRow = {
   batch: string;
   joinedAt: string;
   phone: string | null;
+};
+
+/** An accepted request awaiting the platform-fee "Join" step (0146) — free
+ * Q&A is open, but the student isn't on the roster yet. */
+export type InstituteQnaOpenRow = {
+  id: string;
+  studentName: string;
+  batch: string;
+  inquiryId: string | null;
+  messages: QnaMessageRow[];
 };
 
 export type InstituteJoinRequestRow = {
@@ -49,10 +60,12 @@ function initialsFor(name: string) {
 export function StudentsTab({
   students,
   requests: initialRequests,
+  qnaOpen,
   batchOptions = [],
 }: {
   students: InstituteStudentRow[];
   requests: InstituteJoinRequestRow[];
+  qnaOpen: InstituteQnaOpenRow[];
   /** For the batch picker on a general (batchId === null) request. */
   batchOptions?: { id: string; title: string }[];
 }) {
@@ -189,6 +202,24 @@ export function StudentsTab({
                     {t("requests.decline")}
                   </Button>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {qnaOpen.length > 0 && (
+        <div className="rounded-lg border border-border bg-white p-5">
+          <h3 className="mb-3 text-lg">{t("qnaOpen.heading")}</h3>
+          <p className="mb-3 text-sm text-muted-foreground">{t("qnaOpen.subtitle")}</p>
+          <div className="flex flex-col divide-y divide-border">
+            {qnaOpen.map((row) => (
+              <div key={row.id} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0">
+                <div>
+                  <p className="font-medium text-foreground">{row.studentName}</p>
+                  <p className="text-sm text-muted-foreground">{row.batch}</p>
+                </div>
+                {row.inquiryId && <QnaThread inquiryId={row.inquiryId} role="owner" initialMessages={row.messages} />}
               </div>
             ))}
           </div>

@@ -21,7 +21,7 @@ export function InstituteJoinButton({
   classId: string;
   loggedIn: boolean;
   isStudent: boolean;
-  initialStatus: "pending" | "accepted" | "declined" | null;
+  initialStatus: "pending" | "accepted" | "declined" | "qna_open" | "joined" | null;
 }) {
   const t = useTranslations("profilePage");
   const [status, setStatus] = useState(initialStatus);
@@ -54,7 +54,20 @@ export function InstituteJoinButton({
       </span>
     );
   }
-  if (status === "accepted") {
+  // qna_open's real Q&A thread + "Join" button live in the student's
+  // Connections tab — this compact hero pill links there instead of a
+  // dead-end label.
+  if (status === "qna_open") {
+    return (
+      <Link
+        href={{ pathname: "/student", query: { tab: "requests" } }}
+        className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white underline-offset-2 hover:underline"
+      >
+        {t("qnaOpenContinue")}
+      </Link>
+    );
+  }
+  if (status === "accepted" || status === "joined") {
     return (
       <span className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-xs text-white/85">
         {t("joinAccepted")}

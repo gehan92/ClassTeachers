@@ -62,7 +62,7 @@ export type ConnectionJoinRequest = {
   id: string;
   studentName: string;
   targetLabel: string;
-  status: "pending" | "accepted" | "declined";
+  status: "pending" | "accepted" | "declined" | "qna_open" | "joined";
   createdAt: string;
 };
 

@@ -72,7 +72,11 @@ export function ConnectionsTab({
                 <div className="flex items-center gap-2">
                   <StatusBadge
                     variant={
-                      request.status === "accepted" ? "active" : request.status === "declined" ? "flagged" : "pending"
+                      request.status === "accepted" || request.status === "joined"
+                        ? "active"
+                        : request.status === "declined"
+                          ? "flagged"
+                          : "pending"
                     }
                   >
                     {t(`requestStatus.${request.status}`)}

@@ -86,6 +86,7 @@
       "join_request_accepted": "{ownerName} ඔබේ එකතු වීමේ ඉල්ලීම පිළිගත්තා.",
       "join_request_declined": "{ownerName} ඔබේ එකතු වීමේ ඉල්ලීම ප්‍රතික්ෂේප කළා.",
       "join_request_declined_with_reason": "{ownerName} ඔබේ එකතු වීමේ ඉල්ලීම ප්‍රතික්ෂේප කළා: \"{reason}\"",
+      "join_request_expired": "දින 7ක් ඇතුළත පිළිතුරක් නොලැබී ඔබේ එකතු වීමේ ඉල්ලීම කල් ඉකුත් විය.",
       "open_batch_joined": "{studentName} ඔබේ විවෘත පන්තියට එකතු විය: \"{batchTitle}\".",
       "exam_graded": "ඔබේ \"{examTitle}\" විභාගය ලකුණු කරන ලදී: {grade}.",
       "exam_submitted": "{studentName} \"{examTitle}\" ඉදිරිපත් කළේය.",
@@ -501,7 +502,8 @@
     "joinDeclined": "ප්‍රතික්ෂේප කරන ලදී",
     "openEnrollmentBadge": "විවෘත — ක්ෂණිකව එකතු වන්න",
     "spotsLeft": "ඉඩ {count}ක් ඉතිරිය",
-    "full": "පන්තිය පිරී ඇත"
+    "full": "පන්තිය පිරී ඇත",
+    "qnaOpenContinue": "ප්‍රශ්නෝත්තර විවෘතයි — සම්බන්ධතා වෙත ගොස් දිගටම කරගෙන යන්න"
   },
   "adSlot": {
     "eyebrow": "වේදිකා-ව්‍යාප්ත දැන්වීම",
@@ -1096,7 +1098,9 @@
       "previous": "පෙර",
       "next": "ඊළඟ",
       "pageInfo": "පිටුව {page} න් {totalPages}"
-    }
+    },
+    "classLocked": "අගුළු දමා ඇත",
+    "qnaOpenContinue": "ප්‍රශ්නෝත්තර විවෘතයි — සම්බන්ධතා වෙත ගොස් දිගටම කරගෙන යන්න"
   },
   "adminDashboard": {
     "logout": "පිටවන්න",
@@ -1312,7 +1316,9 @@
       "requestStatus": {
         "pending": "පොරොත්තුවෙන්",
         "accepted": "පිළිගත්තා",
-        "declined": "ප්‍රතික්ෂේප කළා"
+        "declined": "ප්‍රතික්ෂේප කළා",
+        "qna_open": "ප්‍රශ්නෝත්තර විවෘතයි",
+        "joined": "සම්බන්ධ විය"
       }
     },
     "common": {
@@ -1834,6 +1840,10 @@
         "summary": "ලියාපදිංචි {enrolled} · දැනටමත් ලියාපදිංචි {already} · හමු නොවූ {notFound}",
         "notFoundHeading": "මෙම අංක සඳහා ගිණුමක් හමු නොවීය — සිසුවාට පළමුව ලියාපදිංචි වන්නැයි කියන්න:",
         "importMore": "තවත් ආයාත කරන්න"
+      },
+      "qnaOpen": {
+        "heading": "ප්‍රශ්නෝත්තර විවෘතයි",
+        "subtitle": "ඔබ මෙම ඉල්ලීම් පිළිගත්තා — සිසුවා එකතු වීමට පෙර ඕනෑම ප්‍රශ්නයකට පිළිතුරු දෙන්න."
       }
     },
     "attendance": {
@@ -2028,7 +2038,7 @@
       "assignments": "පැවරුම්",
       "homework": "ගෙදර වැඩ",
       "settings": "සැකසුම්",
-      "requests": "ඉල්ලීම්",
+      "requests": "සම්බන්ධතා",
       "calendar": "දින දර්ශනය",
       "wantedAds": "දැන්වීමක් පළ කරන්න",
       "wantedAdResponses": "පිළිතුරු",
@@ -2152,19 +2162,6 @@
         "join": "එකතු වන්න",
         "joining": "එකතු වෙමින්…"
       }
-    },
-    "requests": {
-      "heading": "ඉල්ලීම්",
-      "subtitle": "ඔබ එකතු වීමට ඉල්ලූ පන්ති නිරීක්ෂණය කරන්න.",
-      "empty": "ඔබ තවම එකතු වීමේ ඉල්ලීමක් යවා නැත.",
-      "typeTeacher": "ගුරුවරයා",
-      "typeClass": "පන්තිය",
-      "typeCampusLecturer": "කැම්පස් කථිකාචාර්ය",
-      "statusPending": "පිළිතුරක් එනතෙක් රැඳී සිටී",
-      "statusDeclined": "ප්‍රතික්ෂේප කළා",
-      "declineReasonLabel": "දෙන ලද හේතුව",
-      "cancelRequest": "ඉල්ලීම අවලංගු කරන්න",
-      "cancelling": "අවලංගු කරමින්…"
     },
     "calendar": {
       "title": "දින දර්ශනය",
@@ -2567,6 +2564,23 @@
         "next": "ඊළඟ",
         "pageInfo": "පිටුව {page} න් {totalPages}"
       }
+    },
+    "connections": {
+      "heading": "සම්බන්ධතා",
+      "subtitle": "ඔබ අගුළු හැරූ ආයතන සහ එකතු වීමට ඉල්ලූ පන්ති නිරීක්ෂණය කරන්න.",
+      "myInstitutesHeading": "මගේ ආයතන",
+      "viewClasses": "පන්ති බලන්න",
+      "requestsHeading": "ඉල්ලීම්",
+      "empty": "ඔබ තවම එකතු වීමේ ඉල්ලීම් යවා නැත.",
+      "typeTeacher": "ගුරුවරයා",
+      "typeClass": "පන්තිය",
+      "typeCampusLecturer": "කැම්පස් කථිකාචාර්ය",
+      "statusPending": "පිළිතුරක් එනතුරු",
+      "statusQnaOpen": "ප්‍රශ්නෝත්තර විවෘතයි",
+      "statusDeclined": "ප්‍රතික්ෂේප කළා",
+      "declineReasonLabel": "ලබා දුන් හේතුව",
+      "cancelRequest": "ඉල්ලීම අවලංගු කරන්න",
+      "cancelling": "අවලංගු කරමින්…"
     }
   },
   "dashboardShell": {
@@ -3221,6 +3235,10 @@
         "gradesHeading": "ලකුණු",
         "gradesEmpty": "තවම විභාග ලකුණු කර නැත.",
         "gradePending": "පොරොත්තුවෙන්"
+      },
+      "qnaOpen": {
+        "heading": "ප්‍රශ්නෝත්තර විවෘතයි",
+        "subtitle": "ඔබ මෙම ඉල්ලීම් පිළිගත්තා — සිසුවා එකතු වීමට පෙර ඕනෑම ප්‍රශ්නයකට පිළිතුරු දෙන්න."
       }
     },
     "analytics": {
@@ -3785,7 +3803,11 @@
       "full": "මෙම පන්තිය පිරී ඇත.",
       "joinNow": "දැන් එකතු වන්න",
       "joinedNow": "ඔබ එකතු විය! ඔබ මෙම පන්තියට එකතු වී ඇත.",
-      "signUpToJoin": "ක්ෂණිකව එකතු වීමට ලියාපදිංචි වන්න"
+      "signUpToJoin": "ක්ෂණිකව එකතු වීමට ලියාපදිංචි වන්න",
+      "qnaOpen": "ගුරුවරයා ඔබේ ඉල්ලීම පිළිගත්තා — එකතු වීමට පෙර පහත ඕනෑම ප්‍රශ්නයක් අහන්න.",
+      "join": "එකතු වන්න",
+      "unlockTeacherConnection": "ගුරු සම්බන්ධතා ගාස්තුව",
+      "unlockClassJoin": "පන්තියට එකතු වීමේ ගාස්තුව"
     },
     "resourcesHeading": "{name} ගෙන් නොමිලේ සටහන්",
     "aboutTeacherHeading": "ගුරුවරයා ගැන",
@@ -3856,5 +3878,24 @@
     "regenerate": "නැවත උත්පාදනය කරන්න",
     "copy": "පිටපත් කරන්න",
     "copied": "පිටපත් කළා"
+  },
+  "payhere": {
+    "nonRefundable": "මෙම ගාස්තුව ගෙවූ පසු ආපසු ගෙවිය නොහැක.",
+    "redirecting": "ගෙවීම වෙත යොමු කරමින්...",
+    "payNow": "දැන් ගෙවන්න"
+  },
+  "qnaThread": {
+    "placeholder": "ප්‍රශ්නයක් අහන්න හෝ සටහනක් එකතු කරන්න...",
+    "send": "යවන්න",
+    "justNow": "දැන්"
+  },
+  "instituteUnlock": {
+    "heading": "මෙම ආයතනය අගුළු හරින්න",
+    "body": "සියලුම පන්තිවල කාලසටහන්, ගුරුවරුන් සහ මිල ගණන් ඇතුළු සම්පූර්ණ පන්ති ලැයිස්තුව බැලීමට රු. {fee} එක් වරක් ගාස්තුවක් ගෙවන්න. ගෙවූ පසු ආපසු ගෙවිය නොහැක.",
+    "unlockButton": "රු. {fee} කින් අගුළු හරින්න",
+    "unlocking": "ගෙවීම වෙත යොමු කරමින්...",
+    "signInToUnlock": "අගුළු හැරීමට පුරන්න",
+    "unlockLabel": "ආයතන අගුළු ගැසීමේ ගාස්තුව",
+    "suspendedBanner": "මෙම ආයතනය දැනට අත්හිටුවා ඇත. ඔබට තවමත් එහි පිටුවට ප්‍රවේශය ඇත, නමුත් නව එකතු වීම් නවත්වා ඇත."
   }
 }

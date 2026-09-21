@@ -32,7 +32,7 @@ export type MyClassRow = {
   ownerType: "teacher" | "class";
   mode: "online" | "physical" | "travels_to_student" | null;
   scheduleNote: string | null;
-  status: "pending" | "accepted" | "declined";
+  status: "pending" | "accepted" | "declined" | "qna_open" | "joined";
   /** Swaps this row's "Teacher"/"Class" badge and any join-flow wording to campus terminology (0076) — a mixed list can have both, so this is per-row, not page-level. */
   isCampusLecturer: boolean;
 };
@@ -252,7 +252,7 @@ export function ClassesTab({
     refresh();
   }
 
-  const acceptedClasses = myClasses.filter((item) => item.status === "accepted");
+  const acceptedClasses = myClasses.filter((item) => item.status === "accepted" || item.status === "joined");
   const openClass = openClassId ? (acceptedClasses.find((c) => c.enrollmentId === openClassId) ?? null) : null;
 
   // Landing here from a "class started"/"class ended" notification (see

@@ -14,6 +14,7 @@ import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { usePagination } from "@/lib/hooks/use-pagination";
 import { respondToJoinRequest } from "@/lib/dashboard/batches-actions";
+import { QnaThread, type QnaMessageRow } from "@/components/features/qna-thread";
 import type { AnalyticsExamResultRow, AnalyticsAttendanceRow } from "@/components/dashboard/teacher/analytics-tab";
 
 export type TeacherStudentRow = {
@@ -31,14 +32,26 @@ export type TeacherJoinRequestRow = {
   requestedAt: string;
 };
 
+/** An accepted request awaiting the platform-fee "Join" step (0146) — free
+ * Q&A is open, but the student isn't on the roster yet. */
+export type TeacherQnaOpenRow = {
+  id: string;
+  studentName: string;
+  batch: string;
+  inquiryId: string | null;
+  messages: QnaMessageRow[];
+};
+
 export function StudentsTab({
   students,
   requests: initialRequests,
+  qnaOpen,
   examResults,
   attendance,
 }: {
   students: TeacherStudentRow[];
   requests: TeacherJoinRequestRow[];
+  qnaOpen: TeacherQnaOpenRow[];
   /** Already computed for the Analytics tab (analyticsExamResults) — reused
    * here rather than re-queried, filtered per-student when the profile
    * dialog opens. */
@@ -147,6 +160,24 @@ export function StudentsTab({
                     {t("requests.decline")}
                   </Button>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {qnaOpen.length > 0 && (
+        <div className="rounded-lg border border-border bg-white p-5">
+          <h3 className="mb-3 text-lg">{t("qnaOpen.heading")}</h3>
+          <p className="mb-3 text-sm text-muted-foreground">{t("qnaOpen.subtitle")}</p>
+          <div className="flex flex-col divide-y divide-border">
+            {qnaOpen.map((row) => (
+              <div key={row.id} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0">
+                <div>
+                  <p className="font-medium text-foreground">{row.studentName}</p>
+                  <p className="text-sm text-muted-foreground">{row.batch}</p>
+                </div>
+                {row.inquiryId && <QnaThread inquiryId={row.inquiryId} role="owner" initialMessages={row.messages} />}
               </div>
             ))}
           </div>

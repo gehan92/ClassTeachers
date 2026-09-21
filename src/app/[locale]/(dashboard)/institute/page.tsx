@@ -9,7 +9,8 @@ import {
 } from "@/components/dashboard/institute/overview-tab";
 import { TeachersTab, type InstituteTeacherRow, type TeacherSeekingAdBrowseRow } from "@/components/dashboard/institute/teachers-tab";
 import { BatchesTab } from "@/components/dashboard/institute/batches-tab";
-import { StudentsTab, type InstituteStudentRow, type InstituteJoinRequestRow } from "@/components/dashboard/institute/students-tab";
+import { StudentsTab, type InstituteStudentRow, type InstituteJoinRequestRow, type InstituteQnaOpenRow } from "@/components/dashboard/institute/students-tab";
+import { loadQnaThreadsForEnrollments } from "@/lib/dashboard/qna";
 import {
   AdvertisementTab,
   type InstituteAdBatchRow,
@@ -149,6 +150,7 @@ export default async function InstituteDashboardPage({
   // trips. Only the teacher-related queries below this genuinely have to
   // wait, since they need teacherIds out of classTeacherRows first.
   const [
+    ,
     { data: classTeacherRows },
     { data: instituteEnrollmentRows },
     { data: reviewRows },
@@ -171,6 +173,10 @@ export default async function InstituteDashboardPage({
     { data: vacancyAdRows },
     { data: vacancyApplicationRows },
   ] = await Promise.all([
+    // Lazy 7-day pending-request expiry (no scheduled jobs in this app, see
+    // 0146/0117) — runs alongside instituteEnrollmentRows below in the same
+    // batch, eventually-consistent same as 0117's notification pruning.
+    supabase.rpc("expire_stale_join_requests"),
     instituteId
       ? supabase.from("class_teachers").select("teacher_id, is_visible, status, requested_by").eq("class_id", instituteId)
       : Promise.resolve({
@@ -192,7 +198,13 @@ export default async function InstituteDashboardPage({
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
       : Promise.resolve({
-          data: [] as { id: string; student_id: string; batch_id: string | null; status: "pending" | "accepted" | "declined"; joined_at: string }[],
+          data: [] as {
+            id: string;
+            student_id: string;
+            batch_id: string | null;
+            status: "pending" | "accepted" | "declined" | "qna_open" | "joined";
+            joined_at: string;
+          }[],
         }),
     instituteId
       ? supabase.from("reviews").select("rating").eq("target_type", "class").eq("target_id", instituteId)
@@ -527,7 +539,9 @@ export default async function InstituteDashboardPage({
   const isVisibleById = new Map((classTeacherRows ?? []).map((row) => [row.teacher_id, row.is_visible]));
   const rosterStatusById = new Map((classTeacherRows ?? []).map((row) => [row.teacher_id, row.status]));
   const requestedByById = new Map((classTeacherRows ?? []).map((row) => [row.teacher_id, row.requested_by]));
-  const acceptedInstituteEnrollments = (instituteEnrollmentRows ?? []).filter((row) => row.status === "accepted");
+  const acceptedInstituteEnrollments = (instituteEnrollmentRows ?? []).filter(
+    (row) => row.status === "accepted" || row.status === "joined",
+  );
   const pendingInstituteEnrollments = (instituteEnrollmentRows ?? []).filter((row) => row.status === "pending");
   const studentsCount = new Set(acceptedInstituteEnrollments.map((row) => row.student_id)).size;
 
@@ -891,6 +905,26 @@ export default async function InstituteDashboardPage({
     batchId: row.batch_id,
     requestedAt: dateFormatter.format(new Date(row.joined_at)),
   }));
+
+  // Accepted-but-unpaid requests (platform-fee funnel, 0146) — free Q&A is
+  // open, but the student isn't on the roster (acceptedInstituteEnrollments)
+  // yet.
+  const qnaOpenInstituteEnrollments = (instituteEnrollmentRows ?? []).filter((row) => row.status === "qna_open");
+  const instituteQnaThreadsByEnrollmentId = await loadQnaThreadsForEnrollments(
+    supabase,
+    qnaOpenInstituteEnrollments.map((row) => row.id),
+    locale,
+  );
+  const instituteQnaOpenRows: InstituteQnaOpenRow[] = qnaOpenInstituteEnrollments.map((row) => {
+    const thread = instituteQnaThreadsByEnrollmentId.get(row.id);
+    return {
+      id: row.id,
+      studentName: thread?.studentName ?? "—",
+      batch: row.batch_id ? (batchTitleById.get(row.batch_id) ?? "—") : generalBatchLabel,
+      inquiryId: thread?.inquiryId ?? null,
+      messages: thread?.messages ?? [],
+    };
+  });
 
   // Classes & Batches tab's per-class roster (attendance % + average exam
   // marks alongside who's enrolled) — reuses analyticsAttendance/
@@ -1285,6 +1319,7 @@ export default async function InstituteDashboardPage({
           <StudentsTab
             students={instituteStudents}
             requests={instituteJoinRequests}
+            qnaOpen={instituteQnaOpenRows}
             batchOptions={batches.map((b) => ({ id: b.id, title: b.title }))}
           />
         ),

@@ -11,7 +11,11 @@ export function ClassBatchCard({
   batch: ClassBatch;
   /** Omitted entirely on the institute's own "preview my page" view — a
    * viewer can't request to join their own institute. */
-  join?: { loggedIn: boolean; isStudent: boolean; status: "pending" | "accepted" | "declined" | null };
+  join?: {
+    loggedIn: boolean;
+    isStudent: boolean;
+    status: "pending" | "accepted" | "declined" | "qna_open" | "joined" | null;
+  };
 }) {
   const t = useTranslations("classBatch");
   const chips = [

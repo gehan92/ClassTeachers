@@ -43,11 +43,12 @@ import { classState } from "@/lib/dashboard/live-class-state";
 import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 import { stripRichText } from "@/lib/rich-text";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
+import { loadQnaThreadsForEnrollments } from "@/lib/dashboard/qna";
 import type { TeacherProfileDetail } from "@/types/teacher-profile";
 import type { ReferralRow } from "@/components/dashboard/refer-earn-panel";
 import type { TeacherBatchRow, TeacherBatchOption, BatchRosterEntry } from "@/components/dashboard/teacher/classes-tab";
 import type { TeacherNoteRow } from "@/components/dashboard/teacher/notes-tab";
-import type { TeacherStudentRow, TeacherJoinRequestRow } from "@/components/dashboard/teacher/students-tab";
+import type { TeacherStudentRow, TeacherJoinRequestRow, TeacherQnaOpenRow } from "@/components/dashboard/teacher/students-tab";
 import type { TeacherLiveClassRow } from "@/components/dashboard/teacher/live-classes-tab";
 import type { AttendanceSession } from "@/components/dashboard/teacher/attendance-tab";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
@@ -140,6 +141,7 @@ export default async function TeacherDashboardPage({
   // collapsing that chain here is what actually makes the dashboard feel
   // fast rather than just showing a loading indicator sooner.
   const [
+    ,
     { data: profile },
     { data: teacherProfile },
     { data: priceRow },
@@ -173,6 +175,12 @@ export default async function TeacherDashboardPage({
     { data: teacherSeekingAdResponseRows },
     { data: vacancyAdRows },
   ] = await Promise.all([
+    // Lazy 7-day pending-request expiry (no scheduled jobs in this app, see
+    // 0146/0117) — runs alongside enrollmentRows below in the same batch;
+    // a request that expires mid-batch is just caught on the next load,
+    // same "eventually consistent" tradeoff 0117 already accepted for
+    // notification pruning.
+    supabase.rpc("expire_stale_join_requests"),
     supabase.from("profiles").select("full_name, phone, notification_prefs, role").eq("id", userId).single(),
     supabase.from("teacher_profiles").select("*").eq("id", userId).maybeSingle(),
     supabase.from("prices").select("hourly_rate, monthly_rate").eq("owner_type", "teacher").eq("owner_id", userId).maybeSingle(),
@@ -188,7 +196,7 @@ export default async function TeacherDashboardPage({
       .select("id", { count: "exact", head: true })
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
-      .eq("status", "accepted"),
+      .in("status", ["accepted", "joined"]),
     supabase.from("reviews").select("rating").eq("target_type", "teacher").eq("target_id", userId),
     // No owner filter — RLS (can_manage_content, 0093) already scopes this
     // to exams this teacher owns OR manages via an assigned institute
@@ -727,7 +735,7 @@ export default async function TeacherDashboardPage({
   // decline join requests) is deliberately not extended to institute
   // batches: approving who's "in" at an institute is the institute's own
   // call (Students tab, 0097), not something a linked teacher does.
-  const acceptedEnrollments = (enrollmentRows ?? []).filter((e) => e.status === "accepted");
+  const acceptedEnrollments = (enrollmentRows ?? []).filter((e) => e.status === "accepted" || e.status === "joined");
   const pendingEnrollments = (enrollmentRows ?? []).filter((e) => e.status === "pending");
 
   // Institute Blueprint step 3b — every accepted student across every
@@ -793,6 +801,25 @@ export default async function TeacherDashboardPage({
       studentName: student?.full_name ?? "—",
       batch: (enrollment.batch_id && batches.find((b) => b.id === enrollment.batch_id)?.title) || t("students.noBatch"),
       requestedAt: dateFormatter.format(new Date(enrollment.joined_at)),
+    };
+  });
+
+  // Accepted-but-unpaid requests (platform-fee funnel, 0146) — free Q&A is
+  // open, but the student isn't on the roster (acceptedEnrollments) yet.
+  const qnaOpenEnrollments = (enrollmentRows ?? []).filter((e) => e.status === "qna_open");
+  const qnaThreadsByEnrollmentId = await loadQnaThreadsForEnrollments(
+    supabase,
+    qnaOpenEnrollments.map((e) => e.id),
+    locale,
+  );
+  const qnaOpenRows: TeacherQnaOpenRow[] = qnaOpenEnrollments.map((enrollment) => {
+    const thread = qnaThreadsByEnrollmentId.get(enrollment.id);
+    return {
+      id: enrollment.id,
+      studentName: thread?.studentName ?? "—",
+      batch: (enrollment.batch_id && batches.find((b) => b.id === enrollment.batch_id)?.title) || t("students.noBatch"),
+      inquiryId: thread?.inquiryId ?? null,
+      messages: thread?.messages ?? [],
     };
   });
 
@@ -1385,6 +1412,7 @@ export default async function TeacherDashboardPage({
           <StudentsTab
             students={students}
             requests={requests}
+            qnaOpen={qnaOpenRows}
             examResults={analyticsExamResults}
             attendance={analyticsAttendance}
           />

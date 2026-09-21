@@ -11,6 +11,7 @@ import { Panel } from "@/components/features/teacher-profile-view";
 import { InstituteTeachersPanel } from "@/components/features/institute-teacher-quick-view";
 import { InstituteJoinButton } from "@/components/features/institute-join-button";
 import { InstituteTeacherJoinButton } from "@/components/features/institute-teacher-join-button";
+import { InstituteUnlockGate } from "@/components/features/institute-unlock-gate";
 import type { ClassProfileDetail } from "@/types/class-profile";
 
 /** The signed-in viewer's join state — undefined on the institute's own
@@ -18,8 +19,8 @@ import type { ClassProfileDetail } from "@/types/class-profile";
 export type ClassProfileViewerJoin = {
   loggedIn: boolean;
   isStudent: boolean;
-  generalStatus: "pending" | "accepted" | "declined" | null;
-  batchStatusById: Record<string, "pending" | "accepted" | "declined" | null>;
+  generalStatus: "pending" | "accepted" | "declined" | "qna_open" | "joined" | null;
+  batchStatusById: Record<string, "pending" | "accepted" | "declined" | "qna_open" | "joined" | null>;
   /** A teacher/campus-lecturer viewer (0121) — mutually exclusive with
    * isStudent, since a signed-in account is only ever one role. */
   isTeacher: boolean;
@@ -53,6 +54,14 @@ export function ClassProfileView({
       <Hero classProfile={classProfile} isOwnerView={isOwnerView} backHref={backHref} viewerJoin={viewerJoin} />
       <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-8 px-7 py-10 lg:grid-cols-[2fr_1fr]">
         <div className="min-w-0">
+          {classProfile.suspended && <SuspendedBanner />}
+          {!isOwnerView && !classProfile.unlocked && !classProfile.suspended && (
+            <InstituteUnlockGate
+              instituteId={classProfile.id}
+              fee={classProfile.instituteUnlockFee}
+              loggedIn={viewerJoin?.loggedIn ?? false}
+            />
+          )}
           <AboutPanel classProfile={classProfile} showGate={showGate} />
           {classProfile.teachers.length > 0 && (
             <div className="mt-5">
@@ -206,6 +215,15 @@ function Hero({
   );
 }
 
+function SuspendedBanner() {
+  const t = useTranslations("instituteUnlock");
+  return (
+    <div className="mb-5 rounded-md border border-destructive/25 bg-destructive/5 p-3.5 text-sm text-destructive">
+      {t("suspendedBanner")}
+    </div>
+  );
+}
+
 function AboutPanel({ classProfile, showGate }: { classProfile: ClassProfileDetail; showGate: boolean }) {
   const t = useTranslations("profilePage");
 
@@ -230,19 +248,25 @@ function BatchesPanel({
     <Panel title={t("classesWithinInstitute")}>
       <div className="flex flex-col gap-4">
         {classProfile.batches.map((batch) => (
-          <ClassBatchCard
-            key={batch.id}
-            batch={batch}
-            join={
-              viewerJoin
-                ? {
-                    loggedIn: viewerJoin.loggedIn,
-                    isStudent: viewerJoin.isStudent,
-                    status: viewerJoin.batchStatusById[batch.id] ?? null,
-                  }
-                : undefined
-            }
-          />
+          <div key={batch.id} className={!classProfile.unlocked ? "opacity-60" : undefined}>
+            {!classProfile.unlocked && (
+              <div className="mb-1.5">
+                <LockPill>{t("classLocked")}</LockPill>
+              </div>
+            )}
+            <ClassBatchCard
+              batch={batch}
+              join={
+                viewerJoin
+                  ? {
+                      loggedIn: viewerJoin.loggedIn,
+                      isStudent: viewerJoin.isStudent,
+                      status: viewerJoin.batchStatusById[batch.id] ?? null,
+                    }
+                  : undefined
+              }
+            />
+          </div>
         ))}
       </div>
     </Panel>

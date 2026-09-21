@@ -1002,9 +1002,11 @@ export type Database = {
           owner_type: OwnerType;
           owner_id: string;
           batch_id: string | null;
-          status: "pending" | "accepted" | "declined";
+          status: "pending" | "accepted" | "declined" | "qna_open" | "joined";
           decline_reason: string | null;
           joined_at: string;
+          platform_fee_paid: boolean;
+          platform_fee_waived: boolean;
         };
         Insert: {
           id?: string;
@@ -1012,9 +1014,11 @@ export type Database = {
           owner_type: OwnerType;
           owner_id: string;
           batch_id?: string | null;
-          status?: "pending" | "accepted" | "declined";
+          status?: "pending" | "accepted" | "declined" | "qna_open" | "joined";
           decline_reason?: string | null;
           joined_at?: string;
+          platform_fee_paid?: boolean;
+          platform_fee_waived?: boolean;
         };
         Update: {
           id?: string;
@@ -1022,12 +1026,85 @@ export type Database = {
           owner_type?: OwnerType;
           owner_id?: string;
           batch_id?: string | null;
-          status?: "pending" | "accepted" | "declined";
+          status?: "pending" | "accepted" | "declined" | "qna_open" | "joined";
           decline_reason?: string | null;
           joined_at?: string;
+          platform_fee_paid?: boolean;
+          platform_fee_waived?: boolean;
         };
         // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
         // every table declares no relationships rather than a guessed one.
+        Relationships: [];
+      };
+
+      platform_payments: {
+        Row: {
+          id: string;
+          student_id: string;
+          purpose: "teacher_connection" | "institute_unlock" | "class_join";
+          enrollment_id: string | null;
+          institute_id: string | null;
+          amount: number;
+          currency: string;
+          payhere_order_id: string;
+          payhere_payment_id: string | null;
+          status: "pending" | "completed" | "failed" | "cancelled";
+          paid_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          student_id: string;
+          purpose: "teacher_connection" | "institute_unlock" | "class_join";
+          enrollment_id?: string | null;
+          institute_id?: string | null;
+          amount: number;
+          currency?: string;
+          payhere_order_id: string;
+          payhere_payment_id?: string | null;
+          status?: "pending" | "completed" | "failed" | "cancelled";
+          paid_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          student_id?: string;
+          purpose?: "teacher_connection" | "institute_unlock" | "class_join";
+          enrollment_id?: string | null;
+          institute_id?: string | null;
+          amount?: number;
+          currency?: string;
+          payhere_order_id?: string;
+          payhere_payment_id?: string | null;
+          status?: "pending" | "completed" | "failed" | "cancelled";
+          paid_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+
+      institute_access: {
+        Row: {
+          id: string;
+          student_id: string;
+          institute_id: string;
+          payment_id: string | null;
+          unlocked_at: string;
+        };
+        Insert: {
+          id?: string;
+          student_id: string;
+          institute_id: string;
+          payment_id?: string | null;
+          unlocked_at?: string;
+        };
+        Update: {
+          id?: string;
+          student_id?: string;
+          institute_id?: string;
+          payment_id?: string | null;
+          unlocked_at?: string;
+        };
         Relationships: [];
       };
 
@@ -1372,6 +1449,7 @@ export type Database = {
           message: string;
           status: "new" | "read";
           created_at: string;
+          enrollment_id: string | null;
         };
         Insert: {
           id?: string;
@@ -1383,6 +1461,7 @@ export type Database = {
           message: string;
           status?: "new" | "read";
           created_at?: string;
+          enrollment_id?: string | null;
         };
         Update: {
           id?: string;
@@ -1394,6 +1473,7 @@ export type Database = {
           message?: string;
           status?: "new" | "read";
           created_at?: string;
+          enrollment_id?: string | null;
         };
         // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
         // every table declares no relationships rather than a guessed one.
@@ -2231,6 +2311,22 @@ export type Database = {
           has_assignments: boolean;
           has_homework: boolean;
         }[];
+      };
+      expire_stale_join_requests: {
+        Args: Record<string, never>;
+        Returns: void;
+      };
+      is_first_platform_connection: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      mark_payment_completed: {
+        Args: { p_payhere_order_id: string; p_payhere_payment_id: string };
+        Returns: void;
+      };
+      open_qna_thread: {
+        Args: { p_enrollment_id: string };
+        Returns: void;
       };
       list_public_reviews: {
         Args: { p_target_type: string; p_target_id: string };

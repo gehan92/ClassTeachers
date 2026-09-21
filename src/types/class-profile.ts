@@ -71,4 +71,13 @@ export type ClassProfileDetail = {
   reviews: ReviewDisplay[];
   phone: string | null;
   teachers: InstituteTeacherCard[];
+  /** Two-tier institute unlock (0147) — false means batches/teachers/
+   * promotions above are already stripped to [] by loadClassProfile, not
+   * something the view layer needs to re-check; teacherCount/reviewCount/
+   * rating stay real either way ("entice, don't hide" per spec). Always
+   * true for the owner previewing their own page, or an admin. */
+  unlocked: boolean;
+  instituteUnlockFee: number;
+  /** class_profiles.status === 'suspended' — shown as a banner regardless of unlock state. */
+  suspended: boolean;
 };

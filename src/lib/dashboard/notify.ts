@@ -78,7 +78,7 @@ export async function notifyContentAudience(
       .select("student_id")
       .eq("owner_type", target.ownerType)
       .eq("owner_id", target.ownerId)
-      .eq("status", "accepted");
+      .in("status", ["accepted", "joined"]);
     if (target.batchId) query = query.eq("batch_id", target.batchId);
     const { data: rows } = await query;
     studentIds = [...new Set((rows ?? []).map((r) => r.student_id))];

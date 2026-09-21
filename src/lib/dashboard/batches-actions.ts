@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { notify } from "./notify";
+import { TEACHER_CONNECTION_FEE, CLASS_JOIN_FEE, INSTITUTE_UNLOCK_FEE } from "@/lib/payhere/fees";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -465,7 +466,10 @@ export async function respondToJoinRequest(
   const { data: updated, error } = await supabase
     .from("enrollments")
     .update({
-      status: accept ? "accepted" : "declined",
+      // Accepting no longer drops the student straight into "in" —
+      // qna_open is the free Q&A step the platform-fee funnel inserts
+      // before a paid/waived "joined" (see 0146's header comment).
+      status: accept ? "qna_open" : "declined",
       ...(accept && batchId ? { batch_id: batchId } : {}),
       ...(!accept ? { decline_reason: declineReason?.trim() || null } : {}),
     })
@@ -480,6 +484,11 @@ export async function respondToJoinRequest(
   }
 
   if (updated) {
+    if (accept) {
+      // Opens the Q&A thread the student and owner will actually talk in —
+      // idempotent, safe even if this ever runs twice for the same row.
+      await supabase.rpc("open_qna_thread", { p_enrollment_id: enrollmentId });
+    }
     let ownerName = "—";
     if (updated.owner_type === "teacher") {
       const { data: p } = await supabase.from("profiles").select("full_name").eq("id", updated.owner_id).maybeSingle();
@@ -493,13 +502,129 @@ export async function respondToJoinRequest(
       updated.student_id,
       accept ? "join_request_accepted" : "join_request_declined",
       accept ? { ownerName } : { ownerName, reason: declineReason?.trim() || null },
-      // Accepted requests land the student in My Classes; a decline stays
-      // visible (with its reason) in the Requests tab, not My Classes.
-      accept ? "classes" : "requests",
+      // Both cases stay in the student's connections view now — an accept
+      // only opens Q&A, it doesn't land the student in My Classes anymore
+      // (that only happens once they've actually paid/waived and joined).
+      "connections",
       "joinRequestUpdates",
     );
   }
   return {};
+}
+
+/**
+ * Flow A step 4 / Flow B step 4's "Join" click — only valid once the owner
+ * has accepted (status='qna_open'). Waives the platform fee on a student's
+ * very first-ever completed platform payment (globally, not per-owner, see
+ * is_first_platform_connection, 0147); otherwise creates a pending
+ * platform_payments row for the caller to redirect into PayHere checkout
+ * with. Nothing here ever sets status='joined' directly except the waiver
+ * path — a real payment only reaches 'joined' via mark_payment_completed(),
+ * called from the PayHere notify webhook once the fee is actually paid.
+ */
+export async function joinAfterQna(
+  enrollmentId: string,
+): Promise<ActionResult & { waived?: boolean; payment?: { id: string; orderId: string; amount: number } }> {
+  if (!enrollmentId) {
+    return { error: "Invalid request." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { data: enrollment } = await supabase
+    .from("enrollments")
+    .select("id, owner_type, status")
+    .eq("id", enrollmentId)
+    .eq("student_id", user.id)
+    .maybeSingle();
+  if (!enrollment) {
+    return { error: "That request couldn't be found." };
+  }
+  if (enrollment.status !== "qna_open") {
+    return { error: "This request isn't ready to join yet." };
+  }
+
+  const { data: waiveEligible } = await supabase.rpc("is_first_platform_connection");
+  if (waiveEligible) {
+    const { error } = await supabase
+      .from("enrollments")
+      .update({ status: "joined", platform_fee_waived: true })
+      .eq("id", enrollmentId);
+    if (error) {
+      return { error: "Couldn't complete your join. Please try again." };
+    }
+    return { waived: true };
+  }
+
+  const purpose = enrollment.owner_type === "teacher" ? "teacher_connection" : "class_join";
+  const amount = purpose === "teacher_connection" ? TEACHER_CONNECTION_FEE : CLASS_JOIN_FEE;
+  const orderId = `${purpose}_${enrollmentId}_${Date.now()}`;
+  const { data: payment, error: paymentError } = await supabase
+    .from("platform_payments")
+    .insert({ student_id: user.id, purpose, enrollment_id: enrollmentId, amount, payhere_order_id: orderId })
+    .select("id")
+    .single();
+  if (paymentError || !payment) {
+    return { error: "Couldn't start the payment. Please try again." };
+  }
+  return { payment: { id: payment.id, orderId, amount } };
+}
+
+/**
+ * Flow B step 2's "Unlock institute" click. Idempotent: an existing
+ * institute_access row (already unlocked) is a no-op success, never a
+ * second charge. Otherwise creates a pending platform_payments row exactly
+ * like joinAfterQna above, for the caller to redirect into PayHere
+ * checkout with — completion still only ever happens via
+ * mark_payment_completed() from the notify webhook.
+ */
+export async function unlockInstitute(
+  instituteId: string,
+): Promise<ActionResult & { alreadyUnlocked?: boolean; payment?: { id: string; orderId: string; amount: number } }> {
+  if (!instituteId) {
+    return { error: "Invalid institute." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { data: existing } = await supabase
+    .from("institute_access")
+    .select("id")
+    .eq("student_id", user.id)
+    .eq("institute_id", instituteId)
+    .maybeSingle();
+  if (existing) {
+    return { alreadyUnlocked: true };
+  }
+
+  const orderId = `institute_unlock_${instituteId}_${user.id}_${Date.now()}`;
+  const { data: payment, error: paymentError } = await supabase
+    .from("platform_payments")
+    .insert({
+      student_id: user.id,
+      purpose: "institute_unlock",
+      institute_id: instituteId,
+      amount: INSTITUTE_UNLOCK_FEE,
+      payhere_order_id: orderId,
+    })
+    .select("id")
+    .single();
+  if (paymentError || !payment) {
+    return { error: "Couldn't start the payment. Please try again." };
+  }
+  return { payment: { id: payment.id, orderId, amount: INSTITUTE_UNLOCK_FEE } };
 }
 
 /**

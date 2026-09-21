@@ -276,6 +276,38 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/ad/[id]"
   return {};
 }
 
+type QnaMessageRow = { id: string; senderRole: "owner" | "inquirer"; body: string; createdLabel: string };
+
+/**
+ * Loads the Q&A thread open_qna_thread() (0148) created for this specific
+ * enrollment — the inquiry it seeded plus every message since. Shared by
+ * both AdLandingPage's teacher/class views (LessonAdView/TeacherWiseAdView
+ * have nothing to enroll in, so they never call this).
+ */
+async function loadQnaThread(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  enrollmentId: string,
+  locale: string,
+): Promise<{ inquiryId: string; messages: QnaMessageRow[] } | null> {
+  const { data: inquiry } = await supabase.from("inquiries").select("id").eq("enrollment_id", enrollmentId).maybeSingle();
+  if (!inquiry) return null;
+  const { data: messageRows } = await supabase
+    .from("inquiry_messages")
+    .select("id, sender_role, body, created_at")
+    .eq("inquiry_id", inquiry.id)
+    .order("created_at", { ascending: true });
+  const timeFormatter = createDateTimeFormatter(locale);
+  return {
+    inquiryId: inquiry.id,
+    messages: (messageRows ?? []).map((m) => ({
+      id: m.id,
+      senderRole: m.sender_role,
+      body: m.body,
+      createdLabel: timeFormatter.format(new Date(m.created_at)),
+    })),
+  };
+}
+
 /**
  * Landing page for a clicked search-result ad (0039/0040, extended to
  * institute batches by 0103) — still lighter than the full /teacher/[id]
@@ -307,7 +339,9 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
   const supabase = await createClient();
 
   let viewerRole: string | null = null;
-  let existingStatus: "pending" | "accepted" | "declined" | null = null;
+  let existingStatus: "pending" | "accepted" | "declined" | "qna_open" | "joined" | null = null;
+  let existingEnrollmentId: string | null = null;
+  let qnaThread: { inquiryId: string; messages: QnaMessageRow[] } | null = null;
   if (user) {
     const [{ data: profile }, { data: existing }] = await Promise.all([
       supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
@@ -316,7 +350,7 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
       // (0091/0092) can still request to join this one.
       supabase
         .from("enrollments")
-        .select("status")
+        .select("id, status")
         .eq("student_id", user.id)
         .eq("owner_type", ad.ownerType)
         .eq("owner_id", ad.ownerId)
@@ -325,6 +359,11 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
     ]);
     viewerRole = profile?.role ?? null;
     existingStatus = existing?.status ?? null;
+    existingEnrollmentId = existing?.id ?? null;
+
+    if (existingEnrollmentId && (existingStatus === "qna_open" || existingStatus === "joined")) {
+      qnaThread = await loadQnaThread(supabase, existingEnrollmentId, locale);
+    }
   }
 
   // Notes flagged is_public (0045) are visible to any signed-in account, not
@@ -673,6 +712,8 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
             loggedIn={Boolean(user)}
             isStudent={viewerRole === "student"}
             existingStatus={existingStatus}
+            enrollmentId={existingEnrollmentId ?? undefined}
+            qnaThread={qnaThread ?? undefined}
             isCampusLecturer={ad.isCampusLecturer}
             isOpenEnrollment={ad.isOpenEnrollment}
             capacity={ad.capacity ?? undefined}

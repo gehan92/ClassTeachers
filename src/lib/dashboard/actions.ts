@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { notifyAdmins } from "@/lib/dashboard/notify";
+import { academicTitles } from "@/types/academic-title";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -170,7 +171,7 @@ const teacherProfileSchema = z.object({
   monthlyRate: z.coerce.number().min(0).optional(),
   languages: z.array(z.string().trim().min(1)).optional(),
   institution: z.string().trim().optional(),
-  academicTitle: z.string().trim().optional(),
+  academicTitle: z.enum(academicTitles).optional().or(z.literal("")),
   publications: z.array(z.string().trim().min(1)).optional(),
 });
 

@@ -28,7 +28,9 @@
 --    thread's own messaging doesn't need a contact field, so it's just
 --    never populated for these rows.
 
-create or replace function public.get_roster_student_info(p_student_ids uuid[])
+drop function if exists public.get_roster_student_info(uuid[]);
+
+create function public.get_roster_student_info(p_student_ids uuid[])
 returns table (id uuid, full_name text, phone text)
 language sql
 stable
@@ -68,7 +70,11 @@ as $$
     );
 $$;
 
-create or replace function public.get_managed_batch_student_info()
+grant execute on function public.get_roster_student_info(uuid[]) to authenticated;
+
+drop function if exists public.get_managed_batch_student_info();
+
+create function public.get_managed_batch_student_info()
 returns table (
   enrollment_id uuid,
   student_id uuid,
@@ -98,6 +104,8 @@ as $$
     and e.batch_id is not null
     and can_manage_class_batch(e.batch_id);
 $$;
+
+grant execute on function public.get_managed_batch_student_info() to authenticated;
 
 create or replace function public.open_qna_thread(p_enrollment_id uuid)
 returns void

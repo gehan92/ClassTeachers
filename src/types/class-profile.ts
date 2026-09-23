@@ -25,6 +25,7 @@ export type InstituteTeacherCard = {
   languages: string[];
   academicTitle: string | null;
   institution: string | null;
+  institutionVerified: boolean;
   publications: string[];
 };
 

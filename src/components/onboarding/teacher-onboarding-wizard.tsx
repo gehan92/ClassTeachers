@@ -25,6 +25,7 @@ export type TeacherOnboardingInitial = {
   languages: string;
   hourlyRate: string;
   monthlyRate: string;
+  hasDocument: boolean;
 };
 
 /**
@@ -53,7 +54,7 @@ export function TeacherOnboardingWizard({
   const [publications, setPublications] = useState(initial.publications);
   const [location, setLocation] = useState(initial.location);
   const [languages, setLanguages] = useState(initial.languages);
-  const [hasDocument, setHasDocument] = useState(false);
+  const [hasDocument, setHasDocument] = useState(initial.hasDocument);
   const [docUploading, setDocUploading] = useState(false);
   const [hourlyRate, setHourlyRate] = useState(initial.hourlyRate);
   const [monthlyRate, setMonthlyRate] = useState(initial.monthlyRate);

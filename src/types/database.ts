@@ -2267,6 +2267,7 @@ export type Database = {
           languages: string[] | null;
           academic_title: string | null;
           institution: string | null;
+          institution_verified: boolean | null;
           publications: string[] | null;
         }[];
       };

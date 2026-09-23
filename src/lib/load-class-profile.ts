@@ -182,6 +182,7 @@ export async function loadClassProfile(id: string, locale: string): Promise<Clas
           languages: t.languages ?? [],
           academicTitle: t.academic_title,
           institution: t.institution,
+          institutionVerified: t.institution_verified ?? false,
           publications: t.publications ?? [],
         }))
       : [],

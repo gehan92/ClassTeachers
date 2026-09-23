@@ -5,7 +5,9 @@
 -- established owner_published to prevent, and which list_class_batch_ads()
 -- (same file, both its branches) already gets right. Only the WHERE
 -- clauses change; every column/branch shape is identical to 0142.
-create or replace function public.list_teacher_ads()
+drop function if exists public.list_teacher_ads();
+
+create function public.list_teacher_ads()
 returns table (
   ad_id uuid,
   teacher_id uuid,
@@ -148,3 +150,5 @@ as $$
   from combined
   order by created_at desc;
 $$;
+
+grant execute on function public.list_teacher_ads() to anon, authenticated;

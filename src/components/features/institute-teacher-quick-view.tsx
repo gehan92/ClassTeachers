@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { GraduationCap, Star } from "lucide-react";
+import { BadgeCheck, GraduationCap, Star } from "lucide-react";
 import { Panel } from "@/components/features/teacher-profile-view";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
@@ -108,6 +108,7 @@ export function InstituteTeachersPanel({ teachers }: { teachers: InstituteTeache
  * rendering instead of duplicating it for a near-identical data shape. */
 export function TeacherQuickProfile({ teacher }: { teacher: InstituteTeacherCard }) {
   const t = useTranslations("profilePage");
+  const tl = useTranslations("listing");
   const subtitle =
     teacher.isCampusLecturer && (teacher.academicTitle || teacher.institution)
       ? [teacher.academicTitle, teacher.institution].filter(Boolean).join(" · ")
@@ -135,7 +136,15 @@ export function TeacherQuickProfile({ teacher }: { teacher: InstituteTeacherCard
             </div>
           )}
           <div className="min-w-0 flex-1 pt-0.5">
-            <DialogTitle>{teacher.displayName}</DialogTitle>
+            <DialogTitle className="flex items-center gap-1.5">
+              {teacher.displayName}
+              <span title={teacher.institutionVerified ? tl("institutionVerified") : tl("reviewed")}>
+                <BadgeCheck
+                  className="size-4 shrink-0 text-muted-foreground"
+                  aria-label={teacher.institutionVerified ? tl("institutionVerified") : tl("reviewed")}
+                />
+              </span>
+            </DialogTitle>
             {subtitle && <DialogDescription className="truncate">{subtitle}</DialogDescription>}
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               {teacher.reviewCount > 0 && (

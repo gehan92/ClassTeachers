@@ -7,7 +7,9 @@
 -- like you") already implied this filtering existed. Institute-vs-teacher
 -- is derived the same way the response-matching join already does it two
 -- lines down: does the caller own a class_profiles row.
-create or replace function public.list_wanted_ads_for_responder()
+drop function if exists public.list_wanted_ads_for_responder();
+
+create function public.list_wanted_ads_for_responder()
 returns table (
   id uuid,
   looking_for text,
@@ -49,3 +51,5 @@ as $$
     end
   order by wa.created_at desc;
 $$;
+
+grant execute on function public.list_wanted_ads_for_responder() to authenticated;

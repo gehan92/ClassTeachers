@@ -103,7 +103,9 @@ export default async function TeacherDashboardPage({
     supabase.from("profiles").select("role, profile_completed_at").eq("id", userId).single(),
     supabase
       .from("teacher_profiles")
-      .select("headline, bio, class_type, institution, academic_title, qualifications, work_experience, publications, experience_years, location, languages")
+      .select(
+        "headline, bio, class_type, institution, academic_title, qualifications, work_experience, publications, experience_years, location, languages, verification_document_path",
+      )
       .eq("id", userId)
       .maybeSingle(),
   ]);
@@ -126,6 +128,11 @@ export default async function TeacherDashboardPage({
           languages: (gateTeacherProfile?.languages ?? []).join(", "),
           hourlyRate: "",
           monthlyRate: "",
+          // The wizard's verification step used to always start unchecked,
+          // even when a document was already uploaded and just pending
+          // review — forcing a redundant re-upload if the lecturer left and
+          // came back mid-wizard (later steps still incomplete).
+          hasDocument: Boolean(gateTeacherProfile?.verification_document_path),
         }}
       />
     );

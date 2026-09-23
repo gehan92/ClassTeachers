@@ -573,6 +573,7 @@ export default async function StudentDashboardPage({
         languages: row.languages ?? [],
         academicTitle: row.academic_title,
         institution: row.institution,
+        institutionVerified: row.institution_verified ?? false,
         publications: row.publications ?? [],
       },
     ];

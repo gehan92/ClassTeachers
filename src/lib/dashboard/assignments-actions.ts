@@ -168,7 +168,7 @@ export async function submitAssignment(formData: FormData): Promise<ActionResult
 
   const { data: assignment } = await supabase
     .from("assignments")
-    .select("due_at, owner_type, owner_id, title")
+    .select("due_at, owner_type, owner_id, title, assignment_type")
     .eq("id", assignmentId)
     .maybeSingle();
   if (!assignment) {
@@ -219,7 +219,7 @@ export async function submitAssignment(formData: FormData): Promise<ActionResult
     recipientId,
     "assignment_submitted",
     { studentName: studentProfile?.full_name ?? "—", assignmentTitle: assignment.title },
-    "assignments",
+    assignment.assignment_type === "homework" ? "homework" : "assignments",
     "submissions",
   );
 

@@ -230,12 +230,16 @@ export default async function InstituteDashboardPage({
       : Promise.resolve({
           data: [] as { id: string; content: string; status: "active" | "expired" | "removed" | "deleted"; created_at: string }[],
         }),
+    // enrollment_id IS NULL excludes Q&A threads opened by open_qna_thread()
+    // for a join request — those belong only in the Students tab's Q&A
+    // section, never here (same fix as the teacher dashboard).
     instituteId
       ? supabase
           .from("inquiries")
           .select("id, sender_name, sender_contact, message, status, created_at")
           .eq("owner_type", "class")
           .eq("owner_id", instituteId)
+          .is("enrollment_id", null)
           .order("created_at", { ascending: false })
       : Promise.resolve({
           data: [] as {

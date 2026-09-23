@@ -203,11 +203,18 @@ export default async function TeacherDashboardPage({
     // batch, and pendingSubmissionsCount below should count both.
     supabase.from("exams").select("id"),
     supabase.from("exam_submissions").select("id, exam_id").eq("status", "pending"),
+    // enrollment_id IS NULL excludes Q&A threads opened by open_qna_thread()
+    // for a join request — those belong only in the Students tab's Q&A
+    // section (loadQnaThreadsForEnrollments), never here: showing them here
+    // too both duplicates the thread and, since this query selects
+    // sender_contact, would leak the student's contact info before they've
+    // actually joined/paid.
     supabase
       .from("inquiries")
       .select("id, sender_name, sender_contact, message, status, created_at")
       .eq("owner_type", "teacher")
       .eq("owner_id", userId)
+      .is("enrollment_id", null)
       .order("created_at", { ascending: false }),
     supabase.rpc("list_wanted_ads_for_responder"),
     // Same RPC the public /teacher/[id] page uses — masked reviewer names,

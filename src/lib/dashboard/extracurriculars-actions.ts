@@ -49,6 +49,16 @@ export async function enrollStudent(activityId: string, studentId: string): Prom
   const instituteId = await resolveInstituteId(supabase, user.id);
   if (!instituteId) return { error: "Save your institute details first." };
 
+  const { data: enrollment } = await supabase
+    .from("enrollments")
+    .select("id")
+    .eq("student_id", studentId)
+    .eq("owner_type", "class")
+    .eq("owner_id", instituteId)
+    .in("status", ["accepted", "joined"])
+    .maybeSingle();
+  if (!enrollment) return { error: "That student isn't on your enrolled roster." };
+
   const { error } = await supabase.from("extracurricular_participants").insert({
     activity_id: activityId,
     owner_type: "class",

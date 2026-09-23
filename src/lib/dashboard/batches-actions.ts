@@ -717,6 +717,40 @@ export async function setBatchScheduleSlots(
     ownerId = classProfile.id;
   }
 
+  // Conflict check: the same teacher can't be scheduled into two
+  // overlapping slots across different batches — previously unvalidated,
+  // so two batches (or the same batch re-saved after a title change) could
+  // silently double-book a teacher. Only checks the teacher actually
+  // assigned to THIS batch; an institute running two batches at the same
+  // time with two different teachers is not a conflict.
+  const { data: thisBatch } = await supabase.from("batches").select("taught_by_teacher_id").eq("id", batchId).maybeSingle();
+  const teacherId = thisBatch?.taught_by_teacher_id ?? (ownerType === "teacher" ? user.id : null);
+  if (teacherId && parsed.data.length > 0) {
+    const { data: otherTeacherBatchIds } = await supabase
+      .from("batches")
+      .select("id")
+      .eq("taught_by_teacher_id", teacherId)
+      .neq("id", batchId);
+    const otherBatchIds = (otherTeacherBatchIds ?? []).map((b) => b.id);
+    if (otherBatchIds.length > 0) {
+      const { data: otherSlots } = await supabase
+        .from("batch_schedule_slots")
+        .select("day_of_week, start_time, end_time, batch_id")
+        .in("batch_id", otherBatchIds);
+      const conflict = (otherSlots ?? []).find((existing) =>
+        parsed.data.some(
+          (incoming) =>
+            incoming.dayOfWeek === existing.day_of_week &&
+            incoming.startTime < existing.end_time.slice(0, 5) &&
+            existing.start_time.slice(0, 5) < incoming.endTime,
+        ),
+      );
+      if (conflict) {
+        return { error: "This teacher already has an overlapping class scheduled at that time." };
+      }
+    }
+  }
+
   const { error: deleteError } = await supabase
     .from("batch_schedule_slots")
     .delete()

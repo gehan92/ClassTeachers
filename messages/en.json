@@ -1362,13 +1362,14 @@
     },
     "calendar": {
       "title": "Calendar",
-      "subtitle": "Every linked teacher's live sessions, in one institute-wide view.",
-      "empty": "No live sessions scheduled yet.",
+      "subtitle": "Every linked teacher's live sessions and scheduled exams, in one institute-wide view.",
+      "empty": "Nothing scheduled yet.",
       "noUpcoming": "Nothing upcoming right now.",
       "recentlyEnded": "Recently ended",
       "online": "Online",
       "stateLive": "Live now",
-      "stateEnded": "Ended"
+      "stateEnded": "Ended",
+      "kindExam": "Exam"
     },
     "announcements": {
       "title": "Announcements",

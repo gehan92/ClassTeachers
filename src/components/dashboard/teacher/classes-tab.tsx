@@ -174,7 +174,13 @@ export function ClassesTab({
       return;
     }
     if (result.id && newScheduleSlots.length > 0) {
-      await setBatchScheduleSlots(result.id, "teacher", newScheduleSlots);
+      const scheduleResult = await setBatchScheduleSlots(result.id, "teacher", newScheduleSlots);
+      if (scheduleResult.error) {
+        setCreating(false);
+        setError(scheduleResult.error);
+        refresh();
+        return;
+      }
     }
     setCreating(false);
     resetForm();

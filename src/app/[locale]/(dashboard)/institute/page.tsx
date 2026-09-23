@@ -436,8 +436,21 @@ export default async function InstituteDashboardPage({
   const [{ data: instituteExamRows }, { data: instituteQuestionMarkRows }, { data: instituteLiveClassRows }, { data: announcementRows }] =
     await Promise.all([
     instituteId
-      ? supabase.from("exams").select("id, title, question_ids, scheduled_at, batch_id").eq("owner_type", "class").eq("owner_id", instituteId)
-      : Promise.resolve({ data: [] as { id: string; title: string; question_ids: string[]; scheduled_at: string | null; batch_id: string | null }[] }),
+      ? supabase
+          .from("exams")
+          .select("id, title, question_ids, scheduled_at, batch_id, duration_minutes")
+          .eq("owner_type", "class")
+          .eq("owner_id", instituteId)
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            title: string;
+            question_ids: string[];
+            scheduled_at: string | null;
+            batch_id: string | null;
+            duration_minutes: number;
+          }[],
+        }),
     instituteId
       ? supabase.from("question_bank_items").select("id, marks").eq("owner_type", "class").eq("owner_id", instituteId)
       : Promise.resolve({ data: [] as { id: string; marks: number }[] }),
@@ -850,10 +863,11 @@ export default async function InstituteDashboardPage({
   // they're all owner_id=instituteId, same reasoning as the analytics
   // block's own comment.
   const batchById = new Map(batches.map((b) => [b.id, b]));
-  const calendarSessions: InstituteCalendarSession[] = (instituteLiveClassRows ?? []).map((c) => {
+  const liveCalendarSessions: InstituteCalendarSession[] = (instituteLiveClassRows ?? []).map((c) => {
     const batch = c.batch_id ? batchById.get(c.batch_id) : undefined;
     return {
       id: c.id,
+      kind: "live",
       title: c.title,
       scheduledAtIso: c.scheduled_at,
       durationMinutes: c.duration_minutes,
@@ -863,6 +877,26 @@ export default async function InstituteDashboardPage({
       teacherName: batch?.teacherLabel ?? null,
     };
   });
+  // Exams merged in alongside live sessions (previously missing entirely —
+  // an institute owner had no single place to see an upcoming exam date).
+  // Only scheduled ones have a real calendar slot at all.
+  const examCalendarSessions: InstituteCalendarSession[] = (instituteExamRows ?? [])
+    .filter((e) => e.scheduled_at)
+    .map((e) => {
+      const batch = e.batch_id ? batchById.get(e.batch_id) : undefined;
+      return {
+        id: e.id,
+        kind: "exam",
+        title: e.title,
+        scheduledAtIso: e.scheduled_at as string,
+        durationMinutes: e.duration_minutes,
+        mode: null,
+        location: null,
+        batchTitle: batch?.title ?? null,
+        teacherName: batch?.teacherLabel ?? null,
+      };
+    });
+  const calendarSessions: InstituteCalendarSession[] = [...liveCalendarSessions, ...examCalendarSessions];
 
   // Only an accepted roster teacher can be assigned to a class — a pending
   // invite hasn't agreed to anything yet.

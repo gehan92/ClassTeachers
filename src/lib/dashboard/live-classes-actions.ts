@@ -171,6 +171,27 @@ export async function setAttendanceStatus(input: {
     return { error: "You need to be signed in." };
   }
 
+  const { data: liveClass } = await supabase
+    .from("live_classes")
+    .select("owner_type, owner_id, batch_id")
+    .eq("id", input.liveClassId)
+    .maybeSingle();
+  if (!liveClass) {
+    return { error: "That live class couldn't be found." };
+  }
+  let enrollmentQuery = supabase
+    .from("enrollments")
+    .select("id")
+    .eq("student_id", input.studentId)
+    .eq("owner_type", liveClass.owner_type)
+    .eq("owner_id", liveClass.owner_id)
+    .in("status", ["accepted", "joined"]);
+  if (liveClass.batch_id) enrollmentQuery = enrollmentQuery.eq("batch_id", liveClass.batch_id);
+  const { data: enrollment } = await enrollmentQuery.maybeSingle();
+  if (!enrollment) {
+    return { error: "That student isn't enrolled in this class." };
+  }
+
   const { error } = await supabase
     .from("attendance_records")
     .upsert(

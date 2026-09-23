@@ -6,10 +6,11 @@ import { StatusBadge } from "@/components/features/status-badge";
 
 export type InstituteCalendarSession = {
   id: string;
+  kind: "live" | "exam";
   title: string;
   scheduledAtIso: string;
   durationMinutes: number;
-  mode: "online" | "physical";
+  mode: "online" | "physical" | null;
   location: string | null;
   batchTitle: string | null;
   teacherName: string | null;
@@ -33,6 +34,11 @@ function sessionState(row: InstituteCalendarSession, nowMs: number): SessionStat
  * sorted table rather than a grid — so this follows that same convention:
  * a day-grouped agenda list rather than a month grid, built from the same
  * data the institute Analytics tab already fetches (no new query).
+ *
+ * Also merges in scheduled exams (`kind: "exam"`) — originally live-only,
+ * which left an institute owner with no single place to see an upcoming
+ * exam date, unlike the teacher dashboard's own Schedule tab which already
+ * merges live/exam/assignment/homework into one agenda.
  */
 export function CalendarTab({ sessions }: { sessions: InstituteCalendarSession[] }) {
   const t = useTranslations("instituteDashboard.calendar");
@@ -133,9 +139,20 @@ function DayGroup({
                   {timeFormatter.format(new Date(session.scheduledAtIso))}
                 </span>
                 <div>
-                  <p className="font-medium text-foreground">{session.title}</p>
+                  <p className="font-medium text-foreground">
+                    {session.kind === "exam" && (
+                      <span className="mr-1.5 rounded-sm border border-border bg-secondary px-1.5 py-0.5 align-middle text-[10.5px] font-medium uppercase tracking-wide text-secondary-foreground">
+                        {t("kindExam")}
+                      </span>
+                    )}
+                    {session.title}
+                  </p>
                   <p className="mt-0.5 text-[13px] text-muted-foreground">
-                    {[session.batchTitle, session.teacherName, session.mode === "online" ? t("online") : session.location]
+                    {[
+                      session.batchTitle,
+                      session.teacherName,
+                      session.mode === "online" ? t("online") : session.mode === "physical" ? session.location : null,
+                    ]
                       .filter(Boolean)
                       .join(" · ")}
                   </p>

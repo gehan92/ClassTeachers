@@ -28,6 +28,16 @@ export async function createFeeCharge(input: {
   const instituteId = await resolveInstituteId(supabase, user.id);
   if (!instituteId) return { error: "Save your institute details first." };
 
+  const { data: enrollment } = await supabase
+    .from("enrollments")
+    .select("id")
+    .eq("student_id", input.studentId)
+    .eq("owner_type", "class")
+    .eq("owner_id", instituteId)
+    .in("status", ["accepted", "joined"])
+    .maybeSingle();
+  if (!enrollment) return { error: "That student isn't on your enrolled roster." };
+
   const { error } = await supabase.from("fee_charges").insert({
     owner_type: "class",
     owner_id: instituteId,
@@ -151,6 +161,18 @@ export async function createBulkFeeCharges(input: {
 
   const instituteId = await resolveInstituteId(supabase, user.id);
   if (!instituteId) return { error: "Save your institute details first." };
+
+  const { data: enrolledRows } = await supabase
+    .from("enrollments")
+    .select("student_id")
+    .eq("owner_type", "class")
+    .eq("owner_id", instituteId)
+    .in("status", ["accepted", "joined"])
+    .in("student_id", input.studentIds);
+  const enrolledIds = new Set((enrolledRows ?? []).map((r) => r.student_id));
+  if (input.studentIds.some((id) => !enrolledIds.has(id))) {
+    return { error: "One or more selected students aren't on your enrolled roster." };
+  }
 
   const { error } = await supabase.from("fee_charges").insert(
     input.studentIds.map((studentId) => ({

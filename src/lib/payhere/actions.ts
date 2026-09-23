@@ -57,8 +57,10 @@ export async function getPayhereCheckoutFields(paymentId: string, locale: string
     orderId: payment.payhere_order_id,
     amount: payment.amount,
     itemName,
-    returnUrl: `${origin}/${locale}/student?tab=connections&payment=success`,
-    cancelUrl: `${origin}/${locale}/student?tab=connections&payment=cancelled`,
+    // The Connections tab's nav key is still "requests" (only its visible
+    // label was renamed) — this must match the real key, not the label.
+    returnUrl: `${origin}/${locale}/student?tab=requests&payment=success`,
+    cancelUrl: `${origin}/${locale}/student?tab=requests&payment=cancelled`,
     notifyUrl: `${origin}/api/payhere/notify`,
     firstName: firstName || "Student",
     lastName: rest.join(" ") || "-",

@@ -502,10 +502,13 @@ export async function respondToJoinRequest(
       updated.student_id,
       accept ? "join_request_accepted" : "join_request_declined",
       accept ? { ownerName } : { ownerName, reason: declineReason?.trim() || null },
-      // Both cases stay in the student's connections view now — an accept
+      // Both cases stay in the student's Connections tab now — an accept
       // only opens Q&A, it doesn't land the student in My Classes anymore
       // (that only happens once they've actually paid/waived and joined).
-      "connections",
+      // NOTE: the tab's nav *key* is still "requests" (only its visible
+      // label was renamed to "Connections", see connections-tab.tsx) — the
+      // notification's tab field must match the real key, not the label.
+      "requests",
       "joinRequestUpdates",
     );
   }

@@ -77,13 +77,16 @@ export async function uploadNote(formData: FormData): Promise<ActionResult> {
     return { error: "Couldn't save the note. Please try again." };
   }
 
+  const noteTab =
+    parsed.data.noteType === "short_note" ? "shortNotes" : parsed.data.noteType === "past_paper" ? "pastPapers" : "notes";
+
   await notifyContentAudience(
     supabase,
     target,
     null,
     "new_note",
     { title: parsed.data.title, ownerId: target.ownerId, ownerType: target.ownerType, batchId: target.batchId },
-    "notes",
+    noteTab,
     "newClassContent",
   );
 

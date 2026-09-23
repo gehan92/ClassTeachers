@@ -99,7 +99,7 @@ export async function createAssignment(formData: FormData): Promise<ActionResult
     null,
     "new_assignment",
     { title: parsed.data.title, ownerId: target.ownerId, ownerType: target.ownerType, batchId: target.batchId },
-    "assignments",
+    parsed.data.assignmentType === "homework" ? "homework" : "assignments",
     "newClassContent",
   );
 

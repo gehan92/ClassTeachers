@@ -237,9 +237,19 @@ export default async function StudentDashboardPage({
   // type. Independent of examsDueCount/assignmentsDueCount below, which
   // mean "still due," not "unseen."
   const hasUnreadOfType = (type: string) => notifications.some((n) => n.type === type && !n.readAt);
-  const hasNewNotes = hasUnreadOfType("new_note");
+  // new_note/new_assignment notifications now carry the real destination
+  // tab (fixed in notes-actions.ts/assignments-actions.ts to distinguish
+  // notes/shortNotes/pastPapers and assignments/homework, which used to all
+  // share one hardcoded tab) — so the dot for each sidebar entry has to
+  // match on tab too, not just type, or every sub-tab would light up
+  // together regardless of which one the upload actually was.
+  const hasUnreadOnTab = (type: string, tab: string) => notifications.some((n) => n.type === type && n.tab === tab && !n.readAt);
+  const hasNewNotes = hasUnreadOnTab("new_note", "notes");
+  const hasNewShortNotes = hasUnreadOnTab("new_note", "shortNotes");
+  const hasNewPastPapers = hasUnreadOnTab("new_note", "pastPapers");
   const hasNewExams = hasUnreadOfType("new_exam");
-  const hasNewAssignments = hasUnreadOfType("new_assignment");
+  const hasNewAssignments = hasUnreadOnTab("new_assignment", "assignments");
+  const hasNewHomework = hasUnreadOnTab("new_assignment", "homework");
   // All three live-class notifications (scheduled/started/ended) now deep-link
   // into My Classes -> Open class -> Live Classes, never the flat history tab
   // (see live-classes-actions.ts) -- so this dot belongs on "classes", not
@@ -1147,11 +1157,11 @@ export default async function StudentDashboardPage({
           label: t("groupContent"),
           items: [
             { key: "notes", label: t("tabs.notes"), count: studentNotes.length, hasNew: hasNewNotes },
-            { key: "shortNotes", label: t("tabs.shortNotes"), count: studentShortNotes.length },
-            { key: "pastPapers", label: t("tabs.pastPapers"), count: studentPastPapers.length },
+            { key: "shortNotes", label: t("tabs.shortNotes"), count: studentShortNotes.length, hasNew: hasNewShortNotes },
+            { key: "pastPapers", label: t("tabs.pastPapers"), count: studentPastPapers.length, hasNew: hasNewPastPapers },
             { key: "exams", label: t("tabs.exams"), count: examsDueCount, hasNew: hasNewExams },
             { key: "assignments", label: t("tabs.assignments"), count: assignmentsDueCount, hasNew: hasNewAssignments },
-            { key: "homework", label: t("tabs.homework"), count: homeworkDueCount },
+            { key: "homework", label: t("tabs.homework"), count: homeworkDueCount, hasNew: hasNewHomework },
           ],
         },
         {

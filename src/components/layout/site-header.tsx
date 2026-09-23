@@ -145,12 +145,12 @@ export function SiteHeader({
     router.push({ pathname, query });
   }
   // Students have no "inquiries" tab (they submit them, don't receive them)
-  // — their equivalent inbound-message tab is Post an Ad's wanted-ad
-  // responses.
-  const bellTab = user?.role === "student" ? "wantedAds" : "inquiries";
+  // — their equivalent inbound-message tab is the one showing responses to
+  // their wanted ads, not the ad-management tab itself.
+  const bellTab = user?.role === "student" ? "wantedAdResponses" : "inquiries";
   const inquiriesHref = user ? `${roleDashboardPath[user.role]}?tab=${bellTab}` : "/login";
   const userInitial = user ? user.name.charAt(0).toUpperCase() : "";
-  const bellLabel = t(bellTab === "wantedAds" ? "myRequests" : "inquiries");
+  const bellLabel = t(bellTab === "wantedAdResponses" ? "myRequests" : "inquiries");
 
   const isHeroPage = HERO_PAGES.includes(pathname);
   const [scrolled, setScrolled] = useState(false);

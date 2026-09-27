@@ -3121,6 +3121,11 @@
       "revealAnswersOn": "Answers shown",
       "revealAnswersOff": "Answers hidden",
       "previewAction": "Preview",
+      "deleteAction": "Delete",
+      "deleting": "Deleting…",
+      "confirmDeleteTitle": "Delete this exam?",
+      "confirmDeleteMessage": "This will permanently delete \"{title}\" and every student's submission for it. This can't be undone.",
+      "confirmDeleteButton": "Delete",
       "preview": {
         "heading": "Preview — {title}",
         "publishedNote": "This exam is live — students in scope can see and sit it.",

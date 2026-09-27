@@ -11,12 +11,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/features/status-badge";
 import { PhotoViewerPanel } from "@/components/dashboard/inline-file-viewer";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { TerminalBlock } from "@/components/dashboard/terminal-block";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
-import { createExam, gradeSubmission, setExamPublished, setExamRevealAnswers } from "@/lib/dashboard/exams-actions";
+import {
+  createExam,
+  gradeSubmission,
+  setExamPublished,
+  setExamRevealAnswers,
+  deleteExam,
+} from "@/lib/dashboard/exams-actions";
 import type { SubjectOption } from "@/components/dashboard/teacher/question-bank-tab";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
 import { cn } from "@/lib/utils";
@@ -137,6 +144,8 @@ export function ExamsTab({
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [previewExamId, setPreviewExamId] = useState<string | null>(null);
   const [togglingPublishId, setTogglingPublishId] = useState<string | null>(null);
+  const [confirmDeleteExamId, setConfirmDeleteExamId] = useState<string | null>(null);
+  const [deletingExamId, setDeletingExamId] = useState<string | null>(null);
 
   const [filterQuery, setFilterQuery] = useState("");
   const [filterBatch, setFilterBatch] = useState(ALL_BATCHES_FILTER);
@@ -263,6 +272,15 @@ export function ExamsTab({
     setTogglingRevealId(examId);
     const result = await setExamRevealAnswers(examId, next);
     setTogglingRevealId(null);
+    if (!result.error) refresh();
+  }
+
+  async function handleDeleteExam() {
+    if (!confirmDeleteExamId) return;
+    setDeletingExamId(confirmDeleteExamId);
+    const result = await deleteExam(confirmDeleteExamId);
+    setDeletingExamId(null);
+    setConfirmDeleteExamId(null);
     if (!result.error) refresh();
   }
 
@@ -894,6 +912,15 @@ export function ExamsTab({
                               >
                                 {pending > 0 ? t("gradeWithCount", { count: pending }) : t("grade")}
                               </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => setConfirmDeleteExamId(exam.id)}
+                              >
+                                {t("deleteAction")}
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -953,6 +980,30 @@ export function ExamsTab({
           onClose={() => setSelectedExamId(null)}
         />
       )}
+
+      <Dialog open={confirmDeleteExamId !== null} onOpenChange={(open) => { if (!open) setConfirmDeleteExamId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("confirmDeleteTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("confirmDeleteMessage", { title: exams.find((e) => e.id === confirmDeleteExamId)?.title ?? "" })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmDeleteExamId(null)} disabled={deletingExamId !== null}>
+              {tc("cancel")}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleDeleteExam}
+              disabled={deletingExamId !== null}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {deletingExamId !== null ? t("deleting") : t("confirmDeleteButton")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

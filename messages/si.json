@@ -3121,6 +3121,11 @@
       "revealAnswersOn": "පිළිතුරු පෙන්වා ඇත",
       "revealAnswersOff": "පිළිතුරු සඟවා ඇත",
       "previewAction": "පෙරදසුන",
+      "deleteAction": "මකන්න",
+      "deleting": "මකමින්…",
+      "confirmDeleteTitle": "මෙම විභාගය මකන්නද?",
+      "confirmDeleteMessage": "මෙය \"{title}\" සහ එහි සෑම සිසුවෙකුගේ ම ඉදිරිපත් කිරීමක් ම ස්ථිරවම මකනු ලැබේ. මෙය අහෝසි කළ නොහැක.",
+      "confirmDeleteButton": "මකන්න",
       "preview": {
         "heading": "පෙරදසුන — {title}",
         "publishedNote": "මෙම විභාගය දැන් සජීවීයි — විෂය පථයේ සිසුන්ට එය දැක ලිවිය හැක.",

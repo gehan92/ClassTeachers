@@ -167,6 +167,35 @@ export async function setExamRevealAnswers(examId: string, revealAnswers: boolea
   return {};
 }
 
+/**
+ * Deletes an exam. RLS-scoped like every other delete in this app (0010's
+ * "owner or admin deletes an exam" policy, no explicit owner filter needed
+ * here) and cascades exam_submissions/exam_batch_participants at the DB
+ * level (both declared `on delete cascade`) — this only needs to separately
+ * clean up the submissions' answer-photo files, which live in Storage, not
+ * the database, so cascading the rows doesn't remove them on its own.
+ */
+export async function deleteExam(examId: string): Promise<ActionResult> {
+  if (!examId) {
+    return { error: "Invalid exam." };
+  }
+
+  const supabase = await createClient();
+  const { data: submissions } = await supabase.from("exam_submissions").select("photo_urls").eq("exam_id", examId);
+
+  const { error } = await supabase.from("exams").delete().eq("id", examId);
+  if (error) {
+    return { error: "Couldn't delete this exam. Please try again." };
+  }
+
+  const paths = (submissions ?? []).flatMap((s) => s.photo_urls ?? []).filter((p): p is string => Boolean(p));
+  if (paths.length > 0) {
+    await supabase.storage.from("submissions").remove(paths);
+  }
+
+  return {};
+}
+
 const allowedPhotoTypes: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",

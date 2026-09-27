@@ -10,14 +10,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { TerminalBlock } from "@/components/dashboard/terminal-block";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { usePagination } from "@/lib/hooks/use-pagination";
 import { createQuestion, updateQuestion, deleteQuestion, bulkImportQuestions } from "@/lib/dashboard/question-bank-actions";
-import type { BulkImportQuestionInput } from "@/lib/dashboard/question-bank-actions";
-import { extractQuestionsFromPdf } from "@/lib/dashboard/pdf-extraction-actions";
+import { extractQuestionsFromPdf, type ExtractedQuestionRow } from "@/lib/dashboard/pdf-extraction-actions";
 import { parseBulkImportText, type ParsedBulkRow } from "@/lib/bulk-import-questions";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
 import type { GradeBand } from "@/types/grade-band";
@@ -1228,11 +1228,11 @@ function PdfImportSection({
   const [semester, setSemester] = useState("");
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
-  const [rows, setRows] = useState<BulkImportQuestionInput[] | null>(null);
+  const [rows, setRows] = useState<ExtractedQuestionRow[] | null>(null);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<{ imported: number; rowErrors: { row: number; message: string }[] } | null>(null);
 
-  function updateRow(index: number, patch: Partial<BulkImportQuestionInput>) {
+  function updateRow(index: number, patch: Partial<ExtractedQuestionRow>) {
     setRows((prev) => (prev ? prev.map((r, i) => (i === index ? { ...r, ...patch } : r)) : prev));
   }
   function removeRow(index: number) {
@@ -1258,7 +1258,9 @@ function PdfImportSection({
               : r.multiSelect
                 ? [...current, optionIndex]
                 : [optionIndex];
-            return { ...r, correctIndexes: next };
+            // A manual edit is the teacher's own confirmed choice — drop the
+            // "from answer key"/"AI-suggested" badge, which no longer applies.
+            return { ...r, correctIndexes: next, answerSource: undefined };
           })
         : prev,
     );
@@ -1294,7 +1296,10 @@ function PdfImportSection({
     setImporting(false);
     setResult({ imported: response.imported, rowErrors: response.rowErrors });
     if (response.rowErrors.length === 0) {
-      setRows(null);
+      // Keep the dialog open (with an empty list) so the confirmation
+      // message below is actually visible, instead of the whole preview
+      // vanishing the instant the import succeeds.
+      setRows([]);
       setFile(null);
       onImported();
       return;
@@ -1305,6 +1310,11 @@ function PdfImportSection({
     const failedRowNumbers = new Set(response.rowErrors.map((e) => e.row));
     setRows((prev) => (prev ? prev.filter((_, i) => failedRowNumbers.has(i + 1)) : prev));
     onImported();
+  }
+
+  function closeReviewDialog() {
+    setRows(null);
+    setResult(null);
   }
 
   return (
@@ -1409,11 +1419,20 @@ function PdfImportSection({
         {extractError && <span className="ml-3 text-sm font-medium text-destructive">{extractError}</span>}
       </div>
 
-      {rows && (
-        <div className="mt-4 flex flex-col gap-3">
-          <p className="text-sm font-medium text-foreground">{t("bulkImport.extractedCount", { count: rows.length })}</p>
-          <div className="flex max-h-[32rem] flex-col gap-3 overflow-y-auto rounded-md border border-border p-3">
-            {rows.map((row, index) => (
+      <Dialog open={rows !== null} onOpenChange={(open) => { if (!open) closeReviewDialog(); }}>
+        <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{t("bulkImport.reviewTitle")}</DialogTitle>
+            <DialogDescription>
+              {rows && rows.length > 0 ? t("bulkImport.extractedCount", { count: rows.length }) : null}
+            </DialogDescription>
+            {extractError && rows && rows.length > 0 && (
+              <p className="text-sm font-medium text-amber-600 dark:text-amber-400">{extractError}</p>
+            )}
+          </DialogHeader>
+
+          <div className="flex flex-1 flex-col gap-3 overflow-y-auto rounded-md border border-border p-3">
+            {(rows ?? []).map((row, index) => (
               <div key={index} className="rounded-md border border-border p-3">
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <span className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
@@ -1464,13 +1483,24 @@ function PdfImportSection({
                         />
                       </label>
                     ))}
-                    {(!row.correctIndexes || row.correctIndexes.length === 0) && (
+                    {!row.correctIndexes || row.correctIndexes.length === 0 ? (
                       <p className="text-xs text-destructive">{t("bulkImport.noAnswerYet")}</p>
-                    )}
+                    ) : row.answerSource === "key" ? (
+                      <span className="inline-flex w-fit items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                        {t("bulkImport.answerFromKey")}
+                      </span>
+                    ) : row.answerSource === "ai" ? (
+                      <span className="inline-flex w-fit items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                        {t("bulkImport.answerAiSuggested")}
+                      </span>
+                    ) : null}
                   </div>
                 )}
               </div>
             ))}
+            {rows && rows.length === 0 && result && result.rowErrors.length === 0 && (
+              <p className="p-2 text-sm text-muted-foreground">{t("bulkImport.allImportedDone")}</p>
+            )}
           </div>
 
           {result && (
@@ -1488,11 +1518,16 @@ function PdfImportSection({
             </div>
           )}
 
-          <Button type="button" onClick={handleAddToBank} disabled={importing || rows.length === 0} className="w-fit">
-            {t("bulkImport.importButton", { count: rows.length })}
-          </Button>
-        </div>
-      )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={closeReviewDialog}>
+              {t("bulkImport.closeButton")}
+            </Button>
+            <Button type="button" onClick={handleAddToBank} disabled={importing || !rows || rows.length === 0}>
+              {t("bulkImport.importButton", { count: rows?.length ?? 0 })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -3083,7 +3083,12 @@
         "extracting": "Reading PDF…",
         "extractButton": "Extract questions",
         "extractedCount": "{count, plural, one {# question found — review before adding} other {# questions found — review before adding}}",
-        "noAnswerYet": "No correct answer marked yet — the paper didn't show one, or it wasn't clear. Tick the right option above."
+        "noAnswerYet": "No correct answer marked yet — the paper didn't show one, or it wasn't clear. Tick the right option above.",
+        "reviewTitle": "Review extracted questions",
+        "closeButton": "Close",
+        "answerFromKey": "From the paper's answer key",
+        "answerAiSuggested": "AI-suggested answer — please verify",
+        "allImportedDone": "All done — these questions are now in your question bank."
       }
     },
     "exams": {

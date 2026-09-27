@@ -15,16 +15,19 @@ const MAX_PDF_BYTES = 10 * 1024 * 1024;
 // Revisit if gemini-3.8-flash's availability improves later.
 const GEMINI_MODEL = "gemini-3.1-flash-lite";
 
-type ExtractResult = { error?: string; questions: BulkImportQuestionInput[] };
+export type ExtractedQuestionRow = BulkImportQuestionInput & { answerSource?: "key" | "ai" };
+type ExtractResult = { error?: string; questions: ExtractedQuestionRow[] };
 
 /**
- * Parses Gemini's JSON-array response, salvaging whatever complete question
- * objects it can if the response got cut off mid-array (hit the output
- * token ceiling on a long paper) rather than discarding the whole
- * extraction over an incomplete tail. Only ever fires as a fallback after
- * a clean parse already failed, so an imperfect salvage (e.g. a stray "}"
- * inside a question's own text) is still strictly better than returning
- * nothing.
+ * Parses Gemini's JSON-array response. Verified in testing that the model
+ * can produce one malformed property somewhere in the MIDDLE of an
+ * otherwise-complete response (not just get cut off at the end when it hits
+ * the token ceiling) — re-running the identical request against the
+ * identical PDF sometimes succeeds outright and sometimes doesn't, so this
+ * is model output variance, not something the prompt alone can guarantee
+ * away. Falls back to scanning for every individually-valid top-level
+ * {...} object and skipping just the broken one(s), instead of discarding
+ * the whole extraction (or everything after one bad entry) over it.
  */
 function parseQuestionArray(rawText: string): unknown[] | null {
   const cleaned = rawText
@@ -35,19 +38,46 @@ function parseQuestionArray(rawText: string): unknown[] | null {
     const parsed = JSON.parse(cleaned);
     return Array.isArray(parsed) ? parsed : null;
   } catch {
-    const lastCompleteObjectEnd = cleaned.lastIndexOf("}");
-    if (lastCompleteObjectEnd === -1) return null;
-    try {
-      const salvaged = JSON.parse(`${cleaned.slice(0, lastCompleteObjectEnd + 1)}]`);
-      return Array.isArray(salvaged) ? salvaged : null;
-    } catch {
-      return null;
+    // fall through to per-object recovery below
+  }
+
+  const recovered: unknown[] = [];
+  let depth = 0;
+  let objectStart = -1;
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === "{") {
+      if (depth === 0) objectStart = i;
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+      if (depth === 0 && objectStart !== -1) {
+        try {
+          recovered.push(JSON.parse(cleaned.slice(objectStart, i + 1)));
+        } catch {
+          // this one entry was malformed — skip it, keep scanning for the rest
+        }
+        objectStart = -1;
+      }
     }
   }
+  return recovered.length > 0 ? recovered : null;
 }
 
 const EXTRACTION_PROMPT = `You are helping a teacher digitize a past exam paper into a question bank.
-Read the attached PDF carefully and return ONLY a JSON array (no prose, no markdown fences) of every question you can identify, in this exact shape:
+Read the ENTIRE attached PDF carefully, start to finish, and return ONLY a JSON array (no prose, no markdown fences) of every question you can identify, in this exact shape:
 
 [
   {
@@ -55,15 +85,19 @@ Read the attached PDF carefully and return ONLY a JSON array (no prose, no markd
     "text": "the question exactly as written",
     "options": ["option A text", "option B text", ...],
     "correctIndexes": [0],
+    "answerSource": "key" | "ai",
     "marks": 2,
     "topic": "short lesson/chapter label if a section heading makes it clear, else omit"
   }
 ]
 
 Rules:
-- "options"/"correctIndexes" apply to mcq questions only — omit both fields entirely for essay/code questions.
-- OMIT "correctIndexes" entirely if the paper does not show an answer key or you cannot determine the correct answer with real confidence. Never guess — a missing answer is fine, a wrong one is not.
-- Preserve the original wording exactly — do not paraphrase or correct it.
+- "options"/"correctIndexes"/"answerSource" apply to mcq questions only — omit all three entirely for essay/code questions.
+- Determining the correct answer for each mcq question, in this order:
+  1. First check the WHOLE document for an official answer key or marking scheme (often on a separate page, sometimes near the end, sometimes labeled "Answers"). If the correct answer is there, use it and set "answerSource": "key".
+  2. If the document has no answer key, or it doesn't cover a particular question, work out the single most likely correct answer yourself using your own subject knowledge, and set "answerSource": "ai" so the teacher knows to double-check it.
+  3. Only omit "correctIndexes"/"answerSource" entirely if you genuinely cannot determine any plausible answer even by reasoning — this should be rare.
+- Preserve the original wording exactly, in its original language — do not paraphrase, correct, or translate it into a different language, even if a different language was requested elsewhere for classification purposes only.
 - One entry per question. If a question has sub-parts (a), (b), (c) graded together, keep it as one entry with the sub-parts in the text; if they are clearly separate marks/questions, split them.
 - Classify short-answer/structured/long-answer questions as "essay" and programming/code questions as "code".
 - Include "marks" only when explicitly stated for that question.
@@ -252,7 +286,7 @@ export async function extractQuestionsFromPdf(formData: FormData): Promise<Extra
     };
   }
 
-  const questions: BulkImportQuestionInput[] = [];
+  const questions: ExtractedQuestionRow[] = [];
   for (const raw of parsed) {
     if (!raw || typeof raw !== "object") continue;
     const r = raw as Record<string, unknown>;
@@ -267,6 +301,16 @@ export async function extractQuestionsFromPdf(formData: FormData): Promise<Extra
     const correctIndexes =
       type === "mcq" && Array.isArray(r.correctIndexes)
         ? r.correctIndexes.filter((i): i is number => typeof i === "number" && Number.isInteger(i) && i >= 0)
+        : undefined;
+    // The model is asked to always attempt an answer (from an answer key, or
+    // its own reasoning when the paper doesn't have one) — default a valid
+    // correctIndexes to "ai" if it forgot to tag its source, so the teacher
+    // still sees a "please verify" signal rather than an unmarked answer.
+    const answerSource =
+      type === "mcq" && (correctIndexes?.length ?? 0) > 0
+        ? r.answerSource === "key" || r.answerSource === "ai"
+          ? r.answerSource
+          : "ai"
         : undefined;
     const marks = typeof r.marks === "number" && Number.isFinite(r.marks) && r.marks >= 1 ? Math.round(r.marks) : 1;
     const topic = typeof r.topic === "string" && r.topic.trim() ? r.topic.trim() : "General";
@@ -284,6 +328,7 @@ export async function extractQuestionsFromPdf(formData: FormData): Promise<Extra
       semester,
       options,
       correctIndexes,
+      answerSource,
       multiSelect: type === "mcq" && (correctIndexes?.length ?? 0) > 1,
     });
   }

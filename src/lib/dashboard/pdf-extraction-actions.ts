@@ -93,11 +93,12 @@ Read the ENTIRE attached PDF carefully, start to finish, and return ONLY a JSON 
 
 Rules:
 - "options"/"correctIndexes"/"answerSource" apply to mcq questions only — omit all three entirely for essay/code questions.
+- Strip the paper's own question number and option labels — do NOT include a leading "1.", "40)", "(2)", "Q3:" etc. on "text", and do NOT include a leading "(1)", "(2)", "A)" etc. on any "options" entry. The app assigns its own numbering and option labels (A/B/C/D) when it displays these later, so a number baked into the text itself would show up doubled. Everything else about the wording stays exactly as written.
 - Determining the correct answer for each mcq question, in this order:
   1. First check the WHOLE document for an official answer key or marking scheme (often on a separate page, sometimes near the end, sometimes labeled "Answers"). If the correct answer is there, use it and set "answerSource": "key".
   2. If the document has no answer key, or it doesn't cover a particular question, work out the single most likely correct answer yourself using your own subject knowledge, and set "answerSource": "ai" so the teacher knows to double-check it.
   3. Only omit "correctIndexes"/"answerSource" entirely if you genuinely cannot determine any plausible answer even by reasoning — this should be rare.
-- Preserve the original wording exactly, in its original language — do not paraphrase, correct, or translate it into a different language, even if a different language was requested elsewhere for classification purposes only.
+- Preserve the original wording exactly, in its original language, aside from the stripped numbering above — do not paraphrase, correct, or translate it into a different language, even if a different language was requested elsewhere for classification purposes only.
 - One entry per question. If a question has sub-parts (a), (b), (c) graded together, keep it as one entry with the sub-parts in the text; if they are clearly separate marks/questions, split them.
 - Classify short-answer/structured/long-answer questions as "essay" and programming/code questions as "code".
 - Include "marks" only when explicitly stated for that question.

@@ -45,6 +45,23 @@ const NO_SUBJECT = "none";
 const MIN_OPTIONS = 2;
 const MAX_OPTIONS = 8;
 
+/**
+ * Some questions imported before the PDF-extraction prompt was told to
+ * strip the paper's own numbering ("40.", "(2)") still carry it baked into
+ * the stored text, which then shows up doubled next to this table's own
+ * "#" column. Stripping it only at display time (not touching the stored
+ * value) fixes that for existing rows without a migration/backfill, while
+ * the prompt fix (pdf-extraction-actions.ts) stops new imports from
+ * picking it up in the first place.
+ */
+function stripLeadingNumberLabel(text: string): string {
+  // Requires an actual delimiter (a closing paren or a period/colon right
+  // after the digits) before the match is accepted — a bare number with
+  // nothing after it but a space (e.g. "5 apples cost...") is real content,
+  // not a label, and must be left alone.
+  return text.replace(/^\s*(?:\(\d{1,3}\)|\d{1,3}[.):])\s+/, "");
+}
+
 type OptionRow = {
   id: string; // "" means this row didn't exist before this edit
   text: string;
@@ -942,7 +959,7 @@ export function QuestionBankTab({
                       <Checkbox checked={selectedIds.has(q.id)} onCheckedChange={() => toggleSelected(q.id)} />
                     </TableCell>
                     <TableCell className="text-muted-foreground">{offset + i + 1}</TableCell>
-                    <TableCell className="max-w-80 truncate text-foreground">{q.text}</TableCell>
+                    <TableCell className="max-w-80 truncate text-foreground">{stripLeadingNumberLabel(q.text)}</TableCell>
                     {subjects.length > 0 && (
                       <TableCell className="text-muted-foreground">
                         {q.subjectId ? (subjectNameById.get(q.subjectId) ?? "—") : "—"}
@@ -994,9 +1011,9 @@ export function QuestionBankTab({
                     <TableRow>
                       <TableCell colSpan={subjects.length > 0 ? 12 : 11} className="bg-secondary/20">
                         {q.codeFormat ? (
-                          <TerminalBlock className="mb-2">{q.text}</TerminalBlock>
+                          <TerminalBlock className="mb-2">{stripLeadingNumberLabel(q.text)}</TerminalBlock>
                         ) : (
-                          <p className="mb-2 text-sm whitespace-pre-wrap text-foreground">{q.text}</p>
+                          <p className="mb-2 text-sm whitespace-pre-wrap text-foreground">{stripLeadingNumberLabel(q.text)}</p>
                         )}
                         {q.imageUrl && (
                           // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL
@@ -1022,7 +1039,11 @@ export function QuestionBankTab({
                                   )}
                                 >
                                   {isCorrect ? <Check className="size-3.5 shrink-0" /> : <span className="size-3.5 shrink-0" />}
-                                  {q.codeFormat ? <TerminalBlock compact>{option.text}</TerminalBlock> : option.text}
+                                  {q.codeFormat ? (
+                                    <TerminalBlock compact>{stripLeadingNumberLabel(option.text)}</TerminalBlock>
+                                  ) : (
+                                    stripLeadingNumberLabel(option.text)
+                                  )}
                                   {option.imageUrl && (
                                     // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL
                                     <img src={option.imageUrl} alt="" className="h-12 w-12 rounded-sm border border-border object-cover" />

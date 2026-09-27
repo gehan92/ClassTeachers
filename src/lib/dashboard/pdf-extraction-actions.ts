@@ -94,6 +94,7 @@ Read the ENTIRE attached PDF carefully, start to finish, and return ONLY a JSON 
 Rules:
 - "options"/"correctIndexes"/"answerSource" apply to mcq questions only — omit all three entirely for essay/code questions.
 - Strip the paper's own question number and option labels — do NOT include a leading "1.", "40)", "(2)", "Q3:" etc. on "text", and do NOT include a leading "(1)", "(2)", "A)" etc. on any "options" entry. The app assigns its own numbering and option labels (A/B/C/D) when it displays these later, so a number baked into the text itself would show up doubled. Everything else about the wording stays exactly as written.
+- For mcq questions, "text" is ONLY the question/passage/stem — never repeat the option list a second time inside "text" (e.g. a trailing "(1) ... (2) ... (3) ... (4) ..." after the question). The options belong exclusively in the separate "options" array.
 - Determining the correct answer for each mcq question, in this order:
   1. First check the WHOLE document for an official answer key or marking scheme (often on a separate page, sometimes near the end, sometimes labeled "Answers"). If the correct answer is there, use it and set "answerSource": "key".
   2. If the document has no answer key, or it doesn't cover a particular question, work out the single most likely correct answer yourself using your own subject knowledge, and set "answerSource": "ai" so the teacher knows to double-check it.

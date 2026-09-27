@@ -62,6 +62,27 @@ function stripLeadingNumberLabel(text: string): string {
   return text.replace(/^\s*(?:\(\d{1,3}\)|\d{1,3}[.):])\s+/, "");
 }
 
+/**
+ * Some earlier PDF imports (before the extraction prompt explicitly said
+ * not to) embedded the option list a second time directly inside the
+ * question's own text, on top of it also being correctly stored in the
+ * separate options array that already renders below — so it visibly showed
+ * up twice. Only ever applied to mcq questions (only they have a separate
+ * options array to have duplicated in the first place), and only strips
+ * when it finds an actual "(1) ... (2) ... (3) ... (4)" run near the end,
+ * so genuine essay-style "list four examples" content is never touched.
+ */
+function stripEmbeddedOptionsList(text: string, isMcq: boolean): string {
+  if (!isMcq) return text;
+  const match = text.match(/\(1\)[\s\S]*?\(2\)[\s\S]*?\(3\)[\s\S]*?\(4\)[\s\S]*$/);
+  if (!match || match.index === undefined) return text;
+  return text.slice(0, match.index).trim();
+}
+
+function cleanQuestionText(text: string, isMcq: boolean): string {
+  return stripLeadingNumberLabel(stripEmbeddedOptionsList(text, isMcq));
+}
+
 type OptionRow = {
   id: string; // "" means this row didn't exist before this edit
   text: string;
@@ -976,7 +997,7 @@ export function QuestionBankTab({
                       <Checkbox checked={selectedIds.has(q.id)} onCheckedChange={() => toggleSelected(q.id)} />
                     </TableCell>
                     <TableCell className="text-muted-foreground">{offset + i + 1}</TableCell>
-                    <TableCell className="max-w-80 truncate text-foreground">{stripLeadingNumberLabel(q.text)}</TableCell>
+                    <TableCell className="max-w-80 truncate text-foreground">{cleanQuestionText(q.text, q.type === "mcq")}</TableCell>
                     {subjects.length > 0 && (
                       <TableCell className="text-muted-foreground">
                         {q.subjectId ? (subjectNameById.get(q.subjectId) ?? "—") : "—"}
@@ -1029,9 +1050,9 @@ export function QuestionBankTab({
                     <TableRow>
                       <TableCell colSpan={subjects.length > 0 ? 12 : 11} className="bg-secondary/20">
                         {q.codeFormat ? (
-                          <TerminalBlock className="mb-2">{stripLeadingNumberLabel(q.text)}</TerminalBlock>
+                          <TerminalBlock className="mb-2">{cleanQuestionText(q.text, q.type === "mcq")}</TerminalBlock>
                         ) : (
-                          <p className="mb-2 text-sm whitespace-pre-wrap text-foreground">{stripLeadingNumberLabel(q.text)}</p>
+                          <p className="mb-2 text-sm whitespace-pre-wrap text-foreground">{cleanQuestionText(q.text, q.type === "mcq")}</p>
                         )}
                         {q.imageUrl && (
                           // eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL

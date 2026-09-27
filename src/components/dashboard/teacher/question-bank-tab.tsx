@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Check, ImagePlus, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -224,6 +224,7 @@ export function QuestionBankTab({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const formRef = useRef<HTMLDivElement>(null);
 
   // Blob: object URLs from freshly picked files are only ever read while
   // the form is open — revoke them on unmount/reset so they don't leak.
@@ -234,6 +235,19 @@ export function QuestionBankTab({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- cleanup runs only on unmount, not on every keystroke
   }, []);
+
+  // Edit is clicked from a row that can be far down a long, paginated
+  // table, but the form itself renders up near the top of the page — with
+  // no scroll, it opens off-screen and looks like nothing happened. Runs
+  // after the form's DOM node actually mounts (openEdit/openCreate only
+  // flip state), and re-fires if a different row's edit is clicked while
+  // the form is already open (editingId changes even though formMode
+  // doesn't).
+  useEffect(() => {
+    if (formMode === "edit") {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [formMode, editingId]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -546,7 +560,7 @@ export function QuestionBankTab({
       )}
 
       {formMode && (
-        <div className="rounded-lg border border-border bg-white p-5">
+        <div ref={formRef} className="rounded-lg border border-border bg-white p-5">
           <h3 className="mb-4 text-lg">{formMode === "edit" ? t("form.editTitle") : t("form.title")}</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5 sm:col-span-2">

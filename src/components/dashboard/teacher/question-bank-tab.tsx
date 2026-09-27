@@ -1280,9 +1280,9 @@ function PdfImportSection({
     if (semester.trim()) fd.set("semester", semester.trim());
     const response = await extractQuestionsFromPdf(fd);
     setExtracting(false);
-    if (response.error && response.questions.length === 0) {
+    if (response.error) {
       setExtractError(response.error);
-      return;
+      if (response.questions.length === 0) return;
     }
     setRows(response.questions);
   }

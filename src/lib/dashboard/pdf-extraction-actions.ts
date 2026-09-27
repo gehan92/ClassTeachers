@@ -7,11 +7,44 @@ import type { BulkImportQuestionInput } from "@/lib/dashboard/question-bank-acti
 // inflates raw bytes by ~1.33x, so 10MB raw leaves headroom for the prompt
 // text and JSON envelope on top of the encoded file.
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
-// gemini-2.5-flash returned a 404 telling new API keys to move to this
-// model instead — keep this in sync if Gemini deprecates it again.
-const GEMINI_MODEL = "gemini-3.8-flash";
+// gemini-3.8-flash (the newest model, what most new API keys default to)
+// tested consistently overloaded (503 "high demand") at the time this was
+// wired up — verified directly against Gemini's own /v1beta/models listing
+// and a real past-paper PDF. flash-lite is the same model family (native
+// PDF understanding, same request/response shape) with far more headroom.
+// Revisit if gemini-3.8-flash's availability improves later.
+const GEMINI_MODEL = "gemini-3.1-flash-lite";
 
 type ExtractResult = { error?: string; questions: BulkImportQuestionInput[] };
+
+/**
+ * Parses Gemini's JSON-array response, salvaging whatever complete question
+ * objects it can if the response got cut off mid-array (hit the output
+ * token ceiling on a long paper) rather than discarding the whole
+ * extraction over an incomplete tail. Only ever fires as a fallback after
+ * a clean parse already failed, so an imperfect salvage (e.g. a stray "}"
+ * inside a question's own text) is still strictly better than returning
+ * nothing.
+ */
+function parseQuestionArray(rawText: string): unknown[] | null {
+  const cleaned = rawText
+    .trim()
+    .replace(/^```(?:json)?\n?/, "")
+    .replace(/```$/, "");
+  try {
+    const parsed = JSON.parse(cleaned);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    const lastCompleteObjectEnd = cleaned.lastIndexOf("}");
+    if (lastCompleteObjectEnd === -1) return null;
+    try {
+      const salvaged = JSON.parse(`${cleaned.slice(0, lastCompleteObjectEnd + 1)}]`);
+      return Array.isArray(salvaged) ? salvaged : null;
+    } catch {
+      return null;
+    }
+  }
+}
 
 const EXTRACTION_PROMPT = `You are helping a teacher digitize a past exam paper into a question bank.
 Read the attached PDF carefully and return ONLY a JSON array (no prose, no markdown fences) of every question you can identify, in this exact shape:
@@ -119,7 +152,12 @@ export async function extractQuestionsFromPdf(formData: FormData): Promise<Extra
         ],
       },
     ],
-    generationConfig: { maxOutputTokens: 8000, responseMimeType: "application/json" },
+    // A full past paper in Sinhala/Tamil script needs noticeably more output
+    // tokens per character than English — 8000 was cutting real papers off
+    // mid-array. 32768 gives real headroom while parseQuestionArray below
+    // still salvages whatever completed if a paper is long enough to hit
+    // even this ceiling.
+    generationConfig: { maxOutputTokens: 32768, responseMimeType: "application/json" },
   });
   const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
@@ -166,28 +204,52 @@ export async function extractQuestionsFromPdf(formData: FormData): Promise<Extra
   }
 
   const payload = (await response.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
+    candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+    promptFeedback?: { blockReason?: string };
   };
-  const textBlock = payload.candidates?.[0]?.content?.parts?.find((p) => typeof p.text === "string")?.text ?? "";
 
-  let parsed: unknown;
-  try {
-    // Defensive: strip a markdown code fence if the model added one despite
-    // being told not to.
-    const cleaned = textBlock
-      .trim()
-      .replace(/^```(?:json)?\n?/, "")
-      .replace(/```$/, "");
-    parsed = JSON.parse(cleaned);
-  } catch {
+  if (payload.promptFeedback?.blockReason) {
+    console.error("Gemini blocked the prompt:", payload.promptFeedback.blockReason);
     return {
-      error: "Couldn't understand this PDF's structure. Try a clearer scan, or add questions manually.",
+      error: `Gemini declined to process this PDF (${payload.promptFeedback.blockReason}). Try a different file, or add questions manually.`,
       questions: [],
     };
   }
 
-  if (!Array.isArray(parsed)) {
-    return { error: "Couldn't find any questions in this PDF.", questions: [] };
+  const candidate = payload.candidates?.[0];
+  const textBlock = candidate?.content?.parts?.find((p) => typeof p.text === "string")?.text ?? "";
+
+  if (!textBlock) {
+    console.error(
+      `Gemini returned no text. finishReason=${candidate?.finishReason ?? "unknown"}`,
+      JSON.stringify(payload).slice(0, 2000)
+    );
+    if (candidate?.finishReason === "RECITATION") {
+      return {
+        error:
+          "Gemini declined to reproduce this document (recitation/copyright check triggered by a real past paper). Try a different scan, or add these questions manually.",
+        questions: [],
+      };
+    }
+    if (candidate?.finishReason === "MAX_TOKENS") {
+      return {
+        error: "This PDF has too many questions for one pass. Try splitting it into smaller files.",
+        questions: [],
+      };
+    }
+    return {
+      error: "Couldn't extract text from this PDF. Try a clearer scan, or add questions manually.",
+      questions: [],
+    };
+  }
+
+  const parsed = parseQuestionArray(textBlock);
+  if (!parsed) {
+    console.error("Gemini returned non-JSON text (truncated):", textBlock.slice(0, 2000));
+    return {
+      error: "Couldn't understand this PDF's structure. Try a clearer scan, or add questions manually.",
+      questions: [],
+    };
   }
 
   const questions: BulkImportQuestionInput[] = [];
@@ -230,6 +292,16 @@ export async function extractQuestionsFromPdf(formData: FormData): Promise<Extra
     return {
       error: "Couldn't find any questions in this PDF. Try a clearer scan, or add questions manually.",
       questions: [],
+    };
+  }
+
+  // The array parsed (possibly via salvage), but the response was still cut
+  // off mid-stream — tell the teacher explicitly rather than letting them
+  // assume this covers the whole paper.
+  if (candidate?.finishReason === "MAX_TOKENS") {
+    return {
+      error: `Only reached ${questions.length} question(s) before the output limit — this paper may have more. Review what's below, then re-run on the remaining pages if needed.`,
+      questions,
     };
   }
 

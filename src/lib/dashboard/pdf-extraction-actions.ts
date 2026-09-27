@@ -3,7 +3,11 @@
 import { createClient } from "@/lib/supabase/server";
 import type { BulkImportQuestionInput } from "@/lib/dashboard/question-bank-actions";
 
-const MAX_PDF_BYTES = 15 * 1024 * 1024; // 15MB — plenty for a past paper, keeps latency/cost sane
+// Gemini's inline (base64) request body caps out around 20MB total — base64
+// inflates raw bytes by ~1.33x, so 10MB raw leaves headroom for the prompt
+// text and JSON envelope on top of the encoded file.
+const MAX_PDF_BYTES = 10 * 1024 * 1024;
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 type ExtractResult = { error?: string; questions: BulkImportQuestionInput[] };
 
@@ -32,14 +36,14 @@ Rules:
 - Return ONLY the JSON array, nothing else — no markdown code fence, no explanation.`;
 
 /**
- * Sends an uploaded past-paper PDF straight to Claude as a document
- * attachment (native PDF support handles both digital text and scanned/
- * image pages in one pass, no separate OCR/text-extraction library needed)
- * and asks it to structure every question it finds into our schema. Returns
- * the extracted rows for the teacher to review/edit before anything is
- * saved — this never writes to question_bank_items itself, the actual
- * insert happens through the existing bulkImportQuestions action once the
- * teacher confirms (and fixes up) what came back.
+ * Sends an uploaded past-paper PDF straight to Gemini as an inline document
+ * (native PDF support handles both digital text and scanned/image pages in
+ * one pass, no separate OCR/text-extraction library needed) and asks it to
+ * structure every question it finds into our schema. Returns the extracted
+ * rows for the teacher to review/edit before anything is saved — this never
+ * writes to question_bank_items itself, the actual insert happens through
+ * the existing bulkImportQuestions action once the teacher confirms (and
+ * fixes up) what came back.
  *
  * gradeBand/difficulty/language/subjectId/paperYear/semester are the
  * teacher's own classification choices (set once for the whole paper, same
@@ -49,10 +53,10 @@ Rules:
  * taxonomy means.
  */
 export async function extractQuestionsFromPdf(formData: FormData): Promise<ExtractResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return {
-      error: "PDF import isn't set up yet — it needs an Anthropic API key added to the server's environment first.",
+      error: "PDF import isn't set up yet — it needs a Gemini API key added to the server's environment first.",
       questions: [],
     };
   }
@@ -106,27 +110,24 @@ export async function extractQuestionsFromPdf(formData: FormData): Promise<Extra
 
   let response: Response;
   try {
-    response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-5",
-        max_tokens: 8000,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64Pdf } },
-              { type: "text", text: EXTRACTION_PROMPT },
-            ],
-          },
-        ],
-      }),
-    });
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { inline_data: { mime_type: "application/pdf", data: base64Pdf } },
+                { text: EXTRACTION_PROMPT },
+              ],
+            },
+          ],
+          generationConfig: { maxOutputTokens: 8000, responseMimeType: "application/json" },
+        }),
+      }
+    );
   } catch {
     return { error: "Couldn't reach the extraction service. Please try again.", questions: [] };
   }
@@ -135,8 +136,10 @@ export async function extractQuestionsFromPdf(formData: FormData): Promise<Extra
     return { error: "The PDF couldn't be read right now. Please try again in a moment.", questions: [] };
   }
 
-  const payload = (await response.json()) as { content?: { type: string; text?: string }[] };
-  const textBlock = payload.content?.find((b) => b.type === "text")?.text ?? "";
+  const payload = (await response.json()) as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+  };
+  const textBlock = payload.candidates?.[0]?.content?.parts?.find((p) => typeof p.text === "string")?.text ?? "";
 
   let parsed: unknown;
   try {

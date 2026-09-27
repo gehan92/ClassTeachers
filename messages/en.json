@@ -2982,6 +2982,11 @@
       "hide": "Hide",
       "edit": "Edit",
       "delete": "Delete",
+      "deleteSelected": "Delete selected ({count})",
+      "bulkDeleting": "Deleting…",
+      "confirmBulkDeleteTitle": "Delete these questions?",
+      "confirmBulkDeleteMessage": "{count, plural, one {This will permanently delete # selected question.} other {This will permanently delete # selected questions.}} This can't be undone.",
+      "confirmBulkDeleteButton": "Delete",
       "filters": {
         "searchPlaceholder": "Search by topic or text...",
         "allGrades": "All grades",
@@ -2990,6 +2995,7 @@
         "allSubjects": "All subjects"
       },
       "columns": {
+        "number": "#",
         "question": "Question",
         "subject": "Subject",
         "topic": "Topic",
@@ -3088,7 +3094,18 @@
         "closeButton": "Close",
         "answerFromKey": "From the paper's answer key",
         "answerAiSuggested": "AI-suggested answer — please verify",
-        "allImportedDone": "All done — these questions are now in your question bank."
+        "allImportedDone": "All done — these questions are now in your question bank.",
+        "mcqSection": "MCQ questions",
+        "essaySection": "Essay questions",
+        "codeSection": "Code questions",
+        "duplicatesTitle": "Possible duplicate questions",
+        "duplicatesDescription": "{count, plural, one {# question already looks like one you have — choose which to keep.} other {# questions already look like ones you have — choose which to keep.}}",
+        "newQuestionLabel": "New (from this import)",
+        "alreadyInBankLabel": "Already in your question bank",
+        "importAnywayLabel": "Import this one anyway (keep both)",
+        "skipAllDuplicates": "Skip these",
+        "confirmDuplicatesButton": "Done",
+        "savingDuplicates": "Saving…"
       }
     },
     "exams": {

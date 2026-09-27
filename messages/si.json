@@ -2982,6 +2982,11 @@
       "hide": "සඟවන්න",
       "edit": "සංස්කරණය",
       "delete": "මකන්න",
+      "deleteSelected": "තෝරාගත් ({count}) මකන්න",
+      "bulkDeleting": "මකමින්…",
+      "confirmBulkDeleteTitle": "මෙම ප්‍රශ්න මකන්නද?",
+      "confirmBulkDeleteMessage": "{count, plural, one {තෝරාගත් ප්‍රශ්නය # ස්ථිරවම මකනු ලැබේ.} other {තෝරාගත් ප්‍රශ්න # ස්ථිරවම මකනු ලැබේ.}} මෙය අහෝසි කළ නොහැක.",
+      "confirmBulkDeleteButton": "මකන්න",
       "filters": {
         "searchPlaceholder": "මාතෘකාව හෝ පෙළ අනුව සොයන්න...",
         "allGrades": "සියලුම ශ්‍රේණි",
@@ -2990,6 +2995,7 @@
         "allSubjects": "සියලුම විෂයයන්"
       },
       "columns": {
+        "number": "#",
         "question": "ප්‍රශ්නය",
         "subject": "විෂයය",
         "topic": "මාතෘකාව",
@@ -3088,7 +3094,18 @@
         "closeButton": "වසන්න",
         "answerFromKey": "ප්‍රශ්න පත්‍රයේ පිළිතුරු මාලාවෙන්",
         "answerAiSuggested": "AI යෝජනා කළ පිළිතුර — කරුණාකර තහවුරු කරන්න",
-        "allImportedDone": "සියල්ල සම්පූර්ණයි — මෙම ප්‍රශ්න දැන් ඔබේ ප්‍රශ්න බැංකුවේ ඇත."
+        "allImportedDone": "සියල්ල සම්පූර්ණයි — මෙම ප්‍රශ්න දැන් ඔබේ ප්‍රශ්න බැංකුවේ ඇත.",
+        "mcqSection": "බහුවරණ ප්‍රශ්න",
+        "essaySection": "රචනා ප්‍රශ්න",
+        "codeSection": "කේත ප්‍රශ්න",
+        "duplicatesTitle": "අනුරූප විය හැකි ප්‍රශ්න",
+        "duplicatesDescription": "{count, plural, one {ප්‍රශ්නය # දැනටමත් ඔබ සතුව ඇති එකක් හා සමානය — තබා ගැනීමට කුමක්දැයි තෝරන්න.} other {ප්‍රශ්න # ක් දැනටමත් ඔබ සතුව ඇති ඒවා හා සමානය — තබා ගැනීමට කුමක්දැයි තෝරන්න.}}",
+        "newQuestionLabel": "නව (මෙම ආනයනයෙන්)",
+        "alreadyInBankLabel": "දැනටමත් ඔබේ ප්‍රශ්න බැංකුවේ ඇත",
+        "importAnywayLabel": "කෙසේ වුවත් මෙය ආනයනය කරන්න (දෙකම තබා ගන්න)",
+        "skipAllDuplicates": "මේවා මඟ හරින්න",
+        "confirmDuplicatesButton": "සිදු කළා",
+        "savingDuplicates": "සුරකිමින්…"
       }
     },
     "exams": {

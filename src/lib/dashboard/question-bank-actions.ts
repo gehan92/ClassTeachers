@@ -383,6 +383,43 @@ export async function deleteQuestion(questionId: string): Promise<ActionResult> 
   return {};
 }
 
+/**
+ * Deletes several questions in one round trip (the table's new multi-select
+ * checkboxes) instead of one deleteQuestion call per row. RLS still scopes
+ * every delete to the caller's own rows same as the single-delete path —
+ * passing someone else's id here just silently deletes nothing for that id.
+ */
+export async function bulkDeleteQuestions(questionIds: string[]): Promise<ActionResult & { deleted: number }> {
+  if (!questionIds || questionIds.length === 0) {
+    return { error: "No questions selected.", deleted: 0 };
+  }
+
+  const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from("question_bank_items")
+    .select("options, question_image_path")
+    .in("id", questionIds);
+
+  const { error, count } = await supabase
+    .from("question_bank_items")
+    .delete({ count: "exact" })
+    .in("id", questionIds);
+  if (error) {
+    return { error: "Couldn't delete these questions. Please try again.", deleted: 0 };
+  }
+
+  if (existing && existing.length > 0) {
+    const paths = existing
+      .flatMap((row) => [row.question_image_path, ...((row.options as RawOption[] | null) ?? []).map((o) => o.imagePath)])
+      .filter((p): p is string => Boolean(p));
+    if (paths.length > 0) {
+      await supabase.storage.from("question-images").remove(paths);
+    }
+  }
+
+  return { deleted: count ?? existing?.length ?? 0 };
+}
+
 const bulkRowSchema = z.object({
   type: z.enum(["mcq", "essay", "code"]),
   text: z.string().trim().min(1),
@@ -402,6 +439,11 @@ const bulkRowSchema = z.object({
 
 export type BulkImportQuestionInput = z.infer<typeof bulkRowSchema>;
 export type BulkImportRowError = { row: number; message: string };
+export type BulkImportDuplicate = { row: number; text: string; existingId: string; existingText: string };
+
+function normalizeQuestionText(text: string): string {
+  return text.trim().toLowerCase().replace(/\s+/g, " ");
+}
 
 /**
  * Bulk question import — mirrors the house "paste + local parser" pattern
@@ -412,13 +454,21 @@ export type BulkImportRowError = { row: number; message: string };
  * trust a client-only check) and does one insert for the whole batch, one
  * bad row does not block the rest. Text-only: bulk-imported questions carry
  * no images (unlike createQuestion) — add those afterward via edit if needed.
+ *
+ * Duplicate detection (skipped when `forceRowNumbers` names a row): rows
+ * whose text exactly matches an existing question (case/whitespace
+ * insensitive) in this same owner's bank are held back and reported in
+ * `duplicates` instead of being inserted — the caller shows them to the
+ * teacher to choose "skip" or "import anyway", then re-calls this with
+ * those specific row numbers in `forceRowNumbers` to insert them for real.
  */
 export async function bulkImportQuestions(
   batchId: string | undefined,
   rows: BulkImportQuestionInput[],
-): Promise<{ error?: string; imported: number; rowErrors: BulkImportRowError[] }> {
+  forceRowNumbers?: number[],
+): Promise<{ error?: string; imported: number; rowErrors: BulkImportRowError[]; duplicates: BulkImportDuplicate[] }> {
   if (rows.length === 0) {
-    return { error: "Nothing to import.", imported: 0, rowErrors: [] };
+    return { error: "Nothing to import.", imported: 0, rowErrors: [], duplicates: [] };
   }
 
   const supabase = await createClient();
@@ -426,15 +476,26 @@ export async function bulkImportQuestions(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return { error: "You need to be signed in.", imported: 0, rowErrors: [] };
+    return { error: "You need to be signed in.", imported: 0, rowErrors: [], duplicates: [] };
   }
 
   const target = await resolveBatchOwner(supabase, user.id, batchId);
   if ("error" in target) {
-    return { error: target.error, imported: 0, rowErrors: [] };
+    return { error: target.error, imported: 0, rowErrors: [], duplicates: [] };
   }
 
+  const { data: existingRows } = await supabase
+    .from("question_bank_items")
+    .select("id, question_text")
+    .eq("owner_type", target.ownerType)
+    .eq("owner_id", target.ownerId);
+  const existingByNormalizedText = new Map(
+    (existingRows ?? []).map((r) => [normalizeQuestionText(r.question_text), { id: r.id, text: r.question_text }]),
+  );
+  const forcedRowNumbers = new Set(forceRowNumbers ?? []);
+
   const rowErrors: BulkImportRowError[] = [];
+  const duplicates: BulkImportDuplicate[] = [];
   const toInsert: QuestionBankItemInsert[] = [];
 
   rows.forEach((raw, index) => {
@@ -454,6 +515,14 @@ export async function bulkImportQuestions(
       }
       if (!row.correctIndexes || row.correctIndexes.length === 0 || row.correctIndexes.some((i) => i >= optionCount)) {
         rowErrors.push({ row: rowNumber, message: "MCQ needs a valid correct answer." });
+        return;
+      }
+    }
+
+    if (!forcedRowNumbers.has(rowNumber)) {
+      const existingMatch = existingByNormalizedText.get(normalizeQuestionText(row.text));
+      if (existingMatch) {
+        duplicates.push({ row: rowNumber, text: row.text, existingId: existingMatch.id, existingText: existingMatch.text });
         return;
       }
     }
@@ -491,13 +560,13 @@ export async function bulkImportQuestions(
   });
 
   if (toInsert.length === 0) {
-    return { imported: 0, rowErrors };
+    return { imported: 0, rowErrors, duplicates };
   }
 
   const { error } = await supabase.from("question_bank_items").insert(toInsert);
   if (error) {
-    return { error: "Couldn't save these questions. Please try again.", imported: 0, rowErrors };
+    return { error: "Couldn't save these questions. Please try again.", imported: 0, rowErrors, duplicates };
   }
 
-  return { imported: toInsert.length, rowErrors };
+  return { imported: toInsert.length, rowErrors, duplicates };
 }

@@ -16,7 +16,16 @@ import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { TerminalBlock } from "@/components/dashboard/terminal-block";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { usePagination } from "@/lib/hooks/use-pagination";
-import { createQuestion, updateQuestion, deleteQuestion, bulkImportQuestions } from "@/lib/dashboard/question-bank-actions";
+import {
+  createQuestion,
+  updateQuestion,
+  deleteQuestion,
+  bulkDeleteQuestions,
+  bulkImportQuestions,
+  type BulkImportQuestionInput,
+  type BulkImportRowError,
+  type BulkImportDuplicate,
+} from "@/lib/dashboard/question-bank-actions";
 import { extractQuestionsFromPdf, type ExtractedQuestionRow } from "@/lib/dashboard/pdf-extraction-actions";
 import { parseBulkImportText, type ParsedBulkRow } from "@/lib/bulk-import-questions";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
@@ -195,6 +204,9 @@ export function QuestionBankTab({
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
   // Blob: object URLs from freshly picked files are only ever read while
   // the form is open — revoke them on unmount/reset so they don't leak.
@@ -220,6 +232,40 @@ export function QuestionBankTab({
 
   const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(filtered.length);
   const pagedQuestions = filtered.slice(offset, offset + pageSize);
+  const allOnPageSelected = pagedQuestions.length > 0 && pagedQuestions.every((q) => selectedIds.has(q.id));
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAllOnPage() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allOnPageSelected) {
+        for (const q of pagedQuestions) next.delete(q.id);
+      } else {
+        for (const q of pagedQuestions) next.add(q.id);
+      }
+      return next;
+    });
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return;
+    setBulkDeleting(true);
+    const result = await bulkDeleteQuestions([...selectedIds]);
+    setBulkDeleting(false);
+    setConfirmBulkDelete(false);
+    if (!result.error) {
+      setSelectedIds(new Set());
+      refresh();
+    }
+  }
 
   function openCreate() {
     setForm(blankForm());
@@ -439,6 +485,11 @@ export function QuestionBankTab({
         </div>
         <div className="flex items-center gap-3">
           {added && <span className="animate-in fade-in-0 text-sm font-medium text-success duration-200">{tc("added")}</span>}
+          {selectedIds.size > 0 && (
+            <Button type="button" variant="outline" className="text-destructive hover:text-destructive" onClick={() => setConfirmBulkDelete(true)}>
+              {t("deleteSelected", { count: selectedIds.size })}
+            </Button>
+          )}
           <Button
             type="button"
             variant="outline"
@@ -867,6 +918,10 @@ export function QuestionBankTab({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-8">
+                  <Checkbox checked={allOnPageSelected} onCheckedChange={toggleSelectAllOnPage} />
+                </TableHead>
+                <TableHead className="w-10">{t("columns.number")}</TableHead>
                 <TableHead>{t("columns.question")}</TableHead>
                 {subjects.length > 0 && <TableHead>{t("columns.subject")}</TableHead>}
                 <TableHead>{t("columns.topic")}</TableHead>
@@ -880,9 +935,13 @@ export function QuestionBankTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pagedQuestions.map((q) => (
+              {pagedQuestions.map((q, i) => (
                 <Fragment key={q.id}>
                   <TableRow>
+                    <TableCell>
+                      <Checkbox checked={selectedIds.has(q.id)} onCheckedChange={() => toggleSelected(q.id)} />
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{offset + i + 1}</TableCell>
                     <TableCell className="max-w-80 truncate text-foreground">{q.text}</TableCell>
                     {subjects.length > 0 && (
                       <TableCell className="text-muted-foreground">
@@ -933,7 +992,7 @@ export function QuestionBankTab({
                   </TableRow>
                   {viewingId === q.id && (
                     <TableRow>
-                      <TableCell colSpan={subjects.length > 0 ? 10 : 9} className="bg-secondary/20">
+                      <TableCell colSpan={subjects.length > 0 ? 12 : 11} className="bg-secondary/20">
                         {q.codeFormat ? (
                           <TerminalBlock className="mb-2">{q.text}</TerminalBlock>
                         ) : (
@@ -998,6 +1057,23 @@ export function QuestionBankTab({
           </div>
         )}
       </div>
+
+      <Dialog open={confirmBulkDelete} onOpenChange={setConfirmBulkDelete}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("confirmBulkDeleteTitle")}</DialogTitle>
+            <DialogDescription>{t("confirmBulkDeleteMessage", { count: selectedIds.size })}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmBulkDelete(false)} disabled={bulkDeleting}>
+              {tc("cancel")}
+            </Button>
+            <Button type="button" onClick={handleBulkDelete} disabled={bulkDeleting} className="bg-destructive text-white hover:bg-destructive/90">
+              {bulkDeleting ? t("bulkDeleting") : t("confirmBulkDeleteButton")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -1009,6 +1085,114 @@ const TEMPLATE_TEXT = [
   ["MCQ", "What is the SI unit of force?", "", "Mechanics", "10-11", "easy", "1", "Newton", "Joule", "Watt", "Pascal", "A", ""].join("\t"),
   ["Essay", "Explain Newton's second law with an example.", "", "Mechanics", "10-11", "medium", "5", "", "", "", "", "", ""].join("\t"),
 ].join("\n");
+
+/**
+ * Shared duplicate-resolution state for both bulk-import flows (paste and
+ * PDF) — bulkImportQuestions already holds back any row that exactly
+ * matches an existing question instead of inserting it, returning it in
+ * `duplicates` alongside the resolved `row` number back into whatever array
+ * the caller submitted. This hook keeps that submitted array around so a
+ * later "import anyway" decision can look the original row back up and
+ * re-submit just that one with `forceRowNumbers` — everything the caller
+ * decided to skip stays skipped, since it was never inserted in that first
+ * pass.
+ */
+function useDuplicateResolution<TRow extends BulkImportQuestionInput>(resolvedBatchId: string | undefined, onImported: () => void) {
+  const [duplicates, setDuplicates] = useState<BulkImportDuplicate[]>([]);
+  const [sourceRows, setSourceRows] = useState<TRow[]>([]);
+  const [resolving, setResolving] = useState(false);
+
+  function open(newDuplicates: BulkImportDuplicate[], rows: TRow[]) {
+    if (newDuplicates.length === 0) return;
+    setDuplicates(newDuplicates);
+    setSourceRows(rows);
+  }
+
+  function cancel() {
+    setDuplicates([]);
+    setSourceRows([]);
+  }
+
+  async function confirm(keepRowNumbers: number[]) {
+    if (keepRowNumbers.length === 0) {
+      cancel();
+      return { imported: 0, rowErrors: [] as BulkImportRowError[] };
+    }
+    setResolving(true);
+    const rowsToForce = keepRowNumbers.map((n) => sourceRows[n - 1]).filter((r): r is TRow => Boolean(r));
+    const response = await bulkImportQuestions(resolvedBatchId, rowsToForce, rowsToForce.map((_, i) => i + 1));
+    setResolving(false);
+    cancel();
+    onImported();
+    return response;
+  }
+
+  return { duplicates, resolving, open, cancel, confirm };
+}
+
+function DuplicateReviewDialog({
+  duplicates,
+  resolving,
+  onConfirm,
+  onCancel,
+}: {
+  duplicates: BulkImportDuplicate[];
+  resolving: boolean;
+  onConfirm: (keepRowNumbers: number[]) => void;
+  onCancel: () => void;
+}) {
+  const t = useTranslations("teacherDashboard.questionBank");
+  // Parented with a `key` derived from `duplicates` (see call sites), so a
+  // fresh duplicate set naturally remounts this with a clean `keep` state
+  // instead of needing an effect to reset it.
+  const [keep, setKeep] = useState<Set<number>>(new Set());
+
+  function toggleKeep(row: number) {
+    setKeep((prev) => {
+      const next = new Set(prev);
+      if (next.has(row)) next.delete(row);
+      else next.add(row);
+      return next;
+    });
+  }
+
+  return (
+    <Dialog open={duplicates.length > 0} onOpenChange={(open) => { if (!open) onCancel(); }}>
+      <DialogContent className="flex max-h-[80vh] flex-col sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{t("bulkImport.duplicatesTitle")}</DialogTitle>
+          <DialogDescription>{t("bulkImport.duplicatesDescription", { count: duplicates.length })}</DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-1 flex-col gap-3 overflow-y-auto rounded-md border border-border p-3">
+          {duplicates.map((d) => (
+            <div key={d.row} className="rounded-md border border-border p-3">
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("bulkImport.newQuestionLabel")}
+              </p>
+              <p className="mb-2 text-sm text-foreground">{d.text}</p>
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("bulkImport.alreadyInBankLabel")}
+              </p>
+              <p className="mb-2 text-sm text-muted-foreground">{d.existingText}</p>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox checked={keep.has(d.row)} onCheckedChange={() => toggleKeep(d.row)} />
+                {t("bulkImport.importAnywayLabel")}
+              </label>
+            </div>
+          ))}
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={resolving}>
+            {t("bulkImport.skipAllDuplicates")}
+          </Button>
+          <Button type="button" onClick={() => onConfirm([...keep])} disabled={resolving}>
+            {resolving ? t("bulkImport.savingDuplicates") : t("bulkImport.confirmDuplicatesButton")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 /**
  * Bulk question import — a textarea paste, not a file upload, matching the
@@ -1046,6 +1230,7 @@ function BulkImportPanel({
   );
   const validRows = parsedRows.filter((r): r is Extract<ParsedBulkRow, { ok: true }> => r.ok);
   const invalidRows = parsedRows.filter((r): r is Extract<ParsedBulkRow, { ok: false }> => !r.ok);
+  const dupState = useDuplicateResolution<BulkImportQuestionInput>(batchId !== NO_BATCH ? batchId : undefined, onImported);
 
   async function handleCopyTemplate() {
     try {
@@ -1063,34 +1248,34 @@ function BulkImportPanel({
     setImporting(true);
     setServerError(null);
     setResult(null);
-    const response = await bulkImportQuestions(
-      batchId !== NO_BATCH ? batchId : undefined,
-      validRows.map((r) => r.row),
-    );
+    const rowsToSend = validRows.map((r) => r.row);
+    const response = await bulkImportQuestions(batchId !== NO_BATCH ? batchId : undefined, rowsToSend);
     setImporting(false);
-    if (response.error && response.imported === 0) {
+    if (response.error && response.imported === 0 && response.duplicates.length === 0) {
       setServerError(response.error);
       return;
     }
     setResult({ imported: response.imported, rowErrors: response.rowErrors });
-    if (response.rowErrors.length === 0) {
+    dupState.open(response.duplicates, rowsToSend);
+    if (response.rowErrors.length === 0 && response.duplicates.length === 0) {
       setRawText("");
       onImported();
       return;
     }
-    // Partial success — drop only the pasted lines that already saved, so
-    // re-clicking Import after fixing the rest doesn't resubmit (and
-    // duplicate) them. rowErrors' `row` is the 1-based position within the
-    // submitted (valid-only) array, not the original pasted line number —
-    // map back through validRows to get that.
+    // Drop pasted lines that either already saved or are now tracked
+    // separately in the duplicate-resolution popup — keep only the
+    // genuinely-invalid ones in the textarea to fix and resubmit. rowErrors'
+    // `row` is the 1-based position within the submitted (valid-only)
+    // array, not the original pasted line number — map back through
+    // validRows to get that.
     const failedPositions = new Set(response.rowErrors.map((e) => e.row));
-    const succeededLineNumbers = new Set(
+    const handledLineNumbers = new Set(
       validRows.filter((_, i) => !failedPositions.has(i + 1)).map((r) => r.lineNumber),
     );
     setRawText((current) =>
       current
         .split(/\r?\n/)
-        .filter((_, i) => !succeededLineNumbers.has(i + 1))
+        .filter((_, i) => !handledLineNumbers.has(i + 1))
         .join("\n"),
     );
     onImported();
@@ -1196,6 +1381,20 @@ function BulkImportPanel({
       ) : (
         <PdfImportSection subjects={subjects} batchId={batchId} onImported={onImported} />
       )}
+
+      <DuplicateReviewDialog
+        key={dupState.duplicates.map((d) => d.row).join(",")}
+        duplicates={dupState.duplicates}
+        resolving={dupState.resolving}
+        onCancel={dupState.cancel}
+        onConfirm={async (keep) => {
+          const forced = await dupState.confirm(keep);
+          setResult((prev) => ({
+            imported: (prev?.imported ?? 0) + forced.imported,
+            rowErrors: [...(prev?.rowErrors ?? []), ...forced.rowErrors],
+          }));
+        }}
+      />
     </div>
   );
 }
@@ -1231,6 +1430,7 @@ function PdfImportSection({
   const [rows, setRows] = useState<ExtractedQuestionRow[] | null>(null);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<{ imported: number; rowErrors: { row: number; message: string }[] } | null>(null);
+  const dupState = useDuplicateResolution<ExtractedQuestionRow>(batchId !== NO_BATCH ? batchId : undefined, onImported);
 
   function updateRow(index: number, patch: Partial<ExtractedQuestionRow>) {
     setRows((prev) => (prev ? prev.map((r, i) => (i === index ? { ...r, ...patch } : r)) : prev));
@@ -1295,7 +1495,8 @@ function PdfImportSection({
     const response = await bulkImportQuestions(batchId !== NO_BATCH ? batchId : undefined, rows);
     setImporting(false);
     setResult({ imported: response.imported, rowErrors: response.rowErrors });
-    if (response.rowErrors.length === 0) {
+    dupState.open(response.duplicates, rows);
+    if (response.rowErrors.length === 0 && response.duplicates.length === 0) {
       // Keep the dialog open (with an empty list) so the confirmation
       // message below is actually visible, instead of the whole preview
       // vanishing the instant the import succeeds.
@@ -1304,17 +1505,89 @@ function PdfImportSection({
       onImported();
       return;
     }
-    // Partial success — drop the rows that already saved so a retry after
-    // fixing the rest doesn't re-insert (and duplicate) them. rowErrors'
-    // `row` is the 1-based index into the array just sent.
-    const failedRowNumbers = new Set(response.rowErrors.map((e) => e.row));
-    setRows((prev) => (prev ? prev.filter((_, i) => failedRowNumbers.has(i + 1)) : prev));
+    // Keep only the genuinely-invalid rows visible here — successfully
+    // saved ones are done, and duplicate-flagged ones are now tracked
+    // separately in the duplicate-resolution popup, not re-editable here.
+    // rowErrors' `row` is the 1-based index into the array just sent.
+    const rowErrorNumbers = new Set(response.rowErrors.map((e) => e.row));
+    setRows((prev) => (prev ? prev.filter((_, i) => rowErrorNumbers.has(i + 1)) : prev));
     onImported();
   }
 
   function closeReviewDialog() {
     setRows(null);
     setResult(null);
+  }
+
+  // Keep MCQ/essay/code visually separated in review — the source paper
+  // interleaves them by page order (e.g. MCQ section, then an essay
+  // section), which reads poorly once flattened into one list.
+  const rowsWithIndex = (rows ?? []).map((row, index) => ({ row, index }));
+  const groupedRows: { type: ExtractedQuestionRow["type"]; heading: string; items: typeof rowsWithIndex }[] = [
+    { type: "mcq", heading: t("bulkImport.mcqSection"), items: rowsWithIndex.filter((x) => x.row.type === "mcq") },
+    { type: "essay", heading: t("bulkImport.essaySection"), items: rowsWithIndex.filter((x) => x.row.type === "essay") },
+    { type: "code", heading: t("bulkImport.codeSection"), items: rowsWithIndex.filter((x) => x.row.type === "code") },
+  ];
+
+  function renderQuestionCard(row: ExtractedQuestionRow, index: number) {
+    return (
+      <div key={index} className="rounded-md border border-border p-3">
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <span className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+            {t(`typeLabel.${row.type}`)}
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-destructive"
+            onClick={() => removeRow(index)}
+          >
+            <X className="size-3.5" />
+          </Button>
+        </div>
+        <Textarea value={row.text} onChange={(e) => updateRow(index, { text: e.target.value })} className="mb-2 text-sm" />
+        <div className="mb-2 flex flex-wrap gap-2">
+          <Input
+            value={row.topic}
+            onChange={(e) => updateRow(index, { topic: e.target.value })}
+            placeholder={t("form.topicPlaceholder")}
+            className="w-48"
+          />
+          <Input
+            type="number"
+            min="1"
+            value={row.marks}
+            onChange={(e) => updateRow(index, { marks: Number(e.target.value) || 1 })}
+            className="w-24"
+          />
+        </div>
+        {row.type === "mcq" && (
+          <div className="flex flex-col gap-1.5">
+            {(row.options ?? []).map((option, optionIndex) => (
+              <label key={optionIndex} className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={(row.correctIndexes ?? []).includes(optionIndex)}
+                  onCheckedChange={() => toggleCorrect(index, optionIndex)}
+                />
+                <Input value={option} onChange={(e) => updateOption(index, optionIndex, e.target.value)} className="flex-1" />
+              </label>
+            ))}
+            {!row.correctIndexes || row.correctIndexes.length === 0 ? (
+              <p className="text-xs text-destructive">{t("bulkImport.noAnswerYet")}</p>
+            ) : row.answerSource === "key" ? (
+              <span className="inline-flex w-fit items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                {t("bulkImport.answerFromKey")}
+              </span>
+            ) : row.answerSource === "ai" ? (
+              <span className="inline-flex w-fit items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                {t("bulkImport.answerAiSuggested")}
+              </span>
+            ) : null}
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -1431,73 +1704,17 @@ function PdfImportSection({
             )}
           </DialogHeader>
 
-          <div className="flex flex-1 flex-col gap-3 overflow-y-auto rounded-md border border-border p-3">
-            {(rows ?? []).map((row, index) => (
-              <div key={index} className="rounded-md border border-border p-3">
-                <div className="mb-2 flex items-start justify-between gap-2">
-                  <span className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-                    {t(`typeLabel.${row.type}`)}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-destructive"
-                    onClick={() => removeRow(index)}
-                  >
-                    <X className="size-3.5" />
-                  </Button>
+          <div className="flex flex-1 flex-col gap-4 overflow-y-auto rounded-md border border-border p-3">
+            {groupedRows
+              .filter((group) => group.items.length > 0)
+              .map((group) => (
+                <div key={group.type} className="flex flex-col gap-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {group.heading} ({group.items.length})
+                  </h3>
+                  {group.items.map(({ row, index }) => renderQuestionCard(row, index))}
                 </div>
-                <Textarea
-                  value={row.text}
-                  onChange={(e) => updateRow(index, { text: e.target.value })}
-                  className="mb-2 text-sm"
-                />
-                <div className="mb-2 flex flex-wrap gap-2">
-                  <Input
-                    value={row.topic}
-                    onChange={(e) => updateRow(index, { topic: e.target.value })}
-                    placeholder={t("form.topicPlaceholder")}
-                    className="w-48"
-                  />
-                  <Input
-                    type="number"
-                    min="1"
-                    value={row.marks}
-                    onChange={(e) => updateRow(index, { marks: Number(e.target.value) || 1 })}
-                    className="w-24"
-                  />
-                </div>
-                {row.type === "mcq" && (
-                  <div className="flex flex-col gap-1.5">
-                    {(row.options ?? []).map((option, optionIndex) => (
-                      <label key={optionIndex} className="flex items-center gap-2 text-sm">
-                        <Checkbox
-                          checked={(row.correctIndexes ?? []).includes(optionIndex)}
-                          onCheckedChange={() => toggleCorrect(index, optionIndex)}
-                        />
-                        <Input
-                          value={option}
-                          onChange={(e) => updateOption(index, optionIndex, e.target.value)}
-                          className="flex-1"
-                        />
-                      </label>
-                    ))}
-                    {!row.correctIndexes || row.correctIndexes.length === 0 ? (
-                      <p className="text-xs text-destructive">{t("bulkImport.noAnswerYet")}</p>
-                    ) : row.answerSource === "key" ? (
-                      <span className="inline-flex w-fit items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
-                        {t("bulkImport.answerFromKey")}
-                      </span>
-                    ) : row.answerSource === "ai" ? (
-                      <span className="inline-flex w-fit items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
-                        {t("bulkImport.answerAiSuggested")}
-                      </span>
-                    ) : null}
-                  </div>
-                )}
-              </div>
-            ))}
+              ))}
             {rows && rows.length === 0 && result && result.rowErrors.length === 0 && (
               <p className="p-2 text-sm text-muted-foreground">{t("bulkImport.allImportedDone")}</p>
             )}
@@ -1528,6 +1745,20 @@ function PdfImportSection({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DuplicateReviewDialog
+        key={dupState.duplicates.map((d) => d.row).join(",")}
+        duplicates={dupState.duplicates}
+        resolving={dupState.resolving}
+        onCancel={dupState.cancel}
+        onConfirm={async (keep) => {
+          const forced = await dupState.confirm(keep);
+          setResult((prev) => ({
+            imported: (prev?.imported ?? 0) + forced.imported,
+            rowErrors: [...(prev?.rowErrors ?? []), ...forced.rowErrors],
+          }));
+        }}
+      />
     </div>
   );
 }

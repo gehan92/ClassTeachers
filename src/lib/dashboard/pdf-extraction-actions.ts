@@ -110,26 +110,36 @@ export async function extractQuestionsFromPdf(formData: FormData): Promise<Extra
   const arrayBuffer = await file.arrayBuffer();
   const base64Pdf = Buffer.from(arrayBuffer).toString("base64");
 
+  const requestBody = JSON.stringify({
+    contents: [
+      {
+        parts: [
+          { inline_data: { mime_type: "application/pdf", data: base64Pdf } },
+          { text: EXTRACTION_PROMPT },
+        ],
+      },
+    ],
+    generationConfig: { maxOutputTokens: 8000, responseMimeType: "application/json" },
+  });
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+
+  // Gemini returns 503 when its servers are momentarily overloaded — this
+  // clears on its own within seconds, so a couple of short retries avoids
+  // making the teacher manually click Extract again for a transient blip.
+  const maxAttempts = 3;
   let response: Response;
   try {
-    response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
-      {
+    let attempt = 1;
+    while (true) {
+      response = await fetch(geminiUrl, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { inline_data: { mime_type: "application/pdf", data: base64Pdf } },
-                { text: EXTRACTION_PROMPT },
-              ],
-            },
-          ],
-          generationConfig: { maxOutputTokens: 8000, responseMimeType: "application/json" },
-        }),
-      }
-    );
+        body: requestBody,
+      });
+      if (response.status !== 503 || attempt >= maxAttempts) break;
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
+      attempt += 1;
+    }
   } catch {
     return { error: "Couldn't reach the extraction service. Please try again.", questions: [] };
   }
@@ -143,6 +153,9 @@ export async function extractQuestionsFromPdf(formData: FormData): Promise<Extra
       detail = parsedError.error?.message ?? "";
     } catch {
       // non-JSON error body, ignore
+    }
+    if (response.status === 503) {
+      return { error: "Gemini is busy right now — please try again in a minute.", questions: [] };
     }
     return {
       error: detail

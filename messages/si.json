@@ -3101,14 +3101,10 @@
         "mcqSection": "බහුවරණ ප්‍රශ්න",
         "essaySection": "රචනා ප්‍රශ්න",
         "codeSection": "කේත ප්‍රශ්න",
-        "duplicatesTitle": "අනුරූප විය හැකි ප්‍රශ්න",
-        "duplicatesDescription": "{count, plural, one {ප්‍රශ්නය # දැනටමත් ඔබ සතුව ඇති එකක් හා සමානය — තබා ගැනීමට කුමක්දැයි තෝරන්න.} other {ප්‍රශ්න # ක් දැනටමත් ඔබ සතුව ඇති ඒවා හා සමානය — තබා ගැනීමට කුමක්දැයි තෝරන්න.}}",
-        "newQuestionLabel": "නව (මෙම ආනයනයෙන්)",
-        "alreadyInBankLabel": "දැනටමත් ඔබේ ප්‍රශ්න බැංකුවේ ඇත",
-        "importAnywayLabel": "කෙසේ වුවත් මෙය ආනයනය කරන්න (දෙකම තබා ගන්න)",
-        "skipAllDuplicates": "මේවා මඟ හරින්න",
-        "confirmDuplicatesButton": "සිදු කළා",
-        "savingDuplicates": "සුරකිමින්…"
+        "duplicatesTitle": "අනුරූප ප්‍රශ්න මඟ හරින ලදී",
+        "duplicatesSkippedDescription": "{count, plural, one {ප්‍රශ්නය # දැනටමත් ඔබේ ප්‍රශ්න බැංකුවේ ඇති බැවින්, එය නැවත එකතු කළේ නැත.} other {ප්‍රශ්න # ක් දැනටමත් ඔබේ ප්‍රශ්න බැංකුවේ ඇති බැවින්, ඒවා නැවත එකතු කළේ නැත.}}",
+        "newQuestionLabel": "මඟ හරින ලදී (මෙම ආනයනයෙන්)",
+        "alreadyInBankLabel": "දැනටමත් ඔබේ ප්‍රශ්න බැංකුවේ ඇත"
       }
     },
     "exams": {

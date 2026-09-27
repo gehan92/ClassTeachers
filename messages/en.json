@@ -3101,14 +3101,10 @@
         "mcqSection": "MCQ questions",
         "essaySection": "Essay questions",
         "codeSection": "Code questions",
-        "duplicatesTitle": "Possible duplicate questions",
-        "duplicatesDescription": "{count, plural, one {# question already looks like one you have — choose which to keep.} other {# questions already look like ones you have — choose which to keep.}}",
-        "newQuestionLabel": "New (from this import)",
-        "alreadyInBankLabel": "Already in your question bank",
-        "importAnywayLabel": "Import this one anyway (keep both)",
-        "skipAllDuplicates": "Skip these",
-        "confirmDuplicatesButton": "Done",
-        "savingDuplicates": "Saving…"
+        "duplicatesTitle": "Duplicate questions skipped",
+        "duplicatesSkippedDescription": "{count, plural, one {# question already exists in your question bank, so it wasn't added again.} other {# questions already exist in your question bank, so they weren't added again.}}",
+        "newQuestionLabel": "Skipped (from this import)",
+        "alreadyInBankLabel": "Already in your question bank"
       }
     },
     "exams": {

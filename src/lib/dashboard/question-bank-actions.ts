@@ -141,6 +141,24 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
     return target;
   }
 
+  // Same exact-match (case/whitespace-insensitive) duplicate check as bulk
+  // import, applied here to the one-by-one "+ Add question" form too —
+  // checked before any image uploads so a rejected duplicate doesn't waste
+  // one. Unlike bulk import there's no "import anyway" here (only one
+  // question is on the line, not a whole imported batch) — this form is
+  // for adding new questions, so if it already exists, the honest answer is
+  // "edit that one" rather than silently making a second copy.
+  const { data: existingRows } = await supabase
+    .from("question_bank_items")
+    .select("question_text")
+    .eq("owner_type", target.ownerType)
+    .eq("owner_id", target.ownerId);
+  const normalizedNewText = normalizeQuestionText(parsed.data.text);
+  const isDuplicate = (existingRows ?? []).some((r) => normalizeQuestionText(r.question_text) === normalizedNewText);
+  if (isDuplicate) {
+    return { error: "This question already exists in your question bank — it wasn't added again. Edit the existing one instead if you need to change it." };
+  }
+
   const questionId = crypto.randomUUID();
   const uploadedPaths: string[] = [];
 
@@ -455,17 +473,16 @@ function normalizeQuestionText(text: string): string {
  * bad row does not block the rest. Text-only: bulk-imported questions carry
  * no images (unlike createQuestion) — add those afterward via edit if needed.
  *
- * Duplicate detection (skipped when `forceRowNumbers` names a row): rows
- * whose text exactly matches an existing question (case/whitespace
- * insensitive) in this same owner's bank are held back and reported in
- * `duplicates` instead of being inserted — the caller shows them to the
- * teacher to choose "skip" or "import anyway", then re-calls this with
- * those specific row numbers in `forceRowNumbers` to insert them for real.
+ * Duplicate detection is a hard rule, no override: any row whose text
+ * exactly matches an existing question (case/whitespace insensitive) in
+ * this same owner's bank is held back and reported in `duplicates` instead
+ * of being inserted — the caller shows the teacher which ones were skipped
+ * and why, but there is no way to force one through, matching the same
+ * hard block on the single "+ Add question" form (createQuestion, above).
  */
 export async function bulkImportQuestions(
   batchId: string | undefined,
   rows: BulkImportQuestionInput[],
-  forceRowNumbers?: number[],
 ): Promise<{ error?: string; imported: number; rowErrors: BulkImportRowError[]; duplicates: BulkImportDuplicate[] }> {
   if (rows.length === 0) {
     return { error: "Nothing to import.", imported: 0, rowErrors: [], duplicates: [] };
@@ -492,7 +509,6 @@ export async function bulkImportQuestions(
   const existingByNormalizedText = new Map(
     (existingRows ?? []).map((r) => [normalizeQuestionText(r.question_text), { id: r.id, text: r.question_text }]),
   );
-  const forcedRowNumbers = new Set(forceRowNumbers ?? []);
 
   const rowErrors: BulkImportRowError[] = [];
   const duplicates: BulkImportDuplicate[] = [];
@@ -519,12 +535,10 @@ export async function bulkImportQuestions(
       }
     }
 
-    if (!forcedRowNumbers.has(rowNumber)) {
-      const existingMatch = existingByNormalizedText.get(normalizeQuestionText(row.text));
-      if (existingMatch) {
-        duplicates.push({ row: rowNumber, text: row.text, existingId: existingMatch.id, existingText: existingMatch.text });
-        return;
-      }
+    const existingMatch = existingByNormalizedText.get(normalizeQuestionText(row.text));
+    if (existingMatch) {
+      duplicates.push({ row: rowNumber, text: row.text, existingId: existingMatch.id, existingText: existingMatch.text });
+      return;
     }
 
     const questionId = crypto.randomUUID();

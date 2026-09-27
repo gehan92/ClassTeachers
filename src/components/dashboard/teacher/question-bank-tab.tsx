@@ -22,8 +22,6 @@ import {
   deleteQuestion,
   bulkDeleteQuestions,
   bulkImportQuestions,
-  type BulkImportQuestionInput,
-  type BulkImportRowError,
   type BulkImportDuplicate,
 } from "@/lib/dashboard/question-bank-actions";
 import { extractQuestionsFromPdf, type ExtractedQuestionRow } from "@/lib/dashboard/pdf-extraction-actions";
@@ -1164,81 +1162,22 @@ const TEMPLATE_TEXT = [
 ].join("\n");
 
 /**
- * Shared duplicate-resolution state for both bulk-import flows (paste and
- * PDF) — bulkImportQuestions already holds back any row that exactly
- * matches an existing question instead of inserting it, returning it in
- * `duplicates` alongside the resolved `row` number back into whatever array
- * the caller submitted. This hook keeps that submitted array around so a
- * later "import anyway" decision can look the original row back up and
- * re-submit just that one with `forceRowNumbers` — everything the caller
- * decided to skip stays skipped, since it was never inserted in that first
- * pass.
+ * Read-only notice for both bulk-import flows (paste and PDF) —
+ * bulkImportQuestions holds back any row that exactly matches an existing
+ * question instead of inserting it (a hard rule, no override, same as the
+ * single "+ Add question" form), returning those in `duplicates`. This just
+ * shows the teacher which ones were skipped and why; there's no action
+ * here to force one through.
  */
-function useDuplicateResolution<TRow extends BulkImportQuestionInput>(resolvedBatchId: string | undefined, onImported: () => void) {
-  const [duplicates, setDuplicates] = useState<BulkImportDuplicate[]>([]);
-  const [sourceRows, setSourceRows] = useState<TRow[]>([]);
-  const [resolving, setResolving] = useState(false);
-
-  function open(newDuplicates: BulkImportDuplicate[], rows: TRow[]) {
-    if (newDuplicates.length === 0) return;
-    setDuplicates(newDuplicates);
-    setSourceRows(rows);
-  }
-
-  function cancel() {
-    setDuplicates([]);
-    setSourceRows([]);
-  }
-
-  async function confirm(keepRowNumbers: number[]) {
-    if (keepRowNumbers.length === 0) {
-      cancel();
-      return { imported: 0, rowErrors: [] as BulkImportRowError[] };
-    }
-    setResolving(true);
-    const rowsToForce = keepRowNumbers.map((n) => sourceRows[n - 1]).filter((r): r is TRow => Boolean(r));
-    const response = await bulkImportQuestions(resolvedBatchId, rowsToForce, rowsToForce.map((_, i) => i + 1));
-    setResolving(false);
-    cancel();
-    onImported();
-    return response;
-  }
-
-  return { duplicates, resolving, open, cancel, confirm };
-}
-
-function DuplicateReviewDialog({
-  duplicates,
-  resolving,
-  onConfirm,
-  onCancel,
-}: {
-  duplicates: BulkImportDuplicate[];
-  resolving: boolean;
-  onConfirm: (keepRowNumbers: number[]) => void;
-  onCancel: () => void;
-}) {
+function DuplicatesNotice({ duplicates, onClose }: { duplicates: BulkImportDuplicate[]; onClose: () => void }) {
   const t = useTranslations("teacherDashboard.questionBank");
-  // Parented with a `key` derived from `duplicates` (see call sites), so a
-  // fresh duplicate set naturally remounts this with a clean `keep` state
-  // instead of needing an effect to reset it.
-  const [keep, setKeep] = useState<Set<number>>(new Set());
-
-  function toggleKeep(row: number) {
-    setKeep((prev) => {
-      const next = new Set(prev);
-      if (next.has(row)) next.delete(row);
-      else next.add(row);
-      return next;
-    });
-  }
 
   return (
-    <Dialog open={duplicates.length > 0} onOpenChange={(open) => { if (!open) onCancel(); }}>
+    <Dialog open={duplicates.length > 0} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="flex max-h-[80vh] flex-col sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{t("bulkImport.duplicatesTitle")}</DialogTitle>
-          <DialogDescription>{t("bulkImport.duplicatesDescription", { count: duplicates.length })}</DialogDescription>
+          <DialogDescription>{t("bulkImport.duplicatesSkippedDescription", { count: duplicates.length })}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-1 flex-col gap-3 overflow-y-auto rounded-md border border-border p-3">
           {duplicates.map((d) => (
@@ -1250,20 +1189,13 @@ function DuplicateReviewDialog({
               <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {t("bulkImport.alreadyInBankLabel")}
               </p>
-              <p className="mb-2 text-sm text-muted-foreground">{d.existingText}</p>
-              <label className="flex items-center gap-2 text-sm">
-                <Checkbox checked={keep.has(d.row)} onCheckedChange={() => toggleKeep(d.row)} />
-                {t("bulkImport.importAnywayLabel")}
-              </label>
+              <p className="text-sm text-muted-foreground">{d.existingText}</p>
             </div>
           ))}
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={onCancel} disabled={resolving}>
-            {t("bulkImport.skipAllDuplicates")}
-          </Button>
-          <Button type="button" onClick={() => onConfirm([...keep])} disabled={resolving}>
-            {resolving ? t("bulkImport.savingDuplicates") : t("bulkImport.confirmDuplicatesButton")}
+          <Button type="button" onClick={onClose}>
+            {t("bulkImport.closeButton")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1307,7 +1239,7 @@ function BulkImportPanel({
   );
   const validRows = parsedRows.filter((r): r is Extract<ParsedBulkRow, { ok: true }> => r.ok);
   const invalidRows = parsedRows.filter((r): r is Extract<ParsedBulkRow, { ok: false }> => !r.ok);
-  const dupState = useDuplicateResolution<BulkImportQuestionInput>(batchId !== NO_BATCH ? batchId : undefined, onImported);
+  const [duplicates, setDuplicates] = useState<BulkImportDuplicate[]>([]);
 
   async function handleCopyTemplate() {
     try {
@@ -1333,7 +1265,7 @@ function BulkImportPanel({
       return;
     }
     setResult({ imported: response.imported, rowErrors: response.rowErrors });
-    dupState.open(response.duplicates, rowsToSend);
+    setDuplicates(response.duplicates);
     if (response.rowErrors.length === 0 && response.duplicates.length === 0) {
       setRawText("");
       onImported();
@@ -1459,19 +1391,7 @@ function BulkImportPanel({
         <PdfImportSection subjects={subjects} batchId={batchId} onImported={onImported} />
       )}
 
-      <DuplicateReviewDialog
-        key={dupState.duplicates.map((d) => d.row).join(",")}
-        duplicates={dupState.duplicates}
-        resolving={dupState.resolving}
-        onCancel={dupState.cancel}
-        onConfirm={async (keep) => {
-          const forced = await dupState.confirm(keep);
-          setResult((prev) => ({
-            imported: (prev?.imported ?? 0) + forced.imported,
-            rowErrors: [...(prev?.rowErrors ?? []), ...forced.rowErrors],
-          }));
-        }}
-      />
+      <DuplicatesNotice duplicates={duplicates} onClose={() => setDuplicates([])} />
     </div>
   );
 }
@@ -1507,7 +1427,7 @@ function PdfImportSection({
   const [rows, setRows] = useState<ExtractedQuestionRow[] | null>(null);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<{ imported: number; rowErrors: { row: number; message: string }[] } | null>(null);
-  const dupState = useDuplicateResolution<ExtractedQuestionRow>(batchId !== NO_BATCH ? batchId : undefined, onImported);
+  const [duplicates, setDuplicates] = useState<BulkImportDuplicate[]>([]);
 
   function updateRow(index: number, patch: Partial<ExtractedQuestionRow>) {
     setRows((prev) => (prev ? prev.map((r, i) => (i === index ? { ...r, ...patch } : r)) : prev));
@@ -1572,7 +1492,7 @@ function PdfImportSection({
     const response = await bulkImportQuestions(batchId !== NO_BATCH ? batchId : undefined, rows);
     setImporting(false);
     setResult({ imported: response.imported, rowErrors: response.rowErrors });
-    dupState.open(response.duplicates, rows);
+    setDuplicates(response.duplicates);
     if (response.rowErrors.length === 0 && response.duplicates.length === 0) {
       // Keep the dialog open (with an empty list) so the confirmation
       // message below is actually visible, instead of the whole preview
@@ -1823,19 +1743,7 @@ function PdfImportSection({
         </DialogContent>
       </Dialog>
 
-      <DuplicateReviewDialog
-        key={dupState.duplicates.map((d) => d.row).join(",")}
-        duplicates={dupState.duplicates}
-        resolving={dupState.resolving}
-        onCancel={dupState.cancel}
-        onConfirm={async (keep) => {
-          const forced = await dupState.confirm(keep);
-          setResult((prev) => ({
-            imported: (prev?.imported ?? 0) + forced.imported,
-            rowErrors: [...(prev?.rowErrors ?? []), ...forced.rowErrors],
-          }));
-        }}
-      />
+      <DuplicatesNotice duplicates={duplicates} onClose={() => setDuplicates([])} />
     </div>
   );
 }

@@ -133,7 +133,21 @@ export async function extractQuestionsFromPdf(formData: FormData): Promise<Extra
   }
 
   if (!response.ok) {
-    return { error: "The PDF couldn't be read right now. Please try again in a moment.", questions: [] };
+    const errorBody = await response.text().catch(() => "");
+    console.error(`Gemini extraction failed (${response.status}):`, errorBody);
+    let detail = "";
+    try {
+      const parsedError = JSON.parse(errorBody) as { error?: { message?: string } };
+      detail = parsedError.error?.message ?? "";
+    } catch {
+      // non-JSON error body, ignore
+    }
+    return {
+      error: detail
+        ? `The PDF couldn't be read right now (${response.status}: ${detail}).`
+        : `The PDF couldn't be read right now (error ${response.status}). Please try again in a moment.`,
+      questions: [],
+    };
   }
 
   const payload = (await response.json()) as {

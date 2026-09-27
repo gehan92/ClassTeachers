@@ -150,12 +150,14 @@ export default async function StudentDashboardPage({
     supabase
       .from("exams")
       .select(
-        "id, owner_type, owner_id, batch_id, title, question_ids, duration_minutes, scheduled_at, reveal_answers, published_at, created_at",
+        "id, owner_type, owner_id, batch_id, title, question_ids, duration_minutes, scheduled_at, closes_at, reveal_answers, published_at, created_at",
       )
       .order("scheduled_at", { ascending: true }),
     supabase
       .from("exam_submissions")
-      .select("exam_id, status, grade, feedback, submitted_at, mcq_answers, code_answers")
+      .select(
+        "id, exam_id, status, grade, feedback, submitted_at, mcq_answers, code_answers, started_at, attempt_number, question_order, option_order",
+      )
       .eq("student_id", userId),
     supabase
       .from("batches")
@@ -833,19 +835,30 @@ export default async function StudentDashboardPage({
       durationMinutes: e.duration_minutes,
       scheduledAtIso: e.scheduled_at,
       scheduledLabel: e.scheduled_at ? scheduleFormatter.format(new Date(e.scheduled_at)) : "—",
-      isOpen: !e.scheduled_at || !isFuture(e.scheduled_at),
-      questions: e.question_ids
+      isOpen: (!e.scheduled_at || !isFuture(e.scheduled_at)) && (!e.closes_at || isFuture(e.closes_at)),
+      questions: (submission?.question_order ?? e.question_ids)
         .map((qid): StudentExamQuestion | null => {
           const q = questionById.get(qid);
           if (!q) return null;
           const revealed = revealedAnswersByKey.get(`${e.id}:${qid}`);
+          // Reorder this question's options to match what this student was
+          // actually shown (per-attempt shuffle, 0162) — falls back to the
+          // bank's own stored order for an exam that hasn't been attempted
+          // yet, or one taken before shuffling existed (no stored order).
+          const orderedOptionIds = (submission?.option_order as Record<string, string[]> | null)?.[qid];
+          const options =
+            q.options && orderedOptionIds && orderedOptionIds.length > 0
+              ? orderedOptionIds
+                  .map((oid) => q.options!.find((o) => o.id === oid))
+                  .filter((o): o is NonNullable<(typeof q.options)[number]> => Boolean(o))
+              : q.options;
           return {
             id: q.id,
             text: q.question_text,
             type: q.type,
             marks: q.marks,
             imageUrl: q.question_image_path ? questionImageUrlByPath.get(q.question_image_path) : undefined,
-            options: q.options?.map((o) => ({
+            options: options?.map((o) => ({
               id: o.id,
               text: o.text,
               imageUrl: o.imagePath ? questionImageUrlByPath.get(o.imagePath) : undefined,
@@ -862,7 +875,14 @@ export default async function StudentDashboardPage({
             status: submission.status,
             grade: submission.grade,
             feedback: submission.feedback,
-            submittedLabel: submission.submitted_at ? dateFormatter.format(new Date(submission.submitted_at)) : null,
+            submittedLabel:
+              submission.status !== "in_progress" && submission.submitted_at
+                ? dateFormatter.format(new Date(submission.submitted_at))
+                : null,
+            startedAtIso: submission.started_at,
+            attemptNumber: submission.attempt_number,
+            draftMcqAnswers: submission.mcq_answers ?? {},
+            draftCodeAnswers: submission.code_answers ?? {},
           }
         : null,
       reviewAnswers: canReveal

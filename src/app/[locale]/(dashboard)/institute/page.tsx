@@ -490,7 +490,13 @@ export default async function InstituteDashboardPage({
     instituteExamIds.length
       ? supabase.from("exam_submissions").select("id, exam_id, student_id, status, grade").in("exam_id", instituteExamIds)
       : Promise.resolve({
-          data: [] as { id: string; exam_id: string; student_id: string; status: "pending" | "graded"; grade: number | null }[],
+          data: [] as {
+            id: string;
+            exam_id: string;
+            student_id: string;
+            status: "in_progress" | "pending" | "graded";
+            grade: number | null;
+          }[],
         }),
     instituteLiveClassIds.length
       ? supabase.from("attendance_records").select("live_class_id, student_id, status").in("live_class_id", instituteLiveClassIds)
@@ -514,7 +520,10 @@ export default async function InstituteDashboardPage({
   );
   const analyticsExamById = new Map((instituteExamRows ?? []).map((e) => [e.id, e]));
 
-  const analyticsExamResults: AnalyticsExamResultRow[] = (instituteSubmissionRows ?? []).map((s) => {
+  // A student mid-attempt (0162) has nothing to analyze yet.
+  const finishedInstituteSubmissionRows = (instituteSubmissionRows ?? []).filter((s) => s.status !== "in_progress");
+
+  const analyticsExamResults: AnalyticsExamResultRow[] = finishedInstituteSubmissionRows.map((s) => {
     const exam = analyticsExamById.get(s.exam_id);
     const maxMarks = analyticsMaxMarksByExamId.get(s.exam_id) ?? 0;
     const scorePercent =
@@ -528,7 +537,8 @@ export default async function InstituteDashboardPage({
       batchId: exam?.batch_id ?? null,
       studentId: s.student_id,
       studentName: analyticsStudentById.get(s.student_id)?.full_name ?? "—",
-      status: s.status,
+      // Safe — finishedInstituteSubmissionRows already filtered out "in_progress".
+      status: s.status as "pending" | "graded",
       scorePercent,
     };
   });

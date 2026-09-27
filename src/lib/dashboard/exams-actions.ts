@@ -4,9 +4,20 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBatchOwner } from "@/lib/dashboard/resolve-batch-owner";
 import { notify, notifyContentAudience } from "@/lib/dashboard/notify";
+import { buildAttemptSeed, buildShuffledOrder } from "@/lib/exam-shuffle";
 
 type ActionResult = { error: string } | { error?: undefined };
 type SubmitExamResult = ActionResult & { autoGrade?: { score: number; maxScore: number } };
+type StartExamAttemptResult =
+  | { error: string }
+  | {
+      error?: undefined;
+      submissionId: string;
+      startedAtIso: string;
+      attemptNumber: number;
+      questionOrder: string[];
+      optionOrder: Record<string, string[]>;
+    };
 
 const createExamSchema = z.object({
   title: z.string().trim().min(2),
@@ -163,17 +174,135 @@ const allowedPhotoTypes: Record<string, string> = {
 };
 
 /**
+ * Starts, resumes, or (within the exam's max_attempts) resets a student's
+ * attempt. Computes the per-attempt question/option shuffle here in TS —
+ * order isn't secret, only correctness is (see 0085's revoke) — and hands it
+ * to the start_exam_attempt RPC (0162), which is the only place allowed to
+ * perform the privileged finished->in_progress reset transition. Returns a
+ * server-authoritative startedAtIso so the client's countdown timer survives
+ * a page refresh instead of resetting to the full duration.
+ */
+export async function startExamAttempt(examId: string): Promise<StartExamAttemptResult> {
+  if (!examId) {
+    return { error: "Invalid exam." };
+  }
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { data: exam } = await supabase
+    .from("exams")
+    .select("question_ids, shuffle_questions, shuffle_options")
+    .eq("id", examId)
+    .maybeSingle();
+  if (!exam) {
+    return { error: "Exam not found." };
+  }
+
+  const { data: existing } = await supabase
+    .from("exam_submissions")
+    .select("attempt_number")
+    .eq("exam_id", examId)
+    .eq("student_id", user.id)
+    .maybeSingle();
+  const nextAttemptNumber = (existing?.attempt_number ?? 0) + 1;
+
+  const { data: questionRows } = exam.question_ids.length
+    ? await supabase.from("question_bank_items").select("id, type, options").in("id", exam.question_ids)
+    : { data: [] as { id: string; type: string; options: { id: string }[] | null }[] };
+
+  const optionsByQuestionId = new Map(
+    (questionRows ?? [])
+      .filter((q) => q.type === "mcq" && q.options)
+      .map((q) => [q.id, q.options as { id: string }[]]),
+  );
+
+  const seed = buildAttemptSeed(examId, user.id, nextAttemptNumber);
+  const { questionOrder, optionOrder } = buildShuffledOrder(
+    exam.question_ids,
+    optionsByQuestionId,
+    seed,
+    exam.shuffle_questions,
+    exam.shuffle_options,
+  );
+
+  const { data: attempt, error } = await supabase
+    .rpc("start_exam_attempt", {
+      p_exam_id: examId,
+      p_question_order: questionOrder,
+      p_option_order: optionOrder,
+    })
+    .single();
+  if (error || !attempt) {
+    return { error: error?.message ?? "Couldn't start this exam. Please try again." };
+  }
+
+  if (attempt.prior_photo_urls && attempt.prior_photo_urls.length > 0) {
+    await supabase.storage.from("submissions").remove(attempt.prior_photo_urls);
+  }
+
+  return {
+    submissionId: attempt.id,
+    startedAtIso: attempt.started_at as string,
+    attemptNumber: attempt.attempt_number,
+    questionOrder: (attempt.question_order as string[] | null) ?? questionOrder,
+    optionOrder: (attempt.option_order as Record<string, string[]> | null) ?? optionOrder,
+  };
+}
+
+/**
+ * Periodic/debounced autosave while an attempt is in_progress. A plain
+ * RLS-scoped update — the "student updates own in-progress submission"
+ * policy added in 0162 is what makes this possible, and it silently stops
+ * matching (so this becomes a no-op) the instant the row moves past
+ * in_progress, which is exactly the safety property we want.
+ */
+export async function saveExamProgress(
+  examId: string,
+  mcqAnswers: Record<string, string[]>,
+  codeAnswers: Record<string, string>,
+): Promise<ActionResult> {
+  if (!examId) {
+    return { error: "Invalid exam." };
+  }
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  const { error } = await supabase
+    .from("exam_submissions")
+    .update({ mcq_answers: mcqAnswers, code_answers: codeAnswers })
+    .eq("exam_id", examId)
+    .eq("student_id", user.id)
+    .eq("status", "in_progress");
+  if (error) {
+    return { error: "Couldn't save your progress." };
+  }
+  return {};
+}
+
+/**
  * Student submits an exam — MCQ answers (auto-graded here, server-side, so
  * correct_option_ids never has to reach the browser) plus, only if the exam
  * has essay questions, photo(s) of handwritten answers. A pure-MCQ exam
  * needs no photo at all: it's graded immediately and exam_submissions goes
  * straight to 'graded', skipping the teacher's grading queue entirely.
  *
- * One attempt only — once a row exists for (examId, studentId), this
- * rejects rather than overwriting it, whether that submission is still
- * pending grading or already graded. Enforced here, not just by hiding the
- * resubmit button client-side, since a client-only guard doesn't stop a
- * direct call to this action.
+ * Requires an in_progress row created by startExamAttempt — this updates
+ * that row rather than inserting a fresh one, so the timer/shuffle state
+ * from that attempt carries through. A submission past
+ * started_at + duration (+ a 2 minute grace for network lag) is still
+ * accepted but flagged late_submission for the teacher's grading view,
+ * rather than hard-rejected — losing a student's answers to a few seconds
+ * of lag would be worse than a soft flag.
  */
 export async function submitExam(formData: FormData): Promise<SubmitExamResult> {
   const examId = formData.get("examId");
@@ -242,7 +371,7 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
 
   const { data: exam } = await supabase
     .from("exams")
-    .select("question_ids, owner_type, owner_id, title")
+    .select("question_ids, owner_type, owner_id, title, duration_minutes")
     .eq("id", examId)
     .maybeSingle();
   if (!exam) {
@@ -251,11 +380,14 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
 
   const { data: existingSubmission } = await supabase
     .from("exam_submissions")
-    .select("id")
+    .select("id, status, started_at")
     .eq("exam_id", examId)
     .eq("student_id", user.id)
     .maybeSingle();
-  if (existingSubmission) {
+  if (!existingSubmission) {
+    return { error: "Start the exam before submitting." };
+  }
+  if (existingSubmission.status !== "in_progress") {
     return { error: "You've already submitted this exam." };
   }
 
@@ -317,20 +449,36 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
   // question still needs a human to look at the answer.
   const isFullyAutoGraded = mcqQuestions.length > 0 && !hasEssayQuestions && !hasCodeQuestions;
 
-  const { error } = await supabase.from("exam_submissions").insert({
-    exam_id: examId,
-    student_id: user.id,
-    photo_urls: photoUrls,
-    mcq_answers: mcqAnswers,
-    mcq_score: mcqQuestions.length > 0 ? mcqScore : null,
-    mcq_max_score: mcqQuestions.length > 0 ? mcqMaxScore : null,
-    code_answers: codeAnswers,
-    status: isFullyAutoGraded ? "graded" : "pending",
-    grade: isFullyAutoGraded ? mcqScore : null,
-    feedback: null,
-    graded_at: isFullyAutoGraded ? new Date().toISOString() : null,
-    submitted_at: new Date().toISOString(),
-  });
+  // Soft late-flag only — see this function's doc comment for why a late
+  // submission is still accepted rather than rejected.
+  const lateSubmission = existingSubmission.started_at
+    ? Date.now() >
+      new Date(existingSubmission.started_at).getTime() + exam.duration_minutes * 60_000 + 2 * 60_000
+    : false;
+
+  const questionScores: Record<string, number> = {};
+  for (const q of mcqQuestions) {
+    questionScores[q.id] = correctByQuestionId.get(q.id) ? q.marks : 0;
+  }
+
+  const { error } = await supabase
+    .from("exam_submissions")
+    .update({
+      photo_urls: photoUrls,
+      mcq_answers: mcqAnswers,
+      mcq_score: mcqQuestions.length > 0 ? mcqScore : null,
+      mcq_max_score: mcqQuestions.length > 0 ? mcqMaxScore : null,
+      code_answers: codeAnswers,
+      question_scores: questionScores,
+      status: isFullyAutoGraded ? "graded" : "pending",
+      grade: isFullyAutoGraded ? mcqScore : null,
+      feedback: null,
+      graded_at: isFullyAutoGraded ? new Date().toISOString() : null,
+      submitted_at: new Date().toISOString(),
+      late_submission: lateSubmission,
+    })
+    .eq("id", existingSubmission.id)
+    .eq("status", "in_progress");
   if (error) {
     return { error: "Couldn't save your submission. Please try again." };
   }

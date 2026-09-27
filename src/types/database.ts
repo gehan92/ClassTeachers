@@ -654,9 +654,17 @@ export type Database = {
           question_ids: string[];
           duration_minutes: number;
           scheduled_at: string | null;
+          closes_at: string | null;
           published: boolean;
           published_at: string | null;
           reveal_answers: boolean;
+          max_attempts: number;
+          negative_marking_fraction: number;
+          pass_mark: number | null;
+          shuffle_questions: boolean;
+          shuffle_options: boolean;
+          sections: Json | null;
+          generation_rules: Json | null;
           created_at: string;
           updated_at: string;
         };
@@ -670,9 +678,17 @@ export type Database = {
           question_ids?: string[];
           duration_minutes: number;
           scheduled_at?: string | null;
+          closes_at?: string | null;
           published?: boolean;
           published_at?: string | null;
           reveal_answers?: boolean;
+          max_attempts?: number;
+          negative_marking_fraction?: number;
+          pass_mark?: number | null;
+          shuffle_questions?: boolean;
+          shuffle_options?: boolean;
+          sections?: Json | null;
+          generation_rules?: Json | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -686,9 +702,17 @@ export type Database = {
           question_ids?: string[];
           duration_minutes?: number;
           scheduled_at?: string | null;
+          closes_at?: string | null;
           published?: boolean;
           published_at?: string | null;
           reveal_answers?: boolean;
+          max_attempts?: number;
+          negative_marking_fraction?: number;
+          pass_mark?: number | null;
+          shuffle_questions?: boolean;
+          shuffle_options?: boolean;
+          sections?: Json | null;
+          generation_rules?: Json | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -724,11 +748,18 @@ export type Database = {
           mcq_score: number | null;
           mcq_max_score: number | null;
           code_answers: Record<string, string>;
-          status: "pending" | "graded";
+          status: "in_progress" | "pending" | "graded";
           grade: number | null;
           feedback: string | null;
           submitted_at: string;
           graded_at: string | null;
+          started_at: string | null;
+          attempt_number: number;
+          late_submission: boolean;
+          question_order: string[] | null;
+          option_order: Record<string, string[]>;
+          question_scores: Record<string, number>;
+          integrity_flags: Json;
         };
         Insert: {
           id?: string;
@@ -740,11 +771,18 @@ export type Database = {
           mcq_score?: number | null;
           mcq_max_score?: number | null;
           code_answers?: Record<string, string>;
-          status?: "pending" | "graded";
+          status?: "in_progress" | "pending" | "graded";
           grade?: number | null;
           feedback?: string | null;
           submitted_at?: string;
           graded_at?: string | null;
+          started_at?: string | null;
+          attempt_number?: number;
+          late_submission?: boolean;
+          question_order?: string[] | null;
+          option_order?: Record<string, string[]>;
+          question_scores?: Record<string, number>;
+          integrity_flags?: Json;
         };
         Update: {
           id?: string;
@@ -756,11 +794,18 @@ export type Database = {
           mcq_score?: number | null;
           mcq_max_score?: number | null;
           code_answers?: Record<string, string>;
-          status?: "pending" | "graded";
+          status?: "in_progress" | "pending" | "graded";
           grade?: number | null;
           feedback?: string | null;
           submitted_at?: string;
           graded_at?: string | null;
+          started_at?: string | null;
+          attempt_number?: number;
+          late_submission?: boolean;
+          question_order?: string[] | null;
+          option_order?: Record<string, string[]>;
+          question_scores?: Record<string, number>;
+          integrity_flags?: Json;
         };
         // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
         // every table declares no relationships rather than a guessed one.
@@ -2573,6 +2618,18 @@ export type Database = {
       grade_mcq_answers: {
         Args: { p_question_ids: string[]; p_answers: Json };
         Returns: { question_id: string; is_correct: boolean }[];
+      };
+      start_exam_attempt: {
+        Args: { p_exam_id: string; p_question_order: string[]; p_option_order: Json };
+        Returns: {
+          id: string;
+          status: string;
+          started_at: string;
+          attempt_number: number;
+          question_order: string[] | null;
+          option_order: Json;
+          prior_photo_urls: string[];
+        }[];
       };
       get_revealed_question_answers: {
         Args: { p_exam_ids: string[] };

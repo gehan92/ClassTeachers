@@ -874,6 +874,11 @@ export default async function TeacherDashboardPage({
     if (entry.path && entry.signedUrl) signedUrlByPath.set(entry.path, entry.signedUrl);
   }
 
+  // A student mid-attempt (0162) has nothing to grade or analyze yet —
+  // excluded from both the grading queue and analytics below, same as if
+  // they'd never started.
+  const finishedSubmissionRows = (submissionDetailRows ?? []).filter((s) => s.status !== "in_progress");
+
   const exams: TeacherExamRow[] = (examDetailRows ?? []).map((e) => ({
     id: e.id,
     title: e.title,
@@ -887,12 +892,13 @@ export default async function TeacherDashboardPage({
     revealAnswers: e.reveal_answers,
   }));
 
-  const examSubmissions: ExamSubmissionRow[] = (submissionDetailRows ?? []).map((s) => ({
+  const examSubmissions: ExamSubmissionRow[] = finishedSubmissionRows.map((s) => ({
     id: s.id,
     examId: s.exam_id,
     studentName: studentById.get(s.student_id)?.full_name ?? "—",
     submittedLabel: s.submitted_at ? dateFormatter.format(new Date(s.submitted_at)) : null,
-    status: s.status,
+    // Safe — finishedSubmissionRows already filtered out "in_progress".
+    status: s.status as "pending" | "graded",
     grade: s.grade,
     feedback: s.feedback,
     photoUrls: s.photo_urls.map((p) => signedUrlByPath.get(p)).filter((u): u is string => Boolean(u)),
@@ -917,7 +923,7 @@ export default async function TeacherDashboardPage({
   );
   const examById = new Map((examDetailRows ?? []).map((e) => [e.id, e]));
 
-  const analyticsExamResults: AnalyticsExamResultRow[] = (submissionDetailRows ?? []).map((s) => {
+  const analyticsExamResults: AnalyticsExamResultRow[] = finishedSubmissionRows.map((s) => {
     const exam = examById.get(s.exam_id);
     const maxMarks = maxMarksByExamId.get(s.exam_id) ?? 0;
     const scorePercent =
@@ -931,7 +937,8 @@ export default async function TeacherDashboardPage({
       batchId: exam?.batch_id ?? null,
       studentId: s.student_id,
       studentName: studentById.get(s.student_id)?.full_name ?? "—",
-      status: s.status,
+      // Safe — finishedSubmissionRows already filtered out "in_progress".
+      status: s.status as "pending" | "graded",
       scorePercent,
     };
   });

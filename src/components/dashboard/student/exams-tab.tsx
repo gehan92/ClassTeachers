@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Camera, X } from "lucide-react";
@@ -23,7 +23,7 @@ import { groupByClass } from "@/lib/dashboard/group-by-class";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from "@/components/ui/accordion";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { useIsMounted } from "@/lib/hooks/use-is-mounted";
-import { submitExam } from "@/lib/dashboard/exams-actions";
+import { saveExamProgress, startExamAttempt, submitExam } from "@/lib/dashboard/exams-actions";
 import { cn } from "@/lib/utils";
 
 export type StudentExamQuestion = {
@@ -66,10 +66,22 @@ export type StudentExamRow = {
   isOpen: boolean;
   questions: StudentExamQuestion[];
   submission: {
-    status: "pending" | "graded";
+    status: "in_progress" | "pending" | "graded";
     grade: number | null;
     feedback: string | null;
     submittedLabel: string | null;
+    /** Server-authoritative attempt start (0162) — used to reconstruct the
+     * countdown from real elapsed time rather than trusting client state, so
+     * a refresh mid-exam can't reset the clock. Null until an attempt has
+     * actually been started. */
+    startedAtIso: string | null;
+    attemptNumber: number;
+    /** The student's own in-progress/submitted answers — always safe to
+     * send regardless of reveal_answers (that gate only protects the answer
+     * KEY, never the student's own submission). Used to hydrate a resumed
+     * attempt after a refresh so autosaved progress isn't lost visually. */
+    draftMcqAnswers: Record<string, string[]>;
+    draftCodeAnswers: Record<string, string>;
   } | null;
   /** The student's own answers, for the answer-review panel — only
    * populated when this exam is graded and reveal-gated (0079); null
@@ -249,6 +261,10 @@ function ExamActions({
     </div>
   ) : exam.submission?.status === "pending" ? (
     <StatusBadge variant="pending">{t("pendingGrading")}</StatusBadge>
+  ) : exam.submission?.status === "in_progress" ? (
+    <Button size="sm" onClick={onStart}>
+      {t("continueExam")}
+    </Button>
   ) : !exam.isOpen ? (
     <StatusBadge variant="closed">{t("notOpenYet")}</StatusBadge>
   ) : (
@@ -553,23 +569,77 @@ function formatCountdown(totalSeconds: number) {
 
 const LOW_TIME_THRESHOLD_SECONDS = 5 * 60;
 
+type ActiveAttempt = { startedAtIso: string; questionOrder: string[]; optionOrder: Record<string, string[]> };
+
 function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => void }) {
   const t = useTranslations("studentDashboard.exams");
   const tc = useTranslations("studentDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [photos, setPhotos] = useState<File[]>([]);
-  const [mcqAnswers, setMcqAnswers] = useState<Record<string, string[]>>({});
-  const [codeAnswers, setCodeAnswers] = useState<Record<string, string>>({});
+  const [mcqAnswers, setMcqAnswers] = useState<Record<string, string[]>>(
+    () => exam.submission?.draftMcqAnswers ?? {},
+  );
+  const [codeAnswers, setCodeAnswers] = useState<Record<string, string>>(
+    () => exam.submission?.draftCodeAnswers ?? {},
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoGrade, setAutoGrade] = useState<{ score: number; maxScore: number } | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const mounted = useIsMounted();
   const [timeLeft, setTimeLeft] = useState(() => exam.durationMinutes * 60);
+  const [starting, setStarting] = useState(true);
+  const [startError, setStartError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState<ActiveAttempt | null>(null);
   const autoSubmittedRef = useRef(false);
-  const mcqQuestions = exam.questions.filter((q) => q.type === "mcq");
-  const essayQuestions = exam.questions.filter((q) => q.type === "essay");
-  const codeQuestions = exam.questions.filter((q) => q.type === "code");
+
+  // Starts (or idempotently resumes/resets, per start_exam_attempt's own
+  // rules, 0162) the server-authoritative attempt exactly once per mount —
+  // this is what makes the countdown below survive a refresh instead of
+  // resetting to the full duration.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const result = await startExamAttempt(exam.id);
+      if (cancelled) return;
+      if (!("submissionId" in result)) {
+        setStartError(result.error);
+        setStarting(false);
+        return;
+      }
+      setAttempt({
+        startedAtIso: result.startedAtIso,
+        questionOrder: result.questionOrder,
+        optionOrder: result.optionOrder,
+      });
+      setStarting(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Start exactly once per mount — exam.id is stable for the life of this
+    // component (a new exam means a whole new ExamWorkspace instance).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const orderedQuestions = useMemo(() => {
+    if (!attempt) return exam.questions;
+    const byId = new Map(exam.questions.map((q) => [q.id, q]));
+    return attempt.questionOrder
+      .map((qid) => byId.get(qid))
+      .filter((q): q is StudentExamQuestion => Boolean(q))
+      .map((q) => {
+        const order = attempt.optionOrder[q.id];
+        if (!q.options || !order || order.length === 0) return q;
+        const optionById = new Map(q.options.map((o) => [o.id, o]));
+        const reordered = order.map((oid) => optionById.get(oid)).filter((o): o is NonNullable<typeof o> => Boolean(o));
+        return { ...q, options: reordered };
+      });
+  }, [attempt, exam.questions]);
+
+  const mcqQuestions = orderedQuestions.filter((q) => q.type === "mcq");
+  const essayQuestions = orderedQuestions.filter((q) => q.type === "essay");
+  const codeQuestions = orderedQuestions.filter((q) => q.type === "code");
   const allMcqAnswered = mcqQuestions.every((q) => (mcqAnswers[q.id]?.length ?? 0) > 0);
   const allCodeAnswered = codeQuestions.every((q) => (codeAnswers[q.id]?.trim().length ?? 0) > 0);
   const canSubmit = allMcqAnswered && allCodeAnswered && (essayQuestions.length === 0 || photos.length > 0);
@@ -583,11 +653,30 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
     };
   }, []);
 
+  // Recomputes the true remaining time from the server-authoritative
+  // startedAtIso on every tick (rather than a plain decrement), so it stays
+  // correct across a refresh or a backgrounded/throttled tab.
   useEffect(() => {
-    if (submitted) return;
-    const id = setInterval(() => setTimeLeft((s) => Math.max(0, s - 1)), 1000);
+    if (!attempt || submitted) return;
+    function tick() {
+      const elapsedSeconds = (Date.now() - new Date(attempt!.startedAtIso).getTime()) / 1000;
+      setTimeLeft(Math.max(0, Math.round(exam.durationMinutes * 60 - elapsedSeconds)));
+    }
+    tick();
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [submitted]);
+  }, [attempt, submitted, exam.durationMinutes]);
+
+  // Debounced autosave — a plain no-op once the row has moved past
+  // in_progress (see the RLS policy added in 0162), so this is safe to keep
+  // firing right up to submit.
+  useEffect(() => {
+    if (!attempt || submitted) return;
+    const id = setTimeout(() => {
+      void saveExamProgress(exam.id, mcqAnswers, codeAnswers);
+    }, 1500);
+    return () => clearTimeout(id);
+  }, [attempt, submitted, exam.id, mcqAnswers, codeAnswers]);
 
   function handleAdd(fileList: FileList | null) {
     if (!fileList) return;
@@ -622,13 +711,13 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
   }
 
   useEffect(() => {
-    if (timeLeft > 0 || submitted || autoSubmittedRef.current) return;
+    if (!attempt || timeLeft > 0 || submitted || autoSubmittedRef.current) return;
     autoSubmittedRef.current = true;
     void handleSubmit(true);
     // handleSubmit closes over current answers/photos each render; only the
     // 0-crossing should retrigger this, not every keystroke.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeLeft, submitted]);
+  }, [attempt, timeLeft, submitted]);
 
   function handleExit() {
     if (window.confirm(t("exitConfirm"))) onExit();
@@ -636,7 +725,18 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
 
   const lowOnTime = timeLeft <= LOW_TIME_THRESHOLD_SECONDS;
 
-  const content = submitted ? (
+  const content = starting ? (
+    <div className="mx-auto max-w-160 py-16 text-center text-sm text-muted-foreground">{t("startingExam")}</div>
+  ) : startError ? (
+    <div className="mx-auto max-w-160">
+      <div className="rounded-lg border border-border bg-white p-5 text-center">
+        <p className="mb-4 text-sm font-medium text-destructive">{startError}</p>
+        <Button size="sm" variant="outline" onClick={onExit}>
+          {t("backToExams")}
+        </Button>
+      </div>
+    </div>
+  ) : submitted ? (
     <div className="mx-auto max-w-160">
       <h1 className="mb-4 text-2xl">{exam.title}</h1>
       <div className="rounded-lg border border-border bg-white p-5">
@@ -743,7 +843,7 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-white px-4 py-3 sm:px-8">
         <h1 className="truncate text-lg font-semibold text-foreground sm:text-xl">{exam.title}</h1>
-        {!submitted && (
+        {!starting && !startError && !submitted && (
           <div
             role="timer"
             aria-label={t("timeRemainingLabel")}

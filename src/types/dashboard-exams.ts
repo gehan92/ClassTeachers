@@ -32,7 +32,13 @@ export type QuestionBankItem = {
   type: "mcq" | "essay" | "code";
   difficulty: "easy" | "medium" | "hard";
   marks: number;
-  language: "en" | "si" | "ta";
+  language: "en" | "si" | "ta" | "other";
+  /** The past-paper year this question was sourced from, if any (PDF
+   * import or manually tagged) — purely descriptive, no grading logic
+   * reads it. */
+  paperYear?: number;
+  /** Free-text term/semester label, e.g. "Term 2" — same, descriptive only. */
+  semester?: string;
   /** MCQ only — any number of options (2+), one or more correct. */
   options?: McqOption[];
   /** MCQ only — ids of the correct entries in `options`. */

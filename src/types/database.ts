@@ -579,7 +579,9 @@ export type Database = {
           marks: number;
           grade_band: "1-5" | "6-9" | "10-11" | "12-13" | "campus" | null;
           batch_id: string | null;
-          language: "en" | "si" | "ta";
+          language: "en" | "si" | "ta" | "other";
+          paper_year: number | null;
+          semester: string | null;
           options: Json | null;
           correct_option_id: string | null;
           correct_option_ids: string[];
@@ -603,7 +605,9 @@ export type Database = {
           marks?: number;
           grade_band?: "1-5" | "6-9" | "10-11" | "12-13" | "campus" | null;
           batch_id?: string | null;
-          language?: "en" | "si" | "ta";
+          language?: "en" | "si" | "ta" | "other";
+          paper_year?: number | null;
+          semester?: string | null;
           options?: Json | null;
           correct_option_id?: string | null;
           correct_option_ids?: string[];
@@ -627,7 +631,9 @@ export type Database = {
           marks?: number;
           grade_band?: "1-5" | "6-9" | "10-11" | "12-13" | "campus" | null;
           batch_id?: string | null;
-          language?: "en" | "si" | "ta";
+          language?: "en" | "si" | "ta" | "other";
+          paper_year?: number | null;
+          semester?: string | null;
           options?: Json | null;
           question_image_path?: string | null;
           correct_option_id?: string | null;

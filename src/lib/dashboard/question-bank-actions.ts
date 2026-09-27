@@ -27,7 +27,9 @@ const questionFieldsSchema = z.object({
   type: z.enum(["mcq", "essay", "code"]),
   difficulty: z.enum(["easy", "medium", "hard"]),
   marks: z.coerce.number().int().min(1),
-  language: z.enum(["en", "si", "ta"]),
+  language: z.enum(["en", "si", "ta", "other"]),
+  paperYear: z.coerce.number().int().min(1900).max(2200).optional(),
+  semester: z.string().trim().max(60).optional(),
 });
 
 /** "1"/absent flags, same convention as removeQuestionImage/optionRemoveImage
@@ -103,6 +105,8 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
     difficulty: formData.get("difficulty"),
     marks: formData.get("marks") || "1",
     language: formData.get("language") || "en",
+    paperYear: formData.get("paperYear") || undefined,
+    semester: formData.get("semester") || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Please check the question fields." };
@@ -182,6 +186,8 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
     difficulty: parsed.data.difficulty,
     marks: parsed.data.marks,
     language: parsed.data.language,
+    paper_year: parsed.data.paperYear ?? null,
+    semester: parsed.data.semester ?? null,
     question_image_path: questionImagePath,
     options: parsed.data.type === "mcq" ? options : null,
     correct_option_id: correctOptionIds[0] ?? null,
@@ -212,6 +218,8 @@ export async function updateQuestion(questionId: string, formData: FormData): Pr
     difficulty: formData.get("difficulty"),
     marks: formData.get("marks") || "1",
     language: formData.get("language") || "en",
+    paperYear: formData.get("paperYear") || undefined,
+    semester: formData.get("semester") || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Please check the question fields." };
@@ -325,6 +333,8 @@ export async function updateQuestion(questionId: string, formData: FormData): Pr
       difficulty: parsed.data.difficulty,
       marks: parsed.data.marks,
       language: parsed.data.language,
+      paper_year: parsed.data.paperYear ?? null,
+      semester: parsed.data.semester ?? null,
       question_image_path: questionImagePath,
       options: parsed.data.type === "mcq" ? options : null,
       correct_option_id: correctOptionIds[0] ?? null,
@@ -381,7 +391,9 @@ const bulkRowSchema = z.object({
   gradeBand: z.enum(["1-5", "6-9", "10-11", "12-13", "campus"]),
   difficulty: z.enum(["easy", "medium", "hard"]),
   marks: z.number().int().min(1),
-  language: z.enum(["en", "si", "ta"]),
+  language: z.enum(["en", "si", "ta", "other"]),
+  paperYear: z.number().int().min(1900).max(2200).optional(),
+  semester: z.string().trim().max(60).optional(),
   options: z.array(z.string().trim().min(1)).optional(),
   correctIndexes: z.array(z.number().int().min(0)).optional(),
   multiSelect: z.boolean().optional(),
@@ -467,6 +479,8 @@ export async function bulkImportQuestions(
       difficulty: row.difficulty,
       marks: row.marks,
       language: row.language,
+      paper_year: row.paperYear ?? null,
+      semester: row.semester ?? null,
       options,
       correct_option_id: correctOptionIds[0] ?? null,
       correct_option_ids: correctOptionIds,

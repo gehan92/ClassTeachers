@@ -16,6 +16,8 @@ import { TerminalBlock } from "@/components/dashboard/terminal-block";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { usePagination } from "@/lib/hooks/use-pagination";
 import { createQuestion, updateQuestion, deleteQuestion, bulkImportQuestions } from "@/lib/dashboard/question-bank-actions";
+import type { BulkImportQuestionInput } from "@/lib/dashboard/question-bank-actions";
+import { extractQuestionsFromPdf } from "@/lib/dashboard/pdf-extraction-actions";
 import { parseBulkImportText, type ParsedBulkRow } from "@/lib/bulk-import-questions";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
 import type { GradeBand } from "@/types/grade-band";
@@ -24,7 +26,7 @@ import { cn } from "@/lib/utils";
 export type SubjectOption = { id: string; name: string };
 
 const GRADE_BANDS: GradeBand[] = ["1-5", "6-9", "10-11", "12-13", "campus"];
-const LANGUAGES: QuestionBankItem["language"][] = ["en", "si", "ta"];
+const LANGUAGES: QuestionBankItem["language"][] = ["en", "si", "ta", "other"];
 const ALL_GRADES = "all";
 const ALL_BATCHES = "all";
 const ALL_LANGUAGES = "all";
@@ -1029,6 +1031,7 @@ function BulkImportPanel({
 }) {
   const t = useTranslations("teacherDashboard.questionBank");
   const tc = useTranslations("teacherDashboard.common");
+  const [importMode, setImportMode] = useState<"paste" | "pdf">("paste");
   const [batchId, setBatchId] = useState(NO_BATCH);
   const [rawText, setRawText] = useState("");
   const [importing, setImporting] = useState(false);
@@ -1073,7 +1076,24 @@ function BulkImportPanel({
     if (response.rowErrors.length === 0) {
       setRawText("");
       onImported();
+      return;
     }
+    // Partial success — drop only the pasted lines that already saved, so
+    // re-clicking Import after fixing the rest doesn't resubmit (and
+    // duplicate) them. rowErrors' `row` is the 1-based position within the
+    // submitted (valid-only) array, not the original pasted line number —
+    // map back through validRows to get that.
+    const failedPositions = new Set(response.rowErrors.map((e) => e.row));
+    const succeededLineNumbers = new Set(
+      validRows.filter((_, i) => !failedPositions.has(i + 1)).map((r) => r.lineNumber),
+    );
+    setRawText((current) =>
+      current
+        .split(/\r?\n/)
+        .filter((_, i) => !succeededLineNumbers.has(i + 1))
+        .join("\n"),
+    );
+    onImported();
   }
 
   return (
@@ -1085,6 +1105,15 @@ function BulkImportPanel({
         </div>
         <Button type="button" variant="outline" size="sm" onClick={onClose}>
           {tc("close")}
+        </Button>
+      </div>
+
+      <div className="mb-4 flex gap-2">
+        <Button type="button" size="sm" variant={importMode === "paste" ? "default" : "outline"} onClick={() => setImportMode("paste")}>
+          {t("bulkImport.modePaste")}
+        </Button>
+        <Button type="button" size="sm" variant={importMode === "pdf" ? "default" : "outline"} onClick={() => setImportMode("pdf")}>
+          {t("bulkImport.modePdf")}
         </Button>
       </div>
 
@@ -1105,60 +1134,365 @@ function BulkImportPanel({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-end">
-          <Button type="button" variant="outline" size="sm" onClick={handleCopyTemplate}>
-            {copied ? t("bulkImport.templateCopied") : t("bulkImport.copyTemplate")}
-          </Button>
-        </div>
+        {importMode === "paste" && (
+          <div className="flex items-end">
+            <Button type="button" variant="outline" size="sm" onClick={handleCopyTemplate}>
+              {copied ? t("bulkImport.templateCopied") : t("bulkImport.copyTemplate")}
+            </Button>
+          </div>
+        )}
       </div>
 
-      <p className="mb-2 text-xs text-muted-foreground">{t("bulkImport.instructions")}</p>
-      <Textarea
-        value={rawText}
-        onChange={(e) => setRawText(e.target.value)}
-        placeholder={t("bulkImport.placeholder")}
-        className="min-h-40 font-mono text-xs"
-      />
+      {importMode === "paste" ? (
+        <>
+          <p className="mb-2 text-xs text-muted-foreground">{t("bulkImport.instructions")}</p>
+          <Textarea
+            value={rawText}
+            onChange={(e) => setRawText(e.target.value)}
+            placeholder={t("bulkImport.placeholder")}
+            className="min-h-40 font-mono text-xs"
+          />
 
-      {parsedRows.length > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-          <span className="font-medium text-success">{t("bulkImport.readyCount", { count: validRows.length })}</span>
-          {invalidRows.length > 0 && (
-            <span className="font-medium text-destructive">{t("bulkImport.errorCount", { count: invalidRows.length })}</span>
+          {parsedRows.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+              <span className="font-medium text-success">{t("bulkImport.readyCount", { count: validRows.length })}</span>
+              {invalidRows.length > 0 && (
+                <span className="font-medium text-destructive">{t("bulkImport.errorCount", { count: invalidRows.length })}</span>
+              )}
+            </div>
           )}
-        </div>
-      )}
-      {invalidRows.length > 0 && (
-        <ul className="mt-2 flex flex-col gap-1 rounded-md border border-destructive/30 bg-destructive/5 p-3">
-          {invalidRows.map((r) => (
-            <li key={r.lineNumber} className="text-xs text-destructive">
-              {t("bulkImport.rowError", { row: r.lineNumber, message: r.message })}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {result && (
-        <div className="mt-3 rounded-md border border-border bg-secondary/20 p-3 text-sm">
-          <p className="font-medium text-foreground">{t("bulkImport.importedCount", { count: result.imported })}</p>
-          {result.rowErrors.length > 0 && (
-            <ul className="mt-1.5 flex flex-col gap-1">
-              {result.rowErrors.map((e) => (
-                <li key={e.row} className="text-xs text-destructive">
-                  {t("bulkImport.rowError", { row: e.row, message: e.message })}
+          {invalidRows.length > 0 && (
+            <ul className="mt-2 flex flex-col gap-1 rounded-md border border-destructive/30 bg-destructive/5 p-3">
+              {invalidRows.map((r) => (
+                <li key={r.lineNumber} className="text-xs text-destructive">
+                  {t("bulkImport.rowError", { row: r.lineNumber, message: r.message })}
                 </li>
               ))}
             </ul>
           )}
+
+          {result && (
+            <div className="mt-3 rounded-md border border-border bg-secondary/20 p-3 text-sm">
+              <p className="font-medium text-foreground">{t("bulkImport.importedCount", { count: result.imported })}</p>
+              {result.rowErrors.length > 0 && (
+                <ul className="mt-1.5 flex flex-col gap-1">
+                  {result.rowErrors.map((e) => (
+                    <li key={e.row} className="text-xs text-destructive">
+                      {t("bulkImport.rowError", { row: e.row, message: e.message })}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button type="button" onClick={handleImport} disabled={importing || validRows.length === 0}>
+              {t("bulkImport.importButton", { count: validRows.length })}
+            </Button>
+            {serverError && <span className="text-sm font-medium text-destructive">{serverError}</span>}
+          </div>
+        </>
+      ) : (
+        <PdfImportSection subjects={subjects} batchId={batchId} onImported={onImported} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * PDF-import mode — sends the file to extractQuestionsFromPdf (Claude reads
+ * it directly, no separate OCR/text-extraction step), then shows every
+ * extracted question in an editable list so the teacher can fix anything
+ * the model got wrong (or fill in an answer it deliberately left blank)
+ * before anything is saved. Only the final "Add to bank" click writes
+ * anything, through the same bulkImportQuestions action the paste flow uses.
+ */
+function PdfImportSection({
+  subjects,
+  batchId,
+  onImported,
+}: {
+  subjects: SubjectOption[];
+  batchId: string;
+  onImported: () => void;
+}) {
+  const t = useTranslations("teacherDashboard.questionBank");
+  const tg = useTranslations("search");
+  const [file, setFile] = useState<File | null>(null);
+  const [subjectId, setSubjectId] = useState(NO_SUBJECT);
+  const [gradeBand, setGradeBand] = useState<GradeBand>("12-13");
+  const [difficulty, setDifficulty] = useState<QuestionBankItem["difficulty"]>("medium");
+  const [language, setLanguage] = useState<QuestionBankItem["language"]>("en");
+  const [paperYear, setPaperYear] = useState("");
+  const [semester, setSemester] = useState("");
+  const [extracting, setExtracting] = useState(false);
+  const [extractError, setExtractError] = useState<string | null>(null);
+  const [rows, setRows] = useState<BulkImportQuestionInput[] | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [result, setResult] = useState<{ imported: number; rowErrors: { row: number; message: string }[] } | null>(null);
+
+  function updateRow(index: number, patch: Partial<BulkImportQuestionInput>) {
+    setRows((prev) => (prev ? prev.map((r, i) => (i === index ? { ...r, ...patch } : r)) : prev));
+  }
+  function removeRow(index: number) {
+    setRows((prev) => (prev ? prev.filter((_, i) => i !== index) : prev));
+  }
+  function updateOption(index: number, optionIndex: number, text: string) {
+    setRows((prev) =>
+      prev
+        ? prev.map((r, i) =>
+            i === index ? { ...r, options: (r.options ?? []).map((o, oi) => (oi === optionIndex ? text : o)) } : r,
+          )
+        : prev,
+    );
+  }
+  function toggleCorrect(index: number, optionIndex: number) {
+    setRows((prev) =>
+      prev
+        ? prev.map((r, i) => {
+            if (i !== index) return r;
+            const current = r.correctIndexes ?? [];
+            const next = current.includes(optionIndex)
+              ? current.filter((x) => x !== optionIndex)
+              : r.multiSelect
+                ? [...current, optionIndex]
+                : [optionIndex];
+            return { ...r, correctIndexes: next };
+          })
+        : prev,
+    );
+  }
+
+  async function handleExtract() {
+    if (!file) return;
+    setExtracting(true);
+    setExtractError(null);
+    setRows(null);
+    setResult(null);
+    const fd = new FormData();
+    fd.set("file", file);
+    fd.set("gradeBand", gradeBand);
+    fd.set("difficulty", difficulty);
+    fd.set("language", language);
+    if (subjectId !== NO_SUBJECT) fd.set("subjectId", subjectId);
+    if (paperYear.trim()) fd.set("paperYear", paperYear.trim());
+    if (semester.trim()) fd.set("semester", semester.trim());
+    const response = await extractQuestionsFromPdf(fd);
+    setExtracting(false);
+    if (response.error && response.questions.length === 0) {
+      setExtractError(response.error);
+      return;
+    }
+    setRows(response.questions);
+  }
+
+  async function handleAddToBank() {
+    if (!rows || rows.length === 0) return;
+    setImporting(true);
+    const response = await bulkImportQuestions(batchId !== NO_BATCH ? batchId : undefined, rows);
+    setImporting(false);
+    setResult({ imported: response.imported, rowErrors: response.rowErrors });
+    if (response.rowErrors.length === 0) {
+      setRows(null);
+      setFile(null);
+      onImported();
+      return;
+    }
+    // Partial success — drop the rows that already saved so a retry after
+    // fixing the rest doesn't re-insert (and duplicate) them. rowErrors'
+    // `row` is the 1-based index into the array just sent.
+    const failedRowNumbers = new Set(response.rowErrors.map((e) => e.row));
+    setRows((prev) => (prev ? prev.filter((_, i) => failedRowNumbers.has(i + 1)) : prev));
+    onImported();
+  }
+
+  return (
+    <div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid gap-1.5 sm:col-span-3">
+          <Label htmlFor="pdf-file">{t("bulkImport.pdfFileLabel")}</Label>
+          <input
+            id="pdf-file"
+            type="file"
+            accept="application/pdf"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="text-sm"
+          />
+        </div>
+        {subjects.length > 0 && (
+          <div className="grid gap-1.5">
+            <Label>{t("form.subjectLabel")}</Label>
+            <Select value={subjectId} onValueChange={(v) => setSubjectId(v ?? NO_SUBJECT)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_SUBJECT}>{t("form.subjectAny")}</SelectItem>
+                {subjects.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        <div className="grid gap-1.5">
+          <Label>{t("form.gradeLabel")}</Label>
+          <Select value={gradeBand} onValueChange={(v) => setGradeBand((v ?? "12-13") as GradeBand)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {GRADE_BANDS.map((band) => (
+                <SelectItem key={band} value={band}>
+                  {tg(`grades.${band}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-1.5">
+          <Label>{t("form.difficultyLabel")}</Label>
+          <Select value={difficulty} onValueChange={(v) => setDifficulty((v ?? "medium") as QuestionBankItem["difficulty"])}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="easy">{t("difficultyLabel.easy")}</SelectItem>
+              <SelectItem value="medium">{t("difficultyLabel.medium")}</SelectItem>
+              <SelectItem value="hard">{t("difficultyLabel.hard")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-1.5">
+          <Label>{t("bulkImport.mediumLabel")}</Label>
+          <Select value={language} onValueChange={(v) => setLanguage((v ?? "en") as QuestionBankItem["language"])}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LANGUAGES.map((lang) => (
+                <SelectItem key={lang} value={lang}>
+                  {t(`languages.${lang}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="pdf-year">{t("bulkImport.yearLabel")}</Label>
+          <Input
+            id="pdf-year"
+            type="number"
+            placeholder={t("bulkImport.yearPlaceholder")}
+            value={paperYear}
+            onChange={(e) => setPaperYear(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="pdf-semester">{t("bulkImport.semesterLabel")}</Label>
+          <Input
+            id="pdf-semester"
+            placeholder={t("bulkImport.semesterPlaceholder")}
+            value={semester}
+            onChange={(e) => setSemester(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <Button type="button" onClick={handleExtract} disabled={!file || extracting}>
+          {extracting ? t("bulkImport.extracting") : t("bulkImport.extractButton")}
+        </Button>
+        {extractError && <span className="ml-3 text-sm font-medium text-destructive">{extractError}</span>}
+      </div>
+
+      {rows && (
+        <div className="mt-4 flex flex-col gap-3">
+          <p className="text-sm font-medium text-foreground">{t("bulkImport.extractedCount", { count: rows.length })}</p>
+          <div className="flex max-h-[32rem] flex-col gap-3 overflow-y-auto rounded-md border border-border p-3">
+            {rows.map((row, index) => (
+              <div key={index} className="rounded-md border border-border p-3">
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <span className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {t(`typeLabel.${row.type}`)}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={() => removeRow(index)}
+                  >
+                    <X className="size-3.5" />
+                  </Button>
+                </div>
+                <Textarea
+                  value={row.text}
+                  onChange={(e) => updateRow(index, { text: e.target.value })}
+                  className="mb-2 text-sm"
+                />
+                <div className="mb-2 flex flex-wrap gap-2">
+                  <Input
+                    value={row.topic}
+                    onChange={(e) => updateRow(index, { topic: e.target.value })}
+                    placeholder={t("form.topicPlaceholder")}
+                    className="w-48"
+                  />
+                  <Input
+                    type="number"
+                    min="1"
+                    value={row.marks}
+                    onChange={(e) => updateRow(index, { marks: Number(e.target.value) || 1 })}
+                    className="w-24"
+                  />
+                </div>
+                {row.type === "mcq" && (
+                  <div className="flex flex-col gap-1.5">
+                    {(row.options ?? []).map((option, optionIndex) => (
+                      <label key={optionIndex} className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={(row.correctIndexes ?? []).includes(optionIndex)}
+                          onCheckedChange={() => toggleCorrect(index, optionIndex)}
+                        />
+                        <Input
+                          value={option}
+                          onChange={(e) => updateOption(index, optionIndex, e.target.value)}
+                          className="flex-1"
+                        />
+                      </label>
+                    ))}
+                    {(!row.correctIndexes || row.correctIndexes.length === 0) && (
+                      <p className="text-xs text-destructive">{t("bulkImport.noAnswerYet")}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {result && (
+            <div className="rounded-md border border-border bg-secondary/20 p-3 text-sm">
+              <p className="font-medium text-foreground">{t("bulkImport.importedCount", { count: result.imported })}</p>
+              {result.rowErrors.length > 0 && (
+                <ul className="mt-1.5 flex flex-col gap-1">
+                  {result.rowErrors.map((e) => (
+                    <li key={e.row} className="text-xs text-destructive">
+                      {t("bulkImport.rowError", { row: e.row, message: e.message })}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          <Button type="button" onClick={handleAddToBank} disabled={importing || rows.length === 0} className="w-fit">
+            {t("bulkImport.importButton", { count: rows.length })}
+          </Button>
         </div>
       )}
-
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Button type="button" onClick={handleImport} disabled={importing || validRows.length === 0}>
-          {t("bulkImport.importButton", { count: validRows.length })}
-        </Button>
-        {serverError && <span className="text-sm font-medium text-destructive">{serverError}</span>}
-      </div>
     </div>
   );
 }

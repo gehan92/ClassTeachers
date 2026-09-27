@@ -9,7 +9,9 @@ const GRADE_BANDS: QuestionGradeBand[] = ["1-5", "6-9", "10-11", "12-13", "campu
 const DIFFICULTIES = ["easy", "medium", "hard"] as const;
 const TYPES = ["mcq", "essay", "code"] as const;
 
-export type ParsedBulkRow = { ok: true; row: BulkImportQuestionInput } | { ok: false; lineNumber: number; message: string };
+export type ParsedBulkRow =
+  | { ok: true; lineNumber: number; row: BulkImportQuestionInput }
+  | { ok: false; lineNumber: number; message: string };
 
 /**
  * Parses a tab-separated paste (the shape an Excel/Sheets copy naturally
@@ -23,19 +25,27 @@ export type ParsedBulkRow = { ok: true; row: BulkImportQuestionInput } | { ok: f
  * sheet (header included) just works.
  */
 export function parseBulkImportText(text: string, subjectIdByName: Map<string, string>): ParsedBulkRow[] {
-  const lines = text
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
-
+  // Numbered against the RAW split (blank lines included) rather than a
+  // pre-filtered one, so a caller can later remove specific lines from the
+  // original pasted text by this same 1-based index (see BulkImportPanel's
+  // partial-success handling) without the two numbering schemes drifting
+  // apart whenever the paste has a stray blank line.
+  const rawLines = text.split(/\r?\n/);
   const results: ParsedBulkRow[] = [];
-  lines.forEach((line, index) => {
+  let seenFirstContentLine = false;
+
+  rawLines.forEach((rawLine, index) => {
+    const line = rawLine.trim();
+    if (!line) return;
     const lineNumber = index + 1;
     const cols = line.split("\t").map((c) => c.trim());
     const [typeRaw, textRaw, subjectRaw, topicRaw, gradeRaw, difficultyRaw, marksRaw, ...rest] = cols;
 
-    if (lineNumber === 1 && (typeRaw ?? "").toLowerCase() === "type") {
-      return; // header row, skip silently
+    if (!seenFirstContentLine) {
+      seenFirstContentLine = true;
+      if ((typeRaw ?? "").toLowerCase() === "type") {
+        return; // header row, skip silently
+      }
     }
 
     const type = (typeRaw ?? "").toLowerCase() as (typeof TYPES)[number];
@@ -93,6 +103,7 @@ export function parseBulkImportText(text: string, subjectIdByName: Map<string, s
       }
       results.push({
         ok: true,
+        lineNumber,
         row: {
           type,
           text: textRaw,
@@ -113,6 +124,7 @@ export function parseBulkImportText(text: string, subjectIdByName: Map<string, s
     if (type === "code") {
       results.push({
         ok: true,
+        lineNumber,
         row: {
           type,
           text: textRaw,
@@ -132,6 +144,7 @@ export function parseBulkImportText(text: string, subjectIdByName: Map<string, s
     // analysis' rubric item), just the question itself.
     results.push({
       ok: true,
+      lineNumber,
       row: { type, text: textRaw, subjectId, topic: topicRaw, gradeBand, difficulty, marks, language: "en" },
     });
   });

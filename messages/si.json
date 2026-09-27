@@ -3009,7 +3009,8 @@
       "languages": {
         "en": "ඉංග්‍රීසි",
         "si": "සිංහල",
-        "ta": "දෙමළ"
+        "ta": "දෙමළ",
+        "other": "වෙනත්"
       },
       "difficultyLabel": {
         "easy": "පහසු",
@@ -3070,7 +3071,19 @@
         "errorCount": "{count, plural, one {පේළි # කට ගැටලුවක් ඇත} other {පේළි # කට ගැටලුවක් ඇත}}",
         "rowError": "පේළිය {row}: {message}",
         "importedCount": "{count, plural, one {ප්‍රශ්න # ක් ආනයනය කළා} other {ප්‍රශ්න # ක් ආනයනය කළා}}",
-        "importButton": "ප්‍රශ්න {count} ක් ආනයනය කරන්න"
+        "importButton": "ප්‍රශ්න {count} ක් ආනයනය කරන්න",
+        "modePaste": "පෙළ අලවන්න",
+        "modePdf": "PDF උඩුගත කරන්න",
+        "pdfFileLabel": "පැරණි ප්‍රශ්න පත්‍රය (PDF)",
+        "mediumLabel": "මාධ්‍යය",
+        "yearLabel": "ප්‍රශ්න පත්‍රයේ වර්ෂය (විකල්ප)",
+        "yearPlaceholder": "උදා: 2023",
+        "semesterLabel": "වාරය (විකල්ප)",
+        "semesterPlaceholder": "උදා: වාරය 2",
+        "extracting": "PDF කියවමින්…",
+        "extractButton": "ප්‍රශ්න උපුටා ගන්න",
+        "extractedCount": "{count, plural, one {ප්‍රශ්න # ක් හමු විය — එකතු කිරීමට පෙර සමාලෝචනය කරන්න} other {ප්‍රශ්න # ක් හමු විය — එකතු කිරීමට පෙර සමාලෝචනය කරන්න}}",
+        "noAnswerYet": "තවම නිවැරදි පිළිතුරක් සලකුණු කර නැත — ප්‍රශ්න පත්‍රයේ එය පෙන්වා නැත, හෝ පැහැදිලි නොවීය. ඉහත නිවැරදි විකල්පය සලකුණු කරන්න."
       }
     },
     "exams": {

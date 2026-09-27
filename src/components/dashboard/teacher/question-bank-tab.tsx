@@ -15,17 +15,22 @@ import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { TerminalBlock } from "@/components/dashboard/terminal-block";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { usePagination } from "@/lib/hooks/use-pagination";
-import { createQuestion, updateQuestion, deleteQuestion } from "@/lib/dashboard/question-bank-actions";
+import { createQuestion, updateQuestion, deleteQuestion, bulkImportQuestions } from "@/lib/dashboard/question-bank-actions";
+import { parseBulkImportText, type ParsedBulkRow } from "@/lib/bulk-import-questions";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
 import type { GradeBand } from "@/types/grade-band";
 import { cn } from "@/lib/utils";
+
+export type SubjectOption = { id: string; name: string };
 
 const GRADE_BANDS: GradeBand[] = ["1-5", "6-9", "10-11", "12-13", "campus"];
 const LANGUAGES: QuestionBankItem["language"][] = ["en", "si", "ta"];
 const ALL_GRADES = "all";
 const ALL_BATCHES = "all";
 const ALL_LANGUAGES = "all";
+const ALL_SUBJECTS = "all";
 const NO_BATCH = "none";
+const NO_SUBJECT = "none";
 const MIN_OPTIONS = 2;
 const MAX_OPTIONS = 8;
 
@@ -41,6 +46,7 @@ type OptionRow = {
 type FormState = {
   text: string;
   topic: string;
+  subjectId: string;
   gradeBand: GradeBand;
   batchId: string;
   difficulty: QuestionBankItem["difficulty"];
@@ -75,6 +81,7 @@ function blankForm(): FormState {
   return {
     text: "",
     topic: "",
+    subjectId: NO_SUBJECT,
     gradeBand: "12-13",
     batchId: NO_BATCH,
     difficulty: "medium",
@@ -149,14 +156,17 @@ function ImagePicker({
 export function QuestionBankTab({
   initialQuestions,
   batches,
+  subjects,
 }: {
   initialQuestions: QuestionBankItem[];
   batches: { id: string; title: string }[];
+  subjects: SubjectOption[];
 }) {
   const t = useTranslations("teacherDashboard.questionBank");
   const tc = useTranslations("teacherDashboard.common");
   const tg = useTranslations("search");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
+  const subjectNameById = useMemo(() => new Map(subjects.map((s) => [s.id, s.name])), [subjects]);
 
   // Read straight from the prop, not a useState snapshot — a useState
   // initializer only runs once, on mount, so after create/edit/delete
@@ -172,6 +182,8 @@ export function QuestionBankTab({
   const [gradeFilter, setGradeFilter] = useState<string>(ALL_GRADES);
   const [batchFilter, setBatchFilter] = useState<string>(ALL_BATCHES);
   const [languageFilter, setLanguageFilter] = useState<string>(ALL_LANGUAGES);
+  const [subjectFilter, setSubjectFilter] = useState<string>(ALL_SUBJECTS);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -199,9 +211,10 @@ export function QuestionBankTab({
       const matchesGrade = gradeFilter === ALL_GRADES || item.gradeBand === gradeFilter;
       const matchesBatch = batchFilter === ALL_BATCHES || item.batchId === batchFilter;
       const matchesLanguage = languageFilter === ALL_LANGUAGES || item.language === languageFilter;
-      return matchesSearch && matchesGrade && matchesBatch && matchesLanguage;
+      const matchesSubject = subjectFilter === ALL_SUBJECTS || item.subjectId === subjectFilter;
+      return matchesSearch && matchesGrade && matchesBatch && matchesLanguage && matchesSubject;
     });
-  }, [questions, search, gradeFilter, batchFilter, languageFilter]);
+  }, [questions, search, gradeFilter, batchFilter, languageFilter, subjectFilter]);
 
   const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(filtered.length);
   const pagedQuestions = filtered.slice(offset, offset + pageSize);
@@ -211,6 +224,7 @@ export function QuestionBankTab({
     setEditingId(null);
     setError(null);
     setFormMode("create");
+    setBulkOpen(false);
   }
 
   function openEdit(question: QuestionBankItem) {
@@ -230,6 +244,7 @@ export function QuestionBankTab({
     setForm({
       text: question.text,
       topic: question.topic,
+      subjectId: question.subjectId ?? NO_SUBJECT,
       gradeBand: question.gradeBand,
       batchId: question.batchId ?? NO_BATCH,
       difficulty: question.difficulty,
@@ -249,6 +264,7 @@ export function QuestionBankTab({
     setEditingId(question.id);
     setError(null);
     setFormMode("edit");
+    setBulkOpen(false);
   }
 
   function closeForm() {
@@ -351,6 +367,7 @@ export function QuestionBankTab({
     const fd = new FormData();
     fd.set("text", form.text.trim());
     fd.set("topic", form.topic.trim());
+    if (form.subjectId !== NO_SUBJECT) fd.set("subjectId", form.subjectId);
     fd.set("gradeBand", form.gradeBand);
     if (form.batchId !== NO_BATCH) fd.set("batchId", form.batchId);
     fd.set("type", form.type);
@@ -420,6 +437,16 @@ export function QuestionBankTab({
         </div>
         <div className="flex items-center gap-3">
           {added && <span className="animate-in fade-in-0 text-sm font-medium text-success duration-200">{tc("added")}</span>}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setBulkOpen((v) => !v);
+              if (formMode) closeForm();
+            }}
+          >
+            {t("bulkImport.toggleButton")}
+          </Button>
           <Button type="button" onClick={() => (formMode ? closeForm() : openCreate())}>
             {t("addQuestion")}
           </Button>
@@ -433,6 +460,20 @@ export function QuestionBankTab({
         stuckLabel={tc("updateStuck")}
         reloadLabel={tc("reloadPage")}
       />
+
+      {bulkOpen && (
+        <BulkImportPanel
+          batches={batches}
+          subjects={subjects}
+          onClose={() => setBulkOpen(false)}
+          onImported={() => {
+            setBulkOpen(false);
+            setAdded(true);
+            setTimeout(() => setAdded(false), 2500);
+            refresh();
+          }}
+        />
+      )}
 
       {formMode && (
         <div className="rounded-lg border border-border bg-white p-5">
@@ -469,6 +510,24 @@ export function QuestionBankTab({
                 onChange={(e) => setForm((f) => ({ ...f, topic: e.target.value }))}
               />
             </div>
+            {subjects.length > 0 && (
+              <div className="grid gap-1.5">
+                <Label htmlFor="qb-subject">{t("form.subjectLabel")}</Label>
+                <Select value={form.subjectId} onValueChange={(value) => setForm((f) => ({ ...f, subjectId: value ?? NO_SUBJECT }))}>
+                  <SelectTrigger id="qb-subject" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_SUBJECT}>{t("form.subjectAny")}</SelectItem>
+                    {subjects.map((subject) => (
+                      <SelectItem key={subject.id} value={subject.id}>
+                        {subject.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid gap-1.5">
               <Label htmlFor="qb-marks">{t("form.marksLabel")}</Label>
               <Input
@@ -719,6 +778,27 @@ export function QuestionBankTab({
             }}
             className="w-full sm:w-64"
           />
+          {subjects.length > 0 && (
+            <Select
+              value={subjectFilter}
+              onValueChange={(value) => {
+                setSubjectFilter(value as string);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-auto">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_SUBJECTS}>{t("filters.allSubjects")}</SelectItem>
+                {subjects.map((subject) => (
+                  <SelectItem key={subject.id} value={subject.id}>
+                    {subject.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Select
             value={gradeFilter}
             onValueChange={(value) => {
@@ -786,6 +866,7 @@ export function QuestionBankTab({
             <TableHeader>
               <TableRow>
                 <TableHead>{t("columns.question")}</TableHead>
+                {subjects.length > 0 && <TableHead>{t("columns.subject")}</TableHead>}
                 <TableHead>{t("columns.topic")}</TableHead>
                 <TableHead>{t("columns.grade")}</TableHead>
                 <TableHead>{t("columns.batch")}</TableHead>
@@ -801,6 +882,11 @@ export function QuestionBankTab({
                 <Fragment key={q.id}>
                   <TableRow>
                     <TableCell className="max-w-80 truncate text-foreground">{q.text}</TableCell>
+                    {subjects.length > 0 && (
+                      <TableCell className="text-muted-foreground">
+                        {q.subjectId ? (subjectNameById.get(q.subjectId) ?? "—") : "—"}
+                      </TableCell>
+                    )}
                     <TableCell className="text-muted-foreground">{q.topic}</TableCell>
                     <TableCell className="text-muted-foreground">{tg(`grades.${q.gradeBand}`)}</TableCell>
                     <TableCell className="text-muted-foreground">
@@ -845,7 +931,7 @@ export function QuestionBankTab({
                   </TableRow>
                   {viewingId === q.id && (
                     <TableRow>
-                      <TableCell colSpan={9} className="bg-secondary/20">
+                      <TableCell colSpan={subjects.length > 0 ? 10 : 9} className="bg-secondary/20">
                         {q.codeFormat ? (
                           <TerminalBlock className="mb-2">{q.text}</TerminalBlock>
                         ) : (
@@ -909,6 +995,169 @@ export function QuestionBankTab({
           />
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+const TEMPLATE_TEXT = [
+  ["Type", "Question", "Subject", "Topic", "Grade", "Difficulty", "Marks", "Option A", "Option B", "Option C", "Option D", "Correct", "Sample answer"].join(
+    "\t",
+  ),
+  ["MCQ", "What is the SI unit of force?", "", "Mechanics", "10-11", "easy", "1", "Newton", "Joule", "Watt", "Pascal", "A", ""].join("\t"),
+  ["Essay", "Explain Newton's second law with an example.", "", "Mechanics", "10-11", "medium", "5", "", "", "", "", "", ""].join("\t"),
+].join("\n");
+
+/**
+ * Bulk question import — a textarea paste, not a file upload, matching the
+ * house convention for "bulk" input elsewhere in this app (see the
+ * bulk-enroll-by-phone textarea in institute/students-tab.tsx). A teacher
+ * builds the sheet in Excel/Sheets with the template's column headers, then
+ * copies every cell straight into the box — tab is exactly what a
+ * spreadsheet copy produces between columns, so no manual reformatting.
+ */
+function BulkImportPanel({
+  batches,
+  subjects,
+  onClose,
+  onImported,
+}: {
+  batches: { id: string; title: string }[];
+  subjects: SubjectOption[];
+  onClose: () => void;
+  onImported: () => void;
+}) {
+  const t = useTranslations("teacherDashboard.questionBank");
+  const tc = useTranslations("teacherDashboard.common");
+  const [batchId, setBatchId] = useState(NO_BATCH);
+  const [rawText, setRawText] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [result, setResult] = useState<{ imported: number; rowErrors: { row: number; message: string }[] } | null>(null);
+
+  const subjectIdByName = useMemo(() => new Map(subjects.map((s) => [s.name.toLowerCase(), s.id])), [subjects]);
+  const parsedRows = useMemo<ParsedBulkRow[]>(
+    () => (rawText.trim() ? parseBulkImportText(rawText, subjectIdByName) : []),
+    [rawText, subjectIdByName],
+  );
+  const validRows = parsedRows.filter((r): r is Extract<ParsedBulkRow, { ok: true }> => r.ok);
+  const invalidRows = parsedRows.filter((r): r is Extract<ParsedBulkRow, { ok: false }> => !r.ok);
+
+  async function handleCopyTemplate() {
+    try {
+      await navigator.clipboard.writeText(TEMPLATE_TEXT);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard permission denied — nothing to do, the template is still
+      // visible below for a manual copy.
+    }
+  }
+
+  async function handleImport() {
+    if (validRows.length === 0) return;
+    setImporting(true);
+    setServerError(null);
+    setResult(null);
+    const response = await bulkImportQuestions(
+      batchId !== NO_BATCH ? batchId : undefined,
+      validRows.map((r) => r.row),
+    );
+    setImporting(false);
+    if (response.error && response.imported === 0) {
+      setServerError(response.error);
+      return;
+    }
+    setResult({ imported: response.imported, rowErrors: response.rowErrors });
+    if (response.rowErrors.length === 0) {
+      setRawText("");
+      onImported();
+    }
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-white p-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg">{t("bulkImport.heading")}</h3>
+          <p className="mt-1 text-sm text-muted-foreground">{t("bulkImport.subtitle")}</p>
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={onClose}>
+          {tc("close")}
+        </Button>
+      </div>
+
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid gap-1.5">
+          <Label>{t("form.batchLabel")}</Label>
+          <Select value={batchId} onValueChange={(value) => setBatchId(value ?? NO_BATCH)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_BATCH}>{t("form.batchAny")}</SelectItem>
+              {batches.map((batch) => (
+                <SelectItem key={batch.id} value={batch.id}>
+                  {batch.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-end">
+          <Button type="button" variant="outline" size="sm" onClick={handleCopyTemplate}>
+            {copied ? t("bulkImport.templateCopied") : t("bulkImport.copyTemplate")}
+          </Button>
+        </div>
+      </div>
+
+      <p className="mb-2 text-xs text-muted-foreground">{t("bulkImport.instructions")}</p>
+      <Textarea
+        value={rawText}
+        onChange={(e) => setRawText(e.target.value)}
+        placeholder={t("bulkImport.placeholder")}
+        className="min-h-40 font-mono text-xs"
+      />
+
+      {parsedRows.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+          <span className="font-medium text-success">{t("bulkImport.readyCount", { count: validRows.length })}</span>
+          {invalidRows.length > 0 && (
+            <span className="font-medium text-destructive">{t("bulkImport.errorCount", { count: invalidRows.length })}</span>
+          )}
+        </div>
+      )}
+      {invalidRows.length > 0 && (
+        <ul className="mt-2 flex flex-col gap-1 rounded-md border border-destructive/30 bg-destructive/5 p-3">
+          {invalidRows.map((r) => (
+            <li key={r.lineNumber} className="text-xs text-destructive">
+              {t("bulkImport.rowError", { row: r.lineNumber, message: r.message })}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {result && (
+        <div className="mt-3 rounded-md border border-border bg-secondary/20 p-3 text-sm">
+          <p className="font-medium text-foreground">{t("bulkImport.importedCount", { count: result.imported })}</p>
+          {result.rowErrors.length > 0 && (
+            <ul className="mt-1.5 flex flex-col gap-1">
+              {result.rowErrors.map((e) => (
+                <li key={e.row} className="text-xs text-destructive">
+                  {t("bulkImport.rowError", { row: e.row, message: e.message })}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Button type="button" onClick={handleImport} disabled={importing || validRows.length === 0}>
+          {t("bulkImport.importButton", { count: validRows.length })}
+        </Button>
+        {serverError && <span className="text-sm font-medium text-destructive">{serverError}</span>}
       </div>
     </div>
   );

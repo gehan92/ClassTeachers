@@ -22,6 +22,10 @@ export type QuestionBankItem = {
   text: string;
   /** Lesson/unit label, e.g. "Mechanics — Kinematics". */
   topic: string;
+  /** Top-level subject (Combined Maths, Science, ...) from the shared
+   * `subjects` catalog — `topic` stays the free-text chapter/lesson under
+   * it. Optional since it long predates any UI wiring it up. */
+  subjectId?: string;
   gradeBand: GradeBand;
   /** Optional — ties the question to one specific class/batch instead of the teacher's whole subject. */
   batchId?: string;

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,8 +17,31 @@ import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { TerminalBlock } from "@/components/dashboard/terminal-block";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { createExam, gradeSubmission, setExamPublished, setExamRevealAnswers } from "@/lib/dashboard/exams-actions";
+import type { SubjectOption } from "@/components/dashboard/teacher/question-bank-tab";
 import type { QuestionBankItem } from "@/types/dashboard-exams";
 import { cn } from "@/lib/utils";
+
+type GenerationRule = {
+  id: string;
+  subjectId: string;
+  topic: string;
+  difficulty: string;
+  type: string;
+  count: string;
+};
+
+function blankRule(): GenerationRule {
+  return { id: crypto.randomUUID(), subjectId: "", topic: "", difficulty: "", type: "", count: "5" };
+}
+
+function shuffleArray<T>(items: T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
 
 export type TeacherExamBatchOption = { id: string; title: string; studentCount: number };
 export type TeacherExamStudentOption = { id: string; name: string; batchId: string | null };
@@ -45,6 +69,9 @@ const ALL_DURATION_FILTER = "all";
 const ALL_QUESTIONS_FILTER = "all";
 
 const NO_BATCH = "all";
+const ALL_PICKER_SUBJECTS = "all";
+const ALL_PICKER_DIFFICULTY = "all";
+const ALL_PICKER_TYPE = "all";
 
 export type ExamSubmissionRow = {
   id: string;
@@ -68,6 +95,7 @@ export function ExamsTab({
   exams,
   submissions,
   questions,
+  subjects,
   batches,
   totalStudentsCount,
   studentPool,
@@ -75,6 +103,7 @@ export function ExamsTab({
   exams: TeacherExamRow[];
   submissions: ExamSubmissionRow[];
   questions: QuestionBankItem[];
+  subjects: SubjectOption[];
   batches: TeacherExamBatchOption[];
   totalStudentsCount: number;
   studentPool: TeacherExamStudentOption[];
@@ -83,6 +112,7 @@ export function ExamsTab({
   const tq = useTranslations("teacherDashboard.questionBank");
   const tc = useTranslations("teacherDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
+  const subjectNameById = useMemo(() => new Map(subjects.map((s) => [s.id, s.name])), [subjects]);
 
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState("");
@@ -92,6 +122,13 @@ export function ExamsTab({
   const [batchId, setBatchId] = useState<string>(NO_BATCH);
   const [excludedStudentIds, setExcludedStudentIds] = useState<Set<string>>(new Set());
   const [revealAnswers, setRevealAnswers] = useState(false);
+  const [pickerMode, setPickerMode] = useState<"manual" | "auto">("manual");
+  const [pickerSearch, setPickerSearch] = useState("");
+  const [pickerSubject, setPickerSubject] = useState<string>(ALL_PICKER_SUBJECTS);
+  const [pickerDifficulty, setPickerDifficulty] = useState<string>(ALL_PICKER_DIFFICULTY);
+  const [pickerType, setPickerType] = useState<string>(ALL_PICKER_TYPE);
+  const [rules, setRules] = useState<GenerationRule[]>([blankRule()]);
+  const [generateWarnings, setGenerateWarnings] = useState<string[]>([]);
   const [togglingRevealId, setTogglingRevealId] = useState<string | null>(null);
   const [created, setCreated] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -111,6 +148,56 @@ export function ExamsTab({
   const [page, setPage] = useState(1);
 
   const poolForBatch = studentPool.filter((s) => batchId === NO_BATCH || s.batchId === batchId);
+
+  const pickerFilteredQuestions = useMemo(() => {
+    const q = pickerSearch.trim().toLowerCase();
+    return questions.filter((item) => {
+      const matchesSearch = !q || item.text.toLowerCase().includes(q) || item.topic.toLowerCase().includes(q);
+      const matchesSubject = pickerSubject === ALL_PICKER_SUBJECTS || item.subjectId === pickerSubject;
+      const matchesDifficulty = pickerDifficulty === ALL_PICKER_DIFFICULTY || item.difficulty === pickerDifficulty;
+      const matchesType = pickerType === ALL_PICKER_TYPE || item.type === pickerType;
+      return matchesSearch && matchesSubject && matchesDifficulty && matchesType;
+    });
+  }, [questions, pickerSearch, pickerSubject, pickerDifficulty, pickerType]);
+
+  function addRule() {
+    setRules((r) => [...r, blankRule()]);
+  }
+  function removeRule(id: string) {
+    setRules((r) => (r.length <= 1 ? r : r.filter((x) => x.id !== id)));
+  }
+  function updateRule(id: string, patch: Partial<GenerationRule>) {
+    setRules((r) => r.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  }
+
+  /** Picks questions matching each rule's filters from the already-loaded
+   * bank (no server round trip needed — the full pool is already in props),
+   * shuffled per rule so the same rule doesn't always return the same set.
+   * A rule with fewer matches than requested takes everything available and
+   * surfaces a warning rather than failing the whole generation. */
+  function handleGenerate() {
+    const picked = new Set<string>();
+    const warnings: string[] = [];
+    for (const rule of rules) {
+      const count = Number(rule.count) || 0;
+      if (count <= 0) continue;
+      const pool = questions.filter((q) => {
+        if (picked.has(q.id)) return false;
+        if (rule.subjectId && q.subjectId !== rule.subjectId) return false;
+        if (rule.topic.trim() && !q.topic.toLowerCase().includes(rule.topic.trim().toLowerCase())) return false;
+        if (rule.difficulty && q.difficulty !== rule.difficulty) return false;
+        if (rule.type && q.type !== rule.type) return false;
+        return true;
+      });
+      const chosen = shuffleArray(pool).slice(0, count);
+      for (const q of chosen) picked.add(q.id);
+      if (chosen.length < count) {
+        warnings.push(t("form.autoGenerate.underSupplyWarning", { requested: count, available: chosen.length }));
+      }
+    }
+    setSelectedQuestionIds([...picked]);
+    setGenerateWarnings(warnings);
+  }
 
   const filtersActive =
     filterQuery.trim() !== "" ||
@@ -207,6 +294,13 @@ export function ExamsTab({
     setBatchId(NO_BATCH);
     setExcludedStudentIds(new Set());
     setRevealAnswers(false);
+    setPickerMode("manual");
+    setPickerSearch("");
+    setPickerSubject(ALL_PICKER_SUBJECTS);
+    setPickerDifficulty(ALL_PICKER_DIFFICULTY);
+    setPickerType(ALL_PICKER_TYPE);
+    setRules([blankRule()]);
+    setGenerateWarnings([]);
   }
 
   async function handleCreate() {
@@ -369,26 +463,203 @@ export function ExamsTab({
           </div>
 
           <div className="mt-4">
-            <Label>{t("form.questionsLabel")}</Label>
-            {questions.length === 0 ? (
-              <p className="mt-1.5 text-sm text-muted-foreground">{t("form.noQuestionsForBatch")}</p>
-            ) : (
-              <div className="mt-1.5 flex max-h-64 flex-col gap-1.5 overflow-y-auto rounded-md border border-border p-3">
-                {questions.map((q) => (
-                  <label key={q.id} className="flex items-start gap-2.5 text-sm">
-                    <Checkbox
-                      className="mt-0.5"
-                      checked={selectedQuestionIds.includes(q.id)}
-                      onCheckedChange={(checked) => setQuestionChecked(q.id, checked === true)}
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <Label>{t("form.questionsLabel")}</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={pickerMode === "manual" ? "default" : "outline"}
+                  onClick={() => setPickerMode("manual")}
+                >
+                  {t("form.pickerModeManual")}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={pickerMode === "auto" ? "default" : "outline"}
+                  onClick={() => setPickerMode("auto")}
+                >
+                  {t("form.pickerModeAuto")}
+                </Button>
+              </div>
+            </div>
+
+            {pickerMode === "manual" ? (
+              questions.length === 0 ? (
+                <p className="mt-1.5 text-sm text-muted-foreground">{t("form.noQuestionsForBatch")}</p>
+              ) : (
+                <>
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <Input
+                      placeholder={t("filters.searchPlaceholder")}
+                      value={pickerSearch}
+                      onChange={(e) => setPickerSearch(e.target.value)}
+                      className="w-full sm:w-56"
                     />
-                    <span>
-                      {q.text}{" "}
-                      <span className="text-muted-foreground">
-                        ({tq(`typeLabel.${q.type}`)} · {t("form.questionMarks", { marks: q.marks })})
-                      </span>
+                    {subjects.length > 0 && (
+                      <Select value={pickerSubject} onValueChange={(v) => setPickerSubject(v ?? ALL_PICKER_SUBJECTS)}>
+                        <SelectTrigger className="w-full sm:w-auto">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={ALL_PICKER_SUBJECTS}>{tq("filters.allSubjects")}</SelectItem>
+                          {subjects.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    <Select value={pickerDifficulty} onValueChange={(v) => setPickerDifficulty(v ?? ALL_PICKER_DIFFICULTY)}>
+                      <SelectTrigger className="w-full sm:w-auto">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={ALL_PICKER_DIFFICULTY}>{t("form.autoGenerate.anyDifficulty")}</SelectItem>
+                        <SelectItem value="easy">{tq("difficultyLabel.easy")}</SelectItem>
+                        <SelectItem value="medium">{tq("difficultyLabel.medium")}</SelectItem>
+                        <SelectItem value="hard">{tq("difficultyLabel.hard")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={pickerType} onValueChange={(v) => setPickerType(v ?? ALL_PICKER_TYPE)}>
+                      <SelectTrigger className="w-full sm:w-auto">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={ALL_PICKER_TYPE}>{t("form.autoGenerate.anyType")}</SelectItem>
+                        <SelectItem value="mcq">{tq("typeLabel.mcq")}</SelectItem>
+                        <SelectItem value="essay">{tq("typeLabel.essay")}</SelectItem>
+                        <SelectItem value="code">{tq("typeLabel.code")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex max-h-64 flex-col gap-1.5 overflow-y-auto rounded-md border border-border p-3">
+                    {pickerFilteredQuestions.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">{t("filters.noResults")}</p>
+                    ) : (
+                      pickerFilteredQuestions.map((q) => (
+                        <label key={q.id} className="flex items-start gap-2.5 text-sm">
+                          <Checkbox
+                            className="mt-0.5"
+                            checked={selectedQuestionIds.includes(q.id)}
+                            onCheckedChange={(checked) => setQuestionChecked(q.id, checked === true)}
+                          />
+                          <span>
+                            {q.text}{" "}
+                            <span className="text-muted-foreground">
+                              ({q.subjectId && subjectNameById.get(q.subjectId) ? `${subjectNameById.get(q.subjectId)} · ` : ""}
+                              {tq(`typeLabel.${q.type}`)} · {t("form.questionMarks", { marks: q.marks })})
+                            </span>
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </>
+              )
+            ) : (
+              <div className="flex flex-col gap-3 rounded-md border border-border p-3">
+                {rules.map((rule, index) => (
+                  <div key={rule.id} className="flex flex-wrap items-end gap-2 border-b border-border pb-3 last:border-b-0 last:pb-0">
+                    <span className="w-full text-xs text-muted-foreground sm:w-auto">
+                      {t("form.autoGenerate.ruleLabel", { number: index + 1 })}
                     </span>
-                  </label>
+                    {subjects.length > 0 && (
+                      <Select
+                        value={rule.subjectId || ALL_PICKER_SUBJECTS}
+                        onValueChange={(v) => updateRule(rule.id, { subjectId: v === ALL_PICKER_SUBJECTS ? "" : (v ?? "") })}
+                      >
+                        <SelectTrigger className="w-40">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={ALL_PICKER_SUBJECTS}>{t("form.autoGenerate.anySubject")}</SelectItem>
+                          {subjects.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    <Input
+                      placeholder={t("form.autoGenerate.topicPlaceholder")}
+                      value={rule.topic}
+                      onChange={(e) => updateRule(rule.id, { topic: e.target.value })}
+                      className="w-40"
+                    />
+                    <Select
+                      value={rule.difficulty || ALL_PICKER_DIFFICULTY}
+                      onValueChange={(v) => updateRule(rule.id, { difficulty: v === ALL_PICKER_DIFFICULTY ? "" : (v ?? "") })}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={ALL_PICKER_DIFFICULTY}>{t("form.autoGenerate.anyDifficulty")}</SelectItem>
+                        <SelectItem value="easy">{tq("difficultyLabel.easy")}</SelectItem>
+                        <SelectItem value="medium">{tq("difficultyLabel.medium")}</SelectItem>
+                        <SelectItem value="hard">{tq("difficultyLabel.hard")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={rule.type || ALL_PICKER_TYPE}
+                      onValueChange={(v) => updateRule(rule.id, { type: v === ALL_PICKER_TYPE ? "" : (v ?? "") })}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={ALL_PICKER_TYPE}>{t("form.autoGenerate.anyType")}</SelectItem>
+                        <SelectItem value="mcq">{tq("typeLabel.mcq")}</SelectItem>
+                        <SelectItem value="essay">{tq("typeLabel.essay")}</SelectItem>
+                        <SelectItem value="code">{tq("typeLabel.code")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={rule.count}
+                      onChange={(e) => updateRule(rule.id, { count: e.target.value })}
+                      className="w-20"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0 px-2 text-muted-foreground hover:text-destructive"
+                      disabled={rules.length <= 1}
+                      onClick={() => removeRule(rule.id)}
+                      aria-label={t("form.autoGenerate.removeRule")}
+                    >
+                      <X className="size-3.5" />
+                    </Button>
+                  </div>
                 ))}
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button type="button" variant="outline" size="sm" onClick={addRule}>
+                    {t("form.autoGenerate.addRule")}
+                  </Button>
+                  <Button type="button" size="sm" onClick={handleGenerate}>
+                    {t("form.autoGenerate.generateButton")}
+                  </Button>
+                  {selectedQuestionIds.length > 0 && (
+                    <span className="text-sm text-muted-foreground">
+                      {t("form.autoGenerate.pickedCount", { count: selectedQuestionIds.length })}
+                    </span>
+                  )}
+                </div>
+                {generateWarnings.length > 0 && (
+                  <ul className="flex flex-col gap-1">
+                    {generateWarnings.map((warning, i) => (
+                      <li key={i} className="text-xs text-destructive">
+                        {warning}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
           </div>

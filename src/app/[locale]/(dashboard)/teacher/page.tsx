@@ -270,7 +270,7 @@ export default async function TeacherDashboardPage({
     supabase
       .from("question_bank_items")
       .select(
-        "id, question_text, topic, grade_band, batch_id, type, difficulty, marks, language, options, multi_select, code_format, question_image_path",
+        "id, question_text, topic, subject_id, grade_band, batch_id, type, difficulty, marks, language, options, multi_select, code_format, question_image_path",
       )
       .order("created_at", { ascending: false }),
     // correct_option_id/correct_option_ids/sample_answer are revoke()d from
@@ -850,6 +850,7 @@ export default async function TeacherDashboardPage({
       id: q.id,
       text: q.question_text,
       topic: q.topic ?? "",
+      subjectId: q.subject_id ?? undefined,
       gradeBand: (q.grade_band ?? "12-13") as QuestionBankItem["gradeBand"],
       batchId: q.batch_id ?? undefined,
       type: q.type,
@@ -1362,12 +1363,13 @@ export default async function TeacherDashboardPage({
         classes: (
           <ClassesTab batches={batches} rosterByBatch={rosterByBatch} isCampusLecturer={isCampusLecturer} />
         ),
-        questionBank: <QuestionBankTab initialQuestions={questions} batches={contentTargetBatches} />,
+        questionBank: <QuestionBankTab initialQuestions={questions} batches={contentTargetBatches} subjects={subjectOptions} />,
         exams: (
           <ExamsTab
             exams={exams}
             submissions={examSubmissions}
             questions={questions}
+            subjects={subjectOptions}
             batches={contentTargetBatches.map((b) => ({ id: b.id, title: b.title, studentCount: rosterByBatch[b.id]?.length ?? 0 }))}
             totalStudentsCount={combinedAcceptedEnrollments.length}
             studentPool={combinedAcceptedEnrollments.map((e) => ({

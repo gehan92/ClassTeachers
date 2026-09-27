@@ -2986,10 +2986,12 @@
         "searchPlaceholder": "Search by topic or text...",
         "allGrades": "All grades",
         "allBatches": "All batches",
-        "allLanguages": "All languages"
+        "allLanguages": "All languages",
+        "allSubjects": "All subjects"
       },
       "columns": {
         "question": "Question",
+        "subject": "Subject",
         "topic": "Topic",
         "grade": "Grade",
         "batch": "Batch",
@@ -3021,6 +3023,8 @@
         "textPlaceholder": "Type the question...",
         "topicLabel": "Topic",
         "topicPlaceholder": "e.g. Mechanics — Kinematics",
+        "subjectLabel": "Subject",
+        "subjectAny": "No subject",
         "marksLabel": "Marks",
         "gradeLabel": "Grade level",
         "batchLabel": "Batch",
@@ -3053,6 +3057,20 @@
         "addOption": "Add option",
         "removeOption": "Remove option",
         "correctHint": "Tick the box next to each correct option — tick more than one to make this a \"select all that apply\" question. An option can carry its own image too — useful for \"which of these graphs...\" style questions."
+      },
+      "bulkImport": {
+        "toggleButton": "Bulk import",
+        "heading": "Bulk import questions",
+        "subtitle": "Build your sheet in Excel or Google Sheets, then copy every cell and paste it below — no images with this method, add those later by editing a question.",
+        "copyTemplate": "Copy template",
+        "templateCopied": "Copied!",
+        "instructions": "Columns: Type, Question, Subject, Topic, Grade, Difficulty, Marks, Option A–F, Correct (e.g. \"A\" or \"A,C\"), Sample answer (Code type only). One question per line.",
+        "placeholder": "Paste your rows here (tab-separated)...",
+        "readyCount": "{count, plural, one {# question ready} other {# questions ready}}",
+        "errorCount": "{count, plural, one {# row has a problem} other {# rows have a problem}}",
+        "rowError": "Row {row}: {message}",
+        "importedCount": "{count, plural, one {# question imported} other {# questions imported}}",
+        "importButton": "Import {count, plural, one {# question} other {# questions}}"
       }
     },
     "exams": {
@@ -3134,6 +3152,20 @@
         "questionsLabel": "Questions from the bank",
         "noQuestionsForBatch": "No questions in the bank for this batch yet — add some in the Question bank tab.",
         "questionMarks": "{marks} marks",
+        "pickerModeManual": "Pick manually",
+        "pickerModeAuto": "Auto-generate",
+        "autoGenerate": {
+          "ruleLabel": "Rule {number}",
+          "anySubject": "Any subject",
+          "anyDifficulty": "Any difficulty",
+          "anyType": "Any type",
+          "topicPlaceholder": "Topic contains...",
+          "addRule": "+ Add rule",
+          "removeRule": "Remove rule",
+          "generateButton": "Generate",
+          "pickedCount": "{count, plural, one {# question picked} other {# questions picked}}",
+          "underSupplyWarning": "Only found {available} of the {requested} questions requested for one rule — added everything available."
+        },
         "revealAnswersToggle": "Show correct answers to students once graded",
         "revealAnswersHint": "Off by default — questions come from your reusable bank, so revealing an answer here means students could see it before it's used again in a future exam. Only turn this on for a one-off test you won't reuse these questions in."
       },

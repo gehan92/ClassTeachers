@@ -3,8 +3,10 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBatchOwner } from "@/lib/dashboard/resolve-batch-owner";
+import type { Database } from "@/types/database";
 
 type ActionResult = { error: string } | { error?: undefined };
+type QuestionBankItemInsert = Database["public"]["Tables"]["question_bank_items"]["Insert"];
 
 const MAX_OPTIONS = 8;
 
@@ -19,6 +21,7 @@ type RawOption = { id: string; text: string; imagePath?: string };
 const questionFieldsSchema = z.object({
   text: z.string().trim().min(1),
   topic: z.string().trim().min(1),
+  subjectId: z.string().uuid().optional(),
   gradeBand: z.enum(["1-5", "6-9", "10-11", "12-13", "campus"]),
   batchId: z.string().uuid().optional(),
   type: z.enum(["mcq", "essay", "code"]),
@@ -93,6 +96,7 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
   const parsed = questionFieldsSchema.safeParse({
     text: formData.get("text"),
     topic: formData.get("topic"),
+    subjectId: formData.get("subjectId") || undefined,
     gradeBand: formData.get("gradeBand"),
     batchId: formData.get("batchId") || undefined,
     type: formData.get("type"),
@@ -171,6 +175,7 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
     owner_id: target.ownerId,
     question_text: parsed.data.text,
     topic: parsed.data.topic,
+    subject_id: parsed.data.subjectId ?? null,
     grade_band: parsed.data.gradeBand,
     batch_id: target.batchId,
     type: parsed.data.type,
@@ -200,6 +205,7 @@ export async function updateQuestion(questionId: string, formData: FormData): Pr
   const parsed = questionFieldsSchema.safeParse({
     text: formData.get("text"),
     topic: formData.get("topic"),
+    subjectId: formData.get("subjectId") || undefined,
     gradeBand: formData.get("gradeBand"),
     batchId: formData.get("batchId") || undefined,
     type: formData.get("type"),
@@ -312,6 +318,7 @@ export async function updateQuestion(questionId: string, formData: FormData): Pr
     .update({
       question_text: parsed.data.text,
       topic: parsed.data.topic,
+      subject_id: parsed.data.subjectId ?? null,
       grade_band: parsed.data.gradeBand,
       batch_id: batchId,
       type: parsed.data.type,
@@ -364,4 +371,119 @@ export async function deleteQuestion(questionId: string): Promise<ActionResult> 
     }
   }
   return {};
+}
+
+const bulkRowSchema = z.object({
+  type: z.enum(["mcq", "essay", "code"]),
+  text: z.string().trim().min(1),
+  subjectId: z.string().uuid().optional(),
+  topic: z.string().trim().min(1),
+  gradeBand: z.enum(["1-5", "6-9", "10-11", "12-13", "campus"]),
+  difficulty: z.enum(["easy", "medium", "hard"]),
+  marks: z.number().int().min(1),
+  language: z.enum(["en", "si", "ta"]),
+  options: z.array(z.string().trim().min(1)).optional(),
+  correctIndexes: z.array(z.number().int().min(0)).optional(),
+  multiSelect: z.boolean().optional(),
+  sampleAnswer: z.string().optional(),
+});
+
+export type BulkImportQuestionInput = z.infer<typeof bulkRowSchema>;
+export type BulkImportRowError = { row: number; message: string };
+
+/**
+ * Bulk question import — mirrors the house "paste + local parser" pattern
+ * already used for bulk phone enrollment (bulkEnrollStudentsByPhone,
+ * batches-actions.ts) rather than a real CSV-file-upload flow. Rows are
+ * already parsed and locally validated client-side (parseBulkImportText,
+ * src/lib/bulk-import-questions.ts) — this re-validates defensively (never
+ * trust a client-only check) and does one insert for the whole batch, one
+ * bad row does not block the rest. Text-only: bulk-imported questions carry
+ * no images (unlike createQuestion) — add those afterward via edit if needed.
+ */
+export async function bulkImportQuestions(
+  batchId: string | undefined,
+  rows: BulkImportQuestionInput[],
+): Promise<{ error?: string; imported: number; rowErrors: BulkImportRowError[] }> {
+  if (rows.length === 0) {
+    return { error: "Nothing to import.", imported: 0, rowErrors: [] };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in.", imported: 0, rowErrors: [] };
+  }
+
+  const target = await resolveBatchOwner(supabase, user.id, batchId);
+  if ("error" in target) {
+    return { error: target.error, imported: 0, rowErrors: [] };
+  }
+
+  const rowErrors: BulkImportRowError[] = [];
+  const toInsert: QuestionBankItemInsert[] = [];
+
+  rows.forEach((raw, index) => {
+    const rowNumber = index + 1;
+    const parsed = bulkRowSchema.safeParse(raw);
+    if (!parsed.success) {
+      rowErrors.push({ row: rowNumber, message: parsed.error.issues[0]?.message ?? "Invalid row." });
+      return;
+    }
+    const row = parsed.data;
+
+    if (row.type === "mcq") {
+      const optionCount = row.options?.length ?? 0;
+      if (optionCount < 2) {
+        rowErrors.push({ row: rowNumber, message: "MCQ needs at least two options." });
+        return;
+      }
+      if (!row.correctIndexes || row.correctIndexes.length === 0 || row.correctIndexes.some((i) => i >= optionCount)) {
+        rowErrors.push({ row: rowNumber, message: "MCQ needs a valid correct answer." });
+        return;
+      }
+    }
+
+    const questionId = crypto.randomUUID();
+    const options =
+      row.type === "mcq" ? (row.options ?? []).map((text, i) => ({ id: `${questionId}-o${i + 1}`, text })) : null;
+    const correctOptionIds =
+      row.type === "mcq" && options
+        ? (row.correctIndexes ?? []).map((i) => options[i]?.id).filter((id): id is string => Boolean(id))
+        : [];
+
+    toInsert.push({
+      id: questionId,
+      owner_type: target.ownerType,
+      owner_id: target.ownerId,
+      question_text: row.text,
+      topic: row.topic,
+      subject_id: row.subjectId ?? null,
+      grade_band: row.gradeBand,
+      batch_id: target.batchId,
+      type: row.type,
+      difficulty: row.difficulty,
+      marks: row.marks,
+      language: row.language,
+      options,
+      correct_option_id: correctOptionIds[0] ?? null,
+      correct_option_ids: correctOptionIds,
+      multi_select: row.type === "mcq" ? Boolean(row.multiSelect) : false,
+      code_format: false,
+      sample_answer: row.type === "code" ? (row.sampleAnswer ?? null) : null,
+    });
+  });
+
+  if (toInsert.length === 0) {
+    return { imported: 0, rowErrors };
+  }
+
+  const { error } = await supabase.from("question_bank_items").insert(toInsert);
+  if (error) {
+    return { error: "Couldn't save these questions. Please try again.", imported: 0, rowErrors };
+  }
+
+  return { imported: toInsert.length, rowErrors };
 }

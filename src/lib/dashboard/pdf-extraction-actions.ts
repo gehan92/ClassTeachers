@@ -7,7 +7,9 @@ import type { BulkImportQuestionInput } from "@/lib/dashboard/question-bank-acti
 // inflates raw bytes by ~1.33x, so 10MB raw leaves headroom for the prompt
 // text and JSON envelope on top of the encoded file.
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
-const GEMINI_MODEL = "gemini-2.5-flash";
+// gemini-2.5-flash returned a 404 telling new API keys to move to this
+// model instead — keep this in sync if Gemini deprecates it again.
+const GEMINI_MODEL = "gemini-3.8-flash";
 
 type ExtractResult = { error?: string; questions: BulkImportQuestionInput[] };
 

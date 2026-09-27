@@ -220,6 +220,7 @@ export function QuestionBankTab({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -498,10 +499,12 @@ export function QuestionBankTab({
     refresh();
   }
 
-  async function handleDelete(questionId: string) {
-    setDeletingId(questionId);
-    const result = await deleteQuestion(questionId);
+  async function handleDelete() {
+    if (!confirmDeleteId) return;
+    setDeletingId(confirmDeleteId);
+    const result = await deleteQuestion(confirmDeleteId);
     setDeletingId(null);
+    setConfirmDeleteId(null);
     if (!result.error) {
       refresh();
     }
@@ -1013,8 +1016,9 @@ export function QuestionBankTab({
                           type="button"
                           variant="ghost"
                           size="sm"
+                          className="text-destructive hover:text-destructive"
                           disabled={deletingId === q.id}
-                          onClick={() => handleDelete(q.id)}
+                          onClick={() => setConfirmDeleteId(q.id)}
                         >
                           {t("delete")}
                         </Button>
@@ -1092,6 +1096,23 @@ export function QuestionBankTab({
           </div>
         )}
       </div>
+
+      <Dialog open={confirmDeleteId !== null} onOpenChange={(open) => { if (!open) setConfirmDeleteId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("confirmDeleteTitle")}</DialogTitle>
+            <DialogDescription>{t("confirmDeleteMessage")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmDeleteId(null)} disabled={deletingId !== null}>
+              {tc("cancel")}
+            </Button>
+            <Button type="button" onClick={handleDelete} disabled={deletingId !== null} className="bg-destructive text-white hover:bg-destructive/90">
+              {deletingId !== null ? t("bulkDeleting") : t("confirmDeleteButton")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={confirmBulkDelete} onOpenChange={setConfirmBulkDelete}>
         <DialogContent>

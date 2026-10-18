@@ -1021,7 +1021,9 @@ export default async function InstituteDashboardPage({
   // live-class-session granularity for the editor, plus analyticsAttendance
   // re-aggregated by batch for the trend/low-attendance summary.
   const instituteAttendanceByKey = new Map((instituteAttendanceRows ?? []).map((a) => [`${a.live_class_id}:${a.student_id}`, a.status]));
-  const instituteAttendanceSessions: InstituteAttendanceSession[] = (instituteLiveClassRows ?? []).map((c) => {
+  const instituteAttendanceSessions: InstituteAttendanceSession[] = [...(instituteLiveClassRows ?? [])]
+    .sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime())
+    .map((c) => {
     const pool = c.batch_id ? acceptedInstituteEnrollments.filter((e) => e.batch_id === c.batch_id) : acceptedInstituteEnrollments;
     return {
       id: c.id,
@@ -1389,7 +1391,13 @@ export default async function InstituteDashboardPage({
             vacancyApplications={vacancyApplications}
           />
         ),
-        attendance: <AttendanceTab sessions={instituteAttendanceSessions} batchSummaries={batchAttendanceSummaries} />,
+        attendance: (
+          <AttendanceTab
+            sessions={instituteAttendanceSessions}
+            batchSummaries={batchAttendanceSummaries}
+            batches={batches.map((b) => ({ id: b.id, title: b.title }))}
+          />
+        ),
         finance: (
           <FinanceTab
             totalCharged={totalCharged}

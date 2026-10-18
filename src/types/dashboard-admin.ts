@@ -92,6 +92,19 @@ export type AuditLogEntry = {
   createdAt: string;
 };
 
+export type ModerationItem = {
+  id: string;
+  kind: "note" | "exam" | "assignment" | "ad" | "wantedAd";
+  title: string;
+  ownerName: string;
+  /** e.g. "Past paper", "Homework", "Draft" — a short qualifier, may be empty. */
+  detail: string;
+  createdAt: string;
+  createdAtIso: string;
+  /** Public page for this item, when one exists. */
+  viewHref: string | null;
+};
+
 export type PlatformFeatureState = {
   key: "signups" | "aiPdfImport" | "wantedAds" | "liveClasses";
   enabled: boolean;

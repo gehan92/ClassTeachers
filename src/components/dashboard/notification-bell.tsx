@@ -106,6 +106,10 @@ export function messageFor(t: Translator, n: NotificationRow): string {
       return t("types.listing_decision", {
         decision: t(data.decision === "approved" ? "decisions.approved" : "decisions.rejected"),
       });
+    case "content_removed":
+      return t("types.content_removed", { title: str(data.title), reason: str(data.reason) });
+    case "content_hidden":
+      return t("types.content_hidden", { title: str(data.title), reason: str(data.reason) });
     case "new_library_resource":
       return t("types.new_library_resource", { title: str(data.title) });
     case "verification_decision":

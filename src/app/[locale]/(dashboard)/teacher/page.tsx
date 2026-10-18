@@ -1448,7 +1448,7 @@ export default async function TeacherDashboardPage({
             isCampusLecturer={isCampusLecturer}
           />
         ),
-        attendance: <AttendanceTab sessions={attendanceSessions} />,
+        attendance: <AttendanceTab sessions={attendanceSessions} batches={analyticsBatchOptions} />,
         inquiries: <InquiriesTab inquiries={inquiries} />,
         studentRequests: <WantedAdsBrowseTab requests={wantedAdRequests} />,
         reviews: <ReviewsTab initialReviews={reviews} averageRating={averageRating ?? "0.0"} reviewCount={reviewRows?.length ?? 0} />,

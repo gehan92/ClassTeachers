@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { setAttendanceStatus } from "@/lib/dashboard/live-classes-actions";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { RollCallDialog } from "@/components/dashboard/roll-call-dialog";
 
 type AttendanceStatus = "present" | "absent" | "late";
 const STATUSES: AttendanceStatus[] = ["present", "late", "absent"];
@@ -36,17 +38,44 @@ function statusVariant(status: AttendanceStatus) {
 export function AttendanceTab({
   sessions,
   batchSummaries,
+  batches,
 }: {
   sessions: InstituteAttendanceSession[];
   batchSummaries: BatchAttendanceSummary[];
+  batches: { id: string; title: string }[];
 }) {
   const t = useTranslations("instituteDashboard.attendance");
+  const tr = useTranslations("dashboardCommon.rollCall");
   const [sessionId, setSessionId] = useState<string>(sessions[0]?.id ?? "");
   const [overrides, setOverrides] = useState<Record<string, AttendanceStatus>>({});
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [markingAll, setMarkingAll] = useState(false);
   const { refresh } = useDashboardRefresh();
 
   const session = useMemo(() => sessions.find((s) => s.id === sessionId), [sessions, sessionId]);
+  const unmarkedRows = session
+    ? session.rows.filter((row) => !(overrides[`${session.id}:${row.studentId}`] ?? row.status))
+    : [];
+
+  async function markRemainingPresent() {
+    if (!session || unmarkedRows.length === 0) return;
+    setMarkingAll(true);
+    const results = await Promise.all(
+      unmarkedRows.map((row) =>
+        setAttendanceStatus({ liveClassId: session.id, studentId: row.studentId, status: "present" }).then((r) => ({
+          studentId: row.studentId,
+          ok: !r.error,
+        })),
+      ),
+    );
+    setOverrides((prev) => {
+      const next = { ...prev };
+      for (const r of results) if (r.ok) next[`${session.id}:${r.studentId}`] = "present";
+      return next;
+    });
+    setMarkingAll(false);
+    refresh();
+  }
 
   async function updateStatus(studentId: string, status: AttendanceStatus) {
     if (!session) return;
@@ -71,9 +100,18 @@ export function AttendanceTab({
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-display text-2xl text-primary">{t("heading")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl text-primary">{t("heading")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+        </div>
+        <RollCallDialog
+          batches={batches}
+          onCreated={(id) => {
+            setSessionId(id);
+            refresh();
+          }}
+        />
       </div>
 
       {lowAttendanceBatches.length > 0 && (
@@ -120,8 +158,9 @@ export function AttendanceTab({
       </div>
 
       {sessions.length === 0 ? (
-        <div className="rounded-lg border border-border bg-white p-5">
-          <p className="text-sm text-muted-foreground">{t("noRecords")}</p>
+        <div className="rounded-lg border border-dashed border-border bg-white p-8 text-center">
+          <p className="text-sm font-medium text-foreground">{tr("emptyTitle")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{tr("emptyHint")}</p>
         </div>
       ) : (
         <>
@@ -142,9 +181,18 @@ export function AttendanceTab({
 
           {session && (
             <div className="rounded-lg border border-border bg-white p-5">
-              <div className="mb-3">
-                <h3 className="text-base text-foreground">{session.batchLabel ? `${session.batchLabel} — ${session.title}` : session.title}</h3>
-                <p className="text-xs text-muted-foreground">{session.dateLabel}</p>
+              <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-base text-foreground">{session.batchLabel ? `${session.batchLabel} — ${session.title}` : session.title}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {session.dateLabel} · {tr("markedCount", { marked: session.rows.length - unmarkedRows.length, total: session.rows.length })}
+                  </p>
+                </div>
+                {unmarkedRows.length > 0 && (
+                  <Button type="button" size="sm" variant="outline" onClick={markRemainingPresent} disabled={markingAll}>
+                    {markingAll ? tr("marking") : tr("markRemainingPresent", { count: unmarkedRows.length })}
+                  </Button>
+                )}
               </div>
               {session.rows.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t("noRecords")}</p>

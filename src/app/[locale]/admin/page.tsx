@@ -13,6 +13,7 @@ import { ReferralsTab } from "@/components/dashboard/admin/referrals-tab";
 import { PaymentsTab } from "@/components/dashboard/admin/payments-tab";
 import { AuditLogTab } from "@/components/dashboard/admin/audit-log-tab";
 import { PlatformSwitchesTab } from "@/components/dashboard/admin/platform-switches-tab";
+import { ModerationTab } from "@/components/dashboard/admin/moderation-tab";
 import { PLATFORM_FEATURES, featureSettingKey } from "@/lib/platform-features";
 import { createClient } from "@/lib/supabase/server";
 import { getNavAvailability } from "@/lib/nav-availability";
@@ -22,6 +23,7 @@ import { roleDashboardPath } from "@/lib/auth/routes";
 import type {
   AdminPayment,
   AuditLogEntry,
+  ModerationItem,
   PlatformFeatureState,
   AdminReferral,
   ApprovalEntityType,
@@ -103,6 +105,11 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     { data: notificationRows },
     { data: paymentRows },
     { data: auditRows },
+    { data: moderationNoteRows },
+    { data: moderationExamRows },
+    { data: moderationAssignmentRows },
+    { data: moderationAdRows },
+    { data: moderationWantedRows },
   ] = await Promise.all([
     supabase.from("teacher_profiles").select("id, created_at").eq("status", "pending").order("created_at", { ascending: false }),
     supabase.from("class_profiles").select("id, name, created_at").eq("status", "pending").order("created_at", { ascending: false }),
@@ -165,6 +172,36 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
       .select("id, actor_id, action, target_type, target_id, metadata, created_at")
       .order("created_at", { ascending: false })
       .limit(300),
+    // Admin -> Content: the newest teacher/institute content and student
+    // requests. Every one of these tables already grants admin read access
+    // in RLS (is_admin() / can_manage_content), so these are plain selects.
+    supabase
+      .from("notes")
+      .select("id, owner_type, owner_id, title, note_type, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200),
+    supabase
+      .from("exams")
+      .select("id, owner_type, owner_id, title, published, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200),
+    supabase
+      .from("assignments")
+      .select("id, owner_type, owner_id, title, assignment_type, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200),
+    supabase
+      .from("advertisements")
+      .select("id, owner_type, owner_id, title, status, created_at")
+      .in("owner_type", ["teacher", "class"])
+      .in("status", ["active", "removed"])
+      .order("created_at", { ascending: false })
+      .limit(200),
+    supabase
+      .from("wanted_ads")
+      .select("id, student_id, title, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200),
   ]);
 
   const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({
@@ -376,7 +413,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     if (!metadata || typeof metadata !== "object") return "";
     const m = metadata as Record<string, unknown>;
     const parts: string[] = [];
-    for (const key of ["decision", "reason", "verified", "suspended", "from", "to", "key", "value", "sponsor", "plan", "placement"]) {
+    for (const key of ["title", "decision", "reason", "verified", "suspended", "from", "to", "key", "value", "sponsor", "plan", "placement"]) {
       if (m[key] !== undefined && m[key] !== null && m[key] !== "") parts.push(`${key}: ${String(m[key])}`);
     }
     return parts.join(" · ");
@@ -397,6 +434,65 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     details: auditDetails(row.metadata),
     createdAt: dateFormatter.format(new Date(row.created_at)),
   }));
+
+  const contentOwnerName = (ownerType: string, ownerId: string | null) =>
+    ownerId
+      ? ((ownerType === "class" ? allClassNameById.get(ownerId) : profileNameById.get(ownerId)) ?? "—")
+      : "—";
+  const noteTypeLabel: Record<string, string> = {
+    tute: t("moderation.detail.tute"),
+    short_note: t("moderation.detail.shortNote"),
+    past_paper: t("moderation.detail.pastPaper"),
+  };
+  const moderationItems: ModerationItem[] = [
+    ...(moderationNoteRows ?? []).map((r) => ({
+      id: r.id,
+      kind: "note" as const,
+      title: r.title,
+      ownerName: contentOwnerName(r.owner_type, r.owner_id),
+      detail: noteTypeLabel[r.note_type] ?? "",
+      createdAtIso: r.created_at,
+      viewHref: null,
+    })),
+    ...(moderationExamRows ?? []).map((r) => ({
+      id: r.id,
+      kind: "exam" as const,
+      title: r.title,
+      ownerName: contentOwnerName(r.owner_type, r.owner_id),
+      detail: r.published ? t("moderation.detail.published") : t("moderation.detail.draft"),
+      createdAtIso: r.created_at,
+      viewHref: null,
+    })),
+    ...(moderationAssignmentRows ?? []).map((r) => ({
+      id: r.id,
+      kind: "assignment" as const,
+      title: r.title,
+      ownerName: contentOwnerName(r.owner_type, r.owner_id),
+      detail: r.assignment_type === "homework" ? t("moderation.detail.homework") : t("moderation.detail.assignment"),
+      createdAtIso: r.created_at,
+      viewHref: null,
+    })),
+    ...(moderationAdRows ?? []).map((r) => ({
+      id: r.id,
+      kind: "ad" as const,
+      title: r.title,
+      ownerName: contentOwnerName(r.owner_type, r.owner_id),
+      detail: r.status === "active" ? t("moderation.detail.live") : t("moderation.detail.paused"),
+      createdAtIso: r.created_at,
+      viewHref: r.status === "active" ? `/ad/${r.id}` : null,
+    })),
+    ...(moderationWantedRows ?? []).map((r) => ({
+      id: r.id,
+      kind: "wantedAd" as const,
+      title: r.title,
+      ownerName: profileNameById.get(r.student_id) ?? "—",
+      detail: r.status === "active" ? t("moderation.detail.open") : t("moderation.detail.closed"),
+      createdAtIso: r.created_at,
+      viewHref: r.status === "active" ? `/requests/${r.id}` : null,
+    })),
+  ]
+    .sort((a, b) => new Date(b.createdAtIso).getTime() - new Date(a.createdAtIso).getTime())
+    .map((item) => ({ ...item, createdAt: dateFormatter.format(new Date(item.createdAtIso)) }));
 
   const settingValue = (key: string, fallback: string) =>
     settingsRows?.find((s) => s.key === key)?.value ?? fallback;
@@ -485,6 +581,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
           label: t("groupTrust"),
           items: [
             { key: "flagged", label: t("tabs.flagged"), count: flaggedReviews.length },
+            { key: "moderation", label: t("tabs.moderation") },
             { key: "connections", label: t("tabs.connections") },
             { key: "auditLog", label: t("tabs.auditLog") },
           ],
@@ -526,6 +623,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
         connections: <ConnectionsTab inquiries={connectionInquiries} requests={connectionRequests} />,
         payments: <PaymentsTab payments={payments} />,
         auditLog: <AuditLogTab entries={auditLog} />,
+        moderation: <ModerationTab initialItems={moderationItems} />,
         platformSwitches: <PlatformSwitchesTab initialFeatures={featureStates} />,
       }}
       defaultTab="overview"

@@ -4,6 +4,7 @@ import type { NotificationRow } from "@/components/dashboard/notification-bell";
 import { OverviewTab } from "@/components/dashboard/student/overview-tab";
 import { AnnouncementsPanel, type AnnouncementRow } from "@/components/dashboard/student/announcements-panel";
 import { LibraryTab as StudentLibraryTab, type StudentLibraryRow } from "@/components/dashboard/student/library-tab";
+import { ActivitiesTab, type StudentActivityRow } from "@/components/dashboard/student/activities-tab";
 import { RecommendedPanel, type RecommendedListingRow } from "@/components/dashboard/student/recommended-panel";
 import { ClassesTab } from "@/components/dashboard/student/classes-tab";
 import { LiveClassesTab } from "@/components/dashboard/student/live-classes-tab";
@@ -138,6 +139,7 @@ export default async function StudentDashboardPage({
     { data: notificationRows },
     { data: recommendedTeacherAdRows },
     { data: recommendedClassAdRows },
+    { data: activityParticipationRows },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -224,6 +226,13 @@ export default async function StudentDashboardPage({
     // above), never a fabricated match.
     supabase.rpc("list_teacher_ads"),
     supabase.rpc("list_class_batch_ads"),
+    // Extracurricular activities this student takes part in (0130). The
+    // activity names come in stage 2 below — readable to the student once
+    // 0164 is applied; before that this simply returns nothing.
+    supabase
+      .from("extracurricular_participants")
+      .select("activity_id, owner_id, joined_at, certificate_issued")
+      .eq("student_id", userId),
   ]);
 
   const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({
@@ -331,6 +340,7 @@ export default async function StudentDashboardPage({
     teacherProfileResults,
     { data: classProfileDetailRows },
     { data: libraryRows },
+    { data: activityRows },
   ] = await Promise.all([
     // An exam can be narrowed by batch and/or an explicit hand-picked
     // student list (0060/0061) — is_enrolled_in_exam() is the one place
@@ -469,6 +479,17 @@ export default async function StudentDashboardPage({
             file_path: string;
             created_at: string;
           }[],
+        }),
+    activityParticipationRows?.length
+      ? supabase
+          .from("extracurricular_activities")
+          .select("id, name, description, schedule_note")
+          .in(
+            "id",
+            activityParticipationRows.map((p) => p.activity_id),
+          )
+      : Promise.resolve({
+          data: [] as { id: string; name: string; description: string | null; schedule_note: string | null }[],
         }),
   ]);
 
@@ -623,6 +644,23 @@ export default async function StudentDashboardPage({
     fileUrl: supabase.storage.from("library").getPublicUrl(r.file_path).data.publicUrl,
     addedLabel: dateFormatter.format(new Date(r.created_at)),
   }));
+
+  const activityById = new Map((activityRows ?? []).map((a) => [a.id, a]));
+  const myActivities: StudentActivityRow[] = (activityParticipationRows ?? [])
+    .map((p) => {
+      const activity = activityById.get(p.activity_id);
+      if (!activity) return null;
+      return {
+        id: p.activity_id,
+        name: activity.name,
+        description: activity.description,
+        scheduleNote: activity.schedule_note,
+        instituteName: classNameById.get(p.owner_id) ?? "—",
+        joinedLabel: dateFormatter.format(new Date(p.joined_at)),
+        certificateIssued: p.certificate_issued,
+      };
+    })
+    .filter((a): a is StudentActivityRow => a !== null);
 
   const announcements: AnnouncementRow[] = (announcementRows ?? []).map((a) => ({
     id: a.id,
@@ -1232,6 +1270,7 @@ export default async function StudentDashboardPage({
           label: t("groupMore"),
           items: [
             { key: "progress", label: t("tabs.progress") },
+            ...(myActivities.length > 0 ? [{ key: "activities", label: t("tabs.activities") }] : []),
             { key: "profile", label: t("tabs.profile") },
             { key: "settings", label: t("tabs.settings") },
           ],
@@ -1344,6 +1383,7 @@ export default async function StudentDashboardPage({
         ),
         exams: <ExamsTab exams={exams} scope="history" />,
         library: <StudentLibraryTab resources={libraryResources} />,
+        activities: <ActivitiesTab activities={myActivities} />,
         assignments: <AssignmentsTab assignments={assignments} scope="history" />,
         homework: (
           <AssignmentsTab

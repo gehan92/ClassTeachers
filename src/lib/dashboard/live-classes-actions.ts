@@ -127,6 +127,87 @@ export async function createLiveClass(input: {
 /** live_class_links and attendance_records both cascade-delete on
  * live_classes (0012, 0033) — the video room and any attendance already
  * taken go with it, no manual cleanup needed. */
+const attendanceSessionSchema = z.object({
+  title: z.string().trim().min(2).max(120),
+  batchId: z.string().uuid().optional(),
+  scheduledAt: z.iso.datetime(),
+  durationMinutes: z.coerce.number().int().min(5).max(600),
+});
+
+/**
+ * "Take roll call" on the Attendance tab — for in-person classes that never
+ * get scheduled as a live class. Creates an already-completed physical
+ * session (so it never shows as upcoming or sends a "new live class"
+ * notification) that attendance_records can hang off, reusing the exact
+ * same attendance storage and roster logic as a real live class.
+ */
+export async function createAttendanceSession(input: {
+  title: string;
+  batchId?: string;
+  scheduledAt: string;
+  durationMinutes: string;
+}): Promise<{ error: string } | { error?: undefined; id: string }> {
+  const parsed = attendanceSessionSchema.safeParse({
+    title: input.title,
+    batchId: input.batchId || undefined,
+    scheduledAt: input.scheduledAt,
+    durationMinutes: input.durationMinutes || "60",
+  });
+  if (!parsed.success) {
+    return { error: "Please give the session a name, a date, and a length of at least 5 minutes." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You need to be signed in." };
+  }
+
+  // An institute owner owns content as their class_profiles row; a teacher
+  // (including one teaching an institute batch) resolves through batches.
+  let owner: { ownerType: "teacher" | "class"; ownerId: string; batchId: string | null };
+  const { data: institute } = await supabase.from("class_profiles").select("id").eq("owner_id", user.id).maybeSingle();
+  if (institute) {
+    if (parsed.data.batchId) {
+      const { data: batch } = await supabase
+        .from("batches")
+        .select("id")
+        .eq("id", parsed.data.batchId)
+        .eq("owner_type", "class")
+        .eq("owner_id", institute.id)
+        .maybeSingle();
+      if (!batch) return { error: "That class couldn't be found." };
+    }
+    owner = { ownerType: "class", ownerId: institute.id, batchId: parsed.data.batchId ?? null };
+  } else {
+    const target = await resolveBatchOwner(supabase, user.id, parsed.data.batchId);
+    if ("error" in target) return target;
+    owner = target;
+  }
+
+  const { data: session, error } = await supabase
+    .from("live_classes")
+    .insert({
+      owner_type: owner.ownerType,
+      owner_id: owner.ownerId,
+      batch_id: owner.batchId,
+      title: parsed.data.title,
+      mode: "physical",
+      location: null,
+      scheduled_at: parsed.data.scheduledAt,
+      duration_minutes: parsed.data.durationMinutes,
+      status: "completed",
+    })
+    .select("id")
+    .single();
+  if (error || !session) {
+    return { error: "Couldn't start this roll call. Please try again." };
+  }
+  return { id: session.id };
+}
+
 export async function deleteLiveClass(liveClassId: string): Promise<ActionResult> {
   if (!liveClassId) {
     return { error: "Invalid class." };

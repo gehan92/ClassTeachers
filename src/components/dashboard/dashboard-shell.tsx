@@ -56,6 +56,7 @@ import {
   Flag,
   Link2,
   History,
+  ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -196,6 +197,9 @@ const TAB_ICONS: Partial<Record<string, LucideIcon>> = {
   flagged: Flag,
   connections: Link2,
   auditLog: History,
+  moderation: ShieldAlert,
+  // Student-only.
+  activities: Trophy,
 };
 
 /**

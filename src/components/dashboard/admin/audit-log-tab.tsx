@@ -20,6 +20,8 @@ const KNOWN_ACTIONS = [
   "review_kept",
   "platform_setting_updated",
   "referral_reward_granted",
+  "content_removed",
+  "content_hidden",
 ] as const;
 type KnownAction = (typeof KNOWN_ACTIONS)[number];
 
@@ -42,6 +44,8 @@ export function AuditLogTab({ entries }: { entries: AuditLogEntry[] }) {
     review_kept: t("actions.review_kept"),
     platform_setting_updated: t("actions.platform_setting_updated"),
     referral_reward_granted: t("actions.referral_reward_granted"),
+    content_removed: t("actions.content_removed"),
+    content_hidden: t("actions.content_hidden"),
   };
   const labelFor = (a: string) => (a in actionLabels ? actionLabels[a as KnownAction] : a);
 

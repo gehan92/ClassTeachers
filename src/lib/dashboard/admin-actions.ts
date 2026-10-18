@@ -412,6 +412,142 @@ export async function updatePlatformSetting(input: { key: string; value: string 
   return {};
 }
 
+export type ModeratedContentKind = "note" | "exam" | "assignment" | "ad" | "wantedAd";
+
+/** Resolves who gets told about a moderation decision: a teacher owns content
+ * directly, an institute's notification goes to its class_profiles owner. */
+async function contentOwnerRecipient(
+  supabase: SupabaseClient,
+  ownerType: string,
+  ownerId: string | null,
+): Promise<string | null> {
+  if (!ownerId) return null;
+  if (ownerType !== "class") return ownerId;
+  const { data } = await supabase.from("class_profiles").select("owner_id").eq("id", ownerId).maybeSingle();
+  return data?.owner_id ?? null;
+}
+
+/**
+ * "Remove" on Admin -> Content. RLS already gives admin delete/update reach
+ * on every one of these tables (is_admin() / can_manage_content). The owner
+ * always gets a notification with the reason, and every action is logged.
+ *
+ * Exams are hidden (unpublished), never deleted — deleting would also wipe
+ * every student's submitted answers and grades. Everything else is removed
+ * outright; an ad is deleted rather than paused because owners can re-activate
+ * a paused ad themselves.
+ */
+export async function moderateContent(input: {
+  kind: ModeratedContentKind;
+  id: string;
+  reason: string;
+}): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  if ("error" in admin) {
+    return { error: admin.error };
+  }
+  const reason = input.reason.trim().slice(0, 500);
+  if (reason.length < 5) {
+    return { error: "Please tell the owner why this is being removed (at least a few words)." };
+  }
+
+  const supabase = await createClient();
+  let recipientId: string | null = null;
+  let title = "";
+  let tab = "overview";
+
+  if (input.kind === "note") {
+    const { data: note } = await supabase
+      .from("notes")
+      .select("owner_type, owner_id, title, file_path")
+      .eq("id", input.id)
+      .maybeSingle();
+    if (!note) return { error: "This item no longer exists." };
+    const { error } = await supabase.from("notes").delete().eq("id", input.id);
+    if (error) return { error: "Couldn't remove this item. Please try again." };
+    await supabase.storage.from("notes").remove([note.file_path]);
+    recipientId = await contentOwnerRecipient(supabase, note.owner_type, note.owner_id);
+    title = note.title;
+    tab = "notes";
+  } else if (input.kind === "assignment") {
+    const { data: assignment } = await supabase
+      .from("assignments")
+      .select("owner_type, owner_id, title, file_path")
+      .eq("id", input.id)
+      .maybeSingle();
+    if (!assignment) return { error: "This item no longer exists." };
+    const { data: submissions } = await supabase
+      .from("assignment_submissions")
+      .select("photo_urls")
+      .eq("assignment_id", input.id);
+    const { error } = await supabase.from("assignments").delete().eq("id", input.id);
+    if (error) return { error: "Couldn't remove this item. Please try again." };
+    await supabase.storage.from("assignments").remove([assignment.file_path]);
+    const photoPaths = (submissions ?? []).flatMap((s) => s.photo_urls ?? []);
+    if (photoPaths.length > 0) await supabase.storage.from("submissions").remove(photoPaths);
+    recipientId = await contentOwnerRecipient(supabase, assignment.owner_type, assignment.owner_id);
+    title = assignment.title;
+    tab = "assignments";
+  } else if (input.kind === "exam") {
+    const { data: exam, error } = await supabase
+      .from("exams")
+      .update({ published: false })
+      .eq("id", input.id)
+      .select("owner_type, owner_id, title")
+      .maybeSingle();
+    if (error || !exam) return { error: "Couldn't hide this exam. Please try again." };
+    recipientId = await contentOwnerRecipient(supabase, exam.owner_type, exam.owner_id);
+    title = exam.title;
+    tab = "exams";
+  } else if (input.kind === "ad") {
+    const { data: ad } = await supabase
+      .from("advertisements")
+      .select("owner_type, owner_id, title")
+      .eq("id", input.id)
+      .in("owner_type", ["teacher", "class"])
+      .maybeSingle();
+    if (!ad) return { error: "This item no longer exists." };
+    const { error } = await supabase.from("advertisements").delete().eq("id", input.id);
+    if (error) return { error: "Couldn't remove this item. Please try again." };
+    recipientId = await contentOwnerRecipient(supabase, ad.owner_type, ad.owner_id);
+    title = ad.title;
+    tab = "ads";
+  } else if (input.kind === "wantedAd") {
+    const { data: wanted } = await supabase
+      .from("wanted_ads")
+      .select("student_id, title")
+      .eq("id", input.id)
+      .maybeSingle();
+    if (!wanted) return { error: "This item no longer exists." };
+    const { error } = await supabase.from("wanted_ads").delete().eq("id", input.id);
+    if (error) return { error: "Couldn't remove this item. Please try again." };
+    recipientId = wanted.student_id;
+    title = wanted.title;
+    tab = "wantedAds";
+  } else {
+    return { error: "Unknown content type." };
+  }
+
+  await logAdminAction(
+    supabase,
+    admin.userId,
+    input.kind === "exam" ? "content_hidden" : "content_removed",
+    input.kind,
+    input.id,
+    { title, reason },
+  );
+  // Deliberately no prefKey: a moderation notice is something the owner
+  // must always see, like a listing decision's reason.
+  await notify(
+    supabase,
+    recipientId,
+    input.kind === "exam" ? "content_hidden" : "content_removed",
+    { kind: input.kind, title, reason },
+    tab,
+  );
+  return {};
+}
+
 /** On/off toggle on Admin -> Platform switches. Whitelisted to the known
  * switches so this can't be used to write arbitrary platform_settings keys. */
 export async function setPlatformFeature(input: { feature: string; enabled: boolean }): Promise<ActionResult> {

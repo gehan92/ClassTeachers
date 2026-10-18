@@ -127,7 +127,9 @@
       "verification_granted": "Your account is now verified. The verified badge shows on your listing.",
       "verification_removed": "Your verified badge was removed. Upload an updated document from your profile to request it again.",
       "account_role_changed": "Your account type was changed to {role}. Please complete your profile for it.",
-      "new_library_resource": "A new library resource was shared: \"{title}\"."
+      "new_library_resource": "A new library resource was shared: \"{title}\".",
+      "content_removed": "An admin removed \"{title}\": \"{reason}\"",
+      "content_hidden": "An admin hid your exam \"{title}\" from students: \"{reason}\""
     },
     "responderTypes": {
       "teacher": "teacher",
@@ -1132,7 +1134,8 @@
       "connections": "Connections",
       "payments": "Payments",
       "auditLog": "Audit Log",
-      "platformSwitches": "Platform Switches"
+      "platformSwitches": "Platform Switches",
+      "moderation": "Content"
     },
     "overview": {
       "title": "Platform Overview",
@@ -1437,7 +1440,9 @@
         "review_removed": "Review removed",
         "review_kept": "Flagged review kept",
         "platform_setting_updated": "Platform setting changed",
-        "referral_reward_granted": "Referral reward granted"
+        "referral_reward_granted": "Referral reward granted",
+        "content_removed": "Content removed",
+        "content_hidden": "Exam hidden"
       }
     },
     "platformSwitches": {
@@ -1468,6 +1473,63 @@
         "name": "Scheduling live classes",
         "description": "Lets teachers and institutes schedule new live classes.",
         "offEffect": "No one can schedule new live classes. Classes already scheduled still run as planned."
+      }
+    },
+    "moderation": {
+      "title": "Content",
+      "subtitle": "Everything teachers and institutes publish, plus student requests. Remove anything that breaks the rules — the owner is told why.",
+      "filterLabel": "Filter by type",
+      "kinds": {
+        "all": "All",
+        "note": "Notes",
+        "exam": "Exams",
+        "assignment": "Assignments",
+        "ad": "Ads",
+        "wantedAd": "Student requests"
+      },
+      "detail": {
+        "tute": "Tute / note",
+        "shortNote": "Short note",
+        "pastPaper": "Past paper",
+        "published": "Published",
+        "draft": "Draft",
+        "homework": "Homework",
+        "assignment": "Assignment",
+        "live": "Live",
+        "paused": "Paused",
+        "open": "Open",
+        "closed": "Closed"
+      },
+      "hiddenDetail": "Hidden by admin",
+      "searchPlaceholder": "Search by title or owner...",
+      "empty": "Nothing has been published yet.",
+      "noMatches": "Nothing matches your search.",
+      "columns": {
+        "item": "Item",
+        "type": "Type",
+        "owner": "Owner",
+        "date": "Added",
+        "actions": "Actions"
+      },
+      "view": "View",
+      "remove": "Remove",
+      "hide": "Hide",
+      "consequence": {
+        "note": "The file is deleted and students can no longer open it.",
+        "exam": "The exam goes back to draft so students can't see or start it. Students' answers and grades are kept.",
+        "assignment": "The assignment and every student submission for it are permanently deleted.",
+        "ad": "The ad is deleted and disappears from search straight away.",
+        "wantedAd": "The request is deleted, along with any responses to it."
+      },
+      "dialog": {
+        "removeTitle": "Remove this item?",
+        "hideTitle": "Hide this exam?",
+        "reasonLabel": "Reason",
+        "reasonPlaceholder": "e.g. This file contains copyrighted material from a paid book.",
+        "reasonHint": "Sent to the owner and saved in the audit log.",
+        "cancel": "Cancel",
+        "confirmRemove": "Remove",
+        "confirmHide": "Hide exam"
       }
     }
   },
@@ -2182,7 +2244,8 @@
       "wantedAds": "Post an Ad",
       "wantedAdResponses": "Responses",
       "inquiries": "Messages",
-      "library": "Library"
+      "library": "Library",
+      "activities": "Activities"
     },
     "announcements": {
       "heading": "Announcements"
@@ -2739,6 +2802,13 @@
       "noMatches": "No resources match your search.",
       "added": "Added {date}",
       "open": "Open"
+    },
+    "activities": {
+      "title": "My activities",
+      "subtitle": "Clubs, sports and societies your institutes have enrolled you in.",
+      "empty": "You're not enrolled in any activities yet.",
+      "certificateIssued": "Certificate issued",
+      "joined": "Joined {date}"
     }
   },
   "dashboardShell": {
@@ -4144,5 +4214,28 @@
     "signInToUnlock": "Sign in to unlock",
     "unlockLabel": "Institute unlock fee",
     "suspendedBanner": "This institute is currently suspended. You still have access to its page, but new joins are paused."
+  },
+  "dashboardCommon": {
+    "rollCall": {
+      "button": "Take roll call",
+      "title": "Take roll call",
+      "description": "Start an attendance sheet for a class held in person. Students aren't notified, and it won't appear as an upcoming live class.",
+      "classLabel": "Class",
+      "allStudents": "All my students",
+      "nameLabel": "Session name (optional)",
+      "namePlaceholder": "e.g. Week 6 — Algebra",
+      "defaultTitle": "{batch} — roll call",
+      "whenLabel": "Date and time",
+      "durationLabel": "Length (minutes)",
+      "cancel": "Cancel",
+      "start": "Start roll call",
+      "starting": "Starting…",
+      "genericError": "Couldn't start this roll call. Please try again.",
+      "emptyTitle": "No attendance sheets yet",
+      "emptyHint": "Live classes you schedule appear here automatically. For an in-person class, use Take roll call.",
+      "markedCount": "{marked} of {total} marked",
+      "markRemainingPresent": "{count, plural, one {Mark # remaining present} other {Mark # remaining present}}",
+      "marking": "Marking…"
+    }
   }
 }

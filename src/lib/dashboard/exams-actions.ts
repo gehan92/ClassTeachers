@@ -36,6 +36,14 @@ const createExamSchema = z.object({
   // pitfall here — see readFlag's comment in question-bank-actions.ts for
   // why that matters elsewhere.
   revealAnswers: z.boolean().optional(),
+  maxAttempts: z.coerce.number().int().min(1).max(10),
+  closesAt: z.iso.datetime().optional(),
+  shuffleQuestions: z.boolean(),
+  shuffleOptions: z.boolean(),
+  negativeMarkingFraction: z.coerce.number().min(0).max(1),
+  // Percentage of the total marks (0-100), not a raw score, so it stays
+  // meaningful when questions are added/removed from the bank later.
+  passMarkPercent: z.coerce.number().min(0).max(100).optional(),
 });
 
 export async function createExam(input: {
@@ -46,6 +54,12 @@ export async function createExam(input: {
   batchId?: string;
   participantStudentIds?: string[];
   revealAnswers?: boolean;
+  maxAttempts?: string;
+  closesAt?: string;
+  shuffleQuestions?: boolean;
+  shuffleOptions?: boolean;
+  negativeMarkingFraction?: string;
+  passMarkPercent?: string;
 }): Promise<ActionResult> {
   const parsed = createExamSchema.safeParse({
     title: input.title,
@@ -55,9 +69,22 @@ export async function createExam(input: {
     batchId: input.batchId || undefined,
     participantStudentIds: input.participantStudentIds?.length ? input.participantStudentIds : undefined,
     revealAnswers: input.revealAnswers,
+    maxAttempts: input.maxAttempts || "1",
+    closesAt: input.closesAt || undefined,
+    shuffleQuestions: input.shuffleQuestions ?? true,
+    shuffleOptions: input.shuffleOptions ?? true,
+    negativeMarkingFraction: input.negativeMarkingFraction || "0",
+    passMarkPercent: input.passMarkPercent || undefined,
   });
   if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    if (field === "maxAttempts") return { error: "Attempts allowed must be a whole number from 1 to 10." };
+    if (field === "negativeMarkingFraction") return { error: "Negative marking must be between 0 and 1." };
+    if (field === "passMarkPercent") return { error: "Pass mark must be a percentage from 0 to 100." };
     return { error: "Please add a title, pick at least one question, and set a schedule." };
+  }
+  if (parsed.data.closesAt && new Date(parsed.data.closesAt) <= new Date(parsed.data.scheduledAt)) {
+    return { error: "The closing time must be after the exam's start time." };
   }
 
   const supabase = await createClient();
@@ -89,6 +116,12 @@ export async function createExam(input: {
       // new ones start hidden by this app-level override instead.
       published: false,
       reveal_answers: parsed.data.revealAnswers ?? false,
+      max_attempts: parsed.data.maxAttempts,
+      closes_at: parsed.data.closesAt ?? null,
+      shuffle_questions: parsed.data.shuffleQuestions,
+      shuffle_options: parsed.data.shuffleOptions,
+      negative_marking_fraction: parsed.data.negativeMarkingFraction,
+      pass_mark: parsed.data.passMarkPercent ?? null,
     })
     .select("id")
     .single();
@@ -400,7 +433,7 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
 
   const { data: exam } = await supabase
     .from("exams")
-    .select("question_ids, owner_type, owner_id, title, duration_minutes")
+    .select("question_ids, owner_type, owner_id, title, duration_minutes, negative_marking_fraction")
     .eq("id", examId)
     .maybeSingle();
   if (!exam) {
@@ -452,14 +485,24 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
     : { data: [] as { question_id: string; is_correct: boolean }[] };
   const correctByQuestionId = new Map((mcqResults ?? []).map((r) => [r.question_id, r.is_correct]));
 
-  let mcqScore = 0;
+  // Negative marking: a wrong answer costs fraction × that question's marks;
+  // a skipped question costs nothing (so guessing is discouraged, not
+  // skipping). The MCQ total is floored at 0 — a student can't end up below
+  // zero overall.
+  const negativeFraction = Number(exam.negative_marking_fraction) || 0;
+  const questionScores: Record<string, number> = {};
+  let rawMcqScore = 0;
   let mcqMaxScore = 0;
   for (const q of mcqQuestions) {
     mcqMaxScore += q.marks;
-    if (correctByQuestionId.get(q.id)) {
-      mcqScore += q.marks;
-    }
+    const answered = (mcqAnswers[q.id] ?? []).length > 0;
+    let score = 0;
+    if (correctByQuestionId.get(q.id)) score = q.marks;
+    else if (answered && negativeFraction > 0) score = -Math.round(q.marks * negativeFraction * 100) / 100;
+    questionScores[q.id] = score;
+    rawMcqScore += score;
   }
+  const mcqScore = Math.max(0, Math.round(rawMcqScore * 100) / 100);
 
   const photoUrls: string[] = [];
   for (const [index, file] of files.entries()) {
@@ -484,11 +527,6 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
     ? Date.now() >
       new Date(existingSubmission.started_at).getTime() + exam.duration_minutes * 60_000 + 2 * 60_000
     : false;
-
-  const questionScores: Record<string, number> = {};
-  for (const q of mcqQuestions) {
-    questionScores[q.id] = correctByQuestionId.get(q.id) ? q.marks : 0;
-  }
 
   const { error } = await supabase
     .from("exam_submissions")

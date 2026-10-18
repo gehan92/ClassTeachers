@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type { BulkImportQuestionInput } from "@/lib/dashboard/question-bank-actions";
+import { FEATURE_DISABLED_MESSAGES, isFeatureEnabled } from "@/lib/platform-features";
 
 // Gemini's inline (base64) request body caps out around 20MB total — base64
 // inflates raw bytes by ~1.33x, so 10MB raw leaves headroom for the prompt
@@ -140,7 +141,7 @@ export async function extractQuestionsFromPdf(formData: FormData): Promise<Extra
     return { error: "Please upload a PDF file.", questions: [] };
   }
   if (file.size > MAX_PDF_BYTES) {
-    return { error: "This PDF is too large (max 15MB).", questions: [] };
+    return { error: "This PDF is too large (max 10MB).", questions: [] };
   }
 
   const gradeBandRaw = formData.get("gradeBand");
@@ -174,6 +175,15 @@ export async function extractQuestionsFromPdf(formData: FormData): Promise<Extra
   } = await supabase.auth.getUser();
   if (!user) {
     return { error: "You need to be signed in.", questions: [] };
+  }
+  // Each call spends paid Gemini quota, so only accounts that actually own a
+  // question bank may use it — not students or anonymous sessions.
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  if (!profile || !["teacher", "campus_lecturer", "class", "admin"].includes(profile.role)) {
+    return { error: "Only teacher and institute accounts can import questions from a PDF.", questions: [] };
+  }
+  if (!(await isFeatureEnabled("aiPdfImport"))) {
+    return { error: FEATURE_DISABLED_MESSAGES.aiPdfImport, questions: [] };
   }
 
   const arrayBuffer = await file.arrayBuffer();

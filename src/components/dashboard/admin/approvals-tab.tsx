@@ -5,6 +5,16 @@ import { useTranslations } from "next-intl";
 import { School } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { resolveApproval } from "@/lib/dashboard/admin-actions";
 import { cn } from "@/lib/utils";
@@ -30,6 +40,8 @@ export function ApprovalsTab({ initialApprovals }: { initialApprovals: PendingAp
   const [approvals, setApprovals] = useState(initialApprovals);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rejecting, setRejecting] = useState<PendingApproval | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const entityTypeLabels: Record<ApprovalEntityType, string> = {
     teacher: t("entityTypes.teacher"),
@@ -37,16 +49,18 @@ export function ApprovalsTab({ initialApprovals }: { initialApprovals: PendingAp
     campus_lecturer: t("entityTypes.campusLecturer"),
   };
 
-  async function handleResolve(approval: PendingApproval, decision: "approved" | "rejected") {
+  async function handleResolve(approval: PendingApproval, decision: "approved" | "rejected", reason?: string) {
     setPendingId(approval.id);
     setError(null);
     const kind = approval.entityType === "institute" ? "class" : "teacher";
-    const result = await resolveApproval({ kind, id: approval.id, decision });
+    const result = await resolveApproval({ kind, id: approval.id, decision, reason });
     setPendingId(null);
     if (result.error) {
       setError(result.error);
       return;
     }
+    setRejecting(null);
+    setRejectReason("");
     setApprovals((prev) => prev.filter((a) => a.id !== approval.id));
     // The Overview tab's pending-approvals count is a separately pre-built
     // panel — it won't reflect this until the server data is refetched.
@@ -118,7 +132,11 @@ export function ApprovalsTab({ initialApprovals }: { initialApprovals: PendingAp
                         size="sm"
                         variant="ghost"
                         className={cn("text-lock hover:text-lock")}
-                        onClick={() => handleResolve(approval, "rejected")}
+                        onClick={() => {
+                          setError(null);
+                          setRejectReason("");
+                          setRejecting(approval);
+                        }}
                         disabled={pendingId === approval.id}
                       >
                         {t("actions.reject")}
@@ -131,6 +149,41 @@ export function ApprovalsTab({ initialApprovals }: { initialApprovals: PendingAp
           </Table>
         )}
       </div>
+
+      <Dialog open={rejecting !== null} onOpenChange={(open) => !open && setRejecting(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{rejecting ? t("rejectDialog.title", { name: rejecting.name }) : ""}</DialogTitle>
+            <DialogDescription>{t("rejectDialog.description")}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-1.5">
+            <Label htmlFor="reject-reason">{t("rejectDialog.reasonLabel")}</Label>
+            <Textarea
+              id="reject-reason"
+              rows={4}
+              maxLength={500}
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder={t("rejectDialog.reasonPlaceholder")}
+            />
+            <p className="text-right text-xs text-muted-foreground">{rejectReason.length}/500</p>
+          </div>
+          {error && rejecting && <p className="text-sm font-medium text-destructive">{error}</p>}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setRejecting(null)}>
+              {t("rejectDialog.cancel")}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={!rejecting || pendingId === rejecting.id || rejectReason.trim().length < 5}
+              onClick={() => rejecting && handleResolve(rejecting, "rejected", rejectReason)}
+            >
+              {t("rejectDialog.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

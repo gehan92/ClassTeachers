@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { notifyContentAudience } from "@/lib/dashboard/notify";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -65,6 +66,15 @@ export async function uploadLibraryResource(formData: FormData): Promise<ActionR
     await supabase.storage.from("library").remove([filePath]);
     return { error: "Couldn't save the resource. Please try again." };
   }
+  await notifyContentAudience(
+    supabase,
+    { ownerType: "class", ownerId: instituteId, batchId: null },
+    null,
+    "new_library_resource",
+    { title: parsed.data.title },
+    "library",
+    "newClassContent",
+  );
   return {};
 }
 

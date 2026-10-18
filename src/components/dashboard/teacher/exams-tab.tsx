@@ -129,6 +129,12 @@ export function ExamsTab({
   const [batchId, setBatchId] = useState<string>(NO_BATCH);
   const [excludedStudentIds, setExcludedStudentIds] = useState<Set<string>>(new Set());
   const [revealAnswers, setRevealAnswers] = useState(false);
+  const [maxAttempts, setMaxAttempts] = useState("1");
+  const [closesAt, setClosesAt] = useState("");
+  const [shuffleQuestions, setShuffleQuestions] = useState(true);
+  const [shuffleOptions, setShuffleOptions] = useState(true);
+  const [negativeMarking, setNegativeMarking] = useState("0");
+  const [passMark, setPassMark] = useState("");
   const [pickerMode, setPickerMode] = useState<"manual" | "auto">("manual");
   const [pickerSearch, setPickerSearch] = useState("");
   const [pickerSubject, setPickerSubject] = useState<string>(ALL_PICKER_SUBJECTS);
@@ -312,6 +318,12 @@ export function ExamsTab({
     setBatchId(NO_BATCH);
     setExcludedStudentIds(new Set());
     setRevealAnswers(false);
+    setMaxAttempts("1");
+    setClosesAt("");
+    setShuffleQuestions(true);
+    setShuffleOptions(true);
+    setNegativeMarking("0");
+    setPassMark("");
     setPickerMode("manual");
     setPickerSearch("");
     setPickerSubject(ALL_PICKER_SUBJECTS);
@@ -341,6 +353,12 @@ export function ExamsTab({
       batchId: batchId !== NO_BATCH ? batchId : undefined,
       participantStudentIds,
       revealAnswers,
+      maxAttempts,
+      closesAt: closesAt ? new Date(closesAt).toISOString() : undefined,
+      shuffleQuestions,
+      shuffleOptions,
+      negativeMarkingFraction: negativeMarking,
+      passMarkPercent: passMark,
     });
     setSaving(false);
     if (result.error) {
@@ -680,6 +698,79 @@ export function ExamsTab({
                 )}
               </div>
             )}
+          </div>
+
+          <div className="mt-5 rounded-md border border-border bg-muted/30 p-4">
+            <h4 className="text-sm font-semibold text-foreground">{t("form.rulesHeading")}</h4>
+            <p className="mt-0.5 mb-3 text-xs text-muted-foreground">{t("form.rulesHint")}</p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <Label htmlFor="exam-attempts">{t("form.maxAttemptsLabel")}</Label>
+                <Select value={maxAttempts} onValueChange={(v) => v && setMaxAttempts(v)}>
+                  <SelectTrigger id="exam-attempts" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["1", "2", "3", "5", "10"].map((n) => (
+                      <SelectItem key={n} value={n}>
+                        {t("form.attemptsOption", { count: Number(n) })}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="exam-closes">{t("form.closesAtLabel")}</Label>
+                <Input
+                  id="exam-closes"
+                  type="datetime-local"
+                  value={closesAt}
+                  min={scheduledAt || undefined}
+                  onChange={(e) => setClosesAt(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">{t("form.closesAtHint")}</p>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="exam-negative">{t("form.negativeMarkingLabel")}</Label>
+                <Select value={negativeMarking} onValueChange={(v) => v && setNegativeMarking(v)}>
+                  <SelectTrigger id="exam-negative" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">{t("form.negativeMarkingNone")}</SelectItem>
+                    <SelectItem value="0.25">{t("form.negativeMarkingQuarter")}</SelectItem>
+                    <SelectItem value="0.33">{t("form.negativeMarkingThird")}</SelectItem>
+                    <SelectItem value="0.5">{t("form.negativeMarkingHalf")}</SelectItem>
+                    <SelectItem value="1">{t("form.negativeMarkingFull")}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">{t("form.negativeMarkingHint")}</p>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="exam-pass">{t("form.passMarkLabel")}</Label>
+                <Input
+                  id="exam-pass"
+                  type="number"
+                  min="0"
+                  max="100"
+                  inputMode="numeric"
+                  placeholder={t("form.passMarkPlaceholder")}
+                  value={passMark}
+                  onChange={(e) => setPassMark(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">{t("form.passMarkHint")}</p>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-col gap-2">
+              <label className="flex w-fit items-start gap-2.5 text-sm text-foreground">
+                <Checkbox className="mt-0.5" checked={shuffleQuestions} onCheckedChange={(c) => setShuffleQuestions(c === true)} />
+                {t("form.shuffleQuestionsToggle")}
+              </label>
+              <label className="flex w-fit items-start gap-2.5 text-sm text-foreground">
+                <Checkbox className="mt-0.5" checked={shuffleOptions} onCheckedChange={(c) => setShuffleOptions(c === true)} />
+                {t("form.shuffleOptionsToggle")}
+              </label>
+            </div>
           </div>
 
           <div className="mt-4">

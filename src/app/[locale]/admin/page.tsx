@@ -10,12 +10,19 @@ import { SiteAdsTab } from "@/components/dashboard/admin/site-ads-tab";
 import { FlaggedReviewsTab } from "@/components/dashboard/admin/flagged-reviews-tab";
 import { ConnectionsTab } from "@/components/dashboard/admin/connections-tab";
 import { ReferralsTab } from "@/components/dashboard/admin/referrals-tab";
+import { PaymentsTab } from "@/components/dashboard/admin/payments-tab";
+import { AuditLogTab } from "@/components/dashboard/admin/audit-log-tab";
+import { PlatformSwitchesTab } from "@/components/dashboard/admin/platform-switches-tab";
+import { PLATFORM_FEATURES, featureSettingKey } from "@/lib/platform-features";
 import { createClient } from "@/lib/supabase/server";
 import { getNavAvailability } from "@/lib/nav-availability";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createDateFormatter } from "@/lib/format-date";
 import { roleDashboardPath } from "@/lib/auth/routes";
 import type {
+  AdminPayment,
+  AuditLogEntry,
+  PlatformFeatureState,
   AdminReferral,
   ApprovalEntityType,
   ConnectionInquiry,
@@ -94,6 +101,8 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     { data: classProfileRows },
     { data: referralRows },
     { data: notificationRows },
+    { data: paymentRows },
+    { data: auditRows },
   ] = await Promise.all([
     supabase.from("teacher_profiles").select("id, created_at").eq("status", "pending").order("created_at", { ascending: false }),
     supabase.from("class_profiles").select("id, name, created_at").eq("status", "pending").order("created_at", { ascending: false }),
@@ -127,11 +136,14 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
       .order("joined_at", { ascending: false })
       .limit(50),
     supabase.from("platform_subscriptions").select("plan, status, updated_at"),
-    supabase.from("platform_settings").select("key, value").in("key", ["standard_price", "premium_price"]),
+    supabase
+      .from("platform_settings")
+      .select("key, value")
+      .in("key", ["standard_price", "premium_price", ...PLATFORM_FEATURES.map(featureSettingKey)]),
     supabase.from("teacher_profiles").select("id, created_at, institution_verified, verification_document_path"),
     supabase
       .from("class_profiles")
-      .select("id, created_at, owner_id, institution_verified, verification_document_path"),
+      .select("id, name, created_at, owner_id, institution_verified, verification_document_path"),
     // referrals' own SELECT policy (0089) already covers "referrer_id =
     // auth.uid() or is_admin()" — this admin session sees every row
     // directly, no RPC needed, same as the inquiries/enrollments oversight
@@ -141,6 +153,18 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
       .select("id, referrer_id, referred_id, reward_status, created_at")
       .order("created_at", { ascending: false }),
     supabase.rpc("list_my_notifications"),
+    // platform_payments' SELECT policy (0147) already grants admin every
+    // row — the real PayHere money trail, newest first.
+    supabase
+      .from("platform_payments")
+      .select("id, student_id, purpose, enrollment_id, institute_id, amount, currency, payhere_order_id, status, paid_at, created_at")
+      .order("created_at", { ascending: false })
+      .limit(300),
+    supabase
+      .from("audit_log")
+      .select("id, actor_id, action, target_type, target_id, metadata, created_at")
+      .order("created_at", { ascending: false })
+      .limit(300),
   ]);
 
   const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({
@@ -155,6 +179,9 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
   const pendingTeacherIds = (pendingTeacherRows ?? []).map((row) => row.id);
   const flaggedTeacherIds = (flaggedReviewRows ?? []).filter((r) => r.target_type !== "class").map((r) => r.target_id);
   const flaggedClassIds = (flaggedReviewRows ?? []).filter((r) => r.target_type === "class").map((r) => r.target_id);
+  const paymentEnrollmentIds = [
+    ...new Set((paymentRows ?? []).map((p) => p.enrollment_id).filter((id): id is string => Boolean(id))),
+  ];
   const connectionClassIds = [
     ...new Set([
       ...(recentInquiryRows ?? []).filter((r) => r.owner_type === "class").map((r) => r.owner_id),
@@ -169,6 +196,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     { data: flaggedTeacherProfiles },
     { data: flaggedClassProfiles },
     { data: connectionClassRows },
+    { data: paymentEnrollmentRows },
   ] = await Promise.all([
     pendingTeacherIds.length
       ? supabase.from("profiles").select("id, full_name, role").in("id", pendingTeacherIds)
@@ -182,6 +210,9 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     connectionClassIds.length
       ? supabase.from("class_profiles").select("id, name").in("id", connectionClassIds)
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    paymentEnrollmentIds.length
+      ? supabase.from("enrollments").select("id, owner_type, owner_id").in("id", paymentEnrollmentIds)
+      : Promise.resolve({ data: [] as { id: string; owner_type: string; owner_id: string }[] }),
   ]);
 
   // Everything below is pure computation over already-fetched data — no
@@ -312,8 +343,67 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     createdAt: dateFormatter.format(new Date(row.created_at)),
   }));
 
+  const allClassNameById = new Map((classProfileRows ?? []).map((c) => [c.id, c.name]));
+  const enrollmentOwnerById = new Map((paymentEnrollmentRows ?? []).map((e) => [e.id, e]));
+
+  const payments: AdminPayment[] = (paymentRows ?? []).map((row) => {
+    const enrollment = row.enrollment_id ? enrollmentOwnerById.get(row.enrollment_id) : undefined;
+    const targetLabel = row.institute_id
+      ? (allClassNameById.get(row.institute_id) ?? "—")
+      : enrollment
+        ? enrollment.owner_type === "class"
+          ? (allClassNameById.get(enrollment.owner_id) ?? "—")
+          : (profileNameById.get(enrollment.owner_id) ?? "—")
+        : "—";
+    return {
+      id: row.id,
+      studentName: profileNameById.get(row.student_id) ?? "—",
+      purpose: row.purpose,
+      targetLabel,
+      amount: Number(row.amount),
+      currency: row.currency,
+      orderId: row.payhere_order_id,
+      status: row.status,
+      createdAt: dateFormatter.format(new Date(row.created_at)),
+      createdAtIso: row.created_at,
+      paidAt: row.paid_at ? dateFormatter.format(new Date(row.paid_at)) : null,
+    };
+  });
+
+  // Turns audit_log.metadata into a short readable line — only the keys
+  // admin actions actually write, so nothing internal leaks into the view.
+  function auditDetails(metadata: unknown): string {
+    if (!metadata || typeof metadata !== "object") return "";
+    const m = metadata as Record<string, unknown>;
+    const parts: string[] = [];
+    for (const key of ["decision", "reason", "verified", "suspended", "from", "to", "key", "value", "sponsor", "plan", "placement"]) {
+      if (m[key] !== undefined && m[key] !== null && m[key] !== "") parts.push(`${key}: ${String(m[key])}`);
+    }
+    return parts.join(" · ");
+  }
+
+  function auditTargetLabel(targetType: string | null, targetId: string | null): string {
+    if (!targetId) return targetType ?? "—";
+    if (targetType === "class") return allClassNameById.get(targetId) ?? targetType;
+    if (targetType === "teacher" || targetType === "profile") return profileNameById.get(targetId) ?? targetType;
+    return targetType ?? "—";
+  }
+
+  const auditLog: AuditLogEntry[] = (auditRows ?? []).map((row) => ({
+    id: row.id,
+    actorName: row.actor_id ? (profileNameById.get(row.actor_id) ?? "—") : "—",
+    action: row.action,
+    targetLabel: auditTargetLabel(row.target_type, row.target_id),
+    details: auditDetails(row.metadata),
+    createdAt: dateFormatter.format(new Date(row.created_at)),
+  }));
+
   const settingValue = (key: string, fallback: string) =>
     settingsRows?.find((s) => s.key === key)?.value ?? fallback;
+  const featureStates: PlatformFeatureState[] = PLATFORM_FEATURES.map((key) => ({
+    key,
+    enabled: settingValue(featureSettingKey(key), "true") !== "false",
+  }));
   const standardPrice = settingValue("standard_price", "2500");
   const premiumPrice = settingValue("premium_price", "4900");
 
@@ -369,12 +459,18 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
             { key: "overview", label: t("tabs.overview") },
             { key: "approvals", label: t("tabs.approvals"), count: approvals.length },
             { key: "users", label: t("tabs.users") },
+            { key: "platformSwitches", label: t("tabs.platformSwitches") },
           ],
         },
         {
           key: "monetization",
           label: t("groupMonetization"),
           items: [
+            {
+              key: "payments",
+              label: t("tabs.payments"),
+              count: payments.filter((p) => p.status === "failed").length || undefined,
+            },
             { key: "subscriptions", label: t("tabs.subscriptions") },
             { key: "siteAds", label: t("tabs.siteAds") },
             {
@@ -390,6 +486,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
           items: [
             { key: "flagged", label: t("tabs.flagged"), count: flaggedReviews.length },
             { key: "connections", label: t("tabs.connections") },
+            { key: "auditLog", label: t("tabs.auditLog") },
           ],
         },
       ]}
@@ -427,6 +524,9 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
         referrals: <ReferralsTab initialReferrals={referrals} />,
         flagged: <FlaggedReviewsTab initialReviews={flaggedReviews} />,
         connections: <ConnectionsTab inquiries={connectionInquiries} requests={connectionRequests} />,
+        payments: <PaymentsTab payments={payments} />,
+        auditLog: <AuditLogTab entries={auditLog} />,
+        platformSwitches: <PlatformSwitchesTab initialFeatures={featureStates} />,
       }}
       defaultTab="overview"
     />

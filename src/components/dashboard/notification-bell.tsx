@@ -100,8 +100,27 @@ export function messageFor(t: Translator, n: NotificationRow): string {
     case "vacancy_application_declined":
       return t("types.vacancy_application_declined", { instituteName: str(data.instituteName) });
     case "listing_decision":
+      if (data.decision !== "approved" && str(data.reason) !== "—") {
+        return t("types.listing_rejected_with_reason", { reason: str(data.reason) });
+      }
       return t("types.listing_decision", {
         decision: t(data.decision === "approved" ? "decisions.approved" : "decisions.rejected"),
+      });
+    case "new_library_resource":
+      return t("types.new_library_resource", { title: str(data.title) });
+    case "verification_decision":
+      return t(data.verified === true ? "types.verification_granted" : "types.verification_removed");
+    case "account_role_changed":
+      return t("types.account_role_changed", {
+        role: t(
+          data.role === "teacher"
+            ? "roles.teacher"
+            : data.role === "campus_lecturer"
+              ? "roles.campus_lecturer"
+              : data.role === "class"
+                ? "roles.class"
+                : "roles.student",
+        ),
       });
     case "listing_resubmitted":
       return t("types.listing_resubmitted", { kind: t(data.kind === "class" ? "kinds.class" : "kinds.teacher") });

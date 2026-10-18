@@ -64,6 +64,15 @@ export type StudentExamRow = {
   scheduledAtIso: string | null;
   scheduledLabel: string;
   isOpen: boolean;
+  /** Past the teacher's optional closing time — distinct from "not open
+   * yet" so the student isn't told to wait for an exam that's already over. */
+  isClosed: boolean;
+  closesLabel: string | null;
+  maxAttempts: number;
+  /** Percentage of totalMarks needed to pass; null = no pass mark set. */
+  passMarkPercent: number | null;
+  negativeMarkingFraction: number;
+  totalMarks: number;
   questions: StudentExamQuestion[];
   submission: {
     status: "in_progress" | "pending" | "graded";
@@ -154,6 +163,7 @@ export function ExamsTab({
                                 <div className="truncate text-sm font-medium text-foreground">{exam.title}</div>
                                 <div className="text-xs text-muted-foreground">
                                   {exam.scheduledLabel} · {t("durationLabel", { minutes: exam.durationMinutes })}
+                                  <ExamRulesLine exam={exam} />
                                 </div>
                               </div>
                               <ExamActions
@@ -230,6 +240,7 @@ function ExamRow({
       <TableCell className="font-medium whitespace-normal text-foreground">{exam.title}</TableCell>
       <TableCell className="whitespace-normal text-muted-foreground">
         {exam.scheduledLabel} · {t("durationLabel", { minutes: exam.durationMinutes })}
+        <ExamRulesLine exam={exam} />
       </TableCell>
       <TableCell>
         <ExamActions exam={exam} onStart={onStart} onViewResult={onViewResult} />
@@ -251,13 +262,20 @@ function ExamActions({
   onViewResult: () => void;
 }) {
   const t = useTranslations("studentDashboard.exams");
+  const attemptsLeft = exam.submission ? exam.maxAttempts - exam.submission.attemptNumber : exam.maxAttempts;
+  const canRetake = exam.isOpen && attemptsLeft > 0;
 
   return exam.submission?.status === "graded" ? (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <StatusBadge variant="graded">{exam.submission.grade ?? "—"}</StatusBadge>
       <Button type="button" variant="ghost" size="sm" onClick={onViewResult}>
         {t("viewResult")}
       </Button>
+      {canRetake && (
+        <Button type="button" variant="outline" size="sm" onClick={onStart}>
+          {t("retakeExam", { count: attemptsLeft })}
+        </Button>
+      )}
     </div>
   ) : exam.submission?.status === "pending" ? (
     <StatusBadge variant="pending">{t("pendingGrading")}</StatusBadge>
@@ -265,6 +283,8 @@ function ExamActions({
     <Button size="sm" onClick={onStart}>
       {t("continueExam")}
     </Button>
+  ) : exam.isClosed ? (
+    <StatusBadge variant="closed">{t("examClosed")}</StatusBadge>
   ) : !exam.isOpen ? (
     <StatusBadge variant="closed">{t("notOpenYet")}</StatusBadge>
   ) : (
@@ -272,6 +292,19 @@ function ExamActions({
       {t("startExam")}
     </Button>
   );
+}
+
+/** Rules the student should know before starting — only the ones the
+ * teacher actually set, so a plain exam shows nothing extra. */
+function ExamRulesLine({ exam }: { exam: StudentExamRow }) {
+  const t = useTranslations("studentDashboard.exams");
+  const parts: string[] = [];
+  if (exam.closesLabel) parts.push(t("rulesClosesAt", { date: exam.closesLabel }));
+  if (exam.maxAttempts > 1) parts.push(t("rulesAttempts", { count: exam.maxAttempts }));
+  if (exam.negativeMarkingFraction > 0) parts.push(t("rulesNegativeMarking"));
+  if (exam.passMarkPercent !== null) parts.push(t("rulesPassMark", { percent: exam.passMarkPercent }));
+  if (parts.length === 0) return null;
+  return <div className="mt-0.5 text-xs text-muted-foreground">{parts.join(" · ")}</div>;
 }
 
 /**
@@ -302,8 +335,18 @@ function ExamResultPanel({ exam, onClose }: { exam: StudentExamRow; onClose: () 
           <div className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
             {t("resultGradeHeading")}
           </div>
-          <div className="text-lg font-semibold text-foreground">{exam.submission?.grade ?? "—"}</div>
+          <div className="text-lg font-semibold text-foreground">
+            {exam.submission?.grade ?? "—"}
+            {exam.totalMarks > 0 && <span className="text-sm font-normal text-muted-foreground"> / {exam.totalMarks}</span>}
+          </div>
         </div>
+        {exam.passMarkPercent !== null && exam.submission?.grade != null && exam.totalMarks > 0 && (
+          <StatusBadge
+            variant={(exam.submission.grade / exam.totalMarks) * 100 >= exam.passMarkPercent ? "graded" : "flagged"}
+          >
+            {(exam.submission.grade / exam.totalMarks) * 100 >= exam.passMarkPercent ? t("resultPassed") : t("resultNotPassed")}
+          </StatusBadge>
+        )}
         <p className="min-w-0 flex-1 text-sm text-muted-foreground">
           {exam.submission?.feedback || t("resultNoFeedback")}
         </p>
@@ -576,11 +619,15 @@ function ExamWorkspace({ exam, onExit }: { exam: StudentExamRow; onExit: () => v
   const tc = useTranslations("studentDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
   const [photos, setPhotos] = useState<File[]>([]);
+  // Only resume answers from an attempt that's still in progress — a retake
+  // after a graded/pending attempt must start blank, not pre-filled with
+  // the previous attempt's answers.
+  const isResuming = exam.submission?.status === "in_progress";
   const [mcqAnswers, setMcqAnswers] = useState<Record<string, string[]>>(
-    () => exam.submission?.draftMcqAnswers ?? {},
+    () => (isResuming ? exam.submission!.draftMcqAnswers : {}),
   );
   const [codeAnswers, setCodeAnswers] = useState<Record<string, string>>(
-    () => exam.submission?.draftCodeAnswers ?? {},
+    () => (isResuming ? exam.submission!.draftCodeAnswers : {}),
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

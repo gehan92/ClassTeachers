@@ -48,6 +48,14 @@ import {
   Contact,
   School,
   Trophy,
+  UserCheck,
+  ToggleRight,
+  Receipt,
+  CreditCard,
+  Gift,
+  Flag,
+  Link2,
+  History,
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -177,6 +185,17 @@ const TAB_ICONS: Partial<Record<string, LucideIcon>> = {
   library: Library,
   parentPortal: Contact,
   extracurriculars: Trophy,
+  // Admin tabs.
+  approvals: UserCheck,
+  users: Users,
+  platformSwitches: ToggleRight,
+  payments: Receipt,
+  subscriptions: CreditCard,
+  siteAds: Megaphone,
+  referrals: Gift,
+  flagged: Flag,
+  connections: Link2,
+  auditLog: History,
 };
 
 /**

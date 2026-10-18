@@ -66,6 +66,37 @@ export type ConnectionJoinRequest = {
   createdAt: string;
 };
 
+export type AdminPaymentStatus = "pending" | "completed" | "failed" | "cancelled";
+
+export type AdminPayment = {
+  id: string;
+  studentName: string;
+  purpose: "teacher_connection" | "institute_unlock" | "class_join";
+  targetLabel: string;
+  amount: number;
+  currency: string;
+  orderId: string;
+  status: AdminPaymentStatus;
+  createdAt: string;
+  createdAtIso: string;
+  paidAt: string | null;
+};
+
+export type AuditLogEntry = {
+  id: string;
+  actorName: string;
+  action: string;
+  targetLabel: string;
+  /** Short human-readable extras from metadata (decision, reason, role…). */
+  details: string;
+  createdAt: string;
+};
+
+export type PlatformFeatureState = {
+  key: "signups" | "aiPdfImport" | "wantedAds" | "liveClasses";
+  enabled: boolean;
+};
+
 export type AdminReferral = {
   id: string;
   referrerName: string;

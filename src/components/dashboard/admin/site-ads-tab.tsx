@@ -11,7 +11,15 @@ import { StatusBadge } from "@/components/features/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
-import { createSiteAd } from "@/lib/dashboard/admin-actions";
+import { createSiteAd, removeSiteAd } from "@/lib/dashboard/admin-actions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { SiteAd, SiteAdPlacement, SiteAdPlan } from "@/types/dashboard-admin";
 
 export function SiteAdsTab({ initialAds }: { initialAds: SiteAd[] }) {
@@ -26,6 +34,25 @@ export function SiteAdsTab({ initialAds }: { initialAds: SiteAd[] }) {
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<SiteAd | null>(null);
+  const [removing, setRemoving] = useState(false);
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+
+  async function handleRemove() {
+    if (!confirmRemove) return;
+    const ad = confirmRemove;
+    setRemoving(true);
+    setError(null);
+    const result = await removeSiteAd(ad.id);
+    setRemoving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setConfirmRemove(null);
+    setRemovedIds((prev) => new Set(prev).add(ad.id));
+    refresh();
+  }
 
   const planLabels: Record<SiteAdPlan, string> = {
     basic: t("plans.basic"),
@@ -177,10 +204,11 @@ export function SiteAdsTab({ initialAds }: { initialAds: SiteAd[] }) {
               <TableHead>{t("columns.placement")}</TableHead>
               <TableHead>{t("columns.expires")}</TableHead>
               <TableHead>{t("columns.status")}</TableHead>
+              <TableHead className="text-right">{t("columns.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {initialAds.map((ad) => (
+            {initialAds.filter((ad) => !removedIds.has(ad.id)).map((ad) => (
               <TableRow key={ad.id}>
                 <TableCell className="font-medium text-foreground">{ad.sponsor}</TableCell>
                 <TableCell className="text-muted-foreground">{planLabels[ad.plan]}</TableCell>
@@ -191,11 +219,25 @@ export function SiteAdsTab({ initialAds }: { initialAds: SiteAd[] }) {
                     {ad.status === "expiring" ? t("status.expiring") : t("status.live")}
                   </StatusBadge>
                 </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => {
+                      setError(null);
+                      setConfirmRemove(ad);
+                    }}
+                  >
+                    {t("removeAction")}
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
-            {initialAds.length === 0 && (
+            {initialAds.filter((ad) => !removedIds.has(ad.id)).length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
                   {t("empty")}
                 </TableCell>
               </TableRow>
@@ -203,6 +245,26 @@ export function SiteAdsTab({ initialAds }: { initialAds: SiteAd[] }) {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={confirmRemove !== null} onOpenChange={(open) => !open && setConfirmRemove(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("removeDialog.title")}</DialogTitle>
+            <DialogDescription>
+              {confirmRemove ? t("removeDialog.description", { sponsor: confirmRemove.sponsor }) : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {error && confirmRemove && <p className="text-sm font-medium text-destructive">{error}</p>}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmRemove(null)}>
+              {t("newAdForm.cancel")}
+            </Button>
+            <Button type="button" variant="destructive" disabled={removing} onClick={handleRemove}>
+              {t("removeDialog.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

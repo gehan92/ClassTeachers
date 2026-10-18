@@ -9,6 +9,24 @@ async function resolveInstituteId(supabase: Awaited<ReturnType<typeof createClie
   return data?.id ?? null;
 }
 
+/** A student can hold several enrollment rows at one institute (one per
+ * batch), so this checks "at least one" rather than expecting a single row. */
+async function isOnInstituteRoster(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  instituteId: string,
+  studentId: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("enrollments")
+    .select("id")
+    .eq("student_id", studentId)
+    .eq("owner_type", "class")
+    .eq("owner_id", instituteId)
+    .in("status", ["accepted", "joined"])
+    .limit(1);
+  return (data?.length ?? 0) > 0;
+}
+
 export async function createFeeCharge(input: {
   studentId: string;
   batchId: string | null;
@@ -28,15 +46,9 @@ export async function createFeeCharge(input: {
   const instituteId = await resolveInstituteId(supabase, user.id);
   if (!instituteId) return { error: "Save your institute details first." };
 
-  const { data: enrollment } = await supabase
-    .from("enrollments")
-    .select("id")
-    .eq("student_id", input.studentId)
-    .eq("owner_type", "class")
-    .eq("owner_id", instituteId)
-    .in("status", ["accepted", "joined"])
-    .maybeSingle();
-  if (!enrollment) return { error: "That student isn't on your enrolled roster." };
+  if (!(await isOnInstituteRoster(supabase, instituteId, input.studentId))) {
+    return { error: "That student isn't on your enrolled roster." };
+  }
 
   const { error } = await supabase.from("fee_charges").insert({
     owner_type: "class",
@@ -76,6 +88,22 @@ export async function createFeePayment(input: {
 
   const instituteId = await resolveInstituteId(supabase, user.id);
   if (!instituteId) return { error: "Save your institute details first." };
+
+  if (!(await isOnInstituteRoster(supabase, instituteId, input.studentId))) {
+    return { error: "That student isn't on your enrolled roster." };
+  }
+  // A payment linked to a charge must be against this institute's own charge
+  // for this same student — otherwise balances would net against the wrong one.
+  if (input.chargeId) {
+    const { data: charge } = await supabase
+      .from("fee_charges")
+      .select("id")
+      .eq("id", input.chargeId)
+      .eq("owner_id", instituteId)
+      .eq("student_id", input.studentId)
+      .maybeSingle();
+    if (!charge) return { error: "That charge doesn't belong to this student." };
+  }
 
   const { error } = await supabase.from("fee_payments").insert({
     owner_type: "class",

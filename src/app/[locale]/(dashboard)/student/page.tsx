@@ -3,6 +3,7 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import type { NotificationRow } from "@/components/dashboard/notification-bell";
 import { OverviewTab } from "@/components/dashboard/student/overview-tab";
 import { AnnouncementsPanel, type AnnouncementRow } from "@/components/dashboard/student/announcements-panel";
+import { LibraryTab as StudentLibraryTab, type StudentLibraryRow } from "@/components/dashboard/student/library-tab";
 import { RecommendedPanel, type RecommendedListingRow } from "@/components/dashboard/student/recommended-panel";
 import { ClassesTab } from "@/components/dashboard/student/classes-tab";
 import { LiveClassesTab } from "@/components/dashboard/student/live-classes-tab";
@@ -150,7 +151,7 @@ export default async function StudentDashboardPage({
     supabase
       .from("exams")
       .select(
-        "id, owner_type, owner_id, batch_id, title, question_ids, duration_minutes, scheduled_at, closes_at, reveal_answers, published_at, created_at",
+        "id, owner_type, owner_id, batch_id, title, question_ids, duration_minutes, scheduled_at, closes_at, max_attempts, pass_mark, negative_marking_fraction, reveal_answers, published_at, created_at",
       )
       .order("scheduled_at", { ascending: true }),
     supabase
@@ -329,6 +330,7 @@ export default async function StudentDashboardPage({
     { data: announcementRows },
     teacherProfileResults,
     { data: classProfileDetailRows },
+    { data: libraryRows },
   ] = await Promise.all([
     // An exam can be narrowed by batch and/or an explicit hand-picked
     // student list (0060/0061) — is_enrolled_in_exam() is the one place
@@ -446,6 +448,26 @@ export default async function StudentDashboardPage({
             class_type: "physical" | "online" | "both" | null;
             established: string | null;
             institution_verified: boolean;
+          }[],
+        }),
+    // Institute library (0129) — RLS already limits this to institutes the
+    // student is enrolled in; same audience as announcements above.
+    classIds.length
+      ? supabase
+          .from("library_resources")
+          .select("id, owner_id, title, description, category, file_path, created_at")
+          .eq("owner_type", "class")
+          .in("owner_id", classIds)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            owner_id: string;
+            title: string;
+            description: string | null;
+            category: string | null;
+            file_path: string;
+            created_at: string;
           }[],
         }),
   ]);
@@ -590,6 +612,16 @@ export default async function StudentDashboardPage({
     classType: row.class_type,
     establishedText: row.established,
     verified: row.institution_verified,
+  }));
+
+  const libraryResources: StudentLibraryRow[] = (libraryRows ?? []).map((r) => ({
+    id: r.id,
+    title: r.title,
+    description: r.description,
+    category: r.category,
+    instituteName: classNameById.get(r.owner_id) ?? "—",
+    fileUrl: supabase.storage.from("library").getPublicUrl(r.file_path).data.publicUrl,
+    addedLabel: dateFormatter.format(new Date(r.created_at)),
   }));
 
   const announcements: AnnouncementRow[] = (announcementRows ?? []).map((a) => ({
@@ -836,6 +868,12 @@ export default async function StudentDashboardPage({
       scheduledAtIso: e.scheduled_at,
       scheduledLabel: e.scheduled_at ? scheduleFormatter.format(new Date(e.scheduled_at)) : "—",
       isOpen: (!e.scheduled_at || !isFuture(e.scheduled_at)) && (!e.closes_at || isFuture(e.closes_at)),
+      isClosed: Boolean(e.closes_at && !isFuture(e.closes_at)),
+      closesLabel: e.closes_at ? scheduleFormatter.format(new Date(e.closes_at)) : null,
+      maxAttempts: e.max_attempts,
+      passMarkPercent: e.pass_mark === null ? null : Number(e.pass_mark),
+      negativeMarkingFraction: Number(e.negative_marking_fraction) || 0,
+      totalMarks: e.question_ids.reduce((sum, qid) => sum + (questionById.get(qid)?.marks ?? 0), 0),
       questions: (submission?.question_order ?? e.question_ids)
         .map((qid): StudentExamQuestion | null => {
           const q = questionById.get(qid);
@@ -1183,6 +1221,10 @@ export default async function StudentDashboardPage({
             { key: "exams", label: t("tabs.exams"), count: examsDueCount, hasNew: hasNewExams },
             { key: "assignments", label: t("tabs.assignments"), count: assignmentsDueCount, hasNew: hasNewAssignments },
             { key: "homework", label: t("tabs.homework"), count: homeworkDueCount, hasNew: hasNewHomework },
+            // Only students in at least one institute have a library to see.
+            ...(classIds.length > 0
+              ? [{ key: "library", label: t("tabs.library"), count: libraryResources.length || undefined }]
+              : []),
           ],
         },
         {
@@ -1301,6 +1343,7 @@ export default async function StudentDashboardPage({
           />
         ),
         exams: <ExamsTab exams={exams} scope="history" />,
+        library: <StudentLibraryTab resources={libraryResources} />,
         assignments: <AssignmentsTab assignments={assignments} scope="history" />,
         homework: (
           <AssignmentsTab

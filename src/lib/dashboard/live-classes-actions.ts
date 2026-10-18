@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBatchOwner } from "@/lib/dashboard/resolve-batch-owner";
 import { notifyContentAudience } from "@/lib/dashboard/notify";
+import { FEATURE_DISABLED_MESSAGES, isFeatureEnabled } from "@/lib/platform-features";
 import type { Database } from "@/types/database";
 
 type ActionResult = { error: string } | { error?: undefined };
@@ -49,6 +50,9 @@ export async function createLiveClass(input: {
   });
   if (!parsed.success) {
     return { error: "Please check the class title, mode, and schedule." };
+  }
+  if (!(await isFeatureEnabled("liveClasses"))) {
+    return { error: FEATURE_DISABLED_MESSAGES.liveClasses };
   }
 
   const supabase = await createClient();
@@ -187,8 +191,10 @@ export async function setAttendanceStatus(input: {
     .eq("owner_id", liveClass.owner_id)
     .in("status", ["accepted", "joined"]);
   if (liveClass.batch_id) enrollmentQuery = enrollmentQuery.eq("batch_id", liveClass.batch_id);
-  const { data: enrollment } = await enrollmentQuery.maybeSingle();
-  if (!enrollment) {
+  // limit(1), not maybeSingle(): an institute student holds one row per
+  // batch, so an institute-wide session can match several rows.
+  const { data: enrollmentRows } = await enrollmentQuery.limit(1);
+  if (!enrollmentRows || enrollmentRows.length === 0) {
     return { error: "That student isn't enrolled in this class." };
   }
 

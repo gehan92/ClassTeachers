@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { loginSchema, signupSchema, requestPasswordResetSchema, resetPasswordSchema } from "./schemas";
 import { roleDashboardPath, type UserRole } from "./routes";
 import type { Database } from "@/types/database";
+import { isFeatureEnabled } from "@/lib/platform-features";
 
 export type AuthActionState =
   | { error: string; pendingConfirmationEmail?: undefined }
@@ -213,6 +214,10 @@ export async function signUpAction(
 ): Promise<AuthActionState> {
   const locale = await getLocale();
   const t = await getTranslations({ locale, namespace: "authErrors" });
+
+  if (!(await isFeatureEnabled("signups"))) {
+    return { error: t("signupsPaused") };
+  }
 
   if (formData.get("agree") !== "on") {
     console.error("[signUpAction] rejected: agree checkbox was not checked");

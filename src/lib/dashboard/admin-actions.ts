@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/dashboard/notify";
+import { PLATFORM_FEATURES, featureSettingKey, type PlatformFeature } from "@/lib/platform-features";
 import type { Json } from "@/types/database";
 
 type ActionResult = { error: string } | { error?: undefined };
@@ -51,10 +52,16 @@ export async function resolveApproval(input: {
   kind: "teacher" | "class";
   id: string;
   decision: "approved" | "rejected";
+  /** Shown to the owner in their notification so they know what to fix. */
+  reason?: string;
 }): Promise<ActionResult> {
   const admin = await requireAdmin();
   if ("error" in admin) {
     return { error: admin.error };
+  }
+  const reason = input.decision === "rejected" ? (input.reason ?? "").trim().slice(0, 500) : "";
+  if (input.decision === "rejected" && reason.length < 5) {
+    return { error: "Please tell the owner why this listing was rejected (at least a few words)." };
   }
 
   const supabase = await createClient();
@@ -65,6 +72,7 @@ export async function resolveApproval(input: {
   }
   await logAdminAction(supabase, admin.userId, "listing_approval_decision", input.kind, input.id, {
     decision: input.decision,
+    ...(reason ? { reason } : {}),
   });
 
   let recipientId = input.id;
@@ -72,7 +80,102 @@ export async function resolveApproval(input: {
     const { data: cp } = await supabase.from("class_profiles").select("owner_id").eq("id", input.id).maybeSingle();
     recipientId = cp?.owner_id ?? input.id;
   }
-  await notify(supabase, recipientId, "listing_decision", { decision: input.decision }, "profile", "listingDecisions");
+  await notify(
+    supabase,
+    recipientId,
+    "listing_decision",
+    reason ? { decision: input.decision, reason } : { decision: input.decision },
+    "profile",
+    "listingDecisions",
+  );
+  return {};
+}
+
+const ASSIGNABLE_ROLES = ["student", "teacher", "campus_lecturer", "class"] as const;
+type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
+
+/**
+ * "Change role" on Admin -> Users, for fixing an account that signed up as
+ * the wrong type. The 0080 trigger already permits admin-only role changes;
+ * this adds the safety steps around it:
+ *  - never touches admin accounts, and never grants admin (that stays a
+ *    deliberate database-level action, not a dropdown click)
+ *  - unpublishes the account's old public listing, so an ex-teacher doesn't
+ *    stay discoverable as a teacher after becoming a student
+ *  - clears profile_completed_at (0107) so the onboarding wizard runs again
+ *    for the new role and collects what that role's dashboard needs
+ */
+export async function changeUserRole(input: { userId: string; role: string }): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  if ("error" in admin) {
+    return { error: admin.error };
+  }
+  if (input.userId === admin.userId) {
+    return { error: "You can't change your own role." };
+  }
+  if (!(ASSIGNABLE_ROLES as readonly string[]).includes(input.role)) {
+    return { error: "That role can't be assigned here." };
+  }
+  const newRole = input.role as AssignableRole;
+
+  const supabase = await createClient();
+  const { data: target } = await supabase.from("profiles").select("role").eq("id", input.userId).maybeSingle();
+  if (!target) {
+    return { error: "Couldn't find this account." };
+  }
+  if (target.role === "admin") {
+    return { error: "Admin accounts can't be changed from here." };
+  }
+  if (target.role === newRole) {
+    return {};
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ role: newRole, profile_completed_at: null })
+    .eq("id", input.userId);
+  if (error) {
+    return { error: "Couldn't change this account's role. Please try again." };
+  }
+
+  const wasTeacherLike = target.role === "teacher" || target.role === "campus_lecturer";
+  const isTeacherLike = newRole === "teacher" || newRole === "campus_lecturer";
+  if (wasTeacherLike && !isTeacherLike) {
+    await supabase.from("teacher_profiles").update({ owner_published: false }).eq("id", input.userId);
+  }
+  if (target.role === "class" && newRole !== "class") {
+    await supabase.from("class_profiles").update({ owner_published: false }).eq("owner_id", input.userId);
+  }
+
+  await logAdminAction(supabase, admin.userId, "user_role_changed", "profile", input.userId, {
+    from: target.role,
+    to: newRole,
+  });
+  await notify(supabase, input.userId, "account_role_changed", { role: newRole }, "overview");
+  return {};
+}
+
+/**
+ * "Remove" on Admin -> Site-wide Ads. Soft removal via the existing
+ * 'removed' status (0014) rather than a hard delete, so the record of what
+ * ran and for whom stays available.
+ */
+export async function removeSiteAd(adId: string): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  if ("error" in admin) {
+    return { error: admin.error };
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("advertisements")
+    .update({ status: "removed" })
+    .eq("id", adId)
+    .eq("owner_type", "site")
+    .select("id, title");
+  if (error || !data || data.length === 0) {
+    return { error: "Couldn't remove this ad. Please try again." };
+  }
+  await logAdminAction(supabase, admin.userId, "site_ad_removed", "advertisement", adId, { sponsor: data[0].title });
   return {};
 }
 
@@ -125,6 +228,15 @@ export async function setInstitutionVerified(input: {
   await logAdminAction(supabase, admin.userId, "institution_verified_change", input.ownerType, row.id, {
     verified: input.verified,
   });
+  // ownerId is already the owner's profiles id for both owner types.
+  await notify(
+    supabase,
+    input.ownerId,
+    "verification_decision",
+    { verified: input.verified },
+    "profile",
+    "listingDecisions",
+  );
   return {};
 }
 
@@ -298,6 +410,18 @@ export async function updatePlatformSetting(input: { key: string; value: string 
     value: input.value,
   });
   return {};
+}
+
+/** On/off toggle on Admin -> Platform switches. Whitelisted to the known
+ * switches so this can't be used to write arbitrary platform_settings keys. */
+export async function setPlatformFeature(input: { feature: string; enabled: boolean }): Promise<ActionResult> {
+  if (!(PLATFORM_FEATURES as readonly string[]).includes(input.feature)) {
+    return { error: "Unknown setting." };
+  }
+  return updatePlatformSetting({
+    key: featureSettingKey(input.feature as PlatformFeature),
+    value: input.enabled ? "true" : "false",
+  });
 }
 
 /**

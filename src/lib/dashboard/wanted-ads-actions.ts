@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { notify } from "@/lib/dashboard/notify";
 import { sanitizeRichText } from "@/lib/dashboard/sanitize-rich-text";
+import { FEATURE_DISABLED_MESSAGES, isFeatureEnabled } from "@/lib/platform-features";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -67,6 +68,9 @@ export async function createWantedAd(input: {
       return { error: "The minimum budget can't be more than the maximum." };
     }
     return { error: "Please fill in a title and what you're looking for, then try again." };
+  }
+  if (!(await isFeatureEnabled("wantedAds"))) {
+    return { error: FEATURE_DISABLED_MESSAGES.wantedAds };
   }
 
   const supabase = await createClient();
@@ -309,15 +313,15 @@ export async function respondToWantedAdDecision(responseId: string, accepted: bo
       .maybeSingle();
     recipientId = cp?.owner_id ?? updated.responder_id;
   }
-  // No dedicated notification-preference toggle for this yet (unlike most
-  // other notify() call sites) — narrow enough, and infrequent enough,
-  // that it isn't worth its own Settings entry right now.
+  // Shares the "new inquiries" toggle — both are a student reaching out to
+  // this teacher/institute, so one switch silences both.
   await notify(
     supabase,
     recipientId,
     accepted ? "wanted_ad_response_accepted" : "wanted_ad_response_declined",
     {},
     "studentRequests",
+    "newInquiries",
   );
   return {};
 }

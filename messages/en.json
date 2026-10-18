@@ -122,7 +122,12 @@
       "institute_join_request_accepted": "{instituteName} accepted your request to join.",
       "institute_join_request_declined": "{instituteName} declined your request to join.",
       "institute_batch_assigned": "You've been assigned to teach {batchTitle} at {instituteName}.",
-      "generic": "You have a new update."
+      "generic": "You have a new update.",
+      "listing_rejected_with_reason": "Your listing wasn't approved: \"{reason}\"",
+      "verification_granted": "Your account is now verified. The verified badge shows on your listing.",
+      "verification_removed": "Your verified badge was removed. Upload an updated document from your profile to request it again.",
+      "account_role_changed": "Your account type was changed to {role}. Please complete your profile for it.",
+      "new_library_resource": "A new library resource was shared: \"{title}\"."
     },
     "responderTypes": {
       "teacher": "teacher",
@@ -135,6 +140,12 @@
     "kinds": {
       "teacher": "teacher",
       "class": "institute"
+    },
+    "roles": {
+      "student": "Student",
+      "teacher": "Teacher",
+      "campus_lecturer": "Campus Lecturer",
+      "class": "Institute"
     }
   },
   "onboarding": {
@@ -826,7 +837,8 @@
     "invalidCredentials": "Incorrect email or password.",
     "agreeRequired": "You must agree to the Terms and Privacy Policy to continue.",
     "generic": "Something went wrong. Please try again.",
-    "resetLinkExpired": "Your reset link has expired. Please request a new one."
+    "resetLinkExpired": "Your reset link has expired. Please request a new one.",
+    "signupsPaused": "New sign-ups are paused right now. Please try again later."
   },
   "login": {
     "eyebrow": "Account access",
@@ -1117,7 +1129,10 @@
       "siteAds": "Site-wide Ads",
       "referrals": "Referrals",
       "flagged": "Flagged Reviews",
-      "connections": "Connections"
+      "connections": "Connections",
+      "payments": "Payments",
+      "auditLog": "Audit Log",
+      "platformSwitches": "Platform Switches"
     },
     "overview": {
       "title": "Platform Overview",
@@ -1173,7 +1188,15 @@
         "approve": "Approve",
         "reject": "Reject"
       },
-      "noApprovalsPending": "All caught up — no pending approvals."
+      "noApprovalsPending": "All caught up — no pending approvals.",
+      "rejectDialog": {
+        "title": "Reject {name}?",
+        "description": "The owner will see this reason in their notifications, so tell them what to fix before resubmitting.",
+        "reasonLabel": "Reason",
+        "reasonPlaceholder": "e.g. Please add your teaching qualifications and a clear profile photo.",
+        "cancel": "Cancel",
+        "confirm": "Reject listing"
+      }
     },
     "users": {
       "title": "Users",
@@ -1209,12 +1232,27 @@
         "verify": "Verify",
         "unverify": "Unverify",
         "viewDocument": "View document",
-        "verifyDisabledHint": "This account hasn't submitted a verification document yet."
+        "verifyDisabledHint": "This account hasn't submitted a verification document yet.",
+        "changeRole": "Change role"
       },
       "documentUnavailable": "Couldn't open this document.",
       "institutionVerified": "Institution verified",
       "confirmSuspend": "Suspend {name}? They won't be able to sign in until reactivated.",
-      "empty": "No users match your search."
+      "empty": "No users match your search.",
+      "dialogCancel": "Cancel",
+      "suspendDialog": {
+        "title": "Suspend this account?",
+        "confirm": "Suspend account"
+      },
+      "roleDialog": {
+        "title": "Change account type for {name}",
+        "description": "Use this to fix an account that signed up as the wrong type. Admin accounts can't be changed here.",
+        "newRoleLabel": "New account type",
+        "effectOnboarding": "They'll be asked to complete their profile again for the new type on their next visit.",
+        "effectListing": "If they had a public teacher or institute listing, it's hidden so they don't stay discoverable under the old type.",
+        "effectNotify": "They'll get a notification, and the change is recorded in the audit log.",
+        "confirm": "Change type"
+      }
     },
     "subscriptions": {
       "title": "Platform Subscriptions",
@@ -1263,11 +1301,18 @@
         "plan": "Plan",
         "placement": "Placement",
         "expires": "Expires",
-        "status": "Status"
+        "status": "Status",
+        "actions": "Actions"
       },
       "status": {
         "expiring": "Expiring soon",
         "live": "Live"
+      },
+      "removeAction": "Remove",
+      "removeDialog": {
+        "title": "Remove this ad?",
+        "description": "The {sponsor} ad stops showing on the site immediately. Its record is kept in the audit log.",
+        "confirm": "Remove ad"
       }
     },
     "referrals": {
@@ -1331,6 +1376,98 @@
         "previous": "Previous",
         "next": "Next",
         "pageInfo": "Page {page} of {totalPages}"
+      }
+    },
+    "payments": {
+      "title": "Payments",
+      "subtitle": "Every PayHere platform-fee payment made by students, newest first.",
+      "summary": {
+        "collected": "Total collected",
+        "thisMonth": "Collected this month",
+        "pending": "Awaiting payment",
+        "failed": "Failed or cancelled"
+      },
+      "searchPlaceholder": "Search student, teacher, institute or order ID...",
+      "status": {
+        "all": "All statuses",
+        "completed": "Completed",
+        "pending": "Pending",
+        "failed": "Failed",
+        "cancelled": "Cancelled"
+      },
+      "purpose": {
+        "teacher_connection": "Teacher connection fee",
+        "institute_unlock": "Institute unlock fee",
+        "class_join": "Class join fee"
+      },
+      "columns": {
+        "date": "Date",
+        "student": "Student",
+        "for": "Paid for",
+        "amount": "Amount",
+        "status": "Status",
+        "orderId": "Order ID"
+      },
+      "paidOn": "Paid {date}",
+      "empty": "No payments yet. They'll appear here as soon as a student pays a platform fee.",
+      "noMatches": "No payments match your search.",
+      "safetyNote": "Payments are marked completed only by PayHere's verified confirmation, never by hand, so no one can unlock access without paying. A student whose payment failed can simply try again."
+    },
+    "auditLog": {
+      "title": "Audit Log",
+      "subtitle": "A permanent record of every admin action. Entries can't be edited or deleted.",
+      "searchPlaceholder": "Search admin, account or details...",
+      "allActions": "All actions",
+      "columns": {
+        "when": "When",
+        "admin": "Admin",
+        "action": "Action",
+        "target": "Account / item",
+        "details": "Details"
+      },
+      "empty": "No admin actions recorded yet.",
+      "noMatches": "No entries match your search.",
+      "actions": {
+        "listing_approval_decision": "Listing approved / rejected",
+        "institution_verified_change": "Verification changed",
+        "user_suspension_change": "Account suspended / reactivated",
+        "user_role_changed": "Account type changed",
+        "site_ad_created": "Site ad created",
+        "site_ad_removed": "Site ad removed",
+        "review_removed": "Review removed",
+        "review_kept": "Flagged review kept",
+        "platform_setting_updated": "Platform setting changed",
+        "referral_reward_granted": "Referral reward granted"
+      }
+    },
+    "platformSwitches": {
+      "title": "Platform Switches",
+      "subtitle": "Turn major features on or off for everyone. Use these during maintenance, abuse, or unexpected costs.",
+      "on": "On",
+      "off": "Off",
+      "footnote": "Switching a feature off only stops new actions. Everything already created stays as it is, and switching it back on restores it right away. Every change is recorded in the audit log.",
+      "confirmTitle": "Turn off {name}?",
+      "confirmButton": "Turn off",
+      "cancel": "Cancel",
+      "signups": {
+        "name": "New sign-ups",
+        "description": "Lets new people create an account.",
+        "offEffect": "Nobody new can create an account until you turn this back on. Existing users can still sign in normally."
+      },
+      "aiPdfImport": {
+        "name": "AI PDF question import",
+        "description": "Lets teachers turn past-paper PDFs into question bank items using Gemini. Each use costs API credit.",
+        "offEffect": "Teachers won't be able to import from PDFs. They can still add questions by hand or by bulk paste."
+      },
+      "wantedAds": {
+        "name": "Student requests (wanted ads)",
+        "description": "Lets students post \"looking for a teacher\" requests.",
+        "offEffect": "Students can't post new requests. Existing requests stay visible and can still get responses."
+      },
+      "liveClasses": {
+        "name": "Scheduling live classes",
+        "description": "Lets teachers and institutes schedule new live classes.",
+        "offEffect": "No one can schedule new live classes. Classes already scheduled still run as planned."
       }
     }
   },
@@ -1805,7 +1942,7 @@
         "enrolments": "New enrolments",
         "reviews": "New reviews",
         "listingDecisions": "Your listing is approved or rejected",
-        "newInquiries": "A new inquiry arrives"
+        "newInquiries": "A new inquiry arrives, or a student answers your request response"
       }
     },
     "students": {
@@ -2044,7 +2181,8 @@
       "calendar": "Calendar",
       "wantedAds": "Post an Ad",
       "wantedAdResponses": "Responses",
-      "inquiries": "Messages"
+      "inquiries": "Messages",
+      "library": "Library"
     },
     "announcements": {
       "heading": "Announcements"
@@ -2283,7 +2421,15 @@
       "essayOnlyPendingNote": "We've received your answers. You'll see your grade and feedback here once your teacher has graded it.",
       "autoGradedNote": "You scored {score} / {max} — every question here was multiple choice, so it's graded instantly.",
       "questionLabel": "Question {number}",
-      "examClosedNotAttempted": "This exam is closed and you did not attempt it."
+      "examClosedNotAttempted": "This exam is closed and you did not attempt it.",
+      "retakeExam": "{count, plural, one {Retake (# left)} other {Retake (# left)}}",
+      "examClosed": "Closed",
+      "rulesClosesAt": "Closes {date}",
+      "rulesAttempts": "{count} attempts allowed",
+      "rulesNegativeMarking": "Wrong MCQ answers lose marks",
+      "rulesPassMark": "Pass mark {percent}%",
+      "resultPassed": "Passed",
+      "resultNotPassed": "Not passed"
     },
     "reviews": {
       "pageTitle": "My Reviews",
@@ -2584,6 +2730,15 @@
       "declineReasonLabel": "Reason given",
       "cancelRequest": "Cancel request",
       "cancelling": "Cancelling…"
+    },
+    "library": {
+      "title": "Library",
+      "subtitle": "Study resources your institutes have shared with you.",
+      "searchPlaceholder": "Search by title, category or institute...",
+      "empty": "Your institutes haven't shared any resources yet. New ones will show up here.",
+      "noMatches": "No resources match your search.",
+      "added": "Added {date}",
+      "open": "Open"
     }
   },
   "dashboardShell": {
@@ -3206,7 +3361,25 @@
           "underSupplyWarning": "Only found {available} of the {requested} questions requested for one rule — added everything available."
         },
         "revealAnswersToggle": "Show correct answers to students once graded",
-        "revealAnswersHint": "Off by default — questions come from your reusable bank, so revealing an answer here means students could see it before it's used again in a future exam. Only turn this on for a one-off test you won't reuse these questions in."
+        "revealAnswersHint": "Off by default — questions come from your reusable bank, so revealing an answer here means students could see it before it's used again in a future exam. Only turn this on for a one-off test you won't reuse these questions in.",
+        "rulesHeading": "Exam rules",
+        "rulesHint": "Optional. The defaults suit most exams: one attempt, no closing time, questions and answers shuffled.",
+        "maxAttemptsLabel": "Attempts allowed",
+        "attemptsOption": "{count, plural, one {# attempt} other {# attempts}}",
+        "closesAtLabel": "Closes at (optional)",
+        "closesAtHint": "After this time no one can start the exam. Leave empty to keep it open.",
+        "negativeMarkingLabel": "Negative marking (MCQ)",
+        "negativeMarkingNone": "None",
+        "negativeMarkingQuarter": "Minus ¼ of the marks",
+        "negativeMarkingThird": "Minus ⅓ of the marks",
+        "negativeMarkingHalf": "Minus ½ of the marks",
+        "negativeMarkingFull": "Minus the full marks",
+        "negativeMarkingHint": "Only wrong answers lose marks. Skipped questions score 0, and the total never goes below 0.",
+        "passMarkLabel": "Pass mark % (optional)",
+        "passMarkPlaceholder": "e.g. 40",
+        "passMarkHint": "Students see Passed or Not passed with their result.",
+        "shuffleQuestionsToggle": "Shuffle question order for each student",
+        "shuffleOptionsToggle": "Shuffle MCQ answer choices for each student"
       },
       "grading": {
         "heading": "Grading — {title}",
@@ -3577,7 +3750,7 @@
         "reviews": "New reviews",
         "submissions": "Exam submissions",
         "listingDecisions": "Your listing is approved or rejected",
-        "newInquiries": "A new inquiry arrives"
+        "newInquiries": "A new inquiry arrives, or a student answers your request response"
       }
     },
     "institute": {

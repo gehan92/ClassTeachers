@@ -6,10 +6,24 @@ import { BadgeCheck } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/features/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { setUserSuspended, setInstitutionVerified, getVerificationDocumentUrl } from "@/lib/dashboard/admin-actions";
+import {
+  setUserSuspended,
+  setInstitutionVerified,
+  getVerificationDocumentUrl,
+  changeUserRole,
+} from "@/lib/dashboard/admin-actions";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
@@ -18,6 +32,20 @@ import { usePagination } from "@/lib/hooks/use-pagination";
 import type { PlatformUser, PlatformUserRole } from "@/types/dashboard-admin";
 
 type RoleFilter = "all" | PlatformUserRole;
+type DbRole = "student" | "teacher" | "campus_lecturer" | "class";
+
+const DB_ROLE_BY_PLATFORM_ROLE: Record<PlatformUserRole, DbRole> = {
+  student: "student",
+  teacher: "teacher",
+  campus_lecturer: "campus_lecturer",
+  institute: "class",
+};
+const PLATFORM_ROLE_BY_DB_ROLE: Record<DbRole, PlatformUserRole> = {
+  student: "student",
+  teacher: "teacher",
+  campus_lecturer: "campus_lecturer",
+  class: "institute",
+};
 
 function initialsFor(name: string) {
   return name
@@ -38,6 +66,9 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
   const [role, setRole] = useState<RoleFilter>("all");
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmSuspendUser, setConfirmSuspendUser] = useState<PlatformUser | null>(null);
+  const [roleDialogUser, setRoleDialogUser] = useState<PlatformUser | null>(null);
+  const [roleChoice, setRoleChoice] = useState<DbRole>("student");
 
   const roleLabels: Record<PlatformUserRole, string> = {
     teacher: t("roles.teacher"),
@@ -58,10 +89,44 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
   const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(filtered.length);
   const pagedUsers = filtered.slice(offset, offset + pageSize);
 
-  async function toggleUserStatus(user: PlatformUser) {
-    const suspended = user.status !== "active";
-    if (suspended && !window.confirm(t("confirmSuspend", { name: user.name }))) return;
+  function requestToggleUserStatus(user: PlatformUser) {
+    // Suspending blocks sign-in, so it gets a confirmation; reactivating is
+    // harmless and happens straight away.
+    if (user.status === "active") {
+      setConfirmSuspendUser(user);
+      return;
+    }
+    void toggleUserStatus(user);
+  }
 
+  function openRoleDialog(user: PlatformUser) {
+    setRoleDialogUser(user);
+    setRoleChoice(DB_ROLE_BY_PLATFORM_ROLE[user.role]);
+    setError(null);
+  }
+
+  async function handleChangeRole() {
+    if (!roleDialogUser) return;
+    const user = roleDialogUser;
+    if (roleChoice === DB_ROLE_BY_PLATFORM_ROLE[user.role]) {
+      setRoleDialogUser(null);
+      return;
+    }
+    setPendingId(user.id);
+    setError(null);
+    const result = await changeUserRole({ userId: user.id, role: roleChoice });
+    setPendingId(null);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setRoleDialogUser(null);
+    setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, role: PLATFORM_ROLE_BY_DB_ROLE[roleChoice] } : u)));
+    refresh();
+  }
+
+  async function toggleUserStatus(user: PlatformUser) {
+    const suspended = user.status === "active";
     setPendingId(user.id);
     setError(null);
     const result = await setUserSuspended({ userId: user.id, suspended });
@@ -218,7 +283,16 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => toggleUserStatus(user)}
+                      onClick={() => openRoleDialog(user)}
+                      disabled={pendingId === user.id}
+                    >
+                      {t("actions.changeRole")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className={user.status === "active" ? "text-destructive hover:text-destructive" : undefined}
+                      onClick={() => requestToggleUserStatus(user)}
                       disabled={pendingId === user.id}
                     >
                       {user.status === "active" ? t("actions.manage") : t("actions.reactivate")}
@@ -249,6 +323,78 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
           />
         )}
       </div>
+
+      <Dialog open={confirmSuspendUser !== null} onOpenChange={(open) => !open && setConfirmSuspendUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("suspendDialog.title")}</DialogTitle>
+            <DialogDescription>
+              {confirmSuspendUser ? t("confirmSuspend", { name: confirmSuspendUser.name }) : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmSuspendUser(null)}>
+              {t("dialogCancel")}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                const user = confirmSuspendUser;
+                setConfirmSuspendUser(null);
+                if (user) void toggleUserStatus(user);
+              }}
+            >
+              {t("suspendDialog.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={roleDialogUser !== null} onOpenChange={(open) => !open && setRoleDialogUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{roleDialogUser ? t("roleDialog.title", { name: roleDialogUser.name }) : ""}</DialogTitle>
+            <DialogDescription>{t("roleDialog.description")}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-1.5">
+            <Label htmlFor="role-choice">{t("roleDialog.newRoleLabel")}</Label>
+            <Select value={roleChoice} onValueChange={(v) => v && setRoleChoice(v as DbRole)}>
+              <SelectTrigger id="role-choice" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="student">{t("roles.student")}</SelectItem>
+                <SelectItem value="teacher">{t("roles.teacher")}</SelectItem>
+                <SelectItem value="campus_lecturer">{t("roles.campusLecturer")}</SelectItem>
+                <SelectItem value="class">{t("roles.institute")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <ul className="list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+            <li>{t("roleDialog.effectOnboarding")}</li>
+            <li>{t("roleDialog.effectListing")}</li>
+            <li>{t("roleDialog.effectNotify")}</li>
+          </ul>
+          {error && roleDialogUser && <p className="text-sm font-medium text-destructive">{error}</p>}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setRoleDialogUser(null)}>
+              {t("dialogCancel")}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleChangeRole}
+              disabled={
+                !roleDialogUser ||
+                pendingId === roleDialogUser.id ||
+                roleChoice === DB_ROLE_BY_PLATFORM_ROLE[roleDialogUser.role]
+              }
+            >
+              {t("roleDialog.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

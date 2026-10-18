@@ -56,8 +56,9 @@ export async function enrollStudent(activityId: string, studentId: string): Prom
     .eq("owner_type", "class")
     .eq("owner_id", instituteId)
     .in("status", ["accepted", "joined"])
-    .maybeSingle();
-  if (!enrollment) return { error: "That student isn't on your enrolled roster." };
+    .limit(1);
+  // One enrollment row per batch, so "at least one" is the roster check.
+  if (!enrollment || enrollment.length === 0) return { error: "That student isn't on your enrolled roster." };
 
   const { error } = await supabase.from("extracurricular_participants").insert({
     activity_id: activityId,

@@ -1357,6 +1357,9 @@ export default async function InstituteDashboardPage({
             initialMonthlyRate={priceRow?.monthly_rate?.toString() ?? ""}
             initialStatus={classProfile?.status ?? "pending"}
             initialOwnerPublished={classProfile?.owner_published ?? true}
+            hasActiveAd={
+              (adRows ?? []).some((a) => a.status === "active") || (classAdRows ?? []).some((a) => a.status === "active")
+            }
             initialInstitutionVerified={classProfile?.institution_verified ?? false}
             initialHasVerificationDocument={classProfile?.verification_document_path != null}
           />

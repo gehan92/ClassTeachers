@@ -1,4 +1,6 @@
 import type { getTranslations } from "next-intl/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
 import { createClient } from "@/lib/supabase/server";
 import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 import { looksLikeRichTextHtml } from "@/lib/rich-text";
@@ -61,11 +63,17 @@ function priceFrom(
 export async function getPublicListings(tPage: Translator, tSearch: Translator, locale: string): Promise<Listing[]> {
   const supabase = await createClient();
   const dateTimeFormatter = createDateTimeFormatter(locale);
-  const [{ data: adRows }, { data: classRows }, { data: classAdRows }] = await Promise.all([
+  const [{ data: adRows }, { data: classRows }, { data: classAdRows }, { data: activeClassAdRows }] = await Promise.all([
     supabase.rpc("list_teacher_ads"),
     supabase.rpc("list_public_classes"),
     supabase.rpc("list_class_batch_ads"),
+    activeInstituteAdOwners(supabase),
   ]);
+  const institutesWithAnAd = new Set(
+    (activeClassAdRows ?? [])
+      .filter((r) => r.owner_id && (!r.expires_at || new Date(r.expires_at) > new Date()))
+      .map((r) => r.owner_id as string),
+  );
 
   const teacherListings: Listing[] = (adRows ?? []).flatMap((row) => {
     const price = priceFrom(row.hourly_rate, row.monthly_rate, row.hourly_rate_max, row.monthly_rate_max);
@@ -131,6 +139,10 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator, 
   const classListings: Listing[] = (classRows ?? []).flatMap((row) => {
     const price = priceFrom(row.hourly_rate, row.monthly_rate);
     if (!price) return [];
+    // Same "advertise to be discoverable" rule teachers follow: the whole-
+    // institute card shows only while the institute runs at least one active
+    // ad (a profile promotion or any class ad).
+    if (!institutesWithAnAd.has(row.id)) return [];
 
     const roleLabel = [
       tPage("roleClass"),
@@ -214,6 +226,21 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator, 
   });
 
   return [...teacherListings, ...classListings, ...classAdListings];
+}
+
+/**
+ * Institutes currently running any active ad. advertisements' SELECT policy
+ * (0014) already makes active, unexpired ads public, so this works for a
+ * signed-out visitor too; expiry is re-checked by callers for signed-in
+ * owners/admins, who can see more rows. Shared with nav-availability.ts so
+ * the header menu and the search results apply the same rule.
+ */
+export function activeInstituteAdOwners(supabase: SupabaseClient<Database>) {
+  return supabase
+    .from("advertisements")
+    .select("owner_id, expires_at")
+    .eq("owner_type", "class")
+    .eq("status", "active");
 }
 
 export type ActiveSiteAd = { title: string; content: string | null };

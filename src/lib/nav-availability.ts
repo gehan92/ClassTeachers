@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
+import { activeInstituteAdOwners } from "@/lib/public-directory";
 
 export type NavAvailability = {
   browseAll: boolean;
@@ -29,8 +30,8 @@ export type NavAvailability = {
  *  - teacher ad row counts iff display_name is set AND (it has an hourly
  *    or monthly rate OR is_lesson) — same as public-directory.ts's
  *    teacherListings filter.
- *  - class row counts iff it has an hourly or monthly rate — same as
- *    classListings.
+ *  - class row counts iff it has an hourly or monthly rate AND the
+ *    institute runs at least one active ad — same as classListings.
  *  - class-batch-ad row counts iff it has a rate OR is_teacher_wise — same
  *    as classAdListings.
  * Category predicates below mirror teachers-search.tsx's matchesCategory/
@@ -55,6 +56,7 @@ export const getNavAvailability = unstable_cache(
       { data: wantedAdRows },
       { data: teacherSeekingRows },
       { data: vacancyRows },
+      { data: activeClassAdRows },
     ] = await Promise.all([
       supabase.rpc("list_teacher_ads"),
       supabase.rpc("list_public_classes"),
@@ -62,12 +64,20 @@ export const getNavAvailability = unstable_cache(
       supabase.rpc("list_public_wanted_ads"),
       supabase.rpc("list_public_teacher_seeking_ads"),
       supabase.rpc("list_public_vacancy_ads"),
+      activeInstituteAdOwners(supabase),
     ]);
+    const institutesWithAnAd = new Set(
+      (activeClassAdRows ?? [])
+        .filter((r) => r.owner_id && (!r.expires_at || new Date(r.expires_at) > new Date()))
+        .map((r) => r.owner_id as string),
+    );
 
     const validAdRows = (adRows ?? []).filter(
       (r) => r.display_name && (r.hourly_rate != null || r.monthly_rate != null || r.is_lesson),
     );
-    const validClassRows = (classRows ?? []).filter((r) => r.hourly_rate != null || r.monthly_rate != null);
+    const validClassRows = (classRows ?? []).filter(
+      (r) => (r.hourly_rate != null || r.monthly_rate != null) && institutesWithAnAd.has(r.id),
+    );
     const validClassAdRows = (classAdRows ?? []).filter(
       (r) => r.hourly_rate != null || r.monthly_rate != null || r.is_teacher_wise,
     );

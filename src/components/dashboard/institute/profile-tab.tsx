@@ -35,6 +35,7 @@ export function ProfileTab({
   initialMonthlyRate,
   initialStatus,
   initialOwnerPublished,
+  hasActiveAd,
   initialPhotoUrl,
   initialInstitutionVerified,
   initialHasVerificationDocument,
@@ -49,6 +50,8 @@ export function ProfileTab({
   initialMonthlyRate: string;
   initialStatus: ProfileStatus;
   initialOwnerPublished: boolean;
+  /** Search lists an institute only while it runs at least one active ad. */
+  hasActiveAd: boolean;
   initialPhotoUrl: string | null;
   initialInstitutionVerified: boolean;
   initialHasVerificationDocument: boolean;
@@ -443,11 +446,20 @@ export function ProfileTab({
           <>
             <p className="mb-3 text-sm text-muted-foreground">{t("publish.helper")}</p>
             <div className="flex items-center justify-between gap-4">
-              <p className={`text-sm font-medium ${published ? "text-success" : "text-muted-foreground"}`}>
-                {published ? t("publish.live") : t("publish.hidden")}
+              <p
+                className={`text-sm font-medium ${
+                  published && hasActiveAd ? "text-success" : published ? "text-accent-deep" : "text-muted-foreground"
+                }`}
+              >
+                {!published ? t("publish.hidden") : hasActiveAd ? t("publish.live") : t("publish.needsAd")}
               </p>
               <Switch checked={published} onCheckedChange={handleTogglePublished} disabled={publishSaving} />
             </div>
+            {published && !hasActiveAd && (
+              <p className="mt-2 rounded-md border border-cta/25 bg-cta/10 px-3 py-2 text-xs text-foreground">
+                {t("publish.needsAdHint")}
+              </p>
+            )}
           </>
         )}
 

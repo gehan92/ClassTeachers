@@ -1980,9 +1980,11 @@
         "rejected": "An admin rejected this listing. Update your details above, then resubmit for review.",
         "resubmit": "Resubmit for review",
         "suspended": "This listing has been suspended by an admin.",
-        "helper": "Your institute has been approved. Publish it to appear in Find classes search results, or hide it while you're editing.",
+        "helper": "Your institute has been approved. Publish it, then run at least one ad (Ads tab) to appear in Find classes search. You can hide it any time while editing.",
         "live": "Live — visible in search",
-        "hidden": "Hidden from search"
+        "hidden": "Hidden from search",
+        "needsAd": "Published — not in search yet",
+        "needsAdHint": "Search shows institutes that are running an ad, the same rule teachers follow. Post a profile promotion or a class ad from the Ads tab to appear."
       },
       "verifiedTier": {
         "heading": "Get verified",

@@ -102,6 +102,7 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator, 
     const listing: Listing = {
       id: row.ad_id,
       kind: "teacher",
+      ownerId: row.teacher_id,
       name: row.display_name,
       masked: true,
       roleLabel,
@@ -156,6 +157,7 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator, 
     const listing: Listing = {
       id: row.id,
       kind: "class",
+      ownerId: row.id,
       name: row.name,
       masked: false,
       roleLabel,
@@ -201,6 +203,7 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator, 
     const listing: Listing = {
       id: row.ad_id,
       kind: "class",
+      ownerId: row.class_id,
       name: row.name,
       masked: false,
       roleLabel,
@@ -226,6 +229,24 @@ export async function getPublicListings(tPage: Translator, tSearch: Translator, 
   });
 
   return [...teacherListings, ...classListings, ...classAdListings];
+}
+
+/**
+ * At most one card per teacher/institute, keeping the first (so the order
+ * of `listings` decides which ad represents them) — for the homepage, where
+ * the same face twice in six cards looks like padding.
+ */
+export function onePerOwner(listings: Listing[], max: number): Listing[] {
+  const seen = new Set<string>();
+  const picked: Listing[] = [];
+  for (const listing of listings) {
+    const key = `${listing.kind}:${listing.ownerId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    picked.push(listing);
+    if (picked.length === max) break;
+  }
+  return picked;
 }
 
 /**

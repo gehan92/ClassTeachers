@@ -13,6 +13,7 @@ import { ReferralsTab } from "@/components/dashboard/admin/referrals-tab";
 import { PaymentsTab } from "@/components/dashboard/admin/payments-tab";
 import { AuditLogTab } from "@/components/dashboard/admin/audit-log-tab";
 import { PlatformSwitchesTab } from "@/components/dashboard/admin/platform-switches-tab";
+import { SiteContentTab } from "@/components/dashboard/admin/site-content-tab";
 import { ModerationTab } from "@/components/dashboard/admin/moderation-tab";
 import { GrowthTab } from "@/components/dashboard/admin/growth-tab";
 import { EarningsTab } from "@/components/dashboard/admin/earnings-tab";
@@ -22,6 +23,19 @@ import { ReportsTab } from "@/components/dashboard/admin/reports-tab";
 import { loadAdminReports } from "@/lib/dashboard/admin-reports";
 import { loadTrafficReport } from "@/lib/dashboard/admin-insights-actions";
 import { ANNOUNCEMENT_KEYS, getSiteAnnouncement } from "@/lib/site-announcement";
+import { DEFAULT_SITE_PHOTOS } from "@/lib/site-content";
+import {
+  AD_PLAN_KEYS,
+  SITE_CONTENT_SETTING_KEY,
+  SITE_LOCALES,
+  SITE_TEXT_DEFAULT_KEYS,
+  SITE_TEXT_FIELDS,
+  defaultSiteContent,
+  normalizeSiteContent,
+  type LocalizedText,
+  type SiteTextField,
+} from "@/lib/site-content-schema";
+import { getSupabaseUrl } from "@/lib/supabase/env";
 import { PLATFORM_FEATURES, featureSettingKey } from "@/lib/platform-features";
 import { createClient } from "@/lib/supabase/server";
 import { getNavAvailability } from "@/lib/nav-availability";
@@ -159,7 +173,13 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     supabase
       .from("platform_settings")
       .select("key, value")
-      .in("key", ["standard_price", "premium_price", ...ANNOUNCEMENT_KEYS, ...PLATFORM_FEATURES.map(featureSettingKey)]),
+      .in("key", [
+        "standard_price",
+        "premium_price",
+        SITE_CONTENT_SETTING_KEY,
+        ...ANNOUNCEMENT_KEYS,
+        ...PLATFORM_FEATURES.map(featureSettingKey),
+      ]),
     supabase.from("teacher_profiles").select("id, created_at, institution_verified, verification_document_path"),
     supabase
       .from("class_profiles")
@@ -666,6 +686,27 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
       | "warning"
       | "success",
   };
+  // Admin -> Site content: the saved content, plus the built-in wording in
+  // every language (shown as each empty field's placeholder).
+  const siteContent = (() => {
+    try {
+      const raw = settingValue(SITE_CONTENT_SETTING_KEY, "");
+      return raw ? normalizeSiteContent(JSON.parse(raw), getSupabaseUrl()) : defaultSiteContent();
+    } catch {
+      return defaultSiteContent();
+    }
+  })();
+  const builtInTranslators = await Promise.all(SITE_LOCALES.map((l) => getTranslations({ locale: l })));
+  const builtInSiteText = Object.fromEntries(
+    SITE_TEXT_FIELDS.map((field) => [
+      field,
+      Object.fromEntries(SITE_LOCALES.map((l, i) => [l, builtInTranslators[i](SITE_TEXT_DEFAULT_KEYS[field])])),
+    ]),
+  ) as Record<SiteTextField, LocalizedText>;
+  const builtInPlanPrices = Object.fromEntries(
+    AD_PLAN_KEYS.map((plan) => [plan, builtInTranslators[0](`advertise.plans.${plan}.price`)]),
+  ) as Record<(typeof AD_PLAN_KEYS)[number], string>;
+
   const standardPrice = settingValue("standard_price", "2500");
   const premiumPrice = settingValue("premium_price", "4900");
 
@@ -730,6 +771,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
           items: [
             { key: "approvals", label: t("tabs.approvals"), count: approvals.length + pendingSchoolCount },
             { key: "users", label: t("tabs.users"), count: verificationWaiting || undefined },
+            { key: "siteContent", label: t("tabs.siteContent") },
             { key: "platformSwitches", label: t("tabs.platformSwitches") },
           ],
         },
@@ -817,6 +859,14 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
         auditLog: <AuditLogTab entries={auditLog} />,
         moderation: <ModerationTab initialItems={moderationItems} />,
         reports: <ReportsTab initialReports={contentReports} />,
+        siteContent: (
+          <SiteContentTab
+            initialContent={siteContent}
+            builtInText={builtInSiteText}
+            builtInPhotos={DEFAULT_SITE_PHOTOS}
+            builtInPrices={builtInPlanPrices}
+          />
+        ),
         platformSwitches: <PlatformSwitchesTab initialFeatures={featureStates} initialAnnouncement={announcementSettings} />,
       }}
       defaultTab="overview"

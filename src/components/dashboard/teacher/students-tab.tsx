@@ -27,6 +27,8 @@ export type TeacherStudentRow = {
 
 export type TeacherJoinRequestRow = {
   id: string;
+  /** What the student wrote when asking to join (0167); null when they left it empty. */
+  note: string | null;
   studentName: string;
   batch: string;
   requestedAt: string;
@@ -132,6 +134,11 @@ export function StudentsTab({
                   <p className="text-sm text-muted-foreground">
                     {request.batch} · {request.requestedAt}
                   </p>
+                  {request.note && (
+                    <p className="mt-1.5 max-w-[60ch] rounded-md bg-muted px-3 py-2 text-sm whitespace-pre-line text-foreground/85">
+                      “{request.note}”
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Input

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { localeAlternates } from "@/lib/site-url";
 import { TeachersSearch } from "@/components/features/teachers-search";
 import { Eyebrow } from "@/components/features/eyebrow";
 import { getPublicListings } from "@/lib/public-directory";
@@ -8,7 +9,7 @@ import { getPublicListings } from "@/lib/public-directory";
 export async function generateMetadata({ params }: PageProps<"/[locale]/courses">): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "meta" });
-  return { title: t("coursesTitle"), description: t("coursesDescription") };
+  return { title: t("coursesTitle"), description: t("coursesDescription"), alternates: localeAlternates(locale, "/courses") };
 }
 
 /**
@@ -47,15 +48,15 @@ export default async function CoursesPage({ params, searchParams }: PageProps<"/
 
   return (
     <>
-      <section style={{ background: "var(--muted)" }} className="py-5">
-        <div className="mx-auto max-w-[1180px] px-7">
+      <section className="border-b border-border bg-[radial-gradient(1000px_360px_at_85%_-20%,rgba(201,150,44,0.12),transparent_60%)] bg-muted/50 pt-10 pb-9">
+        <div className="mx-auto max-w-[1180px] px-5 sm:px-7">
           <Eyebrow>{tPage("eyebrow")}</Eyebrow>
-          <h1 className="text-[32px]">{tPage(title)}</h1>
-          <p className="text-muted-foreground mb-0">{tPage(subtitle)}</p>
+          <h1 className="text-[clamp(1.75rem,4vw,2.25rem)] leading-tight">{tPage(title)}</h1>
+          <p className="mt-1.5 max-w-[62ch] text-muted-foreground">{tPage(subtitle)}</p>
         </div>
       </section>
-      <section className="py-12">
-        <div className="mx-auto max-w-[1180px] px-7">
+      <section className="py-10">
+        <div className="mx-auto max-w-[1180px] px-5 sm:px-7">
           <Suspense>
             <TeachersSearch listings={listings} />
           </Suspense>

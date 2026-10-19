@@ -121,7 +121,7 @@ function RequestCard({ ad, index }: { ad: PublicWantedAd; index?: number }) {
   );
 }
 
-export function WantedAdsBoard({ ads }: { ads: PublicWantedAd[] }) {
+export function WantedAdsBoard({ ads, signedInStudent }: { ads: PublicWantedAd[]; signedInStudent: boolean }) {
   const t = useTranslations("requestsPage");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<LookingForFilter>("all");
@@ -235,7 +235,7 @@ export function WantedAdsBoard({ ads }: { ads: PublicWantedAd[] }) {
         </div>
       )}
 
-      <ClosingCtaBanner />
+      <ClosingCtaBanner signedInStudent={signedInStudent} />
     </>
   );
 }
@@ -244,13 +244,11 @@ export function WantedAdsBoard({ ads }: { ads: PublicWantedAd[] }) {
  * This board's audience is genuinely two-sided (students checking existing
  * requests before posting their own, teachers/institutes browsing to
  * respond) and always shown — even with a handful of ads the page shouldn't
- * dead-end after the grid/pagination. Two static CTAs rather than one
- * role-detected CTA: this component has no session data today (the page
- * doesn't fetch a user), and adding that just to pick one CTA would be more
- * machinery than a filler banner warrants — the wrong CTA for a visitor's
- * role is just a no-op click, not a broken state.
+ * dead-end after the grid/pagination. Both CTAs always show; the student
+ * one goes to sign-up for a visitor without a student account, since the
+ * dashboard link alone would only bounce them to the login page.
  */
-function ClosingCtaBanner() {
+function ClosingCtaBanner({ signedInStudent }: { signedInStudent: boolean }) {
   const t = useTranslations("requestsPage.closingCta");
 
   return (
@@ -259,7 +257,9 @@ function ClosingCtaBanner() {
         <Eyebrow>{t("studentEyebrow")}</Eyebrow>
         <p className="text-sm text-muted-foreground">{t("studentText")}</p>
         <Link
-          href="/student?tab=wantedAds"
+          // A visitor without an account signs up as a student first; the
+          // dashboard link alone would just bounce them to the login page.
+          href={signedInStudent ? "/student?tab=wantedAds" : "/signup?role=student"}
           className="mt-1 inline-flex items-center justify-center rounded-sm bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-px hover:bg-primary-light"
         >
           {t("studentCta")}

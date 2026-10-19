@@ -809,10 +809,18 @@ export default async function TeacherDashboardPage({
     };
   });
 
+  // The note each student wrote with their request (0167). Read on its own
+  // and allowed to fail, so the Students tab still works before 0167 is run.
+  const { data: requestNoteRows } = pendingEnrollments.length
+    ? await supabase.from("enrollments").select("id, request_note").in("id", pendingEnrollments.map((e) => e.id))
+    : { data: null };
+  const requestNoteById = new Map((requestNoteRows ?? []).map((r) => [r.id, r.request_note]));
+
   const requests: TeacherJoinRequestRow[] = pendingEnrollments.map((enrollment) => {
     const student = studentById.get(enrollment.student_id);
     return {
       id: enrollment.id,
+      note: requestNoteById.get(enrollment.id) ?? null,
       studentName: student?.full_name ?? "—",
       batch: (enrollment.batch_id && batches.find((b) => b.id === enrollment.batch_id)?.title) || t("students.noBatch"),
       requestedAt: dateFormatter.format(new Date(enrollment.joined_at)),

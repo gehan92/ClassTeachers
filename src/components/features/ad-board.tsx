@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { LockPill } from "@/components/features/lock-pill";
+import { ArrowRight } from "lucide-react";
 import { Eyebrow } from "@/components/features/eyebrow";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { usePagination } from "@/lib/hooks/use-pagination";
@@ -15,12 +15,12 @@ type AdFilter = (typeof adFilters)[number];
 
 function AdListingRow({
   listing,
-  signInLabel,
+  viewDetailsLabel,
   viewClassLabel,
   index,
 }: {
   listing: Listing;
-  signInLabel: string;
+  viewDetailsLabel: string;
   viewClassLabel: string;
   index?: number;
 }) {
@@ -30,7 +30,12 @@ function AdListingRow({
       style={index !== undefined ? { animationDelay: `${Math.min(index, 10) * 35}ms` } : undefined}
       className="flex flex-col gap-3.5 rounded-lg border border-border bg-white p-4 transition-colors animate-in fade-in-0 slide-in-from-bottom-1 fill-mode-both duration-300 hover:border-primary sm:flex-row sm:items-center"
     >
-      <div className="h-16 w-16 shrink-0 rounded-md bg-gradient-to-br from-primary to-primary-light" />
+      {listing.photoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- owner-uploaded Supabase Storage photo
+        <img src={listing.photoUrl} alt="" loading="lazy" decoding="async" className="size-16 shrink-0 rounded-md object-cover" />
+      ) : (
+        <div className="size-16 shrink-0 rounded-md bg-gradient-to-br from-primary to-primary-light" />
+      )}
 
       <div className="min-w-0 flex-1">
         <div className="font-display text-base text-primary">{listing.headline ?? listing.name}</div>
@@ -49,13 +54,10 @@ function AdListingRow({
         )}
       </div>
 
-      {listing.kind === "class" ? (
-        <span className="shrink-0 rounded-sm border border-input px-3.5 py-1.5 text-[13px] font-semibold text-primary">
-          {viewClassLabel}
-        </span>
-      ) : (
-        <LockPill className="shrink-0">{signInLabel}</LockPill>
-      )}
+      <span className="inline-flex shrink-0 items-center gap-1 text-[13px] font-semibold text-accent-deep">
+        {listing.kind === "class" ? viewClassLabel : viewDetailsLabel}
+        <ArrowRight className="size-3.5" aria-hidden />
+      </span>
     </Link>
   );
 }
@@ -69,7 +71,7 @@ function AdListingRow({
  * are actually created — the teacher/institute dashboard's Ads tab —
  * instead of duplicating a fake creation form here.
  */
-export function AdBoard({ listings }: { listings: Listing[] }) {
+export function AdBoard({ listings, dashboardAdsHref }: { listings: Listing[]; dashboardAdsHref: string | null }) {
   const t = useTranslations("advertise");
   const tl = useTranslations("listing");
   const [filter, setFilter] = useState<AdFilter>("all");
@@ -84,11 +86,11 @@ export function AdBoard({ listings }: { listings: Listing[] }) {
 
   return (
     <>
-      <section className="py-15">
-        <div className="mx-auto max-w-[1180px] px-7">
+      <section className="py-16">
+        <div className="mx-auto max-w-[1180px] px-5 sm:px-7">
           <div className="mb-7">
             <Eyebrow>{t("currentAds.eyebrow")}</Eyebrow>
-            <h2 className="text-[28px]">{t("currentAds.title")}</h2>
+            <h2 className="text-[clamp(1.6rem,3vw,2.1rem)] leading-tight">{t("currentAds.title")}</h2>
           </div>
 
           <div role="radiogroup" aria-label={t("currentAds.title")} className="mb-4 flex flex-wrap gap-1.5">
@@ -120,7 +122,7 @@ export function AdBoard({ listings }: { listings: Listing[] }) {
                 <AdListingRow
                   key={listing.id}
                   listing={listing}
-                  signInLabel={tl("signInForContact")}
+                  viewDetailsLabel={tl("viewDetails")}
                   viewClassLabel={tl("viewClass")}
                   index={i}
                 />
@@ -149,33 +151,43 @@ export function AdBoard({ listings }: { listings: Listing[] }) {
         </div>
       </section>
 
-      <section id="postAd" className="border-t border-border bg-white py-15">
-        <div className="mx-auto max-w-160 px-7 text-center">
-          <div className="d-flex justify-content-center">
-            <Eyebrow>{t("form.eyebrow")}</Eyebrow>
-          </div>
+      <section id="postAd" className="scroll-mt-24 border-t border-border bg-white py-16">
+        <div className="mx-auto max-w-160 px-5 text-center sm:px-7">
+          <Eyebrow>{t("form.eyebrow")}</Eyebrow>
           <h2 className="mb-2 text-[28px]">{t("form.title")}</h2>
           <p className="mx-auto mb-6.5 max-w-[46ch] text-muted-foreground">{t("form.subtitle")}</p>
-          <div className="flex flex-wrap items-center justify-center gap-3">
+          {dashboardAdsHref ? (
             <Link
-              href={{ pathname: "/signup", query: { role: "teacher" } }}
-              className="inline-flex items-center justify-center rounded-sm bg-primary px-5 py-2.75 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-px hover:bg-primary-light"
+              href={dashboardAdsHref}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-light"
             >
-              {t("form.ctaTeacher")}
+              {t("form.ctaDashboard")}
+              <ArrowRight className="size-4" aria-hidden />
             </Link>
-            <Link
-              href={{ pathname: "/signup", query: { role: "class" } }}
-              className="inline-flex items-center justify-center rounded-sm border border-input px-5 py-2.75 text-sm font-semibold text-primary transition-all hover:-translate-y-px hover:bg-white"
-            >
-              {t("form.ctaInstitute")}
-            </Link>
-          </div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            {t("form.alreadyHaveAccount")}{" "}
-            <Link href="/login" className="font-semibold text-primary">
-              {t("form.loginLink")}
-            </Link>
-          </p>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href={{ pathname: "/signup", query: { role: "teacher" } }}
+                  className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-light"
+                >
+                  {t("form.ctaTeacher")}
+                </Link>
+                <Link
+                  href={{ pathname: "/signup", query: { role: "class" } }}
+                  className="inline-flex items-center justify-center rounded-lg border border-input bg-white px-5 py-3 text-sm font-semibold text-primary transition-colors hover:bg-muted"
+                >
+                  {t("form.ctaInstitute")}
+                </Link>
+              </div>
+              <p className="mt-4 text-sm text-muted-foreground">
+                {t("form.alreadyHaveAccount")}{" "}
+                <Link href="/login" className="font-semibold text-primary underline-offset-2 hover:underline">
+                  {t("form.loginLink")}
+                </Link>
+              </p>
+            </>
+          )}
         </div>
       </section>
     </>

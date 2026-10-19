@@ -138,12 +138,11 @@ export function TeacherQuickProfile({ teacher }: { teacher: InstituteTeacherCard
           <div className="min-w-0 flex-1 pt-0.5">
             <DialogTitle className="flex items-center gap-1.5">
               {teacher.displayName}
-              <span title={teacher.institutionVerified ? tl("institutionVerified") : tl("reviewed")}>
-                <BadgeCheck
-                  className="size-4 shrink-0 text-muted-foreground"
-                  aria-label={teacher.institutionVerified ? tl("institutionVerified") : tl("reviewed")}
-                />
-              </span>
+              {teacher.institutionVerified && (
+                <span title={tl("institutionVerified")} className="text-success">
+                  <BadgeCheck className="size-4 shrink-0" aria-label={tl("institutionVerified")} />
+                </span>
+              )}
             </DialogTitle>
             {subtitle && <DialogDescription className="truncate">{subtitle}</DialogDescription>}
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">

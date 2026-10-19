@@ -7,6 +7,8 @@ import { Suspense } from "react";
 import { routing } from "@/i18n/routing";
 import { fontVariables } from "@/lib/fonts";
 import { VisitTracker } from "@/components/analytics/visit-tracker";
+import { getSiteUrl } from "@/lib/site-url";
+import { publicClientMessages } from "@/i18n/client-messages";
 import "../globals.css";
 
 export function generateStaticParams() {
@@ -20,9 +22,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "meta" });
+  // Defaults for every page; each page sets its own title, description and
+  // canonical link. Link previews fall back to opengraph-image.tsx.
   return {
+    metadataBase: new URL(getSiteUrl()),
     title: t("homeTitle"),
     description: t("homeDescription"),
+    applicationName: "ClassPortals",
+    openGraph: {
+      siteName: "ClassPortals",
+      type: "website",
+      locale: locale === "si" ? "si_LK" : locale === "ta" ? "ta_LK" : "en_LK",
+    },
+    twitter: { card: "summary_large_image" },
+    formatDetection: { telephone: false },
   };
 }
 
@@ -40,7 +53,9 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[lo
   return (
     <html lang={locale} data-locale={locale} data-scroll-behavior="smooth" className={fontVariables}>
       <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider messages={messages}>
+        {/* Public pages get only the translations they use; (dashboard)/layout.tsx
+            and admin/layout.tsx wrap their pages in a provider with the full set. */}
+        <NextIntlClientProvider messages={publicClientMessages(messages)}>
           {children}
           {/* Anonymous page-visit counter for Admin -> Traffic (0165). */}
           <Suspense fallback={null}>

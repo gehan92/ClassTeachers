@@ -1,7 +1,7 @@
 {
   "meta": {
     "homeTitle": "ClassPortals — Find teachers, classes & campus lecturers, Grade 1 to University",
-    "homeDescription": "Search verified teachers, tuition classes and campus lecturers across Sri Lanka. Compare qualifications, rates and reviews before you ever pick up the phone.",
+    "homeDescription": "Search teachers, tuition classes, schools and campus lecturers across Sri Lanka. Compare subjects, fees and reviews, then send a request — your number stays private.",
     "teachersTitle": "Find Teachers, Classes & Campus Lecturers | ClassPortals",
     "teachersDescription": "Filter by subject, location and grade to compare verified teachers, tuition classes and campus lecturers across Sri Lanka.",
     "coursesTitle": "Find Courses | ClassPortals",
@@ -29,7 +29,20 @@
     "adTitle": "{adTitle} — {name} | ClassPortals",
     "adDescription": "{name}'s class on ClassPortals — view schedule, pricing and how to join.",
     "requestDetailTitle": "{title} | ClassPortals",
-    "requestDetailDescription": "A student is looking for help on ClassPortals — see the details and respond if you can help."
+    "requestDetailDescription": "A student is looking for help on ClassPortals — see the details and respond if you can help.",
+    "teachersTitleTeacher": "Find a Teacher or Private Tutor in Sri Lanka | ClassPortals",
+    "teachersTitleClass": "Tuition Classes & Institutes in Sri Lanka | ClassPortals",
+    "teachersTitleCampus": "Campus Lecturers & University Courses | ClassPortals",
+    "teachersTitleOnline": "Online Tuition Classes in Sri Lanka | ClassPortals",
+    "teachersTitleIndependent": "Independent Private Tutors in Sri Lanka | ClassPortals",
+    "loginTitle": "Log in | ClassPortals",
+    "loginDescription": "Log in to your ClassPortals account to manage your classes, requests and messages.",
+    "signupTitle": "Join ClassPortals free | Teachers, Institutes, Schools & Students",
+    "signupDescription": "Create a free ClassPortals account as a student, teacher, campus lecturer, tuition institute or school.",
+    "forgotPasswordTitle": "Reset your password | ClassPortals",
+    "forgotPasswordDescription": "Get a link to reset your ClassPortals password.",
+    "resetPasswordTitle": "Choose a new password | ClassPortals",
+    "resetPasswordDescription": "Set a new password for your ClassPortals account."
   },
   "nav": {
     "findTeachers": "Find teachers",
@@ -72,7 +85,8 @@
     "muteMic": "Mute microphone",
     "unmuteMic": "Unmute microphone",
     "turnOffCamera": "Turn off camera",
-    "turnOnCamera": "Turn on camera"
+    "turnOnCamera": "Turn on camera",
+    "backToSite": "Back to ClassPortals"
   },
   "notifications": {
     "heading": "Notifications",
@@ -289,15 +303,13 @@
     "eyebrow": "Grade 1 — Grade 13 — Campus",
     "titlePrefix": "Find the right teacher,",
     "titleEmphasis": "not just any teacher.",
-    "subtitle": "Search verified teachers, tuition classes and campus lecturers across Sri Lanka. Compare qualifications, rates and reviews before you ever pick up the phone.",
-    "browseTeachers": "Browse teachers",
-    "iWantToTeach": "I want to teach"
+    "subtitle": "Search teachers, tuition classes and campus lecturers across Sri Lanka. Compare subjects, fees and reviews before you pick up the phone."
   },
   "search": {
     "whatLearning": "What are you learning?",
-    "subjectPlaceholder": "Subject — e.g. Combined Maths, Organic Chemistry",
+    "subjectPlaceholder": "Subject, e.g. Combined Maths",
     "subjectPlaceholderCampus": "Subject / course area — e.g. Data Structures & Algorithms",
-    "locationPlaceholder": "Location — e.g. Matara, or 'Online'",
+    "locationPlaceholder": "Town, or 'Online'",
     "advancedFilters": "Advanced filters",
     "onlineOnly": "Online classes only",
     "verifiedOnly": "Verified only",
@@ -326,12 +338,13 @@
       "campus": "Campus & Professional",
       "adult": "Adult / Senior",
       "open": "Open (no specific grade)"
-    }
+    },
+    "locationLabel": "Location"
   },
   "roles": {
     "eyebrow": "Who's on ClassPortals",
-    "title": "One platform, every level of teaching",
-    "seeHow": "See how each role works →",
+    "title": "One platform, every kind of teaching",
+    "seeHow": "See how each role works",
     "teacher": {
       "tag": "Individual",
       "title": "Teacher",
@@ -340,7 +353,8 @@
         "Own profile & pricing",
         "Notes, question bank, exams",
         "Online or in-person classes"
-      ]
+      ],
+      "cta": "Join as a teacher"
     },
     "class": {
       "tag": "Institute",
@@ -350,7 +364,8 @@
         "Multi-teacher profile",
         "Institute-wide advertisement",
         "Class-level pricing"
-      ]
+      ],
+      "cta": "Register an institute"
     },
     "campus": {
       "tag": "Higher education",
@@ -360,32 +375,50 @@
         "Degree & research credentials",
         "Course-style question banks",
         "Same tools, campus level"
-      ]
+      ],
+      "cta": "Join as a lecturer"
     },
     "student": {
       "tag": "Learner",
       "title": "Student",
-      "description": "From Grade 1 pupils' parents to university students.",
+      "description": "Students and parents — from Grade 1 to university.",
       "points": [
         "Search & compare freely",
         "Join classes, sit exams",
         "Full access after enrolling"
-      ]
+      ],
+      "cta": "Join as a student"
+    },
+    "school": {
+      "tag": "School",
+      "title": "School",
+      "description": "Government, private and international schools.",
+      "points": [
+        "Staff logins with roles",
+        "Approvals and change history",
+        "Grades, sections and subjects"
+      ],
+      "cta": "Register a school"
     }
   },
   "featured": {
-    "eyebrow": "Featured this week",
+    "eyebrow": "Featured",
     "title": "Teachers & classes near you",
-    "viewAll": "View all →",
-    "empty": "No published listings yet — check back soon."
+    "viewAll": "View all",
+    "empty": "No listings yet — the first teachers are joining now.",
+    "emptyCta": "Are you a teacher? Post your first ad"
   },
   "listing": {
-    "signInForContact": "Sign in for contact",
     "viewClass": "View class",
-    "reviewsCount": "{count} reviews",
+    "reviewsCount": "{count, plural, one {# review} other {# reviews}}",
     "institutionVerified": "Institution verified",
-    "reviewed": "Reviewed by ClassPortals",
-    "contactForPrice": "Contact for details"
+    "contactForPrice": "Contact for details",
+    "verified": "Verified",
+    "newListing": "New",
+    "from": "From",
+    "perHour": "/hr",
+    "perMonth": "/month",
+    "viewDetails": "View details"
   },
   "reviews": {
     "replyPrefix": "Replied:"
@@ -509,10 +542,6 @@
     "removeSlot": "Remove this slot",
     "addSlot": "Add a time slot"
   },
-  "comingSoon": {
-    "badge": "Coming soon",
-    "backHome": "Back to home"
-  },
   "classBatch": {
     "started": "Started",
     "upcoming": "Not started yet",
@@ -540,43 +569,95 @@
     "subjects": {
       "eyebrow": "Browse by subject",
       "title": "Whatever the exam, there's a class for it",
-      "teachersCount": "{count} listings"
+      "teachersCount": "{count, plural, one {# listing} other {# listings}}",
+      "viewAll": "All subjects"
     },
     "ctaPhoto": {
       "eyebrow": "Advertise on ClassPortals",
       "title": "Put your class or ad in front of active parents and students",
       "subtitle": "Reach families who are already searching by subject, grade and location — no cold calls, no flyers.",
-      "cta": "Post an ad"
+      "cta": "Post an ad",
+      "secondaryCta": "Join as a teacher"
     },
     "whyUs": {
       "eyebrow": "Why ClassPortals",
-      "title": "Every teacher is checked before they go live",
-      "description": "Qualifications, ID and teaching history are reviewed for every profile — so you're comparing real credentials, not just claims.",
+      "title": "Every profile is checked before it goes live",
+      "description": "Our team reviews each teacher and institute before they appear in search, and removes anything that breaks the rules. Teachers who upload their documents earn a Verified badge.",
       "points": [
         "Search by subject, medium, town and fee range",
-        "Reviews and ratings from real students",
-        "Post a request if you can't find the right fit"
-      ]
+        "Reviews only from students who actually joined",
+        "Report any listing — our team checks every report"
+      ],
+      "verifiedNote": "The green Verified badge means we've checked their documents."
     },
     "howItWorks": {
       "eyebrow": "How it works",
-      "title": "Search, compare, and message — in one place",
-      "description": "No more scrolling WhatsApp groups. Filter by what actually matters, then message the teachers who fit before committing to a class.",
-      "points": [
-        "Browse verified profiles or post a request",
-        "Compare fees, medium and class locations",
-        "Confirm directly with the teacher — online or in person"
-      ]
+      "title": "Search, compare and join — in one place",
+      "description": "No more scrolling WhatsApp groups. Filter by what actually matters, then send a request to the teachers who fit.",
+      "steps": [
+        {
+          "title": "Search and compare",
+          "body": "Filter by subject, grade, town, medium and fee."
+        },
+        {
+          "title": "Send a request",
+          "body": "Ask a question or ask to join — no phone calls needed."
+        },
+        {
+          "title": "Start learning",
+          "body": "Once the teacher accepts, you get their contact details and class materials."
+        }
+      ],
+      "cta": "Find a teacher"
     },
     "stats": {
-      "listings": "Active listings",
-      "locations": "Locations covered",
-      "verified": "Verified profiles"
+      "listings": "{count, plural, one {Active listing} other {Active listings}}",
+      "locations": "{count, plural, one {Town covered} other {Towns covered}}",
+      "verified": "{count, plural, one {Verified teacher or institute} other {Verified teachers & institutes}}",
+      "subjects": "{count, plural, one {Subject} other {Subjects}}"
+    },
+    "popular": "Popular:",
+    "trust": {
+      "reviewed": "Every listing is approved by our team",
+      "private": "Your phone number stays private",
+      "free": "Free to search — no account needed"
+    },
+    "requests": {
+      "eyebrow": "For students and parents",
+      "title": "Can't find the right teacher?",
+      "body": "Post a free request with the subject, grade and town. Teachers and institutes who can help will reply to you.",
+      "cta": "Post a request",
+      "browse": "See open requests",
+      "steps": [
+        "Tell us what you need",
+        "Teachers reply to you",
+        "Pick the one that fits"
+      ]
+    },
+    "schools": {
+      "eyebrow": "For schools",
+      "title": "Run your whole school on ClassPortals",
+      "body": "Register your school, then give every staff member their own login with exactly the access their job needs.",
+      "cta": "Register your school",
+      "features": {
+        "roles": {
+          "title": "Roles and permissions",
+          "body": "Principal, teachers, office staff — each sees only what they should."
+        },
+        "approvals": {
+          "title": "Approvals",
+          "body": "Important changes wait for approval before they happen."
+        },
+        "history": {
+          "title": "Full change history",
+          "body": "See who changed what, and when."
+        }
+      }
     }
   },
   "rolesPage": {
     "eyebrow": "How ClassPortals works",
-    "title": "Four roles, one platform",
+    "title": "One platform for every kind of teaching",
     "subtitle": "Whether you teach one student or run an institute, ClassPortals gives every role the same tools to be found, compared and contacted.",
     "ctaTitle": "Ready to get started?",
     "ctaSubtitle": "Setting up a profile takes a few minutes — you can start on the free plan.",
@@ -622,15 +703,28 @@
       "student": {
         "tag": "Learner",
         "title": "Student",
-        "description": "Anyone searching for a teacher, class, or campus course — from a parent of a Grade 1 pupil to a university student.",
+        "description": "Anyone searching for a teacher, class or campus course — from a parent of a Grade 1 pupil to a university student.",
         "points": [
           "Browse and search freely, no account needed",
           "Full contact details unlock once you join a teacher or class",
           "Join live classes, sit timed exams, and submit assignments",
           "Leave a review only for teachers or classes you've actually joined"
         ]
+      },
+      "school": {
+        "tag": "School",
+        "title": "School",
+        "description": "A government, private or international school (or a pirivena) that wants to manage its staff and classes in one place.",
+        "points": [
+          "The Principal registers the school and our team approves it",
+          "Give every staff member their own login and role",
+          "Decide exactly what each role can see and change",
+          "Important changes can wait for approval first",
+          "A full history of who changed what, and when"
+        ]
       }
-    }
+    },
+    "ctaSchool": "Register a school"
   },
   "advertise": {
     "hero": {
@@ -665,7 +759,7 @@
     },
     "plans": {
       "eyebrow": "Ad plans",
-      "title": "Simple, one-time pricing",
+      "title": "Want more people to see your ad?",
       "basic": {
         "days": "7 days",
         "title": "Basic",
@@ -702,7 +796,13 @@
           "Priority support for your listing"
         ],
         "cta": "Choose Spotlight"
-      }
+      },
+      "subtitle": "Book a plan for higher placement, a Featured tag or the homepage spotlight. Our team sets it up for you.",
+      "bookWhatsapp": "Book on WhatsApp",
+      "bookEmail": "Book by email",
+      "bookingMessage": "Hi ClassPortals, I'd like to book the {plan} ad plan.",
+      "bookingSubject": "Booking: {plan} ad plan",
+      "freeNote": "Posting a normal ad from your dashboard is free. Plans add extra visibility on top."
     },
     "currentAds": {
       "eyebrow": "Live now",
@@ -725,7 +825,8 @@
       "ctaTeacher": "I'm a teacher",
       "ctaInstitute": "I'm an institute",
       "alreadyHaveAccount": "Already have an account?",
-      "loginLink": "Log in"
+      "loginLink": "Log in",
+      "ctaDashboard": "Go to my ads"
     }
   },
   "requestsPage": {
@@ -735,7 +836,7 @@
       "subtitle": "Real requests from students searching for a teacher or institute — respond if you can help."
     },
     "searchPlaceholder": "Search by subject or keyword...",
-    "resultsCount": "{count} requests",
+    "resultsCount": "{count, plural, one {# request} other {# requests}}",
     "clearFilters": "Clear filters",
     "filterLabel": "Filter requests",
     "filterOptions": {
@@ -798,7 +899,7 @@
       "heroSubtitle": "Teachers and campus lecturers looking for a placement — respond if your institute has an opening.",
       "badge": "Available to teach",
       "searchPlaceholder": "Search by subject or keyword...",
-      "resultsCount": "{count} teachers",
+      "resultsCount": "{count, plural, one {# teacher} other {# teachers}}",
       "clearFilters": "Clear search",
       "empty": "No teacher requests match this search yet.",
       "modeOptions": {
@@ -818,7 +919,7 @@
       "heroSubtitle": "Open teaching positions posted by institutes — respond if you're a good fit.",
       "badge": "Vacancy",
       "searchPlaceholder": "Search by subject, location or keyword...",
-      "resultsCount": "{count} vacancies",
+      "resultsCount": "{count, plural, one {# vacancy} other {# vacancies}}",
       "clearFilters": "Clear search",
       "empty": "No vacancies match this search yet.",
       "modeOptions": {
@@ -835,15 +936,146 @@
   },
   "termsPage": {
     "title": "Terms of service",
-    "body": "We're finalising the terms that govern how teachers, classes and students use ClassPortals. Check back soon for the full policy."
+    "updated": "19 October 2026",
+    "intro": "These terms explain the rules for using ClassPortals. By creating an account or using the site, you agree to them. We've kept them short and in plain language.",
+    "sections": [
+      {
+        "heading": "About ClassPortals",
+        "paragraphs": [
+          "ClassPortals is an online platform that helps students and parents in Sri Lanka find teachers, tuition classes, schools and campus lecturers, and helps educators run their classes.",
+          "Lessons, fees and timetables are agreed directly between a student and the teacher, institute or school. ClassPortals is not a party to that agreement."
+        ]
+      },
+      {
+        "heading": "Your account",
+        "paragraphs": [
+          "Give accurate information when you sign up and keep your password private. You are responsible for everything done with your account.",
+          "If you are under 18, a parent or guardian should create or supervise your account. Tell us straight away if you think someone else is using your account."
+        ]
+      },
+      {
+        "heading": "Teachers, institutes and schools",
+        "paragraphs": [
+          "Profiles and ads must be truthful — real qualifications, real experience and real fees. Our team reviews profiles before they go live and may ask for documents.",
+          "A Verified badge means we have checked the documents you uploaded. It is not a guarantee of teaching quality.",
+          "You are responsible for the classes you offer, the materials you upload, and following Sri Lankan law, including rules on tuition and child safety."
+        ]
+      },
+      {
+        "heading": "Students and parents",
+        "paragraphs": [
+          "Use the information on ClassPortals to make your own decision. Meet new teachers in safe places, and parents should supervise lessons for young children.",
+          "Reviews must describe your own real experience."
+        ]
+      },
+      {
+        "heading": "Things you must not do",
+        "paragraphs": [
+          "Post false, misleading, offensive or illegal content; harass anyone; collect other users' contact details for spam; copy or sell notes, exams or other materials without the owner's permission; try to get around the contact-protection rules; or interfere with the security of the site."
+        ]
+      },
+      {
+        "heading": "Content you upload",
+        "paragraphs": [
+          "You keep ownership of what you upload. You give ClassPortals permission to show it on the site so the service can work.",
+          "Notes are shown view-only with a watermark to protect teachers. We may remove content that breaks these terms."
+        ]
+      },
+      {
+        "heading": "Fees and payments",
+        "paragraphs": [
+          "Searching and creating an account are free. Some features, such as ad plans or connection fees, may cost money — the price is always shown before you pay.",
+          "Online payments are processed by PayHere. Fees for lessons are agreed between the student and the teacher, institute or school."
+        ]
+      },
+      {
+        "heading": "Suspending and closing accounts",
+        "paragraphs": [
+          "We may suspend or remove an account or listing that breaks these terms or puts other people at risk. You can stop using ClassPortals at any time and ask us to delete your account."
+        ]
+      },
+      {
+        "heading": "Our responsibility",
+        "paragraphs": [
+          "We work hard to keep ClassPortals accurate and available, but we cannot promise it will always be free of errors or interruptions. As far as the law allows, ClassPortals is not responsible for lessons, payments or disagreements between users."
+        ]
+      },
+      {
+        "heading": "Changes and governing law",
+        "paragraphs": [
+          "We may update these terms. The date at the top of this page shows the latest version. These terms are governed by the laws of Sri Lanka."
+        ]
+      }
+    ]
   },
   "privacyPage": {
     "title": "Privacy policy",
-    "body": "This page will explain how we store your data, and the contact-gating rules that keep teacher and class names masked and phone numbers locked until a student enrolls. We're finalising the full policy — check back soon."
-  },
-  "pricingPage": {
-    "title": "Pricing",
-    "body": "Looking for tutoring rates? Those are already shown on each teacher and class profile — this page isn't for that. This page will cover ClassPortals' own Free, Standard and Premium subscription plans for teachers and classes once finalised."
+    "updated": "19 October 2026",
+    "intro": "This policy explains what information ClassPortals collects, why, who can see it, and the choices you have.",
+    "sections": [
+      {
+        "heading": "What we collect",
+        "paragraphs": [
+          "Account details: your name, email, phone number and the kind of account you chose.",
+          "Profile details you choose to add, such as subjects, qualifications, a photo, or your school's details.",
+          "What you do on the site, such as requests you send, classes you join, exams you take and messages you write.",
+          "Basic technical information, such as which pages are visited and the type of device, counted anonymously so we can see how the site is used."
+        ]
+      },
+      {
+        "heading": "How we use it",
+        "paragraphs": [
+          "To run your account and show your profile or ads; to connect students with teachers, institutes and schools; to send notifications about your requests and classes; to keep the site safe and stop abuse; and to improve ClassPortals.",
+          "We do not sell your personal information."
+        ]
+      },
+      {
+        "heading": "What other people can see",
+        "paragraphs": [
+          "Teacher and institute ads are public, but full names are shown only to signed-in users.",
+          "Phone numbers and other contact details stay private until a teacher or institute accepts a student's request.",
+          "Notes, exams and results are shown only to the people in that class."
+        ]
+      },
+      {
+        "heading": "Who we share it with",
+        "paragraphs": [
+          "Service providers that help us run ClassPortals: Supabase (database and file storage), Vercel (website hosting), PayHere (online payments) and Jitsi (live video classes). They use the data only to provide their service to us.",
+          "We may also share information when the law requires it."
+        ]
+      },
+      {
+        "heading": "How long we keep it",
+        "paragraphs": [
+          "We keep your information while your account is open. When you delete your account, we remove or anonymise your personal information, except records we must keep by law, such as payment records."
+        ]
+      },
+      {
+        "heading": "Security",
+        "paragraphs": [
+          "Passwords are stored encrypted, every connection uses HTTPS, and our database only lets each person see what they are allowed to see. No system is perfectly secure, so please use a strong password and keep it private."
+        ]
+      },
+      {
+        "heading": "Your rights",
+        "paragraphs": [
+          "You can see and update most of your information in your dashboard. You can also ask us for a copy of your data, ask us to correct it, or ask us to delete your account.",
+          "We follow Sri Lanka's Personal Data Protection Act, No. 9 of 2022."
+        ]
+      },
+      {
+        "heading": "Children",
+        "paragraphs": [
+          "Students under 18 should use ClassPortals with a parent's or guardian's permission. A school that creates accounts for its students is responsible for having that permission."
+        ]
+      },
+      {
+        "heading": "Changes to this policy",
+        "paragraphs": [
+          "If we change this policy, we will update the date at the top of this page."
+        ]
+      }
+    ]
   },
   "authErrors": {
     "emailTaken": "An account with this email already exists. Try logging in instead.",
@@ -1176,7 +1408,8 @@
       "earnings": "Earnings",
       "activity": "Activity",
       "traffic": "Traffic & Usage",
-      "reports": "User Reports"
+      "reports": "User Reports",
+      "siteContent": "Site content"
     },
     "overview": {
       "title": "Platform Overview",
@@ -2139,6 +2372,151 @@
       "reasonLabel": "Reason the Principal will see",
       "reasonPlaceholder": "e.g. Please add your Ministry census number so we can confirm the school.",
       "cancel": "Cancel"
+    },
+    "siteContent": {
+      "title": "Site content",
+      "subtitle": "Change the public website's photos, headings, paragraphs and contact details. Nothing changes on the site until you press Publish.",
+      "viewSite": "View site",
+      "unsaved": "You have unpublished changes",
+      "upToDate": "The website shows these settings",
+      "published": "Published — the website is updated",
+      "discard": "Discard changes",
+      "publish": "Publish changes",
+      "publishing": "Publishing…",
+      "photos": {
+        "title": "Photos",
+        "description": "Use real, bright photos of Sri Lankan classrooms or students. Wide (landscape) photos work best.",
+        "tip": "Photos are resized automatically before upload, so any photo from a phone or camera is fine.",
+        "yours": "Your photo",
+        "builtIn": "Built-in photo",
+        "change": "Change photo",
+        "useBuiltIn": "Use built-in",
+        "uploading": "Uploading…",
+        "notImage": "That file isn't a photo. Choose a JPG, PNG or WEBP.",
+        "uploadFailed": "Couldn't upload this photo. Try another one.",
+        "slots": {
+          "hero": {
+            "name": "Homepage — top banner",
+            "where": "The big photo behind the search box."
+          },
+          "whyUs": {
+            "name": "Homepage — trust section",
+            "where": "Next to \"Every profile is checked\"."
+          },
+          "howItWorks": {
+            "name": "Homepage — how it works",
+            "where": "Next to the three steps."
+          },
+          "cta": {
+            "name": "Homepage — bottom banner",
+            "where": "Behind the \"Advertise\" message at the bottom."
+          },
+          "advertise": {
+            "name": "Advertise page — top banner",
+            "where": "The photo at the top of the Advertise page."
+          }
+        }
+      },
+      "text": {
+        "title": "Homepage text",
+        "description": "Write your own headings and paragraphs for each language. Leave a box empty to keep the built-in text (shown in grey).",
+        "languageLabel": "Language",
+        "custom": "Your text",
+        "usingBuiltIn": "Using built-in text",
+        "fields": {
+          "heroTitle": "Main heading",
+          "heroHighlight": "Main heading — gold part",
+          "heroSubtitle": "Paragraph under the main heading",
+          "whyUsTitle": "Trust section — heading",
+          "whyUsBody": "Trust section — paragraph",
+          "howTitle": "How it works — heading",
+          "howBody": "How it works — paragraph",
+          "ctaTitle": "Bottom banner — heading",
+          "ctaBody": "Bottom banner — paragraph"
+        }
+      },
+      "contact": {
+        "title": "Contact details",
+        "description": "Shown in the website footer and on the Help page. Leave a box empty to hide it.",
+        "fields": {
+          "whatsapp": {
+            "label": "WhatsApp number",
+            "placeholder": "077 123 4567",
+            "help": "Visitors can tap to chat. Ad plans are booked through this number."
+          },
+          "phone": {
+            "label": "Phone number",
+            "placeholder": "011 234 5678",
+            "help": "For people who prefer to call."
+          },
+          "email": {
+            "label": "Email",
+            "placeholder": "hello@classportals.lk",
+            "help": "Also used on the Terms and Privacy pages."
+          },
+          "address": {
+            "label": "Address",
+            "placeholder": "No. 12, Main Street, Galle",
+            "help": "Optional."
+          },
+          "hours": {
+            "label": "Opening hours",
+            "placeholder": "Mon–Sat, 9am–6pm",
+            "help": "When your team replies."
+          },
+          "facebook": {
+            "label": "Facebook page",
+            "placeholder": "https://facebook.com/classportals",
+            "help": "Optional."
+          }
+        }
+      },
+      "sections": {
+        "title": "Homepage sections",
+        "description": "Turn sections of the homepage on or off.",
+        "items": {
+          "stats": {
+            "name": "Numbers",
+            "description": "Active listings, subjects and towns. Numbers that are zero are always hidden."
+          },
+          "subjects": {
+            "name": "Browse by subject",
+            "description": "The most-listed subjects."
+          },
+          "featured": {
+            "name": "Featured teachers & classes",
+            "description": "Six live ads, one per teacher or institute."
+          },
+          "requests": {
+            "name": "Post a request",
+            "description": "Invites students and parents to post what they're looking for."
+          },
+          "schools": {
+            "name": "For schools",
+            "description": "Invites principals to register their school."
+          },
+          "roles": {
+            "name": "Who's on ClassPortals",
+            "description": "Cards for teachers, institutes, schools, lecturers and students."
+          },
+          "sponsorSlot": {
+            "name": "\"Advertise here\" box",
+            "description": "Shown under the featured ads when no sponsor has booked the homepage slot."
+          }
+        }
+      },
+      "plans": {
+        "title": "Ad plans",
+        "description": "The Basic, Featured and Spotlight plans on the Advertise page.",
+        "showName": "Show ad plans",
+        "showDescription": "Turn off to hide the plans until you're ready to sell them.",
+        "names": {
+          "basic": "Basic — price",
+          "featured": "Featured — price",
+          "spotlight": "Homepage Spotlight — price"
+        },
+        "tip": "Leave a price empty to keep the built-in price (shown in grey). Visitors book plans through your WhatsApp number, or email if there's no WhatsApp."
+      }
     }
   },
   "instituteDashboard": {
@@ -3322,9 +3700,9 @@
       "titleRequired": "Please add a headline for your ad.",
       "titleAutoDraftHint": "We've drafted this from your selections above — feel free to change it.",
       "suggestedTitleTeacherBase": "Looking for a teacher",
-      "suggestedTitleTeacherWithSubject": "Looking for a {subject} teacher",
+      "suggestedTitleTeacherWithSubject": "Looking for a teacher for {subject}",
       "suggestedTitleInstituteBase": "Looking for an institute or class",
-      "suggestedTitleInstituteWithSubject": "Looking for a {subject} institute or class",
+      "suggestedTitleInstituteWithSubject": "Looking for an institute or class for {subject}",
       "descriptionLabel": "Description (optional)",
       "descriptionPlaceholder": "Share a bit more about what you need...",
       "descriptionAutoDraftHint": "We've drafted a starting point from your selections above — expand or edit it as needed.",
@@ -4644,8 +5022,8 @@
     "subtitleCourses": "Structured, multi-session courses — filter by subject, location and grade to compare verified offerings.",
     "titleCoursesAdult": "Adult & professional learning",
     "subtitleCoursesAdult": "Structured courses aimed at an adult audience, not school-grade students.",
-    "resultsCount": "{count} results",
-    "sessionsCount": "{count} sessions",
+    "resultsCount": "{count, plural, one {# result} other {# results}}",
+    "sessionsCount": "{count, plural, one {# session} other {# sessions}}",
     "noResults": "No teachers or classes match your filters yet. Try clearing a filter or searching a different subject.",
     "clearFilters": "Clear filters",
     "categories": {
@@ -4661,7 +5039,7 @@
     "roleLesson": "Trial lesson",
     "roleFeaturedTeacher": "Featured teacher",
     "online": "Online",
-    "teacherCount": "{count} teachers",
+    "teacherCount": "{count, plural, one {# teacher} other {# teachers}}",
     "allSubjects": "All subjects",
     "pagination": {
       "showingCount": "Showing {shown} of {total}",
@@ -4681,7 +5059,7 @@
     "travelsToStudent": "Travels to student",
     "schedule": "Schedule",
     "durationMinutes": "{minutes} min",
-    "sessionsCount": "{count} sessions",
+    "sessionsCount": "{count, plural, one {# session} other {# sessions}}",
     "lessonInquiry": {
       "heading": "Ask about this lesson",
       "namePlaceholder": "Your name",
@@ -4700,7 +5078,7 @@
     },
     "teacherWiseAd": {
       "meetHeading": "Meet {teacherName}",
-      "experienceYears": "{count} years of experience",
+      "experienceYears": "{count, plural, one {# year of experience} other {# years of experience}}",
       "subjectsHeading": "Subjects"
     },
     "limitedNote": "This is a limited preview. Full profile details unlock once the teacher accepts your request to join.",
@@ -4750,37 +5128,92 @@
   "helpPage": {
     "eyebrow": "Help centre",
     "title": "Frequently asked questions",
-    "subtitle": "Common questions about joining, pricing, and how contact details unlock.",
-    "faq": [
+    "subtitle": "Quick answers about searching, joining, teaching and schools.",
+    "groups": [
       {
-        "question": "Do I need an account to browse teachers and classes?",
-        "answer": "No — anyone can search and view profiles without signing in. You'll need a free account to join a teacher or class, view notes, or take exams."
+        "title": "Students and parents",
+        "items": [
+          {
+            "question": "Do I need an account to search?",
+            "answer": "No — anyone can search and view ads without signing in. You need a free account to join a class, see notes or take exams."
+          },
+          {
+            "question": "Why is the teacher's name or phone number hidden?",
+            "answer": "Full names show once you sign in, and phone numbers unlock after the teacher or institute accepts your request. This keeps contact genuine and protects everyone from spam."
+          },
+          {
+            "question": "How do I join a class?",
+            "answer": "Open the ad and press \"Request to join\". The teacher gets your request and can accept it, ask you questions first, or decline. You'll get a notification either way."
+          },
+          {
+            "question": "I can't find a teacher for my subject. What can I do?",
+            "answer": "Post a request from your student dashboard with the subject, grade and town. Teachers and institutes who can help will reply to you."
+          },
+          {
+            "question": "Who can leave a review?",
+            "answer": "Only students who actually joined that teacher or class. That keeps ratings honest."
+          }
+        ]
       },
       {
-        "question": "Why is the teacher's name and phone number hidden?",
-        "answer": "Full names and phone numbers only unlock once you've actually joined that specific teacher or class. This protects teachers from spam and keeps contact requests genuine."
+        "title": "Teachers and institutes",
+        "items": [
+          {
+            "question": "Is it free to join?",
+            "answer": "Yes. Creating a profile and posting a normal ad is free. Optional ad plans give extra visibility."
+          },
+          {
+            "question": "Why isn't my profile showing in search yet?",
+            "answer": "Our team checks each new profile before it goes live — usually within a day. You also need at least one active ad, and your listing switched on in your dashboard."
+          },
+          {
+            "question": "How do I get the Verified badge?",
+            "answer": "Upload your qualification or registration documents in your dashboard profile. Once our team checks them, the green Verified badge appears on your ads."
+          },
+          {
+            "question": "How do online classes work?",
+            "answer": "Schedule a live class in your dashboard. Students in that class see a \"Join\" button when it's about to start, and the video call opens right in the browser."
+          },
+          {
+            "question": "Can students download my notes?",
+            "answer": "No — notes are view-only and watermarked with the student's name, so your work stays protected."
+          }
+        ]
       },
       {
-        "question": "How does pricing work if a class has multiple teachers?",
-        "answer": "If you join a specific teacher inside a class, you pay that teacher's own rate. If you join the class generally, you pay the class's rate."
+        "title": "Schools",
+        "items": [
+          {
+            "question": "How does a school join?",
+            "answer": "The Principal signs up, chooses \"School\" and fills in the school's details. Our team checks and approves the school, usually within a day."
+          },
+          {
+            "question": "How do teachers and staff get their logins?",
+            "answer": "The school creates them. The Principal decides each person's role — for example Class Teacher or Office Staff — and what that role can see and change."
+          }
+        ]
       },
       {
-        "question": "Is ClassPortals free to join?",
-        "answer": "Yes — the Free plan covers a basic listing for teachers and classes. Paid plans add featured placement and a larger ad slot."
-      },
-      {
-        "question": "Can I advertise without creating a full profile?",
-        "answer": "Yes — the Advertise page lets you post a standalone ad (Basic, Featured, or Homepage Spotlight) without setting up an ongoing teacher or class profile."
-      },
-      {
-        "question": "How do online classes work?",
-        "answer": "Teachers schedule a class and share their own Zoom or Google Meet link. The \"Join Live Class\" button activates once the class is about to start."
-      },
-      {
-        "question": "Can I download or print notes?",
-        "answer": "No — notes are view-only and watermarked with your name to protect the teacher's content. This applies to every note across the platform."
+        "title": "Your account",
+        "items": [
+          {
+            "question": "I forgot my password.",
+            "answer": "Use \"Forgot password\" on the login page and we'll email you a link to set a new one."
+          },
+          {
+            "question": "How do I report a fake or wrong listing?",
+            "answer": "Use the \"Report\" button on the ad. Our team reviews every report."
+          }
+        ]
       }
-    ]
+    ],
+    "contact": {
+      "title": "Still need help?",
+      "body": "Message our team and we'll get back to you as soon as we can.",
+      "whatsapp": "Chat on WhatsApp",
+      "email": "Send an email",
+      "whatsappMessage": "Hi ClassPortals, I need help with"
+    }
   },
   "footer": {
     "tagline": "Find teachers, classes and campus lecturers from Grade 1 through university, across Sri Lanka.",
@@ -4790,13 +5223,16 @@
     "findTeachers": "Find teachers",
     "findClasses": "Find classes",
     "howRolesWork": "How roles work",
-    "pricing": "Pricing",
     "advertise": "Advertise",
     "helpCentre": "Help centre",
     "termsOfService": "Terms of service",
     "privacyPolicy": "Privacy policy",
     "copyright": "© {year} ClassPortals. All rights reserved.",
-    "location": "Koggala, Sri Lanka"
+    "location": "Koggala, Sri Lanka",
+    "requests": "Student requests",
+    "forSchools": "For schools",
+    "contact": "Contact us",
+    "whatsapp": "WhatsApp"
   },
   "batchJoinCode": {
     "label": "Join code",
@@ -5485,5 +5921,23 @@
         }
       }
     }
+  },
+  "notFoundPage": {
+    "title": "We couldn't find that page",
+    "body": "The page may have moved, or the ad may have ended. Try a search, or go to one of these pages.",
+    "links": {
+      "home": "Home",
+      "teachers": "Find teachers",
+      "requests": "Student requests",
+      "help": "Help centre"
+    },
+    "pageTitle": "Page not found | ClassPortals"
+  },
+  "legalCommon": {
+    "eyebrow": "Legal",
+    "updated": "Last updated: {date}",
+    "contents": "Contents",
+    "questions": "Questions about this page? Email us at",
+    "questionsNoEmail": "Questions about this page? Contact us through the Help centre."
   }
 }

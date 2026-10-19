@@ -195,7 +195,7 @@ function StudentRequestForm({ batchId, isCampusLecturer }: { batchId: string; is
   async function handleSend() {
     setSending(true);
     setError(null);
-    const result = await requestToJoin(batchId);
+    const result = await requestToJoin(batchId, note);
     setSending(false);
     if (result.error) {
       setError(result.error);
@@ -217,6 +217,7 @@ function StudentRequestForm({ batchId, isCampusLecturer }: { batchId: string; is
         className={cn(fieldClass, "min-h-18 resize-none py-1.75")}
         placeholder={t("notePlaceholder")}
         value={note}
+        maxLength={500}
         onChange={(e) => setNote(e.target.value)}
       />
       {error && <span className="text-xs font-medium text-destructive">{error}</span>}

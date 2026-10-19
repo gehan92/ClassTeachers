@@ -14,6 +14,7 @@ import { getSubjectIcon } from "@/lib/subject-icon";
 import { getWantedAdRespondHref, resolveWantedAdResponder } from "@/lib/wanted-ad-respond-href";
 import { sanitizeRichText } from "@/lib/dashboard/sanitize-rich-text";
 import { hasRichText, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
+import { localeAlternates } from "@/lib/site-url";
 
 async function loadAd(id: string) {
   const supabase = await createClient();
@@ -31,6 +32,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/requests
   return {
     title: t("requestDetailTitle", { title: ad.title }),
     description: t("requestDetailDescription"),
+    alternates: localeAlternates(locale, `/requests/${id}`),
   };
 }
 

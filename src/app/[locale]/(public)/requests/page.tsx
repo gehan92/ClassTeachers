@@ -1,19 +1,21 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { localeAlternates } from "@/lib/site-url";
 import { WantedAdsBoard } from "@/components/features/wanted-ads-board";
 import type { PublicWantedAd } from "@/components/features/wanted-ads-board";
 import { SimpleAdsBoard } from "@/components/features/simple-ads-board";
 import type { SimpleAd } from "@/components/features/simple-ads-board";
 import { Eyebrow } from "@/components/features/eyebrow";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/auth-user";
 import { createDateFormatter } from "@/lib/format-date";
 import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/requests">): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "meta" });
-  return { title: t("requestsTitle"), description: t("requestsDescription") };
+  return { title: t("requestsTitle"), description: t("requestsDescription"), alternates: localeAlternates(locale, "/requests") };
 }
 
 // "Teacher requests" (teacher_seeking_ads) and "Institute vacancies"
@@ -112,7 +114,7 @@ export default async function RequestsPage({ params, searchParams }: PageProps<"
 
   return (
     <RequestsShell eyebrow={t("hero.eyebrow")} title={t("hero.title")} subtitle={t("hero.subtitle")}>
-      <WantedAdsBoard ads={ads} />
+      <WantedAdsBoard ads={ads} signedInStudent={(await getAuthUser())?.user_metadata?.role === "student"} />
     </RequestsShell>
   );
 }
@@ -133,15 +135,15 @@ function RequestsShell({
       {/* Same tinted-band heading shape as /teachers — this is another
        * searchable listing page, not a marketing landing page, so it
        * should match /teachers rather than /advertise. */}
-      <section style={{ background: "var(--muted)" }} className="py-5">
-        <div className="mx-auto max-w-[1180px] px-7">
+      <section className="border-b border-border bg-[radial-gradient(1000px_360px_at_85%_-20%,rgba(201,150,44,0.12),transparent_60%)] bg-muted/50 pt-10 pb-9">
+        <div className="mx-auto max-w-[1180px] px-5 sm:px-7">
           <Eyebrow>{eyebrow}</Eyebrow>
-          <h1 className="text-[32px]">{title}</h1>
-          <p className="text-muted-foreground mb-0">{subtitle}</p>
+          <h1 className="text-[clamp(1.75rem,4vw,2.25rem)] leading-tight">{title}</h1>
+          <p className="mt-1.5 max-w-[62ch] text-muted-foreground">{subtitle}</p>
         </div>
       </section>
-      <section className="py-12">
-        <div className="mx-auto max-w-[1180px] px-7">{children}</div>
+      <section className="py-10">
+        <div className="mx-auto max-w-[1180px] px-5 sm:px-7">{children}</div>
       </section>
     </>
   );

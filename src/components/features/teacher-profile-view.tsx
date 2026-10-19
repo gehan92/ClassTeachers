@@ -133,12 +133,11 @@ function Hero({
             )}
             <h1 className="mb-2 flex items-center gap-1.5 text-[28px] text-white sm:text-[34px]">
               {teacher.name}
-              <span title={teacher.institutionVerified ? tl("institutionVerified") : tl("reviewed")}>
-                <BadgeCheck
-                  className="size-4 shrink-0 sm:size-5"
-                  aria-label={teacher.institutionVerified ? tl("institutionVerified") : tl("reviewed")}
-                />
-              </span>
+              {teacher.institutionVerified && (
+                <span title={tl("institutionVerified")} className="text-[#8fdcb4]">
+                  <BadgeCheck className="size-4 shrink-0 sm:size-5" aria-label={tl("institutionVerified")} />
+                </span>
+              )}
             </h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-white/85">
               {teacher.reviewCount > 0 && (

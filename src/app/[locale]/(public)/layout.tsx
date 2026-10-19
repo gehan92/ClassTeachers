@@ -5,9 +5,15 @@ import { getAuthUser } from "@/lib/supabase/auth-user";
 import { getNavAvailability } from "@/lib/nav-availability";
 import { getSiteAnnouncement } from "@/lib/site-announcement";
 import { SiteAnnouncementBar } from "@/components/layout/site-announcement-bar";
+import { getSiteContent } from "@/lib/site-content";
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const [authUser, navAvailability, announcement] = await Promise.all([getAuthUser(), getNavAvailability(), getSiteAnnouncement()]);
+  const [authUser, navAvailability, announcement, siteContent] = await Promise.all([
+    getAuthUser(),
+    getNavAvailability(),
+    getSiteAnnouncement(),
+    getSiteContent(),
+  ]);
   const supabase = await createClient();
 
   let headerUser = null;
@@ -64,38 +70,10 @@ export default async function PublicLayout({ children }: { children: React.React
 
   return (
     <>
-      {/* Bootstrap adds grid/layout utilities (row/col, d-flex, etc.) for the
-          public-page redesign — scoped to this route group only via Next's
-          head-hoisting of <link>/<style> rendered inside a nested layout
-          (removed automatically when this layout unmounts on client nav).
-          Loaded via @import ... layer(bootstrap) so it lands in the
-          "bootstrap" cascade layer, whose position is pre-registered in
-          globals.css as theme, base, bootstrap, components, utilities —
-          above Tailwind's base/preflight reset (so Bootstrap's own
-          `.form-control`/`.btn` borders and backgrounds aren't stripped by
-          preflight's `border-width: 0` reset) but below Tailwind's
-          utilities (so our own brand-color utility classes still win any
-          conflict, e.g. against Bootstrap's default link-blue on <a> tags).
-          The second <style> block still explicitly strips the underline
-          Bootstrap's reboot puts on every <a> — being in a lower layer than
-          utilities doesn't make Bootstrap's own decoration/color
-          declarations disappear, only lose ties against Tailwind, so
-          without this a link with no color/decoration utility of its own
-          would still show Bootstrap's underline. */}
-      <style>{`@import url("https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css") layer(bootstrap);`}</style>
-      <style>{`
-        body a { text-decoration: none; color: inherit; }
-        body h1, body h2, body h3, body h4 {
-          font-family: var(--font-display);
-          font-weight: 600;
-          color: var(--primary);
-          letter-spacing: -0.01em;
-        }
-      `}</style>
       {announcement && <SiteAnnouncementBar announcement={announcement} />}
       <SiteHeader user={headerUser} inquiriesCount={inquiriesCount} userPhotoUrl={userPhotoUrl} navAvailability={navAvailability} />
       <main className="flex-1">{children}</main>
-      <SiteFooter />
+      <SiteFooter contact={siteContent.contact} />
     </>
   );
 }

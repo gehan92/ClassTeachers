@@ -6,6 +6,7 @@ import { loadClassProfile } from "@/lib/load-class-profile";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/supabase/auth-user";
 import { ReportButton } from "@/components/features/report-button";
+import { localeAlternates } from "@/lib/site-url";
 
 export async function generateMetadata({
   params,
@@ -20,6 +21,7 @@ export async function generateMetadata({
   return {
     title: t("classProfileTitle", { name: classProfile.name }),
     description: t("classProfileDescription", { name: classProfile.name }),
+    alternates: localeAlternates(locale, `/class/${id}`),
   };
 }
 

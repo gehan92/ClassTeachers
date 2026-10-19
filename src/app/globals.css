@@ -1,62 +1,6 @@
-/* Pre-registers the full cascade-layer order, with "bootstrap" slotted in
-   between Tailwind's "base" and "components"/"utilities" layers — not below
-   everything. Layer names keep whatever relative order they're FIRST
-   declared in, so this bare statement (parsed before Tailwind's own @import
-   below re-declares theme/base/utilities, and before shadcn/tailwind.css
-   declares components) is what actually fixes the order, regardless of
-   where each layer's real content gets added later.
-
-   Putting "bootstrap" above "base" — not below everything as a first
-   attempt at this did — matters because Tailwind's preflight (in "base")
-   resets border-width to 0 and other browser form/element defaults
-   universally; if bootstrap sits below base, that reset wins over
-   Bootstrap's own `.form-control`/`.btn` styles and silently strips their
-   borders/background (this is what broke the search bar's input borders).
-
-   "brand-overrides" is declared FIRST (before even "theme") for a different
-   reason: Bootstrap ships its own `.text-primary`/`.bg-primary`/
-   `.text-secondary`/`.bg-secondary`/`.text-success`/`.bg-success` utility
-   classes (same names as ours, since both frameworks converge on the same
-   semantic color-naming convention), and Bootstrap marks them `!important`.
-   An `!important` declaration ALWAYS beats a normal one regardless of layer
-   or specificity, so no amount of layer reordering fixes that case — that's
-   what was turning the header logo blue and would've turned the "CP" badge
-   grey (Bootstrap's default secondary color) once it switched to
-   bg-secondary. The fix is to also be `!important`, but layer order for
-   *important* declarations is the REVERSE of normal ones (earliest-declared
-   layer wins), so "brand-overrides" has to be declared before "bootstrap"
-   to actually beat it — declaring it in "utilities" (last) would still lose. */
-@layer brand-overrides, theme, base, bootstrap, components, utilities;
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-
-/* Restates the 6 colliding utility classes above with our own token values,
-   `!important`, inside the highest-priority layer for important
-   declarations — see the comment above for why. Only these 6 names collide
-   with a Bootstrap utility class of the same name; every other brand color
-   class we use (bg-cta, text-accent-deep, text-muted-foreground, etc.) has
-   no Bootstrap equivalent and needs no override. */
-@layer brand-overrides {
-  .text-primary {
-    color: var(--primary) !important;
-  }
-  .bg-primary {
-    background-color: var(--primary) !important;
-  }
-  .text-secondary {
-    color: var(--secondary) !important;
-  }
-  .bg-secondary {
-    background-color: var(--secondary) !important;
-  }
-  .text-success {
-    color: var(--success) !important;
-  }
-  .bg-success {
-    background-color: var(--success) !important;
-  }
-}
 
 @custom-variant dark (&:is(.dark *));
 
@@ -254,72 +198,6 @@
   h3,
   h4 {
     @apply font-display font-semibold text-primary tracking-tight;
-  }
-}
-
-/* Home page's WhyUs/HowItWorks photo bands (page.tsx) — matches the
-   classportals-home-v3.html reference's `.band .text{padding:60px}` /
-   `@media (max-width:991px){.band .text{padding:36px 8px}}` exactly, which
-   Bootstrap's spacing-utility scale (p-4/p-5) can't hit precisely. */
-.home-band-text {
-  padding: 36px 8px;
-}
-@media (min-width: 992px) {
-  .home-band-text {
-    padding: 60px;
-  }
-}
-
-/* Home hero (page.tsx): a fixed 92vh + 120px top padding looked fine on
-   desktop but on a phone forced extra scrolling before the search card
-   (the primary conversion element) came into view — so mobile gets a
-   shorter floor and much less top padding, both restored at md.
-   56px undershot it, though: the fixed mobile header itself is ~64px tall,
-   so the headline sat almost flush against it with no breathing room —
-   bumped to 92px, still far short of desktop's 120px. */
-.home-hero {
-  min-height: 78vh;
-}
-.home-hero-inner {
-  padding-top: 92px;
-}
-@media (min-width: 768px) {
-  .home-hero {
-    min-height: 92vh;
-  }
-  .home-hero-inner {
-    padding-top: 120px;
-  }
-}
-
-/* Themes Bootstrap's OWN CSS custom property (its native theming hook)
-   instead of overriding .form-control/.form-select rules directly:
-   --bs-border-color is the single variable bootstrap.min.css's :root
-   defines and every unstyled form/border reads from (confirmed by
-   inspecting the compiled CSS — .form-control/.form-select never
-   redefine it themselves, just consume the :root value), so redefining
-   it here — in the "components" layer, which the pre-registered layer
-   order (top of this file) places after "bootstrap" — recolors every
-   text input/select's resting border via Bootstrap's own mechanism,
-   the way changing a Sass variable and recompiling would, with no
-   !important needed (later layer wins regardless of specificity).
-   The vanilla CDN build has no such hook for the :focus state, though —
-   its border-color/box-shadow are hardcoded literal Bootstrap-blue
-   values in the compiled CSS, not variable-driven (checked: no
-   --bs-focus-ring-color reference anywhere on these two selectors).
-   Getting the focus ring on a real Bootstrap variable too would mean
-   dropping the CDN-import-into-layer approach (see the (public) layout's
-   own comment on why that was chosen) for a full Sass build step — so
-   this one rule stays a plain override, everything else here is native
-   Bootstrap theming. */
-@layer components {
-  :root {
-    --bs-border-color: var(--input);
-  }
-  .form-control:focus,
-  .form-select:focus {
-    border-color: var(--ring);
-    box-shadow: 0 0 0 0.2rem color-mix(in oklab, var(--ring) 25%, transparent);
   }
 }
 

@@ -379,7 +379,7 @@ export async function deleteBatch(batchId: string, ownerType: "teacher" | "class
  * turned down. The RPC transparently handles both the fresh-join and
  * re-request-after-decline cases in one atomic step.
  */
-export async function requestToJoin(batchId: string): Promise<ActionResult> {
+export async function requestToJoin(batchId: string, note?: string): Promise<ActionResult> {
   if (!batchId) {
     return { error: "Invalid class." };
   }
@@ -402,6 +402,12 @@ export async function requestToJoin(batchId: string): Promise<ActionResult> {
     }
     return { error: "Couldn't send your request. Please try again." };
   }
+
+  // The student's note for the teacher (0167). Always called, so a request
+  // reopened after a decline never keeps an old note. If 0167 hasn't been
+  // run yet the request itself has still gone through, so a failure here
+  // is not reported as one.
+  await supabase.rpc("set_join_request_note", { p_batch_id: batchId, p_note: (note ?? "").trim().slice(0, 500) });
   return {};
 }
 

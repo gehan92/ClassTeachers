@@ -7,6 +7,7 @@ import { getAuthUser } from "@/lib/supabase/auth-user";
 import { ReportButton } from "@/components/features/report-button";
 import { createDateFormatter } from "@/lib/format-date";
 import type { TeacherProfileDetail } from "@/types/teacher-profile";
+import { localeAlternates } from "@/lib/site-url";
 
 async function loadTeacherProfile(
   id: string,
@@ -137,6 +138,8 @@ export async function generateMetadata({
   return {
     title: t("teacherProfileTitle", { name: teacher.display_name, subject }),
     description: t("teacherProfileDescription", { name: teacher.display_name }),
+    alternates: localeAlternates(locale, `/teacher/${id}`),
+    openGraph: teacher.photo_url ? { images: [{ url: teacher.photo_url }] } : undefined,
   };
 }
 

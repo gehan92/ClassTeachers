@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -14,6 +15,7 @@ import { avatarGradientClass } from "@/lib/avatar-color";
 import { sanitizeRichText } from "@/lib/dashboard/sanitize-rich-text";
 import { hasRichText, looksLikeRichTextHtml, RICH_TEXT_DISPLAY_CLASS } from "@/lib/rich-text";
 import { createDateFormatter, createDateTimeFormatter } from "@/lib/format-date";
+import { localeAlternates } from "@/lib/site-url";
 import type { ReviewDisplay } from "@/types/review";
 
 /**
@@ -60,15 +62,12 @@ type NormalizedAd = {
   totalSessions: number | null;
 };
 
-async function loadAd(adId: string): Promise<NormalizedAd | null> {
+const loadAd = cache(async (adId: string): Promise<NormalizedAd | null> => {
   const supabase = await createClient();
 
   const { data: teacherRows } = await supabase.rpc("get_public_ad", { p_ad_id: adId });
   if (teacherRows && teacherRows.length > 0) {
     const r = teacherRows[0];
-    // Result intentionally ignored -- a failed count bump shouldn't ever
-    // break the page rendering for the visitor viewing the ad.
-    await supabase.rpc("increment_ad_view", { p_ad_id: adId });
     return {
       ownerType: "teacher",
       ownerId: r.teacher_id,
@@ -104,7 +103,6 @@ async function loadAd(adId: string): Promise<NormalizedAd | null> {
   const { data: classRows } = await supabase.rpc("get_public_class_ad", { p_ad_id: adId });
   if (classRows && classRows.length > 0) {
     const r = classRows[0];
-    await supabase.rpc("increment_ad_view", { p_ad_id: adId });
     return {
       ownerType: "class",
       ownerId: r.class_id,
@@ -138,7 +136,7 @@ async function loadAd(adId: string): Promise<NormalizedAd | null> {
   }
 
   return null;
-}
+});
 
 /**
  * "Lesson/Grade-wise Ad" (0138) — a narrower promotion than the batch-shaped
@@ -168,13 +166,12 @@ type NormalizedLessonAd = {
   institutionVerified: boolean;
 };
 
-async function loadLessonAd(adId: string): Promise<NormalizedLessonAd | null> {
+const loadLessonAd = cache(async (adId: string): Promise<NormalizedLessonAd | null> => {
   const supabase = await createClient();
 
   const { data: rows } = await supabase.rpc("get_public_lesson_ad", { p_ad_id: adId });
   if (!rows || rows.length === 0) return null;
   const r = rows[0];
-  await supabase.rpc("increment_ad_view", { p_ad_id: adId });
   return {
     adId: r.ad_id,
     teacherId: r.teacher_id,
@@ -193,7 +190,7 @@ async function loadLessonAd(adId: string): Promise<NormalizedLessonAd | null> {
     isCampusLecturer: r.is_campus_lecturer,
     institutionVerified: r.institution_verified,
   };
-}
+});
 
 /**
  * "Teacher-Wise Ad" (0140, mockup section 2.4) -- an institute-owned ad
@@ -222,13 +219,12 @@ type NormalizedTeacherWiseAd = {
   adContent: string | null;
 };
 
-async function loadTeacherWiseAd(adId: string): Promise<NormalizedTeacherWiseAd | null> {
+const loadTeacherWiseAd = cache(async (adId: string): Promise<NormalizedTeacherWiseAd | null> => {
   const supabase = await createClient();
 
   const { data: rows } = await supabase.rpc("get_public_teacher_wise_ad", { p_ad_id: adId });
   if (!rows || rows.length === 0) return null;
   const r = rows[0];
-  await supabase.rpc("increment_ad_view", { p_ad_id: adId });
   return {
     adId: r.ad_id,
     instituteId: r.institute_id,
@@ -246,6 +242,16 @@ async function loadTeacherWiseAd(adId: string): Promise<NormalizedTeacherWiseAd 
     adTitle: r.ad_title,
     adContent: r.ad_content,
   };
+});
+
+/**
+ * One view per page visit. Called from the page only — generateMetadata
+ * loads the same ad (deduplicated by cache() above) and must not count a
+ * second view. A failed count bump never breaks the page.
+ */
+async function recordAdView(adId: string) {
+  const supabase = await createClient();
+  await supabase.rpc("increment_ad_view", { p_ad_id: adId });
 }
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/ad/[id]">): Promise<Metadata> {
@@ -253,28 +259,36 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/ad/[id]"
   const [ad, t] = await Promise.all([loadAd(id), getTranslations({ locale, namespace: "meta" })]);
   if (ad) {
     const name = ad.name ?? (ad.ownerType === "class" ? t("classRoleFallback") : t("teacherRoleFallback"));
-    return {
-      title: t("adTitle", { adTitle: ad.adTitle, name }),
-      description: t("adDescription", { name }),
-    };
+    return adMetadata(t("adTitle", { adTitle: ad.adTitle, name }), t("adDescription", { name }), ad.photoUrl, locale, id);
   }
   const lessonAd = await loadLessonAd(id);
   if (lessonAd) {
     const name = lessonAd.name ?? t("teacherRoleFallback");
-    return {
-      title: t("adTitle", { adTitle: lessonAd.adTitle, name }),
-      description: t("adDescription", { name }),
-    };
+    return adMetadata(t("adTitle", { adTitle: lessonAd.adTitle, name }), t("adDescription", { name }), lessonAd.photoUrl, locale, id);
   }
   const teacherWiseAd = await loadTeacherWiseAd(id);
   if (teacherWiseAd) {
     const name = teacherWiseAd.instituteName ?? t("classRoleFallback");
-    return {
-      title: t("adTitle", { adTitle: teacherWiseAd.adTitle, name }),
-      description: t("adDescription", { name }),
-    };
+    return adMetadata(
+      t("adTitle", { adTitle: teacherWiseAd.adTitle, name }),
+      t("adDescription", { name }),
+      teacherWiseAd.teacherPhotoUrl ?? teacherWiseAd.institutePhotoUrl,
+      locale,
+      id,
+    );
   }
   return {};
+}
+
+/** Title, description and the link preview (WhatsApp/Facebook) for one ad. */
+function adMetadata(title: string, description: string, photoUrl: string | null, locale: string, id: string): Metadata {
+  return {
+    title: { absolute: title },
+    description,
+    alternates: localeAlternates(locale, `/ad/${id}`),
+    openGraph: { title, description, type: "article", ...(photoUrl ? { images: [{ url: photoUrl }] } : {}) },
+    twitter: { card: photoUrl ? "summary_large_image" : "summary", title, description },
+  };
 }
 
 type QnaMessageRow = { id: string; senderRole: "owner" | "inquirer"; body: string; createdLabel: string };
@@ -327,14 +341,17 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
   if (!ad) {
     const lessonAd = await loadLessonAd(id);
     if (lessonAd) {
+      await recordAdView(id);
       return <LessonAdView ad={lessonAd} locale={locale} />;
     }
     const teacherWiseAd = await loadTeacherWiseAd(id);
     if (teacherWiseAd) {
+      await recordAdView(id);
       return <TeacherWiseAdView ad={teacherWiseAd} />;
     }
     notFound();
   }
+  await recordAdView(id);
 
   const user = await getAuthUser();
   const reportSignedIn = Boolean(user);
@@ -451,7 +468,7 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
       : [];
 
   return (
-    <div className="mx-auto max-w-[860px] px-7 py-10">
+    <div className="mx-auto max-w-[860px] px-5 py-10 sm:px-7">
       <Link
         href="/teachers"
         className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary"
@@ -480,12 +497,15 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
             {ad.subject && (
               <div className="mb-1 font-mono text-xs uppercase tracking-[0.12em] text-white/70">{ad.subject}</div>
             )}
-            <h1 className="mb-1.5 flex items-center gap-1.5 text-2xl text-white">
+            <p className="mb-1.5 flex flex-wrap items-center gap-2 font-display text-xl font-semibold text-white">
               {displayName}
-              <span title={ad.institutionVerified ? tl("institutionVerified") : tl("reviewed")}>
-                <BadgeCheck className="size-4 shrink-0" aria-label={ad.institutionVerified ? tl("institutionVerified") : tl("reviewed")} />
-              </span>
-            </h1>
+              {ad.institutionVerified && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-success px-2 py-0.5 font-sans text-[11px] font-semibold text-success-foreground">
+                  <BadgeCheck className="size-3.5" aria-hidden />
+                  {tl("verified")}
+                </span>
+              )}
+            </p>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-white/85">
               {ad.reviewCount > 0 && (
                 <span className="flex items-center gap-1.5">
@@ -530,10 +550,10 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
         </div>
       </div>
 
-      <h2 className="mt-7 mb-4 text-2xl text-primary sm:text-[26px]">
+      <h1 className="mt-7 mb-4 text-[clamp(1.6rem,3.5vw,2rem)] leading-tight text-balance text-primary">
         {ad.courseCode && <span className="text-muted-foreground">{ad.courseCode} · </span>}
         {ad.adTitle}
-      </h2>
+      </h1>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-6">
@@ -767,7 +787,7 @@ async function LessonAdView({ ad, locale }: { ad: NormalizedLessonAd; locale: st
   const scheduledLabel = createDateTimeFormatter(locale).format(new Date(ad.scheduledAtIso));
 
   return (
-    <div className="mx-auto max-w-[860px] px-7 py-10">
+    <div className="mx-auto max-w-[860px] px-5 py-10 sm:px-7">
       <Link
         href="/teachers"
         className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary"
@@ -794,15 +814,15 @@ async function LessonAdView({ ad, locale }: { ad: NormalizedLessonAd; locale: st
           )}
           <div className="min-w-0 flex-1">
             {ad.subject && <div className="mb-1 font-mono text-xs uppercase tracking-[0.12em] text-white/70">{ad.subject}</div>}
-            <h1 className="mb-1.5 flex items-center gap-1.5 text-2xl text-white">
+            <p className="mb-1.5 flex flex-wrap items-center gap-2 font-display text-xl font-semibold text-white">
               {displayName}
-              <span title={ad.institutionVerified ? tl("institutionVerified") : tl("reviewed")}>
-                <BadgeCheck
-                  className="size-4 shrink-0"
-                  aria-label={ad.institutionVerified ? tl("institutionVerified") : tl("reviewed")}
-                />
-              </span>
-            </h1>
+              {ad.institutionVerified && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-success px-2 py-0.5 font-sans text-[11px] font-semibold text-success-foreground">
+                  <BadgeCheck className="size-3.5" aria-hidden />
+                  {tl("verified")}
+                </span>
+              )}
+            </p>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-white/85">
               {ad.reviewCount > 0 && (
                 <span className="flex items-center gap-1.5">
@@ -824,7 +844,7 @@ async function LessonAdView({ ad, locale }: { ad: NormalizedLessonAd; locale: st
         </div>
       </div>
 
-      <h2 className="mt-7 mb-4 text-2xl text-primary sm:text-[26px]">{ad.adTitle}</h2>
+      <h1 className="mt-7 mb-4 text-[clamp(1.6rem,3.5vw,2rem)] leading-tight text-balance text-primary">{ad.adTitle}</h1>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">
@@ -868,7 +888,7 @@ async function TeacherWiseAdView({ ad }: { ad: NormalizedTeacherWiseAd }) {
   const richContent = sanitizeRichText(ad.adContent ?? "");
 
   return (
-    <div className="mx-auto max-w-[860px] px-7 py-10">
+    <div className="mx-auto max-w-[860px] px-5 py-10 sm:px-7">
       <Link
         href="/teachers"
         className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary"
@@ -894,20 +914,20 @@ async function TeacherWiseAdView({ ad }: { ad: NormalizedTeacherWiseAd }) {
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <h1 className="mb-1.5 flex items-center gap-1.5 text-2xl text-white">
+            <p className="mb-1.5 flex flex-wrap items-center gap-2 font-display text-xl font-semibold text-white">
               {displayInstituteName}
-              <span title={ad.institutionVerified ? tl("institutionVerified") : tl("reviewed")}>
-                <BadgeCheck
-                  className="size-4 shrink-0"
-                  aria-label={ad.institutionVerified ? tl("institutionVerified") : tl("reviewed")}
-                />
-              </span>
-            </h1>
+              {ad.institutionVerified && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-success px-2 py-0.5 font-sans text-[11px] font-semibold text-success-foreground">
+                  <BadgeCheck className="size-3.5" aria-hidden />
+                  {tl("verified")}
+                </span>
+              )}
+            </p>
           </div>
         </div>
       </div>
 
-      <h2 className="mt-7 mb-4 text-2xl text-primary sm:text-[26px]">{ad.adTitle}</h2>
+      <h1 className="mt-7 mb-4 text-[clamp(1.6rem,3.5vw,2rem)] leading-tight text-balance text-primary">{ad.adTitle}</h1>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-6">

@@ -1,16 +1,19 @@
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 /** Small uppercase label with a leading tick-mark, used above headings on
- * every redesigned public page (Home, search, detail pages) for a
- * consistent visual rhythm. `dark` swaps to a lighter tint for use over a
- * photo/dark background. */
-export function Eyebrow({ children, dark }: { children: ReactNode; dark?: boolean }) {
+ * every public page for a consistent visual rhythm. `dark` swaps to a
+ * lighter tint for use over a photo/dark background. */
+export function Eyebrow({ children, dark, className }: { children: ReactNode; dark?: boolean; className?: string }) {
   return (
     <div
-      className="mb-2 d-inline-flex align-items-center gap-2 text-uppercase fw-bold"
-      style={{ fontSize: 12, letterSpacing: "0.06em", color: dark ? "#f0dfae" : "var(--accent-deep)" }}
+      className={cn(
+        "mb-2 inline-flex items-center gap-2 text-xs font-bold tracking-[0.08em] uppercase",
+        dark ? "text-[#f0dfae]" : "text-accent-deep",
+        className,
+      )}
     >
-      <span style={{ width: 18, height: 1.5, background: dark ? "#f0dfae" : "var(--accent-deep)", display: "inline-block" }} />
+      <span aria-hidden className={cn("inline-block h-[1.5px] w-[18px]", dark ? "bg-[#f0dfae]" : "bg-accent-deep")} />
       {children}
     </div>
   );

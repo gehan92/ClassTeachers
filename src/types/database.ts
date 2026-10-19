@@ -1062,6 +1062,7 @@ export type Database = {
           joined_at: string;
           platform_fee_paid: boolean;
           platform_fee_waived: boolean;
+          request_note: string | null;
         };
         Insert: {
           id?: string;
@@ -1074,6 +1075,7 @@ export type Database = {
           joined_at?: string;
           platform_fee_paid?: boolean;
           platform_fee_waived?: boolean;
+          request_note?: string | null;
         };
         Update: {
           id?: string;
@@ -1086,6 +1088,7 @@ export type Database = {
           joined_at?: string;
           platform_fee_paid?: boolean;
           platform_fee_waived?: boolean;
+          request_note?: string | null;
         };
         // No embedded-resource typing yet (e.g. `.select('*, exams(*)')`) —
         // every table declares no relationships rather than a guessed one.
@@ -2452,6 +2455,10 @@ export type Database = {
       };
       rejoin_after_decline: {
         Args: { p_batch_id: string };
+        Returns: undefined;
+      };
+      set_join_request_note: {
+        Args: { p_batch_id: string; p_note: string };
         Returns: undefined;
       };
       join_open_batch: {

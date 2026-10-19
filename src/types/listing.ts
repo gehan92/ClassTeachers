@@ -4,6 +4,8 @@ import type { GradeBand } from "./grade-band";
 export type Listing = {
   id: string;
   kind: "teacher" | "class";
+  /** The teacher's profile id or the institute's id — one owner can run several ads, so this is what tells cards apart as "the same person". */
+  ownerId: string;
   /** Full name/institute name. Masking for guests happens at render time via `masked`. */
   name: string;
   masked: boolean;

@@ -4,11 +4,32 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { TeachersSearch } from "@/components/features/teachers-search";
 import { Eyebrow } from "@/components/features/eyebrow";
 import { getPublicListings } from "@/lib/public-directory";
+import { localeAlternates } from "@/lib/site-url";
 
-export async function generateMetadata({ params }: PageProps<"/[locale]/teachers">): Promise<Metadata> {
-  const { locale } = await params;
+// Each view gets its own title, so search results and browser tabs tell them apart.
+const metaTitleByView = {
+  title: "teachersTitle",
+  titleTeacher: "teachersTitleTeacher",
+  titleClass: "teachersTitleClass",
+  titleCampus: "teachersTitleCampus",
+  titleOnline: "teachersTitleOnline",
+  titleIndependent: "teachersTitleIndependent",
+} as const;
+
+export async function generateMetadata({ params, searchParams }: PageProps<"/[locale]/teachers">): Promise<Metadata> {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
   const t = await getTranslations({ locale, namespace: "meta" });
-  return { title: t("teachersTitle"), description: t("teachersDescription") };
+  const { title } = headingKeys(query.category, query.online, query.type);
+  const view = new URLSearchParams();
+  if (typeof query.category === "string" && query.category in headingKeyByCategory) view.set("category", query.category);
+  if (query.type === "independent") view.set("type", "independent");
+  if (query.online === "true") view.set("online", "true");
+  const path = `/teachers${view.size ? `?${view.toString()}` : ""}`;
+  return {
+    title: t(metaTitleByView[title]),
+    description: t("teachersDescription"),
+    alternates: localeAlternates(locale, path),
+  };
 }
 
 const headingKeyByCategory = {
@@ -52,15 +73,15 @@ export default async function TeachersPage({ params, searchParams }: PageProps<"
 
   return (
     <>
-      <section style={{ background: "var(--muted)" }} className="py-5">
-        <div className="mx-auto max-w-[1180px] px-7">
+      <section className="border-b border-border bg-[radial-gradient(1000px_360px_at_85%_-20%,rgba(201,150,44,0.12),transparent_60%)] bg-muted/50 pt-10 pb-9">
+        <div className="mx-auto max-w-[1180px] px-5 sm:px-7">
           <Eyebrow>{tPage("eyebrow")}</Eyebrow>
-          <h1 className="text-[32px]">{tPage(title)}</h1>
-          <p className="text-muted-foreground mb-0">{tPage(subtitle)}</p>
+          <h1 className="text-[clamp(1.75rem,4vw,2.25rem)] leading-tight">{tPage(title)}</h1>
+          <p className="mt-1.5 max-w-[62ch] text-muted-foreground">{tPage(subtitle)}</p>
         </div>
       </section>
-      <section className="py-12">
-        <div className="mx-auto max-w-[1180px] px-7">
+      <section className="py-10">
+        <div className="mx-auto max-w-[1180px] px-5 sm:px-7">
           <Suspense>
             <TeachersSearch listings={listings} />
           </Suspense>

@@ -956,8 +956,15 @@ export default async function InstituteDashboardPage({
     batch: row.batch_id ? (batchTitleById.get(row.batch_id) ?? "—") : generalBatchLabel,
     joinedAt: dateFormatter.format(new Date(row.joined_at)),
   }));
+  // The note each student wrote with their request (0167). Read on its own
+  // and allowed to fail, so the Students tab still works before 0167 is run.
+  const { data: requestNoteRows } = pendingInstituteEnrollments.length
+    ? await supabase.from("enrollments").select("id, request_note").in("id", pendingInstituteEnrollments.map((r) => r.id))
+    : { data: null };
+  const requestNoteById = new Map((requestNoteRows ?? []).map((r) => [r.id, r.request_note]));
   const instituteJoinRequests: InstituteJoinRequestRow[] = pendingInstituteEnrollments.map((row) => ({
     id: row.id,
+    note: requestNoteById.get(row.id) ?? null,
     studentName: studentInfoById.get(row.student_id)?.full_name ?? "—",
     batch: row.batch_id ? (batchTitleById.get(row.batch_id) ?? "—") : generalBatchLabel,
     batchId: row.batch_id,

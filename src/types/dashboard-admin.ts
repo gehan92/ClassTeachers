@@ -282,3 +282,21 @@ export type AdminUserDetail = {
   adminActions: { action: string; details: string; adminName: string; date: string }[];
   reportsAgainst: number;
 };
+
+/** A school registered through School Mode (0166), for Admin -> Approvals. */
+export type AdminSchool = {
+  id: string;
+  name: string;
+  principalName: string;
+  schoolType: "government" | "private" | "international" | "pirivena";
+  district: string;
+  registrationNumber: string | null;
+  mediums: ("si" | "ta" | "en")[];
+  gradeFrom: number;
+  gradeTo: number;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  status: "pending" | "approved" | "rejected" | "suspended";
+  decisionReason: string | null;
+  submittedAt: string;
+};

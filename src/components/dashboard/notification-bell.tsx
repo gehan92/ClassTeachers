@@ -132,6 +132,23 @@ export function messageFor(t: Translator, n: NotificationRow): string {
       return t("types.review_flagged");
     case "content_reported":
       return t("types.content_reported");
+    // School Mode (0166).
+    case "school_registered":
+      return t("types.school_registered", { name: str(data.name) });
+    case "school_resubmitted":
+      return t("types.school_resubmitted", { name: str(data.name) });
+    case "school_decision":
+      return data.decision === "approved"
+        ? t("types.school_approved", { name: str(data.name) })
+        : data.decision === "suspended"
+          ? t("types.school_suspended", { reason: str(data.reason) })
+          : t("types.school_rejected", { reason: str(data.reason) });
+    case "school_approval_requested":
+      return t("types.school_approval_requested", { name: str(data.name), summary: str(data.summary) });
+    case "school_approval_decided":
+      return t(data.decision === "approved" ? "types.school_approval_approved" : "types.school_approval_rejected", {
+        summary: str(data.summary),
+      });
     case "report_resolved":
       return t(data.decision === "resolved" ? "types.report_resolved" : "types.report_dismissed", { title: str(data.title) });
     case "institute_invite_received":

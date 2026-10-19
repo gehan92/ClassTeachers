@@ -30,6 +30,7 @@ import { createDateFormatter } from "@/lib/format-date";
 import { roleDashboardPath } from "@/lib/auth/routes";
 import type {
   AdminContentReport,
+  AdminSchool,
   ApprovalDecision,
   AdminPayment,
   AuditLogEntry,
@@ -121,6 +122,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     { data: moderationAdRows },
     { data: moderationWantedRows },
     { data: contentReportRows },
+    { data: schoolRows },
   ] = await Promise.all([
     supabase.from("teacher_profiles").select("id, created_at").eq("status", "pending").order("created_at", { ascending: false }),
     supabase.from("class_profiles").select("id, name, created_at").eq("status", "pending").order("created_at", { ascending: false }),
@@ -219,6 +221,14 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
       .from("content_reports")
       .select("id, reporter_id, target_type, target_id, reason, details, status, resolution_note, created_at")
       .order("created_at", { ascending: false })
+      .limit(300),
+    // School Mode (0166) — empty until that migration has run.
+    supabase
+      .from("schools")
+      .select(
+        "id, owner_id, name, school_type, district, registration_number, mediums, grade_from, grade_to, contact_phone, contact_email, status, decision_reason, submitted_at",
+      )
+      .order("submitted_at", { ascending: false })
       .limit(300),
   ]);
 
@@ -488,16 +498,39 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     createdAt: dateFormatter.format(new Date(row.created_at)),
   }));
 
+  // Admin -> Approvals -> Schools.
+  const schools: AdminSchool[] = (schoolRows ?? []).map((row) => ({
+    id: row.id,
+    name: row.name,
+    principalName: profileNameById.get(row.owner_id) ?? "—",
+    schoolType: row.school_type,
+    district: row.district,
+    registrationNumber: row.registration_number,
+    mediums: row.mediums,
+    gradeFrom: row.grade_from,
+    gradeTo: row.grade_to,
+    contactPhone: row.contact_phone,
+    contactEmail: row.contact_email,
+    status: row.status,
+    decisionReason: row.decision_reason,
+    submittedAt: dateFormatter.format(new Date(row.submitted_at)),
+  }));
+  const pendingSchoolCount = schools.filter((s) => s.status === "pending").length;
+  const schoolNameById = new Map(schools.map((s) => [s.id, s.name]));
+
   // Admin -> Approvals history: the latest approve/reject decisions.
   const approvalDecisions: ApprovalDecision[] = (auditRows ?? [])
-    .filter((row) => row.action === "listing_approval_decision")
+    .filter((row) => row.action === "listing_approval_decision" || row.action === "school_approval_decision")
     .slice(0, 50)
     .map((row) => {
       const meta = (row.metadata as Record<string, unknown> | null) ?? {};
       return {
         id: row.id,
-        name: auditTargetLabel(row.target_type, row.target_id),
-        decision: meta.decision === "rejected" ? "rejected" : "approved",
+        name:
+          row.target_type === "school"
+            ? (typeof meta.name === "string" ? meta.name : (schoolNameById.get(row.target_id ?? "") ?? "—"))
+            : auditTargetLabel(row.target_type, row.target_id),
+        decision: meta.decision === "rejected" || meta.decision === "suspended" ? "rejected" : "approved",
         reason: typeof meta.reason === "string" ? meta.reason : "",
         adminName: row.actor_id ? (profileNameById.get(row.actor_id) ?? "—") : "—",
         decidedAt: dateFormatter.format(new Date(row.created_at)),
@@ -695,7 +728,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
           key: "platform",
           label: t("groupPlatform"),
           items: [
-            { key: "approvals", label: t("tabs.approvals"), count: approvals.length },
+            { key: "approvals", label: t("tabs.approvals"), count: approvals.length + pendingSchoolCount },
             { key: "users", label: t("tabs.users"), count: verificationWaiting || undefined },
             { key: "platformSwitches", label: t("tabs.platformSwitches") },
           ],
@@ -734,7 +767,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
             traffic={trafficYear}
             mrr={mrr}
             attention={{
-              pendingApprovals: approvals.length,
+              pendingApprovals: approvals.length + pendingSchoolCount,
               openReports: openReportCount,
               flaggedReviews: flaggedReviews.length,
               failedPayments: failedPaymentCount,
@@ -758,6 +791,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
         approvals: (
           <ApprovalsTab
             initialApprovals={approvals}
+            schools={schools}
             decisions={approvalDecisions}
             avgDecisionDays={reports.approvalStats.avgDecisionDays}
           />

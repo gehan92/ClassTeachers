@@ -62,6 +62,7 @@ import {
   Radar,
   MessageSquareWarning,
   ChartLine,
+  KeyRound,
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -212,6 +213,10 @@ const TAB_ICONS: Partial<Record<string, LucideIcon>> = {
   moderation: ShieldAlert,
   // Student-only.
   activities: Trophy,
+  // School Mode (/school). "approvals" is shared with the admin tab above.
+  schoolProfile: School,
+  roles: KeyRound,
+  changeHistory: History,
 };
 
 /**
@@ -236,6 +241,8 @@ const GROUP_ICONS: Partial<Record<string, LucideIcon>> = {
   messages: MessageSquare,
   promote: Megaphone,
   lms: School,
+  school: School,
+  oversight: ShieldCheck,
 };
 
 function updateTabParam(tab: string, liveClassId?: string) {

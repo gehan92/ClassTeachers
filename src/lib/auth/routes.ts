@@ -12,4 +12,4 @@ export const roleDashboardPath: Record<UserRole, string> = {
 };
 
 /** Path prefixes (locale already stripped) that require a signed-in user. */
-export const protectedPathPrefixes = ["/student", "/teacher", "/institute", "/admin"] as const;
+export const protectedPathPrefixes = ["/student", "/teacher", "/institute", "/school", "/admin"] as const;

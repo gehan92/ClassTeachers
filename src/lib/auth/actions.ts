@@ -6,9 +6,10 @@ import { getLocale, getTranslations } from "next-intl/server";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { loginSchema, signupSchema, requestPasswordResetSchema, resetPasswordSchema } from "./schemas";
-import { roleDashboardPath, type UserRole } from "./routes";
+import type { UserRole } from "./routes";
 import type { Database } from "@/types/database";
 import { isFeatureEnabled } from "@/lib/platform-features";
+import { dashboardPathFor, isSchoolSignup, registerSchoolFromMetadata } from "@/lib/school/register";
 
 export type AuthActionState =
   | { error: string; pendingConfirmationEmail?: undefined }
@@ -36,6 +37,16 @@ type SignupMetadata = {
   // Resolved from ?ref= at signup time (referrals, 0089) — the referrer's
   // own profile id, already validated to exist before signUp was called.
   referred_by?: string;
+  // School Mode (0166): an Institute that chose "School" on the sign-up
+  // form. See src/lib/school/register.ts.
+  institute_kind?: "tuition" | "school";
+  school_name?: string;
+  school_type?: string;
+  district?: string;
+  registration_number?: string | null;
+  mediums?: string[];
+  grade_from?: number;
+  grade_to?: number;
 };
 
 /**
@@ -185,7 +196,11 @@ async function ensureProfile(supabase: SupabaseClient<Database>, user: User): Pr
     throw error;
   }
 
-  if (role === "class" && metadata.institute_name) {
+  if (role === "class" && isSchoolSignup(metadata)) {
+    // A School never gets a tuition class_profiles row. If this fails (for
+    // example before migration 0166 has run) the /school page retries it.
+    await registerSchoolFromMetadata(supabase, metadata);
+  } else if (role === "class" && metadata.institute_name) {
     await ensureInstituteProfileRow(supabase, user.id, metadata);
   } else if ((role === "teacher" && metadata.headline) || (role === "campus_lecturer" && metadata.institution)) {
     await ensureTeacherProfileRow(supabase, user.id, metadata);
@@ -242,6 +257,14 @@ export async function signUpAction(
     instituteName: formData.get("instituteName") || undefined,
     location: formData.get("location") || undefined,
     physical: formData.get("physical") === "on",
+    instituteKind: formData.get("instituteKind") || undefined,
+    schoolName: formData.get("schoolName") || undefined,
+    schoolType: formData.get("schoolType") || undefined,
+    district: formData.get("district") || undefined,
+    registrationNumber: formData.get("registrationNumber") || undefined,
+    mediums: formData.getAll("medium").filter((v) => typeof v === "string" && v !== "" && v !== "on"),
+    gradeFrom: formData.get("gradeFrom") || undefined,
+    gradeTo: formData.get("gradeTo") || undefined,
     referralCode: formData.get("referralCode") || undefined,
   });
   if (!parsed.success) {
@@ -270,6 +293,14 @@ export async function signUpAction(
     instituteName,
     location,
     physical,
+    instituteKind,
+    schoolName,
+    schoolType,
+    district,
+    registrationNumber,
+    mediums,
+    gradeFrom,
+    gradeTo,
     referralCode,
   } = parsed.data;
   // The role picker's "lecturer" option is a campus lecturer under the hood
@@ -299,6 +330,17 @@ export async function signUpAction(
       qualifications: qualification,
       subject,
       class_type: onCampus && online ? ("both" as const) : online ? ("online" as const) : ("physical" as const),
+    };
+  } else if (role === "class" && instituteKind === "school") {
+    roleMetadata = {
+      institute_kind: "school",
+      school_name: schoolName,
+      school_type: schoolType,
+      district,
+      registration_number: registrationNumber ?? null,
+      mediums,
+      grade_from: gradeFrom,
+      grade_to: gradeTo,
     };
   } else if (role === "class") {
     roleMetadata = {
@@ -349,7 +391,7 @@ export async function signUpAction(
     console.error("[signUpAction] ensureProfile failed:", err);
     return { error: t("generic") };
   }
-  redirect(`/${locale}${roleDashboardPath[finalRole]}`);
+  redirect(`/${locale}${await dashboardPathFor(supabase, data.user.id, finalRole, data.user.user_metadata)}`);
 }
 
 export async function logInAction(
@@ -381,7 +423,7 @@ export async function logInAction(
     console.error("[logInAction] ensureProfile failed:", err);
     return { error: t("generic") };
   }
-  redirect(`/${locale}${roleDashboardPath[role]}`);
+  redirect(`/${locale}${await dashboardPathFor(supabase, data.user.id, role, data.user.user_metadata)}`);
 }
 
 export async function logOutAction(): Promise<void> {

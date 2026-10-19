@@ -16,6 +16,10 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 type OwnerType = "teacher" | "class";
 export type ProfileStatus = "pending" | "approved" | "rejected" | "suspended";
 type GradeBand = "1-5" | "6-9" | "10-11" | "12-13" | "campus" | "adult";
+export type SchoolType = "government" | "private" | "international" | "pirivena";
+export type SchoolMedium = "si" | "ta" | "en";
+export type SchoolStatus = "pending" | "approved" | "rejected" | "suspended";
+export type SchoolScopeKind = "school" | "grades" | "sections" | "subjects" | "own";
 
 export type Database = {
   public: {
@@ -2050,11 +2054,253 @@ export type Database = {
         };
         Relationships: [];
       };
+      // 0166 — School Mode. Every write goes through an RPC below.
+      schools: {
+        Row: {
+          id: string;
+          owner_id: string;
+          name: string;
+          slug: string;
+          school_type: SchoolType;
+          district: string;
+          address: string | null;
+          registration_number: string | null;
+          mediums: SchoolMedium[];
+          grade_from: number;
+          grade_to: number;
+          contact_phone: string | null;
+          contact_email: string | null;
+          website: string | null;
+          logo_url: string | null;
+          status: SchoolStatus;
+          decision_reason: string | null;
+          decided_at: string | null;
+          decided_by: string | null;
+          submitted_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      school_staff: {
+        Row: {
+          id: string;
+          school_id: string;
+          profile_id: string;
+          staff_number: string | null;
+          designation: string | null;
+          status: "active" | "on_leave" | "left";
+          joined_on: string | null;
+          left_on: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      school_roles: {
+        Row: {
+          id: string;
+          school_id: string;
+          key: string;
+          name: string;
+          description: string | null;
+          is_system: boolean;
+          scope_kind: SchoolScopeKind;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      school_role_permissions: {
+        Row: {
+          role_id: string;
+          school_id: string;
+          area: string;
+          action: string;
+          needs_approval: boolean;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      school_member_roles: {
+        Row: {
+          id: string;
+          school_id: string;
+          staff_id: string;
+          role_id: string;
+          scope: Json;
+          assigned_by: string | null;
+          assigned_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      school_approval_requests: {
+        Row: {
+          id: string;
+          school_id: string;
+          requested_by: string;
+          area: string;
+          action: string;
+          kind: string;
+          summary: string;
+          payload: Json;
+          status: "pending" | "approved" | "rejected" | "cancelled";
+          decided_by: string | null;
+          decided_at: string | null;
+          decision_note: string | null;
+          created_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      school_change_log: {
+        Row: {
+          id: number;
+          school_id: string;
+          actor_id: string | null;
+          area: string;
+          event: string;
+          entity_type: string;
+          entity_id: string | null;
+          entity_label: string | null;
+          old_value: Json | null;
+          new_value: Json | null;
+          created_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
     };
 
     Views: Record<string, never>;
 
     Functions: {
+      // 0166 — School Mode.
+      my_schools: {
+        Args: Record<string, never>;
+        Returns: { id: string; name: string; slug: string; status: SchoolStatus; is_owner: boolean }[];
+      };
+      school_access: {
+        Args: { p_school_id: string; p_area: string; p_action: string };
+        Returns: "allow" | "approval" | "deny";
+      };
+      school_my_permissions: {
+        Args: { p_school_id: string };
+        Returns: { area: string; action: string; needs_approval: boolean }[];
+      };
+      school_scope: {
+        Args: { p_school_id: string; p_area: string; p_action: string };
+        Returns: Json;
+      };
+      register_school: {
+        Args: {
+          p_name: string;
+          p_school_type: SchoolType;
+          p_district: string;
+          p_mediums: SchoolMedium[];
+          p_grade_from: number;
+          p_grade_to: number;
+          p_registration_number: string | null;
+          p_contact_phone: string;
+          p_address?: string | null;
+        };
+        Returns: string;
+      };
+      update_school_details: {
+        Args: {
+          p_school_id: string;
+          p_name: string;
+          p_school_type: SchoolType;
+          p_district: string;
+          p_mediums: SchoolMedium[];
+          p_grade_from: number;
+          p_grade_to: number;
+          p_registration_number: string | null;
+          p_contact_phone: string;
+          p_address: string | null;
+          p_contact_email: string | null;
+          p_website: string | null;
+        };
+        Returns: SchoolStatus;
+      };
+      admin_decide_school: {
+        Args: { p_school_id: string; p_decision: "approved" | "rejected" | "suspended"; p_reason?: string | null };
+        Returns: string;
+      };
+      save_school_role: {
+        Args: {
+          p_school_id: string;
+          p_role_id: string | null;
+          p_name: string;
+          p_description: string | null;
+          p_scope_kind: SchoolScopeKind;
+          p_permissions: Json;
+        };
+        Returns: string;
+      };
+      delete_school_role: {
+        Args: { p_role_id: string };
+        Returns: undefined;
+      };
+      reset_school_role: {
+        Args: { p_role_id: string };
+        Returns: undefined;
+      };
+      request_school_approval: {
+        Args: { p_school_id: string; p_area: string; p_action: string; p_kind: string; p_summary: string; p_payload?: Json };
+        Returns: string;
+      };
+      decide_school_approval: {
+        Args: { p_request_id: string; p_decision: "approved" | "rejected"; p_note?: string | null };
+        Returns: Json;
+      };
+      cancel_school_approval: {
+        Args: { p_request_id: string };
+        Returns: undefined;
+      };
+      school_approval_list: {
+        Args: { p_school_id: string; p_limit?: number };
+        Returns: {
+          id: string;
+          area: string;
+          action: string;
+          kind: string;
+          summary: string;
+          status: "pending" | "approved" | "rejected" | "cancelled";
+          requested_by: string;
+          requester_name: string;
+          decider_name: string | null;
+          decision_note: string | null;
+          created_at: string;
+          decided_at: string | null;
+        }[];
+      };
+      school_history: {
+        Args: { p_school_id: string; p_area?: string | null; p_limit?: number; p_offset?: number };
+        Returns: {
+          id: number;
+          area: string;
+          event: string;
+          entity_type: string;
+          entity_label: string | null;
+          old_value: Json | null;
+          new_value: Json | null;
+          actor_name: string;
+          created_at: string;
+        }[];
+      };
       track_page_visit: {
         Args: {
           p_path: string;

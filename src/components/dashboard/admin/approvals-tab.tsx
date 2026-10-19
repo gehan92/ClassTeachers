@@ -22,7 +22,8 @@ import { avatarGradientClass } from "@/lib/avatar-color";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { StatusBadge } from "@/components/features/status-badge";
-import type { ApprovalDecision, ApprovalEntityType, PendingApproval } from "@/types/dashboard-admin";
+import { SchoolApprovalsSection } from "@/components/dashboard/admin/school-approvals-section";
+import type { AdminSchool, ApprovalDecision, ApprovalEntityType, PendingApproval } from "@/types/dashboard-admin";
 
 function initialsFor(name: string) {
   return name
@@ -36,10 +37,13 @@ function initialsFor(name: string) {
 
 export function ApprovalsTab({
   initialApprovals,
+  schools = [],
   decisions,
   avgDecisionDays,
 }: {
   initialApprovals: PendingApproval[];
+  /** School Mode schools (0166), pending first. Empty hides the section. */
+  schools?: AdminSchool[];
   /** Most recent approve/reject decisions, newest first (from the audit log). */
   decisions: ApprovalDecision[];
   avgDecisionDays: number | null;
@@ -95,6 +99,9 @@ export function ApprovalsTab({
         className="mb-4"
       />
 
+      <SchoolApprovalsSection schools={schools} onChanged={refresh} />
+
+      {schools.length > 0 && <h2 className="mb-3 font-display text-lg text-primary">{t("listingsTitle")}</h2>}
       <div className="rounded-lg border border-border bg-white p-5">
         {approvals.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">{t("noApprovalsPending")}</p>

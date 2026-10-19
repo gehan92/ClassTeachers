@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { signupRoles } from "@/types/signup-role";
 import { academicTitles } from "@/types/academic-title";
+import { SCHOOL_DISTRICTS, SCHOOL_MEDIUMS, SCHOOL_TYPES } from "@/lib/school/catalog";
 
 export const loginSchema = z.object({
   email: z.email(),
@@ -44,6 +45,15 @@ export const signupSchema = z
     instituteName: z.string().trim().optional(),
     location: z.string().trim().optional(),
     physical: z.boolean().optional(),
+    // Institute only: a tuition institute (above) or a School (School Mode, 0166).
+    instituteKind: z.enum(["tuition", "school"]).optional(),
+    schoolName: z.string().trim().max(160).optional(),
+    schoolType: z.enum(SCHOOL_TYPES).optional(),
+    district: z.enum(SCHOOL_DISTRICTS).optional(),
+    registrationNumber: z.string().trim().max(60).optional(),
+    mediums: z.array(z.enum(SCHOOL_MEDIUMS)).optional(),
+    gradeFrom: z.coerce.number().int().min(1).max(13).optional(),
+    gradeTo: z.coerce.number().int().min(1).max(13).optional(),
     // Optional, any role — a referral code from ?ref= (referrals, 0089).
     referralCode: z.string().trim().optional(),
   })
@@ -81,7 +91,26 @@ export const signupSchema = z
       }
     }
 
-    if (data.role === "class") {
+    if (data.role === "class" && data.instituteKind === "school") {
+      if (!data.schoolName || data.schoolName.length < 2) {
+        ctx.addIssue({ code: "custom", path: ["schoolName"], message: "School name is required" });
+      }
+      if (!data.schoolType) {
+        ctx.addIssue({ code: "custom", path: ["schoolType"], message: "School type is required" });
+      }
+      if (!data.district) {
+        ctx.addIssue({ code: "custom", path: ["district"], message: "District is required" });
+      }
+      if (!data.mediums || data.mediums.length === 0) {
+        ctx.addIssue({ code: "custom", path: ["mediums"], message: "Pick at least one medium" });
+      }
+      if (!data.gradeFrom || !data.gradeTo || data.gradeFrom > data.gradeTo) {
+        ctx.addIssue({ code: "custom", path: ["gradeTo"], message: "Check the grades" });
+      }
+      if (!data.phone || data.phone.length < 7) {
+        ctx.addIssue({ code: "custom", path: ["phone"], message: "A contact number is required" });
+      }
+    } else if (data.role === "class") {
       if (!data.instituteName) {
         ctx.addIssue({ code: "custom", path: ["instituteName"], message: "Institute name is required" });
       }

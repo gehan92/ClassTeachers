@@ -9,7 +9,7 @@ import { RoleSelect, type SignupRole } from "@/components/features/role-select";
 import { signupRoles } from "@/types/signup-role";
 import { TeacherFields } from "@/components/features/teacher-fields";
 import { LecturerFields } from "@/components/features/lecturer-fields";
-import { InstituteFields } from "@/components/features/institute-fields";
+import { InstituteFields, type InstituteKind } from "@/components/features/institute-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +36,9 @@ function SignupForm() {
     ? (roleParam as SignupRole)
     : "student";
   const [role, setRole] = useState<SignupRole>(initialRole);
+  // ?kind=school pre-picks School under Institute (School Mode, 0166).
+  const [instituteKind, setInstituteKind] = useState<InstituteKind>(searchParams.get("kind") === "school" ? "school" : "tuition");
+  const isSchool = role === "class" && instituteKind === "school";
   // A teacher/institute's own Refer & Earn link (referrals, 0089).
   const referralCode = searchParams.get("ref");
   const [state, formAction, pending] = useActionState(signUpAction, undefined);
@@ -71,15 +74,15 @@ function SignupForm() {
 
         {role === "teacher" && <TeacherFields />}
         {role === "lecturer" && <LecturerFields />}
-        {role === "class" && <InstituteFields />}
+        {role === "class" && <InstituteFields kind={instituteKind} onKindChange={setInstituteKind} />}
 
         <div className="grid gap-1.5">
-          <Label htmlFor="name">{role === "class" ? t("contactPersonLabel") : t("nameLabel")}</Label>
+          <Label htmlFor="name">{isSchool ? t("principalNameLabel") : role === "class" ? t("contactPersonLabel") : t("nameLabel")}</Label>
           <Input
             id="name"
             name="name"
             type="text"
-            placeholder={role === "class" ? t("contactPersonPlaceholder") : t("namePlaceholder")}
+            placeholder={isSchool ? t("principalNamePlaceholder") : role === "class" ? t("contactPersonPlaceholder") : t("namePlaceholder")}
             required
             minLength={2}
           />
@@ -90,8 +93,8 @@ function SignupForm() {
         </div>
         {role !== "student" && (
           <div className="grid gap-1.5">
-            <Label htmlFor="phone">{t("phoneLabel")}</Label>
-            <Input id="phone" name="phone" type="tel" placeholder={t("phonePlaceholder")} />
+            <Label htmlFor="phone">{isSchool ? t("schoolPhoneLabel") : t("phoneLabel")}</Label>
+            <Input id="phone" name="phone" type="tel" placeholder={t("phonePlaceholder")} required={isSchool} minLength={isSchool ? 7 : undefined} />
           </div>
         )}
         <div className="grid gap-1.5">

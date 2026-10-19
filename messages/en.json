@@ -132,7 +132,15 @@
       "content_hidden": "An admin hid your exam \"{title}\" from students: \"{reason}\"",
       "content_reported": "Someone reported content — review it in User Reports.",
       "report_resolved": "Thanks for your report about “{title}” — we took action.",
-      "report_dismissed": "We reviewed your report about “{title}” and found nothing against our rules."
+      "report_dismissed": "We reviewed your report about “{title}” and found nothing against our rules.",
+      "school_registered": "New school waiting for approval: {name}",
+      "school_resubmitted": "{name} fixed its details and is waiting for approval again",
+      "school_approved": "{name} is approved — you can now add staff and students",
+      "school_rejected": "Your school needs some changes before approval: {reason}",
+      "school_suspended": "Your school has been suspended: {reason}",
+      "school_approval_requested": "{name} asked for your approval: {summary}",
+      "school_approval_approved": "Approved: {summary}",
+      "school_approval_rejected": "Not approved: {summary}"
     },
     "responderTypes": {
       "teacher": "teacher",
@@ -925,7 +933,12 @@
       "locationPlaceholder": "e.g. Colombo 05",
       "classTypeLabel": "Class type",
       "physical": "Physical",
-      "online": "Online"
+      "online": "Online",
+      "kindHeading": "What kind of institute?",
+      "kindTuition": "Tuition institute",
+      "kindTuitionHint": "Classes and batches, with ads on ClassPortals",
+      "kindSchool": "School",
+      "kindSchoolHint": "Grades and sections, staff roles, attendance and report cards"
     },
     "teacherFields": {
       "heading": "Information about the lessons you teach",
@@ -989,6 +1002,26 @@
       "title": "Confirm your email",
       "body": "We've sent a confirmation link to {email}. Click it to activate your account, then come back and log in.",
       "backToLogin": "Back to log in"
+    },
+    "principalNameLabel": "Principal's full name",
+    "principalNamePlaceholder": "e.g. W. M. Perera",
+    "schoolPhoneLabel": "School or Principal's phone",
+    "schoolFields": {
+      "nameLabel": "School name",
+      "namePlaceholder": "e.g. Kandy Model School",
+      "typeLabel": "Type of school",
+      "districtLabel": "District",
+      "choose": "Choose…",
+      "registrationLabel": "Census or registration number",
+      "optional": "(optional)",
+      "registrationPlaceholder": "e.g. 01234",
+      "registrationHint": "Government schools: the Ministry census number. Private and international schools: your registration number. It helps us approve you faster.",
+      "gradesLabel": "Grades taught",
+      "gradeFrom": "Lowest grade",
+      "gradeTo": "Highest grade",
+      "to": "to",
+      "mediumsLabel": "Teaching mediums",
+      "approvalNote": "We check every school before it goes live, because a school creates accounts for children. You can start setting up straight away; staff and students join after approval."
     }
   },
   "forgotPassword": {
@@ -1277,7 +1310,8 @@
         },
         "approved": "Approved",
         "rejected": "Rejected"
-      }
+      },
+      "listingsTitle": "Teacher and institute listings"
     },
     "users": {
       "title": "Users",
@@ -2070,6 +2104,41 @@
         "report_resolved": "Report resolved",
         "report_dismissed": "Report dismissed"
       }
+    },
+    "schools": {
+      "title": "Schools",
+      "subtitle": "A school can create accounts for children — check it's real before approving.",
+      "nonePending": "No schools waiting.",
+      "status": {
+        "pending": "Waiting",
+        "approved": "Live",
+        "rejected": "Rejected",
+        "suspended": "Suspended"
+      },
+      "principal": "Principal",
+      "registration": "Census / registration no.",
+      "notGiven": "Not given — ask on the call",
+      "district": "District",
+      "phone": "Phone",
+      "email": "Email",
+      "submitted": "Sent",
+      "checkHint": "Before approving: call the phone number, check the census number against the Ministry school list (government schools) or ask for a registration letter (private schools).",
+      "approve": "Approve school",
+      "reject": "Ask for changes",
+      "suspend": "Suspend",
+      "reinstate": "Approve again",
+      "allSchools": "Other schools ({n})",
+      "rejectedDialog": {
+        "title": "Ask {name} for changes",
+        "description": "The Principal sees this reason, fixes the details and sends the school back to you."
+      },
+      "suspendedDialog": {
+        "title": "Suspend {name}?",
+        "description": "The school becomes read-only for the Principal and its staff can't sign in to it. Nothing is deleted, and you can approve it again later."
+      },
+      "reasonLabel": "Reason the Principal will see",
+      "reasonPlaceholder": "e.g. Please add your Ministry census number so we can confirm the school.",
+      "cancel": "Cancel"
     }
   },
   "instituteDashboard": {
@@ -4834,5 +4903,587 @@
     "signInTitle": "Sign in to report",
     "signInBody": "Reports come from signed-in accounts so we can follow up and stop abuse of the Report button.",
     "signIn": "Sign in"
+  },
+  "school": {
+    "brandBadge": "School",
+    "logout": "Log out",
+    "gradeN": "Grade {n}",
+    "gradeRange": "Grades {from}–{to}",
+    "mediumLine": "{mediums} medium",
+    "types": {
+      "government": "Government school",
+      "private": "Private school",
+      "international": "International school",
+      "pirivena": "Pirivena"
+    },
+    "mediums": {
+      "si": "Sinhala",
+      "ta": "Tamil",
+      "en": "English"
+    },
+    "statusShort": {
+      "pending": "Waiting",
+      "approved": "Live",
+      "rejected": "Needs changes",
+      "suspended": "Suspended"
+    },
+    "tabs": {
+      "overview": "Home",
+      "schoolProfile": "School details",
+      "roles": "Roles & permissions",
+      "approvals": "Approvals",
+      "changeHistory": "Change history"
+    },
+    "groups": {
+      "school": "School",
+      "oversight": "Oversight"
+    },
+    "districts": {
+      "ampara": "Ampara",
+      "anuradhapura": "Anuradhapura",
+      "badulla": "Badulla",
+      "batticaloa": "Batticaloa",
+      "colombo": "Colombo",
+      "galle": "Galle",
+      "gampaha": "Gampaha",
+      "hambantota": "Hambantota",
+      "jaffna": "Jaffna",
+      "kalutara": "Kalutara",
+      "kandy": "Kandy",
+      "kegalle": "Kegalle",
+      "kilinochchi": "Kilinochchi",
+      "kurunegala": "Kurunegala",
+      "mannar": "Mannar",
+      "matale": "Matale",
+      "matara": "Matara",
+      "monaragala": "Monaragala",
+      "mullaitivu": "Mullaitivu",
+      "nuwara_eliya": "Nuwara Eliya",
+      "polonnaruwa": "Polonnaruwa",
+      "puttalam": "Puttalam",
+      "ratnapura": "Ratnapura",
+      "trincomalee": "Trincomalee",
+      "vavuniya": "Vavuniya"
+    },
+    "actions": {
+      "view": "View",
+      "create": "Create",
+      "edit": "Edit",
+      "delete": "Delete",
+      "approve": "Approve",
+      "export": "Export"
+    },
+    "areas": {
+      "settings": {
+        "label": "School settings",
+        "hint": "School details, terms and setup"
+      },
+      "roles": {
+        "label": "Roles & permissions",
+        "hint": "Only the Principal can change these"
+      },
+      "staff": {
+        "label": "Staff",
+        "hint": "Teachers and other staff, their roles and sections"
+      },
+      "students": {
+        "label": "Students",
+        "hint": "Student records, guardians and accounts"
+      },
+      "timetable": {
+        "label": "Timetable",
+        "hint": "Periods, rooms and substitutes"
+      },
+      "attendance": {
+        "label": "Attendance",
+        "hint": "Morning register and period attendance"
+      },
+      "lessons": {
+        "label": "Lessons & homework",
+        "hint": "Lesson plans, materials and homework"
+      },
+      "exams": {
+        "label": "Exams & tests",
+        "hint": "Term tests and online tests"
+      },
+      "marks": {
+        "label": "Marks",
+        "hint": "Entering and changing marks"
+      },
+      "report_cards": {
+        "label": "Report cards",
+        "hint": "Term reports and teacher remarks"
+      },
+      "fees": {
+        "label": "Fees",
+        "hint": "Facility fees, payments and receipts"
+      },
+      "notices": {
+        "label": "Notices",
+        "hint": "Notices to the school, grades, sections and parents"
+      },
+      "discipline": {
+        "label": "Discipline",
+        "hint": "Incidents and parent follow-up"
+      },
+      "counseling": {
+        "label": "Counseling notes",
+        "hint": "Private — keep this to the counselor and the Principal"
+      },
+      "library": {
+        "label": "Library",
+        "hint": "Digital library resources"
+      },
+      "history": {
+        "label": "Change history",
+        "hint": "Who changed what, and when"
+      }
+    },
+    "common": {
+      "updating": "Updating…",
+      "updateStuck": "This is taking longer than usual.",
+      "reload": "Reload page",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "discard": "Discard changes",
+      "cancel": "Cancel",
+      "genericError": "Something went wrong. Please try again."
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "not_signed_in": "Please sign in again.",
+      "school_not_institute_account": "Only an Institute account can register a school.",
+      "school_already_tuition": "This account is already a tuition institute. Contact ClassPortals to change it to a school.",
+      "school_invalid_name": "Enter the school's name (2–160 characters).",
+      "school_invalid_type": "Choose the type of school.",
+      "school_invalid_district": "Choose the district.",
+      "school_invalid_mediums": "Pick at least one teaching medium.",
+      "school_invalid_grades": "The lowest grade must not be above the highest grade.",
+      "school_invalid_registration": "The registration number is too long.",
+      "school_invalid_phone": "Enter a phone number we can call to check the school.",
+      "school_invalid_email": "Enter a valid email address, or leave it empty.",
+      "school_invalid_website": "The website address is too long.",
+      "school_invalid_address": "The address is too long.",
+      "school_not_allowed": "Your role doesn't allow this.",
+      "school_invalid_decision": "That decision isn't possible.",
+      "school_reason_required": "Please give a reason (at least a few words).",
+      "school_not_found": "This school couldn't be found.",
+      "school_invalid_permissions": "Some permissions couldn't be read. Reload the page and try again.",
+      "school_invalid_description": "The description is too long (300 characters at most).",
+      "school_invalid_role_name": "Give the role a name (2–60 characters).",
+      "school_invalid_scope": "Choose what this role covers.",
+      "school_too_many_roles": "A school can have up to 40 custom roles.",
+      "school_role_name_taken": "There's already a role with this name.",
+      "school_role_not_found": "This role no longer exists. Reload the page.",
+      "school_principal_locked": "The Principal always has full access, so this role can't be changed.",
+      "school_system_role": "Built-in roles can't be deleted.",
+      "school_role_in_use": "Someone still has this role. Move them to another role first.",
+      "school_approval_not_needed": "This change doesn't need approval.",
+      "school_too_many_requests": "You have 50 requests waiting. Wait for some decisions first.",
+      "school_request_not_found": "This request no longer exists.",
+      "school_request_closed": "This request has already been decided.",
+      "school_own_request": "You can't decide your own request.",
+      "school_invalid_note": "The note is too long (500 characters at most)."
+    },
+    "status": {
+      "reasonLabel": "Reason:",
+      "pending": {
+        "title": "Waiting for ClassPortals approval",
+        "body": "Sent on {date}. We check every school before it can add students, usually within two working days, and may call to confirm. You can set up roles and permissions while you wait."
+      },
+      "rejected": {
+        "title": "Some details need changing",
+        "body": "ClassPortals couldn't approve the school yet. Fix the details below and save — that sends it back for another look.",
+        "action": "Fix details and resubmit"
+      },
+      "suspended": {
+        "title": "This school is suspended",
+        "body": "You can still see everything, but nothing can be changed and staff can't sign in to the school. Contact ClassPortals to restore it."
+      }
+    },
+    "overview": {
+      "principalBadge": "Principal",
+      "actions": {
+        "roles": "Roles & permissions",
+        "details": "School details"
+      },
+      "stats": {
+        "status": "Status",
+        "roles": "Roles",
+        "waiting": "Waiting for you",
+        "changes": "Changes this week"
+      },
+      "setupTitle": "Set up your school",
+      "setupSubtitle": "Each step unlocks the next. The later steps arrive in the next update.",
+      "progress": "{done} of {total} done",
+      "comingNext": "Coming in the next update",
+      "stepState": {
+        "done": "Done",
+        "todo": "To do",
+        "waiting": "Waiting",
+        "blocked": "Needs your attention",
+        "soon": "Coming soon"
+      },
+      "steps": {
+        "registered": {
+          "title": "Register the school",
+          "detail": "Sent on {date}"
+        },
+        "approval": {
+          "title": "ClassPortals approval",
+          "detail": "We confirm the school is real before it can add children"
+        },
+        "roles": {
+          "title": "Check roles and permissions",
+          "detail": "Decide what Vice Principals, Sectional Heads and teachers can do"
+        },
+        "calendar": {
+          "title": "Academic year and terms",
+          "detail": "Three terms, holidays and exam weeks"
+        },
+        "structure": {
+          "title": "Grades and sections",
+          "detail": "For example Grade 6 A–D, with a class teacher each"
+        },
+        "subjects": {
+          "title": "Subjects for each grade",
+          "detail": "From the national syllabus, with O/L and A/L baskets"
+        },
+        "staff": {
+          "title": "Add staff and give them roles",
+          "detail": "Teachers who already use ClassPortals keep one login"
+        },
+        "students": {
+          "title": "Add students and print login slips",
+          "detail": "Upload class lists; each student gets a username"
+        }
+      },
+      "recentTitle": "Recent changes",
+      "seeAll": "See all",
+      "recentEmpty": "Nothing has changed yet.",
+      "safetyTitle": "How your school stays safe",
+      "safety": {
+        "roles": "Everyone sees only what their role allows — a class teacher sees their own section, not the whole school.",
+        "approvals": "Important changes, like moving a teacher or changing published marks, can wait for your approval.",
+        "database": "Permissions are checked by the database itself, and every change is kept in the history."
+      },
+      "customRolesHint": "Need an Accountant, Exam Coordinator or Librarian? Create a custom role from a template.",
+      "staffWelcome": "Welcome, {name}",
+      "staffWelcomeBody": "Your school tools appear in the menu as the Principal gives your role access."
+    },
+    "profile": {
+      "title": "School details",
+      "subtitle": "What ClassPortals checks before approving, and what parents and staff will see on school documents.",
+      "sections": {
+        "identity": "The school",
+        "identityHint": "Use the name exactly as it appears on official letters.",
+        "teaching": "Grades and mediums",
+        "teachingHint": "These set which grades and sections you can create later.",
+        "contact": "Contact",
+        "contactHint": "We call this number to confirm the school. It's never shown publicly."
+      },
+      "fields": {
+        "name": "School name",
+        "type": "Type of school",
+        "registration": "Census or registration number",
+        "registrationHint": "Speeds up approval",
+        "grades": "Grades taught",
+        "gradeFrom": "Lowest grade",
+        "gradeTo": "Highest grade",
+        "mediums": "Teaching mediums",
+        "district": "District",
+        "phone": "Phone",
+        "email": "School email",
+        "website": "Website",
+        "address": "Address"
+      },
+      "to": "to",
+      "saved": "Saved",
+      "resubmitted": "Saved and sent back for approval",
+      "readOnly": "Only people allowed to edit school settings can change these.",
+      "saveAndResubmit": "Save and resubmit"
+    },
+    "setupNotice": {
+      "unavailable": {
+        "title": "School Mode is almost ready",
+        "body": "Your school details are saved. School Mode is being switched on for ClassPortals — sign in again a little later and your school will be waiting."
+      },
+      "failed": {
+        "title": "We couldn't finish setting up your school",
+        "body": "Some sign-up details were missing. Contact ClassPortals and we'll finish it for you."
+      },
+      "help": "Get help",
+      "logout": "Log out"
+    },
+    "roles": {
+      "title": "Roles & permissions",
+      "subtitle": "A role is a set of things someone may see and do. Mark a change \"needs approval\" and it waits for you instead of happening straight away.",
+      "newRole": "New role",
+      "listLabel": "Roles",
+      "builtIn": "Built-in roles",
+      "custom": "Your roles",
+      "untitled": "New role",
+      "notSavedYet": "Not saved yet",
+      "noCustomYet": "No custom roles yet. Create one for an Accountant, Exam Coordinator, Librarian or any other job.",
+      "noCustomReadOnly": "No custom roles yet.",
+      "pickRole": "Pick a role to see what it can do.",
+      "saved": "Saved",
+      "resetDone": "Back to the default permissions",
+      "deleted": "Role deleted",
+      "fullAccess": "Full access",
+      "permissionCount": "{n, plural, =0 {No permissions} one {# permission} other {# permissions}}",
+      "approvalCount": "{n} need approval",
+      "peopleCount": "{n, plural, =0 {Nobody yet} one {# person} other {# people}}",
+      "unsaved": "Unsaved changes",
+      "unsavedChanges": "You have unsaved changes",
+      "builtInTag": "Built-in",
+      "customTag": "Custom",
+      "preview": "Preview",
+      "nameLabel": "Role name",
+      "namePlaceholder": "e.g. Accountant",
+      "nameTaken": "There's already a role with this name.",
+      "scopeLabel": "Works on",
+      "descriptionLabel": "Description",
+      "principalTitle": "The Principal can do everything",
+      "principalBody": "The Principal owns the school account, sees every record, decides every approval and is the only person who can change roles. This role can't be edited; ClassPortals can move it to another person if the Principal changes.",
+      "legend": {
+        "off": "Not allowed",
+        "allow": "Allowed",
+        "approval": "Needs approval"
+      },
+      "needsApprovalShort": "needs approval",
+      "viewAll": "View everything",
+      "clearAll": "Clear all",
+      "tapHint": "Tap an action to switch it on. Tap again on Create, Edit or Delete to make it need your approval; tap once more to switch it off.",
+      "rolesViewNote": "People with this role can see roles, but only the Principal can change them.",
+      "groups": {
+        "people": "School and people",
+        "daily": "Daily running",
+        "teaching": "Teaching and results",
+        "care": "Care and money",
+        "records": "Records"
+      },
+      "deleteConfirm": "Delete this role?",
+      "deleteYes": "Yes, delete",
+      "delete": "Delete role",
+      "deleteInUse": "Someone still has this role",
+      "resetDefault": "Reset to default",
+      "create": "Create role",
+      "readOnly": "Only the Principal can change roles.",
+      "continue": "Continue",
+      "newTitle": "Create a role",
+      "newBody": "Start from a template or from nothing. You can change every permission before saving.",
+      "startFrom": "Start from",
+      "blank": "Blank role",
+      "blankHint": "No permissions — you choose everything",
+      "previewTitle": "What a {name} sees",
+      "previewSees": "Sections in their menu",
+      "previewNothing": "Nothing yet — they'd see only their own Home page.",
+      "previewChanges": "Can change straight away",
+      "previewNoChanges": "Nothing — view only.",
+      "previewApprovals": "Needs your approval first",
+      "previewNoApprovals": "Nothing waits for approval.",
+      "previewHidden": "Hidden from them",
+      "scopes": {
+        "school": {
+          "label": "Whole school",
+          "hint": "Applies to every grade, section and subject."
+        },
+        "grades": {
+          "label": "A range of grades",
+          "hint": "Limited to the grades you choose when you give someone this role — for example Grades 6–9."
+        },
+        "sections": {
+          "label": "Chosen sections",
+          "hint": "Limited to the sections you choose — for a class teacher, their own class."
+        },
+        "subjects": {
+          "label": "Chosen subjects",
+          "hint": "Limited to the subjects you choose, across all grades — for a Subject Head."
+        },
+        "own": {
+          "label": "Their own classes",
+          "hint": "Only the sections and subjects this person teaches on the timetable."
+        }
+      },
+      "system": {
+        "principal": {
+          "name": "Principal",
+          "description": "Runs the school and has full access."
+        },
+        "vice_principal": {
+          "name": "Vice Principal",
+          "description": "Day-to-day running: attendance, discipline and notices. Timetable changes, moving staff, changing marks and removing students need the Principal's approval."
+        },
+        "sectional_head": {
+          "name": "Sectional Head",
+          "description": "Looks after a range of grades: attendance, results and discipline before issues reach the Principal."
+        },
+        "subject_head": {
+          "name": "Subject Head",
+          "description": "Leads one subject across all grades: reviews lesson plans and papers and keeps sections at the same pace."
+        },
+        "class_teacher": {
+          "name": "Class Teacher",
+          "description": "Looks after one section: the morning register, student records, parent contact and report card remarks."
+        },
+        "subject_teacher": {
+          "name": "Subject Teacher",
+          "description": "Teaches subjects to sections: lessons, homework, tests, marks and period attendance."
+        }
+      },
+      "templates": {
+        "accountant": {
+          "name": "Accountant",
+          "description": "Records fees and payments and prints receipts. Deleting a fee needs approval."
+        },
+        "exam_coordinator": {
+          "name": "Exam Coordinator",
+          "description": "Plans term tests and exports results and report cards."
+        },
+        "admissions_officer": {
+          "name": "Admissions Officer",
+          "description": "Adds and updates student records. Removing a student needs approval."
+        },
+        "librarian": {
+          "name": "Librarian",
+          "description": "Manages the digital library."
+        },
+        "sports_coordinator": {
+          "name": "Sports Coordinator",
+          "description": "Sends notices about practices and events and checks attendance."
+        },
+        "counselor": {
+          "name": "Counselor",
+          "description": "Keeps private counseling notes and sees attendance, marks and discipline to help students early."
+        }
+      }
+    },
+    "approvals": {
+      "title": "Approvals",
+      "subtitle": "Changes that wait for a decision before they happen. Whoever asked is told the outcome straight away.",
+      "filtersLabel": "Show",
+      "filters": {
+        "waiting": "Waiting for you",
+        "mine": "My requests",
+        "decided": "Decided"
+      },
+      "empty": {
+        "waiting": {
+          "title": "Nothing waiting",
+          "body": "When someone makes a change their role sends for approval, it appears here for you to approve or reject."
+        },
+        "mine": {
+          "title": "You haven't asked for anything",
+          "body": "Changes you make that need approval are listed here until they're decided."
+        },
+        "decided": {
+          "title": "No decisions yet",
+          "body": "Approved, rejected and withdrawn requests stay here as a record."
+        }
+      },
+      "status": {
+        "pending": "Waiting",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "cancelled": "Withdrawn"
+      },
+      "youAsked": "You asked on {date}",
+      "askedBy": "Asked by {name} on {date}",
+      "approvedBy": "Approved by {name} on {date}",
+      "rejectedBy": "Rejected by {name} on {date}",
+      "approve": "Approve",
+      "reject": "Reject",
+      "withdraw": "Withdraw",
+      "approveTitle": "Approve this change?",
+      "rejectTitle": "Reject this change?",
+      "noteLabel": "Note to the person who asked",
+      "noteOptional": "(optional)",
+      "rulesTitle": "What needs your approval",
+      "rulesNone": "No role sends anything for approval right now.",
+      "rulesHint": "Change these on Roles & permissions — tap an action until it shows the hourglass."
+    },
+    "history": {
+      "title": "Change history",
+      "subtitle": "Every change at the school, who made it and what it was before. Nothing here can be edited or deleted.",
+      "filterLabel": "Filter by area",
+      "allAreas": "All areas",
+      "export": "Export CSV",
+      "empty": "No changes yet.",
+      "emptyArea": "No changes in this area yet.",
+      "loading": "Loading…",
+      "loadMore": "Show older changes",
+      "csv": {
+        "when": "When",
+        "who": "Who",
+        "area": "Area",
+        "what": "What happened",
+        "details": "Details"
+      },
+      "added": "Added",
+      "removed": "Removed",
+      "permissions": "Permissions",
+      "reason": "Reason",
+      "note": "Note",
+      "system": "ClassPortals",
+      "fields": {
+        "name": "Name",
+        "school_type": "Type",
+        "district": "District",
+        "address": "Address",
+        "registration_number": "Census / registration no.",
+        "mediums": "Mediums",
+        "grade_from": "Lowest grade",
+        "grade_to": "Highest grade",
+        "contact_phone": "Phone",
+        "contact_email": "Email",
+        "website": "Website",
+        "logo_url": "Logo"
+      },
+      "events": {
+        "school": {
+          "registered": "<b>{actor}</b> registered <b>{label}</b>",
+          "updated": "<b>{actor}</b> updated the school details",
+          "resubmitted": "<b>{actor}</b> sent the school back for approval",
+          "approved": "<b>ClassPortals</b> approved the school",
+          "rejected": "<b>ClassPortals</b> asked for changes before approving",
+          "suspended": "<b>ClassPortals</b> suspended the school"
+        },
+        "role": {
+          "created": "<b>{actor}</b> created the role <b>{label}</b>",
+          "updated": "<b>{actor}</b> changed what <b>{label}</b> can do",
+          "reset": "<b>{actor}</b> reset <b>{label}</b> to its default permissions",
+          "deleted": "<b>{actor}</b> deleted the role <b>{label}</b>"
+        },
+        "approval": {
+          "requested": "<b>{actor}</b> asked for approval: {label}",
+          "approved": "<b>{actor}</b> approved: {label}",
+          "rejected": "<b>{actor}</b> rejected: {label}",
+          "cancelled": "<b>{actor}</b> withdrew a request: {label}"
+        }
+      },
+      "eventsPlain": {
+        "school": {
+          "registered": "Registered {label}",
+          "updated": "Updated the school details",
+          "resubmitted": "Sent back for approval",
+          "approved": "School approved",
+          "rejected": "Changes requested",
+          "suspended": "School suspended"
+        },
+        "role": {
+          "created": "Created role {label}",
+          "updated": "Changed role {label}",
+          "reset": "Reset role {label}",
+          "deleted": "Deleted role {label}"
+        },
+        "approval": {
+          "requested": "Asked for approval: {label}",
+          "approved": "Approved: {label}",
+          "rejected": "Rejected: {label}",
+          "cancelled": "Withdrew: {label}"
+        }
+      }
+    }
   }
 }

@@ -91,6 +91,50 @@ export async function resolveApproval(input: {
   return {};
 }
 
+/**
+ * Admin -> Approvals -> Schools (School Mode, 0166). A school can create
+ * accounts for children, so it is checked before it goes live. Suspending
+ * makes a school read-only for its Principal and locks its staff out.
+ */
+export async function decideSchool(input: {
+  id: string;
+  name: string;
+  decision: "approved" | "rejected" | "suspended";
+  reason?: string;
+}): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  if ("error" in admin) {
+    return { error: admin.error };
+  }
+  const reason = input.decision === "approved" ? "" : (input.reason ?? "").trim().slice(0, 500);
+  if (input.decision !== "approved" && reason.length < 5) {
+    return { error: "Please tell the school why (at least a few words)." };
+  }
+  const supabase = await createClient();
+  const { data: ownerId, error } = await supabase.rpc("admin_decide_school", {
+    p_school_id: input.id,
+    p_decision: input.decision,
+    p_reason: reason || null,
+  });
+  if (error) {
+    return { error: "Couldn't update this school. Please try again." };
+  }
+  await logAdminAction(supabase, admin.userId, "school_approval_decision", "school", input.id, {
+    decision: input.decision,
+    name: input.name.slice(0, 160),
+    ...(reason ? { reason } : {}),
+  });
+  await notify(
+    supabase,
+    ownerId,
+    "school_decision",
+    reason ? { decision: input.decision, reason, name: input.name } : { decision: input.decision, name: input.name },
+    "overview",
+    "listingDecisions",
+  );
+  return {};
+}
+
 const ASSIGNABLE_ROLES = ["student", "teacher", "campus_lecturer", "class"] as const;
 type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 

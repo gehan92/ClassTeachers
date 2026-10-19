@@ -1,4 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import type { NotificationRow } from "@/components/dashboard/notification-bell";
 import {
@@ -91,6 +92,7 @@ export default async function InstituteDashboardPage({
     { data: referralCodeValue },
     { data: myReferralRows },
     { data: notificationRows },
+    { data: ownSchool },
   ] = await Promise.all([
     supabase.from("profiles").select("full_name, phone, notification_prefs, role, profile_completed_at").eq("id", userId).single(),
     supabase.from("class_profiles").select("*").eq("owner_id", userId).maybeSingle(),
@@ -99,7 +101,14 @@ export default async function InstituteDashboardPage({
     supabase.rpc("ensure_referral_code"),
     supabase.rpc("list_my_referrals"),
     supabase.rpc("list_my_notifications"),
+    // School Mode (0166): a School's Principal works in /school instead.
+    // Errors (and so stays null) until that migration has run.
+    supabase.from("schools").select("id").eq("owner_id", userId).maybeSingle(),
   ]);
+
+  if (ownSchool || user!.user_metadata?.institute_kind === "school") {
+    redirect(`/${locale}/school`);
+  }
 
   const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({
     id: n.id,

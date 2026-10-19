@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notify } from "@/lib/dashboard/notify";
 import { sanitizeRichText } from "@/lib/dashboard/sanitize-rich-text";
 import { FEATURE_DISABLED_MESSAGES, isFeatureEnabled } from "@/lib/platform-features";
+import { recordFeatureEvent } from "@/lib/analytics/track-server";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -97,6 +98,7 @@ export async function createWantedAd(input: {
   if (error) {
     return { error: "Couldn't post your ad. Please try again." };
   }
+  await recordFeatureEvent("wanted_ad_posted");
   return {};
 }
 

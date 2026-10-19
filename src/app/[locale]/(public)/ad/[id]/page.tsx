@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { JoinRequestBox } from "@/components/features/join-request-box";
 import { InquiryBox } from "@/components/features/inquiry-box";
 import { ShareButtons } from "@/components/features/share-buttons";
+import { ReportButton } from "@/components/features/report-button";
 import { ReviewItem } from "@/components/features/review-item";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/supabase/auth-user";
@@ -336,6 +337,7 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
   }
 
   const user = await getAuthUser();
+  const reportSignedIn = Boolean(user);
   const supabase = await createClient();
 
   let viewerRole: string | null = null;
@@ -742,6 +744,7 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
           )}
 
           <ShareButtons title={ad.adTitle} />
+          <ReportButton targetType="ad" targetId={ad.adId} signedIn={reportSignedIn} className="self-start" />
         </div>
       </div>
     </div>
@@ -756,6 +759,7 @@ export default async function AdLandingPage({ params }: PageProps<"/[locale]/ad/
  * nothing here to enroll in — just a trial someone can ask about.
  */
 async function LessonAdView({ ad, locale }: { ad: NormalizedLessonAd; locale: string }) {
+  const reportSignedIn = Boolean(await getAuthUser());
   const t = await getTranslations("adPage");
   const tl = await getTranslations("listing");
   const displayName = ad.name ?? t("teacherFallback");
@@ -839,6 +843,7 @@ async function LessonAdView({ ad, locale }: { ad: NormalizedLessonAd; locale: st
         <div className="flex flex-col gap-6">
           <InquiryBox ownerType="teacher" ownerId={ad.teacherId} />
           <ShareButtons title={ad.adTitle} />
+          <ReportButton targetType="ad" targetId={ad.adId} signedIn={reportSignedIn} className="self-start" />
         </div>
       </div>
     </div>
@@ -855,6 +860,7 @@ async function LessonAdView({ ad, locale }: { ad: NormalizedLessonAd; locale: st
  * in for JoinRequestBox, same reasoning as LessonAdView's own.
  */
 async function TeacherWiseAdView({ ad }: { ad: NormalizedTeacherWiseAd }) {
+  const reportSignedIn = Boolean(await getAuthUser());
   const t = await getTranslations("adPage");
   const tl = await getTranslations("listing");
   const displayInstituteName = ad.instituteName ?? t("classFallback");
@@ -968,6 +974,7 @@ async function TeacherWiseAdView({ ad }: { ad: NormalizedTeacherWiseAd }) {
         <div className="flex flex-col gap-6">
           <InquiryBox ownerType="class" ownerId={ad.instituteId} tNamespace="adPage.teacherWiseInquiry" />
           <ShareButtons title={ad.adTitle} />
+          <ReportButton targetType="ad" targetId={ad.adId} signedIn={reportSignedIn} className="self-start" />
         </div>
       </div>
     </div>

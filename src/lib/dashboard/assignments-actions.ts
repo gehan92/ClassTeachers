@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAssignmentOwner } from "@/lib/dashboard/resolve-batch-owner";
 import { notify, notifyContentAudience } from "@/lib/dashboard/notify";
+import { recordFeatureEvent } from "@/lib/analytics/track-server";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -103,6 +104,7 @@ export async function createAssignment(formData: FormData): Promise<ActionResult
     "newClassContent",
   );
 
+  await recordFeatureEvent("assignment_created");
   return {};
 }
 
@@ -223,6 +225,7 @@ export async function submitAssignment(formData: FormData): Promise<ActionResult
     "submissions",
   );
 
+  await recordFeatureEvent("assignment_submitted");
   return {};
 }
 

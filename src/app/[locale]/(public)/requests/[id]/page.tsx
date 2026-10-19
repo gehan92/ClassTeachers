@@ -7,6 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/supabase/auth-user";
+import { ReportButton } from "@/components/features/report-button";
 import { createDateFormatter } from "@/lib/format-date";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { getSubjectIcon } from "@/lib/subject-icon";
@@ -138,9 +139,12 @@ export default async function RequestDetailPage({ params }: PageProps<"/[locale]
           ) : (
             <p className="text-sm text-muted-foreground">{td("noDescription")}</p>
           )}
-          <p className="mt-6 text-xs text-muted-foreground">
-            {td("postedOn", { date: dateFormatter.format(new Date(ad.created_at)) })}
-          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+            <p className="m-0 text-xs text-muted-foreground">
+              {td("postedOn", { date: dateFormatter.format(new Date(ad.created_at)) })}
+            </p>
+            <ReportButton targetType="wanted_ad" targetId={ad.id} signedIn={Boolean(user)} />
+          </div>
         </div>
 
         <div className="flex h-fit flex-col gap-3 rounded-lg border border-border bg-white p-5.5 shadow-[0_1px_2px_rgba(14,33,29,0.07),0_8px_24px_-12px_rgba(14,33,29,0.16)]">

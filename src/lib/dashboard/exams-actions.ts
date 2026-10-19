@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveBatchOwner } from "@/lib/dashboard/resolve-batch-owner";
 import { notify, notifyContentAudience } from "@/lib/dashboard/notify";
 import { buildAttemptSeed, buildShuffledOrder } from "@/lib/exam-shuffle";
+import { recordFeatureEvent } from "@/lib/analytics/track-server";
 
 type ActionResult = { error: string } | { error?: undefined };
 type SubmitExamResult = ActionResult & { autoGrade?: { score: number; maxScore: number } };
@@ -138,6 +139,7 @@ export async function createExam(input: {
     }
   }
 
+  await recordFeatureEvent("exam_created");
   return {};
 }
 
@@ -307,6 +309,7 @@ export async function startExamAttempt(examId: string): Promise<StartExamAttempt
     await supabase.storage.from("submissions").remove(attempt.prior_photo_urls);
   }
 
+  await recordFeatureEvent("exam_started");
   return {
     submissionId: attempt.id,
     startedAtIso: attempt.started_at as string,
@@ -569,6 +572,7 @@ export async function submitExam(formData: FormData): Promise<SubmitExamResult> 
     );
   }
 
+  await recordFeatureEvent("exam_submitted");
   return isFullyAutoGraded ? { autoGrade: { score: mcqScore, maxScore: mcqMaxScore } } : {};
 }
 

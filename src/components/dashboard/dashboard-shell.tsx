@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import {
   ChevronDown,
   LogOut,
@@ -57,6 +58,10 @@ import {
   Link2,
   History,
   ShieldAlert,
+  Activity,
+  Radar,
+  MessageSquareWarning,
+  ChartLine,
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -81,6 +86,8 @@ import { VideoCallPanel } from "@/components/dashboard/inline-file-viewer";
 import { notifyLiveClassEnded } from "@/lib/dashboard/live-classes-actions";
 import type { DashboardNavGroup, DemoRole } from "@/types/dashboard";
 import type { NavAvailability } from "@/lib/nav-availability";
+import { SiteAnnouncementBar, type SiteAnnouncement } from "@/components/layout/site-announcement-bar";
+import { SELECT_TAB_EVENT } from "@/components/dashboard/tab-link";
 
 /**
  * Same grouped BROWSE/REQUESTS picker as the public SiteHeader's "Search"
@@ -187,6 +194,11 @@ const TAB_ICONS: Partial<Record<string, LucideIcon>> = {
   parentPortal: Contact,
   extracurriculars: Trophy,
   // Admin tabs.
+  growth: ChartLine,
+  earnings: Wallet,
+  activity: Activity,
+  traffic: Radar,
+  reports: MessageSquareWarning,
   approvals: UserCheck,
   users: Users,
   platformSwitches: ToggleRight,
@@ -217,6 +229,7 @@ const GROUP_ICONS: Partial<Record<string, LucideIcon>> = {
   students: Users,
   institute: Building2,
   manage: Layers,
+  insights: BarChart3,
   platform: LayoutGrid,
   monetization: Wallet,
   trust: ShieldCheck,
@@ -428,6 +441,8 @@ export function DashboardShell(props: {
    * would currently show zero results (see lib/nav-availability.ts) —
    * undefined fails open, showing every item. */
   navAvailability?: NavAvailability;
+  /** Admin's site-wide announcement (Admin -> Settings), shown under the header. */
+  announcement?: SiteAnnouncement | null;
 }) {
   // The call's connection lifetime needs to survive tab switches, so its
   // state has to live above wherever panels[activeTab] gets swapped — see
@@ -453,6 +468,7 @@ function DashboardShellInner({
   realtimeWatch,
   notifications = [],
   navAvailability,
+  announcement,
 }: {
   brandBadge?: string;
   userLabel: string;
@@ -466,6 +482,7 @@ function DashboardShellInner({
   realtimeWatch?: RealtimeWatch[];
   notifications?: NotificationRow[];
   navAvailability?: NavAvailability;
+  announcement?: SiteAnnouncement | null;
 }) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   // browseOnlineOnly has no matching NavAvailability field (it's a filter
@@ -495,18 +512,18 @@ function DashboardShellInner({
     }
   }, [activeCall]);
 
+  // Follows ?tab= in the URL — on first load, and whenever a link elsewhere
+  // on the page (a hero stat, an "attention" card) points at another tab.
+  // Reading it in an effect rather than a lazy useState initializer keeps
+  // the first client render identical to the server-rendered defaultTab.
+  const tabParam = useSearchParams().get("tab");
   useEffect(() => {
-    // Only read the URL once, on mount — after that, tab state is owned
-    // locally. Deliberately not a lazy useState initializer: that would
-    // read window.location during the first client render and mismatch
-    // the server-rendered defaultTab, breaking hydration.
-    const fromUrl = new URLSearchParams(window.location.search).get("tab");
-    if (fromUrl && panels[fromUrl] && fromUrl !== defaultTab) {
+    if (tabParam && panels[tabParam]) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from the URL, not derived render state
-      setActiveTab(fromUrl);
+      setActiveTab(tabParam);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tabParam]);
 
   // Bumped only for a notification's deep link (see select's liveClassId
   // param) so the target panel remounts and re-reads the URL even when the
@@ -525,6 +542,17 @@ function DashboardShellInner({
     updateTabParam(tab, liveClassId);
     if (liveClassId) setNavNonce((n) => n + 1);
   }
+
+  // <TabLink> (tab-link.tsx) switches tabs from inside a panel without a
+  // server round trip.
+  useEffect(() => {
+    function onSelectTab(event: Event) {
+      const tab = (event as CustomEvent<string>).detail;
+      if (typeof tab === "string" && panels[tab]) select(tab);
+    }
+    window.addEventListener(SELECT_TAB_EVENT, onSelectTab);
+    return () => window.removeEventListener(SELECT_TAB_EVENT, onSelectTab);
+  });
 
   // Only the host actually ending the call counts as "class ended" — a
   // student leaving their own view of it never fires this. Fire-and-forget,
@@ -707,6 +735,8 @@ function DashboardShellInner({
           </Sheet>
         </div>
       </header>
+
+      {announcement && <SiteAnnouncementBar announcement={announcement} />}
 
       <div className="shrink-0 overflow-x-auto border-b border-border bg-white md:hidden">
         <NavList groups={groups} activeTab={activeTab} onSelect={select} orientation="horizontal" />

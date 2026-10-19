@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBatchOwner } from "@/lib/dashboard/resolve-batch-owner";
 import type { Database } from "@/types/database";
+import { recordFeatureEvent } from "@/lib/analytics/track-server";
 
 type ActionResult = { error: string } | { error?: undefined };
 type QuestionBankItemInsert = Database["public"]["Tables"]["question_bank_items"]["Insert"];
@@ -218,6 +219,7 @@ export async function createQuestion(formData: FormData): Promise<ActionResult> 
     if (uploadedPaths.length > 0) await supabase.storage.from("question-images").remove(uploadedPaths);
     return { error: "Couldn't save this question. Please try again." };
   }
+  await recordFeatureEvent("question_added");
   return {};
 }
 
@@ -582,5 +584,6 @@ export async function bulkImportQuestions(
     return { error: "Couldn't save these questions. Please try again.", imported: 0, rowErrors, duplicates };
   }
 
+  await recordFeatureEvent("questions_bulk_imported");
   return { imported: toInsert.length, rowErrors, duplicates };
 }

@@ -129,7 +129,10 @@
       "account_role_changed": "Your account type was changed to {role}. Please complete your profile for it.",
       "new_library_resource": "A new library resource was shared: \"{title}\".",
       "content_removed": "An admin removed \"{title}\": \"{reason}\"",
-      "content_hidden": "An admin hid your exam \"{title}\" from students: \"{reason}\""
+      "content_hidden": "An admin hid your exam \"{title}\" from students: \"{reason}\"",
+      "content_reported": "Someone reported content — review it in User Reports.",
+      "report_resolved": "Thanks for your report about “{title}” — we took action.",
+      "report_dismissed": "We reviewed your report about “{title}” and found nothing against our rules."
     },
     "responderTypes": {
       "teacher": "teacher",
@@ -1134,8 +1137,13 @@
       "connections": "Connections",
       "payments": "Payments",
       "auditLog": "Audit Log",
-      "platformSwitches": "Platform Switches",
-      "moderation": "Content"
+      "platformSwitches": "Settings",
+      "moderation": "Content",
+      "growth": "Users & Growth",
+      "earnings": "Earnings",
+      "activity": "Activity",
+      "traffic": "Traffic & Usage",
+      "reports": "User Reports"
     },
     "overview": {
       "title": "Platform Overview",
@@ -1145,7 +1153,11 @@
         "institutes": "Total institutes",
         "students": "Total students",
         "revenue": "Platform MRR",
-        "thisWeek": "+{count} this week"
+        "thisWeek": "+{count} this week",
+        "users": "Total accounts",
+        "activeWeek": "Active this week",
+        "studentsInClasses": "Students in classes",
+        "mrr": "Monthly subscriptions"
       },
       "attentionHeading": "Needs your attention",
       "attention": {
@@ -1166,11 +1178,63 @@
           "body": "{sponsor}, {expires}.",
           "empty": "No site ads expiring soon.",
           "cta": "Manage ads"
+        },
+        "reports": {
+          "title": "{count, plural, =0 {No open user reports} one {# open user report} other {# open user reports}}",
+          "body": "People flagged ads, profiles or requests as spam, fake or unsafe.",
+          "empty": "Nobody has reported anything."
+        },
+        "verification": {
+          "title": "{count, plural, =0 {No documents to verify} one {# document to verify} other {# documents to verify}}",
+          "body": "Teachers or institutes uploaded proof and are waiting for the Verified badge.",
+          "empty": "No verification documents are waiting."
+        },
+        "payments": {
+          "title": "{count, plural, =0 {No failed payments} one {# failed payment} other {# failed payments}}",
+          "body": "A student's PayHere payment didn't go through — check if they need help.",
+          "empty": "Every payment went through."
         }
       },
       "hero": {
         "reviewApprovals": "Review approvals",
-        "manageAds": "+ Manage ads"
+        "manageAds": "+ Manage ads",
+        "viewReports": "See growth reports"
+      },
+      "greeting": "Welcome back, {name}",
+      "subtitleAttention": "{count, plural, one {# thing needs} other {# things need}} your attention today.",
+      "subtitleClear": "Everything is under control — nothing is waiting for you.",
+      "periodTitle": "How the platform is doing",
+      "periodSubtitle": "Each number compares the selected period with the one before it.",
+      "kpi": {
+        "signups": "New sign-ups",
+        "earnings": "Fees earned",
+        "requests": "Join requests",
+        "joined": "Students joined",
+        "examsTaken": "Exams taken",
+        "visits": "Site visits",
+        "visitsNotTracked": "Starts after the tracking update"
+      },
+      "charts": {
+        "signups": "New sign-ups",
+        "signupsHint": "By account type",
+        "earnings": "Fees earned",
+        "earningsHint": "Completed PayHere payments, in rupees",
+        "earningsEmpty": "No paid connections in this period yet. Earnings appear here as soon as students pay.",
+        "traffic": "Visits to the site",
+        "trafficHint": "Page views and visitors (your own visits are not counted)",
+        "trafficEmpty": "No visits recorded in this period yet.",
+        "trafficNotTracked": "Visit counting starts once database update 0165 has been run.",
+        "trafficOpen": "Open traffic report"
+      },
+      "attentionHint": "Items that need action are listed first",
+      "glanceHeading": "Platform at a glance",
+      "glance": {
+        "classes": "Classes",
+        "studentsInClasses": "Students in classes",
+        "exams": "Exams",
+        "questions": "Bank questions",
+        "activeAds": "Live ads",
+        "adViews": "Ad views (all time)"
       }
     },
     "approvals": {
@@ -1199,6 +1263,20 @@
         "reasonPlaceholder": "e.g. Please add your teaching qualifications and a clear profile photo.",
         "cancel": "Cancel",
         "confirm": "Reject listing"
+      },
+      "history": {
+        "title": "Recent decisions",
+        "avgDays": "On average a listing is decided {days} days after it was submitted",
+        "empty": "No decisions recorded yet.",
+        "columns": {
+          "name": "Listing",
+          "decision": "Decision",
+          "reason": "Reason given",
+          "by": "By",
+          "date": "Date"
+        },
+        "approved": "Approved",
+        "rejected": "Rejected"
       }
     },
     "users": {
@@ -1208,13 +1286,13 @@
       "roleFilter": {
         "all": "All roles",
         "teacher": "Teacher",
-        "institute": "Class",
+        "institute": "Institute",
         "student": "Student",
         "campusLecturer": "Campus Lecturer"
       },
       "roles": {
         "teacher": "Teacher",
-        "institute": "Class",
+        "institute": "Institute",
         "student": "Student",
         "campusLecturer": "Campus Lecturer"
       },
@@ -1223,7 +1301,8 @@
         "role": "Role",
         "joined": "Joined",
         "status": "Status",
-        "actions": "Actions"
+        "actions": "Actions",
+        "lastActive": "Last active"
       },
       "status": {
         "active": "Active",
@@ -1255,6 +1334,25 @@
         "effectListing": "If they had a public teacher or institute listing, it's hidden so they don't stay discoverable under the old type.",
         "effectNotify": "They'll get a notification, and the change is recorded in the audit log.",
         "confirm": "Change type"
+      },
+      "never": "Never",
+      "openDetail": "Open account details",
+      "statusFilter": {
+        "all": "Any status",
+        "active": "Active",
+        "suspended": "Suspended",
+        "inactive": "Not seen in 30 days",
+        "verificationWaiting": "Waiting for verification"
+      },
+      "csv": {
+        "name": "Name",
+        "role": "Account type",
+        "status": "Status",
+        "joined": "Joined",
+        "lastActive": "Last signed in",
+        "verified": "Verified",
+        "yes": "Yes",
+        "no": "No"
       }
     },
     "subscriptions": {
@@ -1446,8 +1544,8 @@
       }
     },
     "platformSwitches": {
-      "title": "Platform Switches",
-      "subtitle": "Turn major features on or off for everyone. Use these during maintenance, abuse, or unexpected costs.",
+      "title": "Settings",
+      "subtitle": "A message for everyone, and on/off switches for major features. Use the switches during maintenance, abuse or unexpected costs.",
       "on": "On",
       "off": "Off",
       "footnote": "Switching a feature off only stops new actions. Everything already created stays as it is, and switching it back on restores it right away. Every change is recorded in the audit log.",
@@ -1473,6 +1571,26 @@
         "name": "Scheduling live classes",
         "description": "Lets teachers and institutes schedule new live classes.",
         "offEffect": "No one can schedule new live classes. Classes already scheduled still run as planned."
+      },
+      "switchesHeading": "Feature switches",
+      "announcement": {
+        "title": "Site announcement",
+        "live": "Showing",
+        "description": "A short banner at the top of the public site and every dashboard — for maintenance notices, exam season tips or news.",
+        "messageLabel": "Message",
+        "placeholder": "e.g. ClassPortals will be down for maintenance on Sunday from 1 am to 3 am.",
+        "toneLabel": "Style",
+        "tones": {
+          "info": "Information",
+          "warning": "Warning",
+          "success": "Good news"
+        },
+        "preview": "Preview",
+        "saving": "Saving…",
+        "publish": "Show to everyone",
+        "save": "Save",
+        "published": "Live — everyone sees it now.",
+        "savedOff": "Saved — the banner is hidden."
       }
     },
     "moderation": {
@@ -1530,6 +1648,427 @@
         "cancel": "Cancel",
         "confirmRemove": "Remove",
         "confirmHide": "Hide exam"
+      }
+    },
+    "groupInsights": "Insights",
+    "reports": {
+      "range": {
+        "label": "Date range",
+        "7d": "7 days",
+        "30d": "30 days",
+        "90d": "90 days",
+        "12m": "12 months"
+      },
+      "vsPrevious": "Previous period: {value}",
+      "noChange": "No change",
+      "emptyRange": "Nothing recorded in this period yet.",
+      "exportCsv": "Export CSV",
+      "loading": "Updating…",
+      "earned": "Earned",
+      "visits": "Visits",
+      "visitors": "Visitors",
+      "visitorsDaily": "Visitors per day",
+      "roles": {
+        "student": "Students",
+        "teacher": "Teachers",
+        "campus_lecturer": "Lecturers",
+        "institute": "Institutes"
+      },
+      "purposes": {
+        "teacher_connection": "Teacher connection fee",
+        "institute_unlock": "Institute unlock fee",
+        "class_join": "Class join fee"
+      },
+      "paymentStatus": {
+        "completed": "Completed",
+        "pending": "Pending",
+        "failed": "Failed",
+        "cancelled": "Cancelled"
+      },
+      "ownerKinds": {
+        "teacher": "Teacher",
+        "institute": "Institute"
+      },
+      "devices": {
+        "mobile": "Phone",
+        "tablet": "Tablet",
+        "desktop": "Computer",
+        "unknown": "Unknown"
+      },
+      "locales": {
+        "en": "English",
+        "si": "Sinhala",
+        "ta": "Tamil"
+      },
+      "visitorRoles": {
+        "visitor": "Not signed in",
+        "student": "Students",
+        "teacher": "Teachers",
+        "campus_lecturer": "Lecturers",
+        "class": "Institutes"
+      }
+    },
+    "growth": {
+      "title": "Users & Growth",
+      "subtitle": "Who is on ClassPortals, who joined recently, and who actually comes back.",
+      "csv": {
+        "name": "Name",
+        "role": "Account type",
+        "status": "Status",
+        "joined": "Joined",
+        "lastActive": "Last signed in",
+        "verified": "Verified"
+      },
+      "kpi": {
+        "total": "Total accounts",
+        "new": "New in this period",
+        "activeToday": "Active today",
+        "signInHint": "Signed in today",
+        "active30": "Active in 30 days",
+        "ofAll": "of all accounts",
+        "onboarded": "Profiles completed",
+        "onboardedHint": "{count} finished the setup steps"
+      },
+      "charts": {
+        "byRole": "Accounts by type",
+        "accounts": "accounts",
+        "signups": "Sign-ups over time",
+        "signupsHint": "Daily for short ranges, weekly for 90 days, monthly for a year",
+        "activeVsInactive": "Active vs inactive",
+        "activeVsInactiveHint": "Active = signed in during the last 30 days",
+        "active": "Active",
+        "inactive": "Inactive",
+        "onboarding": "Finished profile setup",
+        "onboardingHint": "Completed the step-by-step setup after signing up",
+        "locations": "Top locations",
+        "locationsHint": "From the town people typed on their profile",
+        "locationsEmpty": "No one has added a location yet.",
+        "weekActivity": "Active this week",
+        "weekActivityHint": "Signed in during the last 7 days"
+      },
+      "engagementHeading": "Who comes back",
+      "engagementHint": "Based on the last time each person signed in"
+    },
+    "earnings": {
+      "title": "Earnings",
+      "subtitle": "What ClassPortals earned, from which fee, and which teachers and institutes bring it in.",
+      "csv": {
+        "date": "Date",
+        "order": "PayHere order ID",
+        "student": "Student",
+        "fee": "Fee",
+        "paidTo": "Teacher / institute",
+        "amount": "Amount",
+        "currency": "Currency",
+        "status": "Status",
+        "paidAt": "Paid at",
+        "rank": "Rank",
+        "name": "Name",
+        "kind": "Type"
+      },
+      "kpi": {
+        "earned": "Fees earned",
+        "payments": "Paid connections",
+        "successRate": "Payment success",
+        "failedHint": "{count, plural, one {# payment failed} other {# payments failed}}",
+        "noFailures": "No failed payments",
+        "average": "Average fee",
+        "waived": "Free first connections",
+        "waivedHint": "Fees not charged on a student's first connection",
+        "mrr": "Subscription MRR",
+        "mrrHint": "{count, plural, =0 {No paid plans yet} one {# paid plan} other {# paid plans}}",
+        "schoolFees": "Fees institutes recorded",
+        "schoolFeesHint": "Tuition institutes collected themselves — not ClassPortals revenue"
+      },
+      "charts": {
+        "bySource": "Earnings by fee type",
+        "bySourceHint": "Completed payments only, in rupees",
+        "empty": "No payments in this period yet.",
+        "status": "Payment outcomes",
+        "statusHint": "Every checkout that was started",
+        "succeeded": "succeeded",
+        "topEarners": "Top 20 by fee income"
+      },
+      "earnersHeading": "Who brings in the most",
+      "earnersHint": "Fees paid by students to connect with each teacher or institute",
+      "table": {
+        "name": "Teacher / institute",
+        "kind": "Type",
+        "earned": "Earned",
+        "share": "Share"
+      },
+      "schoolHeading": "School-side money",
+      "schoolHint": "Shown for context only"
+    },
+    "activity": {
+      "title": "Activity",
+      "subtitle": "Is the marketplace turning interest into students, and is real teaching happening?",
+      "funnel": {
+        "title": "Join funnel",
+        "subtitle": "From first message to a paid place in a class",
+        "inquiries": "Messages",
+        "inquiriesHint": "Questions sent from ads and profiles",
+        "requests": "Join requests",
+        "requestsHint": "Students asked to join a class",
+        "accepted": "Accepted",
+        "acceptedHint": "The teacher or institute said yes",
+        "inClass": "In class",
+        "inClassHint": "Fully joined and can see class content",
+        "paid": "Paid",
+        "paidHint": "Joined by paying the platform fee",
+        "conversion": "{value}% of previous"
+      },
+      "learningHeading": "Teaching & learning",
+      "learningHint": "Across every teacher and institute",
+      "kpi": {
+        "examsCreated": "Exams created",
+        "examsTaken": "Exams taken",
+        "avgScore": "Average score",
+        "attendance": "Attendance rate",
+        "attendanceHint": "Present or late, out of {count} marked",
+        "liveClasses": "Classes held",
+        "content": "New materials",
+        "contentHint": "Notes, assignments and questions"
+      },
+      "charts": {
+        "scores": "Average exam score",
+        "scoresHint": "Graded exams only",
+        "liveClasses": "Classes held",
+        "liveClassesHint": "Online video classes and in-person roll calls",
+        "online": "Online",
+        "inPerson": "In person",
+        "classes": "New classes",
+        "classesHint": "Batches created by teachers and institutes",
+        "subjects": "Most popular subjects",
+        "subjectsHint": "Students currently in a class, by subject",
+        "subjectsEmpty": "No classes have a subject set yet.",
+        "questionBank": "Question bank by subject",
+        "questionBankHint": "{count} questions in total",
+        "ratings": "Review ratings",
+        "ratingsAvg": "Average {value}★ from {count} reviews",
+        "moderation": "Admin actions",
+        "moderationHint": "Removals, suspensions and rejected listings",
+        "moderationEmpty": "No moderation was needed in this period."
+      },
+      "marketHeading": "Marketplace",
+      "marketHint": "Classes on offer and what students ask for",
+      "requests": {
+        "title": "Student requests",
+        "posted": "Posted",
+        "answered": "Replies from teachers",
+        "open": "{count, plural, =0 {No requests open right now} one {# request open right now} other {# requests open right now}}"
+      },
+      "trustHeading": "Trust & safety",
+      "trustHint": "Reviews and admin actions",
+      "moderation": {
+        "contentRemoved": "Content removed",
+        "reviewRemoved": "Reviews removed",
+        "suspended": "Accounts suspended",
+        "rejected": "Listings rejected"
+      }
+    },
+    "traffic": {
+      "title": "Traffic & Usage",
+      "subtitle": "Visits, the pages people open, where they come from, and which features they use.",
+      "subtitleSince": "Visits, pages, sources and feature use — counted since {date}.",
+      "setup": {
+        "title": "Visit tracking isn't switched on yet",
+        "body": "Run database update 0165 in Supabase. From that moment every page visit and feature use is counted here — anonymously, with no names or IP addresses."
+      },
+      "kpi": {
+        "visits": "Page views",
+        "visitors": "Unique visitors",
+        "visitorsHint": "Different browsers",
+        "pagesPerVisitor": "Pages per visitor",
+        "signedIn": "Signed-in people",
+        "signedInHint": "Accounts that used the site",
+        "public": "Guest views",
+        "publicHint": "Not signed in"
+      },
+      "charts": {
+        "daily": "Visits over time",
+        "dailyHint": "Your own admin visits are left out",
+        "noVisits": "No visits in this period yet.",
+        "topPages": "Most visited pages",
+        "sources": "Where visitors come from",
+        "sourcesHint": "The site that linked to ClassPortals",
+        "devices": "Devices",
+        "languages": "Languages",
+        "who": "Who visits",
+        "whoHint": "Page views by account type",
+        "features": "Feature usage",
+        "featuresHint": "Times used, and how many different people used it",
+        "noFeatures": "No feature use recorded in this period yet.",
+        "searches": "What people search for",
+        "searchesHint": "Subjects and towns typed in Find teachers. Red = searches that found nothing.",
+        "noSearches": "No searches in this period yet.",
+        "ads": "Most viewed ads",
+        "adsHint": "Ad page views in this period",
+        "noAds": "No ad pages were opened in this period."
+      },
+      "featuresHeading": "Features people use",
+      "featuresHint": "Counted each time the action is completed",
+      "table": {
+        "page": "Page",
+        "path": "Address",
+        "views": "Views",
+        "visitors": "Visitors",
+        "term": "Search",
+        "searches": "Times",
+        "noResults": "No results"
+      },
+      "direct": "Direct / app / typed in",
+      "usersCount": "{count, plural, one {# person} other {# people}}",
+      "visitorsCount": "{count, plural, one {# visitor} other {# visitors}}",
+      "privacyNote": "Privacy: only the page, language, device type and referring site are stored, with an anonymous browser ID — no names, emails or IP addresses. Records older than 400 days are deleted automatically.",
+      "pages": {
+        "home": "Home page",
+        "search": "Find teachers & classes",
+        "institutes": "Institutes list",
+        "lecturers": "Campus lecturers",
+        "courses": "Courses",
+        "requests": "Student requests",
+        "request": "A student request",
+        "ad": "An ad page",
+        "teacherProfile": "A teacher profile",
+        "instituteProfile": "An institute profile",
+        "note": "A free note",
+        "pricing": "Pricing",
+        "advertise": "Advertise",
+        "roles": "Who it's for",
+        "help": "Help",
+        "login": "Sign in",
+        "signup": "Sign up",
+        "studentDashboard": "Student dashboard",
+        "teacherDashboard": "Teacher dashboard",
+        "instituteDashboard": "Institute dashboard"
+      },
+      "features": {
+        "exam_created": "Exam created",
+        "exam_started": "Exam started by a student",
+        "exam_submitted": "Exam submitted",
+        "pdf_import": "AI PDF question import",
+        "live_class_scheduled": "Live class scheduled",
+        "live_class_started": "Live class started",
+        "roll_call_taken": "Roll call taken",
+        "wanted_ad_posted": "Student request posted",
+        "note_uploaded": "Note uploaded",
+        "assignment_created": "Assignment created",
+        "assignment_submitted": "Assignment submitted",
+        "question_added": "Question added to bank",
+        "questions_bulk_imported": "Questions pasted in bulk",
+        "inquiry_sent": "Message sent to a teacher",
+        "library_upload": "Library resource uploaded",
+        "review_posted": "Review posted",
+        "content_reported": "Something reported"
+      }
+    },
+    "contentReports": {
+      "title": "User Reports",
+      "subtitle": "Ads, profiles, reviews and student requests that people flagged with the Report button. Closing a report tells everyone who reported it.",
+      "filterLabel": "Show reports",
+      "status": {
+        "open": "Open",
+        "resolved": "Resolved",
+        "dismissed": "Dismissed",
+        "all": "All"
+      },
+      "emptyOpen": "No open reports — all clear.",
+      "empty": "Nothing here.",
+      "emptyHint": "Reports appear here as soon as someone uses the Report link on an ad, profile or request.",
+      "targets": {
+        "ad": "Ad",
+        "teacher": "Teacher profile",
+        "institute": "Institute profile",
+        "review": "Review",
+        "wanted_ad": "Student request"
+      },
+      "reasons": {
+        "spam": "Spam",
+        "fake": "Fake or misleading",
+        "inappropriate": "Inappropriate",
+        "scam": "Scam or asks for money",
+        "other": "Other"
+      },
+      "sameTarget": "{count} reports",
+      "byLine": "Reported by {name} · {date}",
+      "noteLine": "Admin note: {note}",
+      "actions": {
+        "view": "View",
+        "manageUser": "Manage account",
+        "resolve": "Take action",
+        "dismiss": "Nothing wrong"
+      },
+      "dialog": {
+        "resolveTitle": "Resolve this report",
+        "resolveBody": "Use this when the report was right. Everyone who reported it is told it was handled.",
+        "dismissTitle": "Dismiss this report",
+        "dismissBody": "Nothing will be removed. The people who reported it are told it was reviewed and no action was needed.",
+        "removeLabel": "Also remove this {kind}",
+        "removeHint": "It disappears for everyone and the owner gets your reason.",
+        "noteLabel": "Note (optional)",
+        "reasonLabel": "Reason sent to the owner",
+        "notePlaceholder": "e.g. Asked students to pay outside ClassPortals",
+        "cancel": "Cancel",
+        "confirmResolve": "Mark resolved",
+        "confirmRemove": "Remove and resolve",
+        "confirmDismiss": "Dismiss report"
+      },
+      "removedItem": "Item no longer available",
+      "reviewOf": "Review of {name}: “{comment}”"
+    },
+    "userDetail": {
+      "admin": "Admin",
+      "verified": "Verified",
+      "active": "Active",
+      "suspended": "Suspended",
+      "loading": "Loading account details…",
+      "loadError": "Couldn't load this account. Please try again.",
+      "email": "Email",
+      "phone": "Phone",
+      "location": "Location",
+      "joined": "Joined",
+      "lastSignIn": "Last signed in",
+      "never": "Never",
+      "onboarding": "Profile setup",
+      "onboardingDone": "Completed",
+      "onboardingPending": "Not finished",
+      "listing": "Public listing",
+      "listingStatus": {
+        "pending": "Waiting for approval",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "suspended": "Suspended"
+      },
+      "hidden": "hidden by owner",
+      "account": "Account",
+      "suspendedLong": "Suspended — can't sign in",
+      "stats": {
+        "classes": "Classes",
+        "students": "Students",
+        "enrollments": "Classes joined",
+        "exams": "Exams",
+        "notes": "Notes",
+        "reviewsReceived": "Reviews",
+        "reviewsWritten": "Reviews written",
+        "payments": "Payments",
+        "spent": "Fees paid",
+        "reports": "Reports against"
+      },
+      "enrolments": "Classes joined",
+      "classes": "Classes they run",
+      "payments": "Payments",
+      "none": "None yet.",
+      "adminActions": "Admin history",
+      "noAdminActions": "No admin has changed anything on this account.",
+      "byAdmin": "{name} · {date}",
+      "actions": {
+        "listing_approval_decision": "Listing reviewed",
+        "user_role_changed": "Account type changed",
+        "institution_verified_change": "Verification changed",
+        "user_suspension_change": "Suspension changed",
+        "report_resolved": "Report resolved",
+        "report_dismissed": "Report dismissed"
       }
     }
   },
@@ -4239,5 +4778,61 @@
       "markRemainingPresent": "{count, plural, one {Mark # remaining present} other {Mark # remaining present}}",
       "marking": "Marking…"
     }
+  },
+  "announcement": {
+    "dismiss": "Close announcement"
+  },
+  "report": {
+    "button": {
+      "ad": "Report this ad",
+      "teacher": "Report this profile",
+      "institute": "Report this institute",
+      "review": "Report review",
+      "wanted_ad": "Report this request"
+    },
+    "title": {
+      "ad": "Report this ad",
+      "teacher": "Report this teacher's profile",
+      "institute": "Report this institute",
+      "review": "Report this review",
+      "wanted_ad": "Report this student request"
+    },
+    "description": "Our team reviews every report. The person you report won't know it was you.",
+    "reasonLabel": "What's wrong?",
+    "reasons": {
+      "spam": {
+        "label": "Spam",
+        "hint": "Repeated, irrelevant or advertising something else"
+      },
+      "fake": {
+        "label": "Fake or misleading",
+        "hint": "False qualifications, someone else's photo, made-up results"
+      },
+      "scam": {
+        "label": "Scam or asks for money",
+        "hint": "Asks for payment outside ClassPortals or personal details"
+      },
+      "inappropriate": {
+        "label": "Inappropriate",
+        "hint": "Offensive, abusive or not suitable for students"
+      },
+      "other": {
+        "label": "Something else",
+        "hint": "Tell us below"
+      }
+    },
+    "detailsLabel": "Details",
+    "optional": "(optional)",
+    "detailsPlaceholder": "Anything that helps us check quickly",
+    "chooseReason": "Choose a reason first.",
+    "cancel": "Cancel",
+    "send": "Send report",
+    "sending": "Sending…",
+    "sentTitle": "Thanks — we'll take a look",
+    "sentBody": "Your report reached our team. You'll get a notification once it has been reviewed.",
+    "done": "Done",
+    "signInTitle": "Sign in to report",
+    "signInBody": "Reports come from signed-in accounts so we can follow up and stop abuse of the Report button.",
+    "signIn": "Sign in"
   }
 }

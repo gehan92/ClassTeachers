@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck, ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,9 +29,14 @@ import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
 import { usePagination } from "@/lib/hooks/use-pagination";
+import { ExportButton, downloadCsv } from "@/components/dashboard/admin/reports/report-kit";
+import { UserDetailSheet } from "@/components/dashboard/admin/user-detail-sheet";
 import type { PlatformUser, PlatformUserRole } from "@/types/dashboard-admin";
 
 type RoleFilter = "all" | PlatformUserRole;
+type StatusFilter = "all" | "active" | "suspended" | "inactive" | "verificationWaiting";
+const STATUS_FILTERS: StatusFilter[] = ["all", "active", "suspended", "inactive", "verificationWaiting"];
+const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
 type DbRole = "student" | "teacher" | "campus_lecturer" | "class";
 
 const DB_ROLE_BY_PLATFORM_ROLE: Record<PlatformUserRole, DbRole> = {
@@ -64,6 +69,10 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
   const [users, setUsers] = useState<PlatformUser[]>(initialUsers);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<RoleFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [detailUser, setDetailUser] = useState<PlatformUser | null>(null);
+  // Fixed once per mount so the "inactive" filter doesn't call Date.now() during render.
+  const [now] = useState(() => Date.now());
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmSuspendUser, setConfirmSuspendUser] = useState<PlatformUser | null>(null);
@@ -82,9 +91,30 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
     return users.filter((user) => {
       const matchesSearch = query.length === 0 || user.name.toLowerCase().includes(query);
       const matchesRole = role === "all" || user.role === role;
-      return matchesSearch && matchesRole;
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && user.status === "active") ||
+        (statusFilter === "suspended" && user.status === "suspended") ||
+        (statusFilter === "inactive" && (!user.lastActiveIso || now - new Date(user.lastActiveIso).getTime() > THIRTY_DAYS)) ||
+        (statusFilter === "verificationWaiting" && user.hasVerificationDocument === true && !user.institutionVerified);
+      return matchesSearch && matchesRole && matchesStatus;
     });
-  }, [users, search, role]);
+  }, [users, search, role, statusFilter, now]);
+
+  function exportCsv() {
+    downloadCsv(
+      "classportals-users",
+      [t("csv.name"), t("csv.role"), t("csv.status"), t("csv.joined"), t("csv.lastActive"), t("csv.verified")],
+      filtered.map((u) => [
+        u.name,
+        roleLabels[u.role],
+        u.status === "active" ? t("status.active") : t("status.suspended"),
+        u.joinedAt,
+        u.lastActive ?? t("never"),
+        u.institutionVerified === undefined ? "" : u.institutionVerified ? t("csv.yes") : t("csv.no"),
+      ]),
+    );
+  }
 
   const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(filtered.length);
   const pagedUsers = filtered.slice(offset, offset + pageSize);
@@ -173,9 +203,12 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-display text-2xl text-primary">{t("title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="font-display text-2xl text-primary">{t("title")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+        </div>
+        <ExportButton onClick={exportCsv} disabled={filtered.length === 0} />
       </div>
 
       {error && <p className="mb-4 text-sm font-medium text-destructive">{error}</p>}
@@ -217,15 +250,34 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
             <SelectItem value="campus_lecturer">{t("roleFilter.campusLecturer")}</SelectItem>
           </SelectContent>
         </Select>
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => {
+            setStatusFilter((value as StatusFilter) ?? "all");
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="sm:w-56">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_FILTERS.map((f) => (
+              <SelectItem key={f} value={f}>
+                {t(`statusFilter.${f}`)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      <div className="rounded-lg border border-border bg-white p-5">
+      <div className="overflow-x-auto rounded-lg border border-border bg-white p-5">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>{t("columns.user")}</TableHead>
               <TableHead>{t("columns.role")}</TableHead>
               <TableHead>{t("columns.joined")}</TableHead>
+              <TableHead>{t("columns.lastActive")}</TableHead>
               <TableHead>{t("columns.status")}</TableHead>
               <TableHead className="text-right">{t("columns.actions")}</TableHead>
             </TableRow>
@@ -234,20 +286,27 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
             {pagedUsers.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>
-                  <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setDetailUser(user)}
+                    className="group flex items-center gap-2.5 rounded-md text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    title={t("openDetail")}
+                  >
                     <Avatar>
                       <AvatarFallback className={avatarGradientClass(user.name)}>
                         {initialsFor(user.name)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium text-foreground">{user.name}</span>
+                    <span className="font-medium text-foreground group-hover:text-primary group-hover:underline">{user.name}</span>
                     {user.institutionVerified && (
                       <BadgeCheck className="size-4 shrink-0 text-primary" aria-label={t("institutionVerified")} />
                     )}
-                  </div>
+                    <ChevronRight className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                  </button>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{roleLabels[user.role]}</TableCell>
                 <TableCell className="text-muted-foreground">{user.joinedAt}</TableCell>
+                <TableCell className="text-muted-foreground">{user.lastActive ?? t("never")}</TableCell>
                 <TableCell>
                   <StatusBadge variant={user.status === "active" ? "active" : "suspended"}>
                     {user.status === "active" ? t("status.active") : t("status.suspended")}
@@ -303,7 +362,7 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
                   {t("empty")}
                 </TableCell>
               </TableRow>
@@ -323,6 +382,8 @@ export function UsersTab({ initialUsers }: { initialUsers: PlatformUser[] }) {
           />
         )}
       </div>
+
+      <UserDetailSheet user={detailUser} onClose={() => setDetailUser(null)} />
 
       <Dialog open={confirmSuspendUser !== null} onOpenChange={(open) => !open && setConfirmSuspendUser(null)}>
         <DialogContent>

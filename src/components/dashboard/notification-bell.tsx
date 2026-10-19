@@ -130,6 +130,10 @@ export function messageFor(t: Translator, n: NotificationRow): string {
       return t("types.listing_resubmitted", { kind: t(data.kind === "class" ? "kinds.class" : "kinds.teacher") });
     case "review_flagged":
       return t("types.review_flagged");
+    case "content_reported":
+      return t("types.content_reported");
+    case "report_resolved":
+      return t(data.decision === "resolved" ? "types.report_resolved" : "types.report_dismissed", { title: str(data.title) });
     case "institute_invite_received":
       return t("types.institute_invite_received", { instituteName: str(data.instituteName) });
     case "institute_invite_accepted":

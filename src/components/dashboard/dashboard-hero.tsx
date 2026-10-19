@@ -1,5 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
+import { TabLink } from "@/components/dashboard/tab-link";
 
 type HeroHref = ComponentProps<typeof Link>["href"];
 
@@ -20,6 +21,26 @@ export type HeroStat = {
   href?: HeroHref;
 };
 
+/** A link to another tab of the same dashboard ({ query: { tab } }) — switched in place, no page reload. */
+function dashboardTab(href: HeroHref | undefined): string | null {
+  if (!href || typeof href === "string") return null;
+  const tab = (href.query as Record<string, unknown> | undefined)?.tab;
+  return typeof tab === "string" ? tab : null;
+}
+
+function HeroLink({ href, className, children }: { href: HeroHref; className?: string; children: ReactNode }) {
+  const tab = dashboardTab(href);
+  return tab ? (
+    <TabLink tab={tab} className={className}>
+      {children}
+    </TabLink>
+  ) : (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 function HeroStatTile({ label, value, href }: HeroStat) {
   const content = (
     <div className="rounded-lg bg-white/8 px-4 py-3.5 transition-colors hover:bg-white/12">
@@ -27,7 +48,7 @@ function HeroStatTile({ label, value, href }: HeroStat) {
       <div className="font-display text-2xl text-white">{value}</div>
     </div>
   );
-  return href ? <Link href={href}>{content}</Link> : content;
+  return href ? <HeroLink href={href}>{content}</HeroLink> : content;
 }
 
 /**
@@ -67,7 +88,7 @@ export function DashboardHero({
         {actions.length > 0 && (
           <div className="flex flex-wrap gap-2.5">
             {actions.map((action) => (
-              <Link
+              <HeroLink
                 key={action.label}
                 href={action.href}
                 className={
@@ -77,7 +98,7 @@ export function DashboardHero({
                 }
               >
                 {action.label}
-              </Link>
+              </HeroLink>
             ))}
           </div>
         )}

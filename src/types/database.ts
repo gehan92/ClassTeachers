@@ -1984,11 +1984,100 @@ export type Database = {
         // every table declares no relationships rather than a guessed one.
         Relationships: [];
       };
+
+      // 0165 — written only through track_page_visit / track_feature_event.
+      page_visits: {
+        Row: {
+          id: number;
+          visited_at: string;
+          path: string;
+          locale: string | null;
+          role: string | null;
+          device: string | null;
+          referrer_host: string | null;
+          search_query: string | null;
+          visitor_id: string | null;
+          user_id: string | null;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+
+      feature_events: {
+        Row: {
+          id: number;
+          created_at: string;
+          event: string;
+          role: string | null;
+          user_id: string | null;
+          metadata: Json;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+
+      content_reports: {
+        Row: {
+          id: string;
+          reporter_id: string;
+          target_type: "ad" | "teacher" | "institute" | "review" | "wanted_ad";
+          target_id: string;
+          reason: "spam" | "fake" | "inappropriate" | "scam" | "other";
+          details: string | null;
+          status: "open" | "resolved" | "dismissed";
+          resolution_note: string | null;
+          resolved_by: string | null;
+          resolved_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          reporter_id: string;
+          target_type: "ad" | "teacher" | "institute" | "review" | "wanted_ad";
+          target_id: string;
+          reason: "spam" | "fake" | "inappropriate" | "scam" | "other";
+          details?: string | null;
+          status?: "open" | "resolved" | "dismissed";
+          created_at?: string;
+        };
+        Update: {
+          status?: "open" | "resolved" | "dismissed";
+          resolution_note?: string | null;
+          resolved_by?: string | null;
+          resolved_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
 
     Views: Record<string, never>;
 
     Functions: {
+      track_page_visit: {
+        Args: {
+          p_path: string;
+          p_locale: string | null;
+          p_device: string | null;
+          p_referrer_host: string | null;
+          p_search_query: string | null;
+          p_visitor_id: string | null;
+        };
+        Returns: undefined;
+      };
+      track_feature_event: {
+        Args: { p_event: string; p_metadata?: Json };
+        Returns: undefined;
+      };
+      prune_analytics: {
+        Args: Record<string, never>;
+        Returns: undefined;
+      };
+      admin_traffic_report: {
+        Args: { p_days: number };
+        Returns: Json;
+      };
       resolve_referral_code: {
         Args: { p_code: string };
         Returns: string | null;

@@ -12,6 +12,7 @@ import { ListingCard } from "./listing-card";
 import { PaginationFooter } from "@/components/dashboard/pagination-footer";
 import { usePagination } from "@/lib/hooks/use-pagination";
 import { cn } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics/track";
 import type { Listing } from "@/types/listing";
 
 type Grade = "1-5" | "6-9" | "10-11" | "12-13" | "campus" | "adult";
@@ -235,6 +236,25 @@ export function TeachersSearch({ listings }: { listings: Listing[] }) {
 
   const { currentPage, totalPages, setPage, offset, pageSize } = usePagination(results.length);
   const pagedResults = results.slice(offset, offset + pageSize);
+
+  // Admin -> Traffic "what people search for": one event per settled search
+  // (after typing stops), with the result count so searches that find
+  // nothing stand out. Only the typed subject/location — nothing personal.
+  const resultCount = results.length;
+  useEffect(() => {
+    const subjectTerm = subject.trim();
+    const locationTerm = location.trim();
+    if (!subjectTerm && !locationTerm) return;
+    const timer = window.setTimeout(() => {
+      trackEvent("search_performed", {
+        subject: subjectTerm.slice(0, 60),
+        location: locationTerm.slice(0, 60),
+        category,
+        results: resultCount,
+      });
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [subject, location, category, resultCount]);
 
   useEffect(() => {
     // Re-sync whenever the URL's search params actually change (not just on

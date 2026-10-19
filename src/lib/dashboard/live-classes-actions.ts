@@ -7,6 +7,7 @@ import { resolveBatchOwner } from "@/lib/dashboard/resolve-batch-owner";
 import { notifyContentAudience } from "@/lib/dashboard/notify";
 import { FEATURE_DISABLED_MESSAGES, isFeatureEnabled } from "@/lib/platform-features";
 import type { Database } from "@/types/database";
+import { recordFeatureEvent } from "@/lib/analytics/track-server";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -121,6 +122,7 @@ export async function createLiveClass(input: {
     "newClassContent",
   );
 
+  await recordFeatureEvent("live_class_scheduled");
   return {};
 }
 
@@ -205,6 +207,7 @@ export async function createAttendanceSession(input: {
   if (error || !session) {
     return { error: "Couldn't start this roll call. Please try again." };
   }
+  await recordFeatureEvent("roll_call_taken");
   return { id: session.id };
 }
 
@@ -386,6 +389,7 @@ export async function notifyLiveClassStarted(liveClassId: string): Promise<Actio
   }
   const supabase = await createClient();
   await updateLiveClassStatus(supabase, liveClassId, "live", "live_class_started");
+  await recordFeatureEvent("live_class_started");
   return {};
 }
 

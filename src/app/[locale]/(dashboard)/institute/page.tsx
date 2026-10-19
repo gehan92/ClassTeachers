@@ -60,6 +60,7 @@ import { InstituteOnboardingWizard } from "@/components/onboarding/institute-onb
 import { loadClassProfile } from "@/lib/load-class-profile";
 import { createClient } from "@/lib/supabase/server";
 import { getNavAvailability } from "@/lib/nav-availability";
+import { getSiteAnnouncement } from "@/lib/site-announcement";
 import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 import { createDateFormatter } from "@/lib/format-date";
 import type { TeachersAtGlance } from "@/types/dashboard-institute";
@@ -1241,10 +1242,11 @@ export default async function InstituteDashboardPage({
     batchLabel: row.batch,
   }));
 
-  const navAvailability = await getNavAvailability();
+  const [navAvailability, announcement] = await Promise.all([getNavAvailability(), getSiteAnnouncement()]);
 
   return (
     <DashboardShell
+      announcement={announcement}
       userLabel={fullName}
       userInitial={userInitial}
       userPhotoUrl={classProfile?.photo_url ?? null}

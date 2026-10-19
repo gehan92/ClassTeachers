@@ -14,6 +14,14 @@ import { PaymentsTab } from "@/components/dashboard/admin/payments-tab";
 import { AuditLogTab } from "@/components/dashboard/admin/audit-log-tab";
 import { PlatformSwitchesTab } from "@/components/dashboard/admin/platform-switches-tab";
 import { ModerationTab } from "@/components/dashboard/admin/moderation-tab";
+import { GrowthTab } from "@/components/dashboard/admin/growth-tab";
+import { EarningsTab } from "@/components/dashboard/admin/earnings-tab";
+import { ActivityTab } from "@/components/dashboard/admin/activity-tab";
+import { TrafficTab } from "@/components/dashboard/admin/traffic-tab";
+import { ReportsTab } from "@/components/dashboard/admin/reports-tab";
+import { loadAdminReports } from "@/lib/dashboard/admin-reports";
+import { loadTrafficReport } from "@/lib/dashboard/admin-insights-actions";
+import { ANNOUNCEMENT_KEYS, getSiteAnnouncement } from "@/lib/site-announcement";
 import { PLATFORM_FEATURES, featureSettingKey } from "@/lib/platform-features";
 import { createClient } from "@/lib/supabase/server";
 import { getNavAvailability } from "@/lib/nav-availability";
@@ -21,6 +29,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createDateFormatter } from "@/lib/format-date";
 import { roleDashboardPath } from "@/lib/auth/routes";
 import type {
+  AdminContentReport,
+  ApprovalDecision,
   AdminPayment,
   AuditLogEntry,
   ModerationItem,
@@ -110,6 +120,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     { data: moderationAssignmentRows },
     { data: moderationAdRows },
     { data: moderationWantedRows },
+    { data: contentReportRows },
   ] = await Promise.all([
     supabase.from("teacher_profiles").select("id, created_at").eq("status", "pending").order("created_at", { ascending: false }),
     supabase.from("class_profiles").select("id, name, created_at").eq("status", "pending").order("created_at", { ascending: false }),
@@ -146,7 +157,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     supabase
       .from("platform_settings")
       .select("key, value")
-      .in("key", ["standard_price", "premium_price", ...PLATFORM_FEATURES.map(featureSettingKey)]),
+      .in("key", ["standard_price", "premium_price", ...ANNOUNCEMENT_KEYS, ...PLATFORM_FEATURES.map(featureSettingKey)]),
     supabase.from("teacher_profiles").select("id, created_at, institution_verified, verification_document_path"),
     supabase
       .from("class_profiles")
@@ -202,6 +213,13 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
       .select("id, student_id, title, status, created_at")
       .order("created_at", { ascending: false })
       .limit(200),
+    // User reports (0165). Before that migration runs this just errors and
+    // comes back empty, so the Reports tab shows "nothing reported".
+    supabase
+      .from("content_reports")
+      .select("id, reporter_id, target_type, target_id, reason, details, status, resolution_note, created_at")
+      .order("created_at", { ascending: false })
+      .limit(300),
   ]);
 
   const notifications: NotificationRow[] = (notificationRows ?? []).map((n) => ({
@@ -219,6 +237,12 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
   const paymentEnrollmentIds = [
     ...new Set((paymentRows ?? []).map((p) => p.enrollment_id).filter((id): id is string => Boolean(id))),
   ];
+  const reportIds = (type: string) =>
+    [...new Set((contentReportRows ?? []).filter((r) => r.target_type === type).map((r) => r.target_id))];
+  const reportedAdIds = reportIds("ad");
+  const reportedWantedIds = reportIds("wanted_ad");
+  const reportedReviewIds = reportIds("review");
+  const reportedInstituteIds = reportIds("institute");
   const connectionClassIds = [
     ...new Set([
       ...(recentInquiryRows ?? []).filter((r) => r.owner_type === "class").map((r) => r.owner_id),
@@ -234,6 +258,14 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     { data: flaggedClassProfiles },
     { data: connectionClassRows },
     { data: paymentEnrollmentRows },
+    reports,
+    { report: trafficYear },
+    { report: trafficMonth },
+    { data: reportedAdRows },
+    { data: reportedWantedRows },
+    { data: reportedReviewRows },
+    { data: reportedInstituteRows },
+    announcement,
   ] = await Promise.all([
     pendingTeacherIds.length
       ? supabase.from("profiles").select("id, full_name, role").in("id", pendingTeacherIds)
@@ -250,6 +282,24 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     paymentEnrollmentIds.length
       ? supabase.from("enrollments").select("id, owner_type, owner_id").in("id", paymentEnrollmentIds)
       : Promise.resolve({ data: [] as { id: string; owner_type: string; owner_id: string }[] }),
+    // Charts for Overview / Growth / Earnings / Activity (no tracking needed).
+    loadAdminReports(supabaseAdmin, authUsersPage?.users ?? []),
+    // Visits: 12 months for the Overview trend, 30 days for the Traffic tab.
+    loadTrafficReport(365),
+    loadTrafficReport(30),
+    reportedAdIds.length
+      ? supabase.from("advertisements").select("id, title").in("id", reportedAdIds)
+      : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+    reportedWantedIds.length
+      ? supabase.from("wanted_ads").select("id, title").in("id", reportedWantedIds)
+      : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+    reportedReviewIds.length
+      ? supabase.from("reviews").select("id, target_type, target_id, comment").in("id", reportedReviewIds)
+      : Promise.resolve({ data: [] as { id: string; target_type: string; target_id: string; comment: string | null }[] }),
+    reportedInstituteIds.length
+      ? supabase.from("class_profiles").select("id, name").in("id", reportedInstituteIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    getSiteAnnouncement(),
   ]);
 
   // Everything below is pure computation over already-fetched data — no
@@ -299,6 +349,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     (classProfileRows ?? []).map((cp) => [cp.owner_id, cp.verification_document_path !== null]),
   );
 
+  const lastSignInById = new Map(authUsersPage?.users.map((u) => [u.id, u.last_sign_in_at ?? null]) ?? []);
   const platformUsers: PlatformUser[] = (allProfiles ?? [])
     .map((p) => {
       const platformRole = platformRoleByDbRole[p.role];
@@ -310,6 +361,8 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
         name: p.full_name,
         role: platformRole,
         joinedAt: dateFormatter.format(new Date(p.created_at)),
+        lastActive: lastSignInById.get(p.id) ? dateFormatter.format(new Date(lastSignInById.get(p.id)!)) : null,
+        lastActiveIso: lastSignInById.get(p.id) ?? null,
         status: suspended ? "suspended" : "active",
         institutionVerified:
           platformRole === "student"
@@ -435,6 +488,77 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     createdAt: dateFormatter.format(new Date(row.created_at)),
   }));
 
+  // Admin -> Approvals history: the latest approve/reject decisions.
+  const approvalDecisions: ApprovalDecision[] = (auditRows ?? [])
+    .filter((row) => row.action === "listing_approval_decision")
+    .slice(0, 50)
+    .map((row) => {
+      const meta = (row.metadata as Record<string, unknown> | null) ?? {};
+      return {
+        id: row.id,
+        name: auditTargetLabel(row.target_type, row.target_id),
+        decision: meta.decision === "rejected" ? "rejected" : "approved",
+        reason: typeof meta.reason === "string" ? meta.reason : "",
+        adminName: row.actor_id ? (profileNameById.get(row.actor_id) ?? "—") : "—",
+        decidedAt: dateFormatter.format(new Date(row.created_at)),
+      };
+    });
+
+  // Admin -> Reports: what each reported item is, and where to look at it.
+  const reportedAdTitle = new Map((reportedAdRows ?? []).map((r) => [r.id, r.title]));
+  const reportedWantedTitle = new Map((reportedWantedRows ?? []).map((r) => [r.id, r.title]));
+  const reportedReviewById = new Map((reportedReviewRows ?? []).map((r) => [r.id, r]));
+  const reportedInstituteName = new Map((reportedInstituteRows ?? []).map((r) => [r.id, r.name]));
+  const openReportsByTarget = new Map<string, number>();
+  for (const r of contentReportRows ?? []) {
+    if (r.status !== "open") continue;
+    const key = `${r.target_type}:${r.target_id}`;
+    openReportsByTarget.set(key, (openReportsByTarget.get(key) ?? 0) + 1);
+  }
+  const contentReports: AdminContentReport[] = (contentReportRows ?? []).map((r) => {
+    let targetLabel = t("contentReports.removedItem");
+    let targetHref: string | null = null;
+    if (r.target_type === "ad") {
+      targetLabel = reportedAdTitle.get(r.target_id) ?? targetLabel;
+      targetHref = reportedAdTitle.has(r.target_id) ? `/ad/${r.target_id}` : null;
+    } else if (r.target_type === "wanted_ad") {
+      targetLabel = reportedWantedTitle.get(r.target_id) ?? targetLabel;
+      targetHref = reportedWantedTitle.has(r.target_id) ? `/requests/${r.target_id}` : null;
+    } else if (r.target_type === "teacher") {
+      targetLabel = profileNameById.get(r.target_id) ?? targetLabel;
+      targetHref = `/teacher/${r.target_id}`;
+    } else if (r.target_type === "institute") {
+      targetLabel = reportedInstituteName.get(r.target_id) ?? targetLabel;
+      targetHref = `/class/${r.target_id}`;
+    } else if (r.target_type === "review") {
+      const review = reportedReviewById.get(r.target_id);
+      if (review) {
+        const reviewed =
+          review.target_type === "class"
+            ? (allClassNameById.get(review.target_id) ?? "—")
+            : (profileNameById.get(review.target_id) ?? "—");
+        targetLabel = t("contentReports.reviewOf", { name: reviewed, comment: (review.comment ?? "").slice(0, 80) });
+        targetHref = review.target_type === "class" ? `/class/${review.target_id}` : `/teacher/${review.target_id}`;
+      }
+    }
+    return {
+      id: r.id,
+      targetType: r.target_type,
+      targetId: r.target_id,
+      targetLabel,
+      targetHref,
+      reason: r.reason,
+      details: r.details ?? "",
+      reporterName: profileNameById.get(r.reporter_id) ?? "—",
+      status: r.status,
+      resolutionNote: r.resolution_note ?? "",
+      createdAt: dateFormatter.format(new Date(r.created_at)),
+      createdAtIso: r.created_at,
+      sameTargetCount: openReportsByTarget.get(`${r.target_type}:${r.target_id}`) ?? 0,
+    };
+  });
+  const openReportCount = openReportsByTarget.size;
+
   const contentOwnerName = (ownerType: string, ownerId: string | null) =>
     ownerId
       ? ((ownerType === "class" ? allClassNameById.get(ownerId) : profileNameById.get(ownerId)) ?? "—")
@@ -500,6 +624,15 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     key,
     enabled: settingValue(featureSettingKey(key), "true") !== "false",
   }));
+  const announcementTone = settingValue("announcement_tone", "info");
+  const announcementSettings = {
+    enabled: settingValue("announcement_enabled", "false") === "true",
+    text: settingValue("announcement_text", ""),
+    tone: (announcementTone === "warning" || announcementTone === "success" ? announcementTone : "info") as
+      | "info"
+      | "warning"
+      | "success",
+  };
   const standardPrice = settingValue("standard_price", "2500");
   const premiumPrice = settingValue("premium_price", "4900");
 
@@ -524,12 +657,6 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
   const standardMrr = activeStandardCount * Number(standardPrice);
   const premiumMrr = activePremiumCount * Number(premiumPrice);
 
-  const studentProfiles = (allProfiles ?? []).filter((p) => p.role === "student");
-  const studentsCount = studentProfiles.length;
-  const teachersDelta = (teacherProfileRows ?? []).filter((r) => isWithinPastDays(r.created_at, 7)).length;
-  const institutesDelta = (classProfileRows ?? []).filter((r) => isWithinPastDays(r.created_at, 7)).length;
-  const studentsDelta = studentProfiles.filter((p) => isWithinPastDays(p.created_at, 7)).length;
-
   const expiringSiteAds = siteAds.filter((ad) => ad.status === "expiring");
   const nextExpiringAd = expiringSiteAds[0]
     ? { sponsor: expiringSiteAds[0].sponsor, expiresDisplay: expiringSiteAds[0].expiresDisplay }
@@ -537,24 +664,39 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
 
   const navAvailability = await getNavAvailability();
 
+  const mrr = standardMrr + premiumMrr;
+  const failedPaymentCount = payments.filter((p) => p.status === "failed").length;
+  const verificationWaiting = platformUsers.filter((u) => u.hasVerificationDocument && !u.institutionVerified).length;
+
   return (
     <DashboardShell
       brandBadge="ADMIN"
       userLabel={profile.full_name}
       userInitial={userInitial}
       navAvailability={navAvailability}
+      announcement={announcement}
       logoutLabel={t("logout")}
       demoRole="admin"
       notifications={notifications}
       realtimeWatch={[{ table: "notifications", filter: `recipient_id=eq.${user!.id}` }]}
       groups={[
         {
+          key: "insights",
+          label: t("groupInsights"),
+          items: [
+            { key: "overview", label: t("tabs.overview") },
+            { key: "growth", label: t("tabs.growth") },
+            { key: "earnings", label: t("tabs.earnings") },
+            { key: "activity", label: t("tabs.activity") },
+            { key: "traffic", label: t("tabs.traffic") },
+          ],
+        },
+        {
           key: "platform",
           label: t("groupPlatform"),
           items: [
-            { key: "overview", label: t("tabs.overview") },
             { key: "approvals", label: t("tabs.approvals"), count: approvals.length },
-            { key: "users", label: t("tabs.users") },
+            { key: "users", label: t("tabs.users"), count: verificationWaiting || undefined },
             { key: "platformSwitches", label: t("tabs.platformSwitches") },
           ],
         },
@@ -562,11 +704,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
           key: "monetization",
           label: t("groupMonetization"),
           items: [
-            {
-              key: "payments",
-              label: t("tabs.payments"),
-              count: payments.filter((p) => p.status === "failed").length || undefined,
-            },
+            { key: "payments", label: t("tabs.payments"), count: failedPaymentCount || undefined },
             { key: "subscriptions", label: t("tabs.subscriptions") },
             { key: "siteAds", label: t("tabs.siteAds") },
             {
@@ -580,6 +718,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
           key: "trust",
           label: t("groupTrust"),
           items: [
+            { key: "reports", label: t("tabs.reports"), count: openReportCount || undefined },
             { key: "flagged", label: t("tabs.flagged"), count: flaggedReviews.length },
             { key: "moderation", label: t("tabs.moderation") },
             { key: "connections", label: t("tabs.connections") },
@@ -590,20 +729,39 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
       panels={{
         overview: (
           <OverviewTab
-            teachersCount={teacherCount}
-            teachersDelta={teachersDelta}
-            institutesCount={classCount}
-            institutesDelta={institutesDelta}
-            studentsCount={studentsCount}
-            studentsDelta={studentsDelta}
-            revenueDisplay={`Rs. ${currencyFormatter.format(standardMrr + premiumMrr)}`}
-            pendingApprovalsCount={approvals.length}
-            flaggedCount={flaggedReviews.length}
-            expiringAdsCount={expiringSiteAds.length}
-            nextExpiringAd={nextExpiringAd}
+            adminName={profile.full_name}
+            reports={reports}
+            traffic={trafficYear}
+            mrr={mrr}
+            attention={{
+              pendingApprovals: approvals.length,
+              openReports: openReportCount,
+              flaggedReviews: flaggedReviews.length,
+              failedPayments: failedPaymentCount,
+              verificationWaiting,
+              expiringAds: expiringSiteAds.length,
+              nextExpiringAd,
+            }}
           />
         ),
-        approvals: <ApprovalsTab initialApprovals={approvals} />,
+        growth: <GrowthTab reports={reports} users={platformUsers} />,
+        earnings: (
+          <EarningsTab
+            reports={reports}
+            payments={payments}
+            mrr={mrr}
+            subscriberCount={activeStandardCount + activePremiumCount}
+          />
+        ),
+        activity: <ActivityTab reports={reports} />,
+        traffic: <TrafficTab initialReport={trafficMonth} initialRange="30d" />,
+        approvals: (
+          <ApprovalsTab
+            initialApprovals={approvals}
+            decisions={approvalDecisions}
+            avgDecisionDays={reports.approvalStats.avgDecisionDays}
+          />
+        ),
         users: <UsersTab initialUsers={platformUsers} />,
         subscriptions: (
           <SubscriptionsTab
@@ -624,7 +782,8 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
         payments: <PaymentsTab payments={payments} />,
         auditLog: <AuditLogTab entries={auditLog} />,
         moderation: <ModerationTab initialItems={moderationItems} />,
-        platformSwitches: <PlatformSwitchesTab initialFeatures={featureStates} />,
+        reports: <ReportsTab initialReports={contentReports} />,
+        platformSwitches: <PlatformSwitchesTab initialFeatures={featureStates} initialAnnouncement={announcementSettings} />,
       }}
       defaultTab="overview"
     />

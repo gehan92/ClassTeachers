@@ -21,7 +21,8 @@ import { cn } from "@/lib/utils";
 import { avatarGradientClass } from "@/lib/avatar-color";
 import { RefreshStatus } from "@/components/dashboard/refresh-status";
 import { useDashboardRefresh } from "@/lib/hooks/use-dashboard-refresh";
-import type { ApprovalEntityType, PendingApproval } from "@/types/dashboard-admin";
+import { StatusBadge } from "@/components/features/status-badge";
+import type { ApprovalDecision, ApprovalEntityType, PendingApproval } from "@/types/dashboard-admin";
 
 function initialsFor(name: string) {
   return name
@@ -33,7 +34,16 @@ function initialsFor(name: string) {
     .toUpperCase();
 }
 
-export function ApprovalsTab({ initialApprovals }: { initialApprovals: PendingApproval[] }) {
+export function ApprovalsTab({
+  initialApprovals,
+  decisions,
+  avgDecisionDays,
+}: {
+  initialApprovals: PendingApproval[];
+  /** Most recent approve/reject decisions, newest first (from the audit log). */
+  decisions: ApprovalDecision[];
+  avgDecisionDays: number | null;
+}) {
   const t = useTranslations("adminDashboard.approvals");
   const tc = useTranslations("adminDashboard.common");
   const { refresh, isRefreshing, refreshStuck } = useDashboardRefresh();
@@ -143,6 +153,45 @@ export function ApprovalsTab({ initialApprovals }: { initialApprovals: PendingAp
                       </Button>
                     </div>
                   </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+
+      <div className="mt-8 mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="font-display text-lg text-primary">{t("history.title")}</h2>
+        {avgDecisionDays !== null && (
+          <span className="text-xs text-muted-foreground">{t("history.avgDays", { days: avgDecisionDays })}</span>
+        )}
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-border bg-white p-5">
+        {decisions.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">{t("history.empty")}</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("history.columns.name")}</TableHead>
+                <TableHead>{t("history.columns.decision")}</TableHead>
+                <TableHead>{t("history.columns.reason")}</TableHead>
+                <TableHead>{t("history.columns.by")}</TableHead>
+                <TableHead>{t("history.columns.date")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {decisions.map((d) => (
+                <TableRow key={d.id}>
+                  <TableCell className="font-medium text-foreground">{d.name}</TableCell>
+                  <TableCell>
+                    <StatusBadge variant={d.decision === "approved" ? "active" : "flagged"}>
+                      {d.decision === "approved" ? t("history.approved") : t("history.rejected")}
+                    </StatusBadge>
+                  </TableCell>
+                  <TableCell className="max-w-xs text-sm whitespace-normal text-muted-foreground">{d.reason || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{d.adminName}</TableCell>
+                  <TableCell className="text-muted-foreground">{d.decidedAt}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

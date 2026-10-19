@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { BulkImportQuestionInput } from "@/lib/dashboard/question-bank-actions";
 import { FEATURE_DISABLED_MESSAGES, isFeatureEnabled } from "@/lib/platform-features";
+import { recordFeatureEvent } from "@/lib/analytics/track-server";
 
 // Gemini's inline (base64) request body caps out around 20MB total — base64
 // inflates raw bytes by ~1.33x, so 10MB raw leaves headroom for the prompt
@@ -362,5 +363,6 @@ export async function extractQuestionsFromPdf(formData: FormData): Promise<Extra
     };
   }
 
+  await recordFeatureEvent("pdf_import");
   return { questions };
 }

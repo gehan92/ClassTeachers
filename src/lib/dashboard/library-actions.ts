@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { notifyContentAudience } from "@/lib/dashboard/notify";
+import { recordFeatureEvent } from "@/lib/analytics/track-server";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -75,6 +76,7 @@ export async function uploadLibraryResource(formData: FormData): Promise<ActionR
     "library",
     "newClassContent",
   );
+  await recordFeatureEvent("library_upload");
   return {};
 }
 

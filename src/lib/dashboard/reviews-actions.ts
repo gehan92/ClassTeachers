@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { notify, notifyAdmins } from "@/lib/dashboard/notify";
+import { recordFeatureEvent } from "@/lib/analytics/track-server";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -60,6 +61,7 @@ export async function postReview(input: {
     recipientId = cp?.owner_id ?? parsed.data.targetId;
   }
   await notify(supabase, recipientId, "review_posted", { rating: parsed.data.rating }, "reviews", "reviews");
+  await recordFeatureEvent("review_posted");
   return {};
 }
 

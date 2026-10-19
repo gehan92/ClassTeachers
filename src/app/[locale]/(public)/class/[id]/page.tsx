@@ -5,6 +5,7 @@ import { ClassProfileView } from "@/components/features/class-profile-view";
 import { loadClassProfile } from "@/lib/load-class-profile";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/supabase/auth-user";
+import { ReportButton } from "@/components/features/report-button";
 
 export async function generateMetadata({
   params,
@@ -72,19 +73,24 @@ export default async function ClassProfilePage({
   }
 
   return (
-    <ClassProfileView
-      classProfile={classProfile}
-      showGate={!user}
-      backHref="/teachers"
-      viewerJoin={{
-        loggedIn: Boolean(user),
-        isStudent,
-        generalStatus,
-        batchStatusById,
-        isTeacher,
-        teacherStatus,
-        teacherRequestedBy,
-      }}
-    />
+    <>
+      <ClassProfileView
+        classProfile={classProfile}
+        showGate={!user}
+        backHref="/teachers"
+        viewerJoin={{
+          loggedIn: Boolean(user),
+          isStudent,
+          generalStatus,
+          batchStatusById,
+          isTeacher,
+          teacherStatus,
+          teacherRequestedBy,
+        }}
+      />
+      <div className="mx-auto flex max-w-[1180px] justify-end px-7 pb-10">
+        <ReportButton targetType="institute" targetId={classProfile.id} signedIn={Boolean(user)} />
+      </div>
+    </>
   );
 }

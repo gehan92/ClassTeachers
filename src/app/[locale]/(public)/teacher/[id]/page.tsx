@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { TeacherProfileView } from "@/components/features/teacher-profile-view";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/supabase/auth-user";
+import { ReportButton } from "@/components/features/report-button";
 import { createDateFormatter } from "@/lib/format-date";
 import type { TeacherProfileDetail } from "@/types/teacher-profile";
 
@@ -152,5 +153,12 @@ export default async function TeacherProfilePage({
 
   const user = await getAuthUser();
 
-  return <TeacherProfileView teacher={teacher} showGate={!user} backHref="/teachers" />;
+  return (
+    <>
+      <TeacherProfileView teacher={teacher} showGate={!user} backHref="/teachers" />
+      <div className="mx-auto flex max-w-[1180px] justify-end px-7 pb-10">
+        <ReportButton targetType="teacher" targetId={id} signedIn={Boolean(user)} />
+      </div>
+    </>
+  );
 }

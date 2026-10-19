@@ -3,9 +3,11 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/supabase/auth-user";
 import { getNavAvailability } from "@/lib/nav-availability";
+import { getSiteAnnouncement } from "@/lib/site-announcement";
+import { SiteAnnouncementBar } from "@/components/layout/site-announcement-bar";
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const [authUser, navAvailability] = await Promise.all([getAuthUser(), getNavAvailability()]);
+  const [authUser, navAvailability, announcement] = await Promise.all([getAuthUser(), getNavAvailability(), getSiteAnnouncement()]);
   const supabase = await createClient();
 
   let headerUser = null;
@@ -90,6 +92,7 @@ export default async function PublicLayout({ children }: { children: React.React
           letter-spacing: -0.01em;
         }
       `}</style>
+      {announcement && <SiteAnnouncementBar announcement={announcement} />}
       <SiteHeader user={headerUser} inquiriesCount={inquiriesCount} userPhotoUrl={userPhotoUrl} navAvailability={navAvailability} />
       <main className="flex-1">{children}</main>
       <SiteFooter />

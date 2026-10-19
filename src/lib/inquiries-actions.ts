@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { notify } from "@/lib/dashboard/notify";
+import { recordFeatureEvent } from "@/lib/analytics/track-server";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -47,6 +48,7 @@ export async function submitInquiry(input: {
     }
     return { error: "Couldn't send your message. Please try again." };
   }
+  await recordFeatureEvent("inquiry_sent");
   return {};
 }
 

@@ -28,6 +28,7 @@ import type { ProgressAttendanceRow } from "@/components/dashboard/student/progr
 import { createClient } from "@/lib/supabase/server";
 import { getCachedSubjects } from "@/lib/supabase/cached-subjects";
 import { getNavAvailability } from "@/lib/nav-availability";
+import { getSiteAnnouncement } from "@/lib/site-announcement";
 import { createDateFormatter, createScheduleFormatter } from "@/lib/format-date";
 import { sanitizeRichTextNullable } from "@/lib/dashboard/sanitize-rich-text";
 import type { MyClassRow, AvailableBatchRow } from "@/components/dashboard/student/classes-tab";
@@ -1219,10 +1220,11 @@ export default async function StudentDashboardPage({
     createdLabel: dateFormatter.format(new Date(row.created_at)),
   }));
 
-  const navAvailability = await getNavAvailability();
+  const [navAvailability, announcement] = await Promise.all([getNavAvailability(), getSiteAnnouncement()]);
 
   return (
     <DashboardShell
+      announcement={announcement}
       userLabel={fullName}
       userInitial={userInitial}
       userPhotoUrl={profile?.avatar_url ?? null}

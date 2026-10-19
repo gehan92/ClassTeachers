@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBatchOwner } from "@/lib/dashboard/resolve-batch-owner";
 import { notifyContentAudience } from "@/lib/dashboard/notify";
+import { recordFeatureEvent } from "@/lib/analytics/track-server";
 
 type ActionResult = { error: string } | { error?: undefined };
 
@@ -90,6 +91,7 @@ export async function uploadNote(formData: FormData): Promise<ActionResult> {
     "newClassContent",
   );
 
+  await recordFeatureEvent("note_uploaded");
   return {};
 }
 
